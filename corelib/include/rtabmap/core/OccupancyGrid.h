@@ -119,7 +119,7 @@ private:
 	float cellSize_;
 	bool preVoxelFiltering_;
 	bool occupancyFromDepth_;
-	bool projMapFrame_;
+	bool projMapFrame_; // false по умолчанию
 	float maxObstacleHeight_;
 	int normalKSearch_;
 	float maxGroundAngle_;
@@ -137,7 +137,7 @@ private:
 	bool rayTracing_;
 	bool fullUpdate_;
 	float minMapSize_;
-	bool erode_;
+	bool erode_; // false по умолчанию
 	float footprintRadius_;
 	float updateError_;
 	float occupancyThr_;

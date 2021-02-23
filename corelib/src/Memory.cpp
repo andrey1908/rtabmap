@@ -1856,11 +1856,16 @@ std::map<int, float> Memory::computeLikelihood(const Signature * signature, cons
 		const std::list<int> & wordIds = uUniqueKeys(signature->getWords());
 
 		float nwi; // nwi is the number of a specific word referenced by a place
+				   // сколько раз встречается слово с фрейме
 		float ni; // ni is the total of words referenced by a place
+				  // сколько всего слов в фрейме
+				  
 		float nw; // nw is the number of places referenced by a specific word
+				  // в скольких фреймах встречается слово
 		float N; // N is the total number of places
+				 // всего фреймов
 
-		float logNnw;
+		float logNnw; // редкость слова
 		const VisualWord * vw;
 
 		N = this->getSignatures().size();

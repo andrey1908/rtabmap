@@ -144,7 +144,8 @@ private:
 	int _mapId;
 	double _stamp;
 	std::multimap<int, Link> _links; // id, transform
-	std::map<int, Link> _landmarks;
+									 // first - id узла, к которому присоединён линк. Все линки, хранящиеся в узле, выходят из этого же узла.
+	std::map<int, Link> _landmarks; // first - id узла, к которому присоединён лендмарк. Все лендмарки, хранящиеся в узле, выходят из этого же узла.
 	int _weight;
 	std::string _label;
 	bool _saved; // If it's saved to bd
@@ -155,6 +156,7 @@ private:
 	// times in the signature, it will be 2 times in this list)
 	// Words match with the CvSeq keypoints and descriptors
 	std::multimap<int, int> _words; // word <id, keypoint index>
+									// first - id слова в словаре
 	std::vector<cv::KeyPoint> _wordsKpts;
 	std::vector<cv::Point3f> _words3; // in base_link frame (localTransform applied))
 	cv::Mat _wordsDescriptors;

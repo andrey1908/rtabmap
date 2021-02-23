@@ -271,14 +271,14 @@ private:
 	bool _statisticLogsBufferedInRAM;
 	bool _statisticLogged;
 	bool _statisticLoggedHeaders;
-	bool _rgbdSlamMode;
+	bool _rgbdSlamMode; // пременная _rgbdSlamMode определяется параметром RGBD/Enabled и должна быть равна true, иначе карта занятости не будет строится.
 	float _rgbdLinearUpdate;
 	float _rgbdAngularUpdate;
 	float _rgbdLinearSpeedUpdate;
 	float _rgbdAngularSpeedUpdate;
 	float _newMapOdomChangeDistance;
-	bool _neighborLinkRefining;
-	bool _proximityByTime;
+	bool _neighborLinkRefining; // false по умолчанию
+	bool _proximityByTime; // false по умолчанию
 	bool _proximityBySpace;
 	bool _scanMatchingIdsSavedInLinks;
 	float _localRadius;
@@ -293,7 +293,7 @@ private:
 	std::string _databasePath;
 	bool _optimizeFromGraphEnd;
 	float _optimizationMaxError;
-	bool _startNewMapOnLoopClosure;
+	bool _startNewMapOnLoopClosure; // false по умолчанию 
 	bool _startNewMapOnGoodSignature;
 	float _goalReachedRadius; // meters
 	bool _goalsSavedInUserData;
@@ -309,7 +309,7 @@ private:
 	std::pair<int, float> _highestHypothesis;
 	double _lastProcessTime;
 	bool _someNodesHaveBeenTransferred;
-	float _distanceTravelled;
+	float _distanceTravelled; // пройденное расстояние
 	float _distanceTravelledSinceLastLocalization;
 	bool _optimizeFromGraphEndChanged;
 
@@ -320,7 +320,7 @@ private:
 	Optimizer * _graphOptimizer;
 	ParametersMap _parameters;
 
-	Memory * _memory;
+	Memory * _memory; // здесь храняться узлы графа
 
 	FILE* _foutFloat;
 	FILE* _foutInt;
@@ -331,9 +331,9 @@ private:
 
 	std::string _wDir;
 
-	std::map<int, Transform> _optimizedPoses;
+	std::map<int, Transform> _optimizedPoses; // скорректированное положение узлов
 	std::multimap<int, Link> _constraints;
-	Transform _mapCorrection;
+	Transform _mapCorrection; // корректировка для одометрии
 	Transform _mapCorrectionBackup; // used in localization mode when odom is lost
 	Transform _lastLocalizationPose; // Corrected odometry pose. In mapping mode, this corresponds to last pose return by getLocalOptimizedPoses().
 	int _lastLocalizationNodeId; // for localization mode

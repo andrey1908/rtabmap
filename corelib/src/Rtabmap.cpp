@@ -1205,6 +1205,7 @@ bool Rtabmap::process(
 	ULOGGER_INFO("Updating memory...");
 	if(_rgbdSlamMode)
 	{
+		// Здесь создаётся новый узел и добавляются линки.
 		if(!_memory->update(data, odomPose, odomCovariance, odomVelocity, &statistics_))
 		{
 			return false;
@@ -1218,7 +1219,7 @@ bool Rtabmap::process(
 		}
 	}
 
-	signature = _memory->getLastWorkingSignature();
+	signature = _memory->getLastWorkingSignature(); // только что созданный узел
 	_currentSessionHasGPS = _currentSessionHasGPS || signature->sensorData().gps().stamp() > 0.0;
 	if(!signature)
 	{
@@ -1232,7 +1233,7 @@ bool Rtabmap::process(
 	//============================================================
 	// Metric
 	//============================================================
-	bool smallDisplacement = false;
+	bool smallDisplacement = false; // имеется ввиду наличие большого смещения
 	bool tooFastMovement = false;
 	std::list<int> signaturesRemoved;
 	if(_rgbdSlamMode)
@@ -1248,6 +1249,7 @@ bool Rtabmap::process(
 		}
 		else
 		{
+			// Здесь проверяется смещение между текущим и предыдущим узлами и если порог не превышен, то значение smallDisplacement устанавливается равным true
 			if(_rgbdLinearUpdate > 0.0f || _rgbdAngularUpdate > 0.0f)
 			{
 				//============================================================
@@ -1280,6 +1282,7 @@ bool Rtabmap::process(
 					}
 				}
 			}
+			// Здест проверяется скорость движение и при превышении порога значение tooFastMovement устанавливается равным true
 			if(odomVelocity.size() == 6)
 			{
 				// This will disable global loop closure detection, only retrieval will be done.

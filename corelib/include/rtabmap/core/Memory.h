@@ -342,6 +342,7 @@ private:
 	std::vector<double> _odomMaxInf;
 
 	std::map<int, Signature *> _signatures; // TODO : check if a signature is already added? although it is not supposed to occur...
+											// _signatures - узлы графа (но не все). first - id узла.
 	std::set<int> _stMem; // id
 	std::map<int, double> _workingMem; // id,age
 	std::map<int, Transform> _groundTruths;
@@ -353,7 +354,7 @@ private:
 	VWDictionary * _vwd;
 	Feature2D * _feature2D;
 	float _badSignRatio;
-	bool _tfIdfLikelihoodUsed;
+	bool _tfIdfLikelihoodUsed; // true по умолчанию
 	bool _parallelized;
 
 	Registration * _registrationPipeline;
