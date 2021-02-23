@@ -345,6 +345,7 @@ DatabaseViewer::DatabaseViewer(const QString & ini, QWidget * parent) :
 	connect(ui_->checkBox_showMap, SIGNAL(toggled(bool)), this, SLOT(update3dView()));
 	connect(ui_->checkBox_showGrid, SIGNAL(toggled(bool)), this, SLOT(update3dView()));
 	connect(ui_->checkBox_odomFrame_3dview, SIGNAL(toggled(bool)), this, SLOT(update3dView()));
+	connect(ui_->checkBox_gravity_3dview, SIGNAL(toggled(bool)), this, SLOT(update3dView()));
 
 	ui_->horizontalSlider_neighbors->setTracking(false);
 	ui_->horizontalSlider_loops->setTracking(false);
@@ -1427,130 +1428,169 @@ void DatabaseViewer::extractImages()
 	}
 
 	QStringList formats;
-	formats.push_back("jpg");
-	formats.push_back("png");
+	formats.push_back("id.jpg");
+	formats.push_back("id.png");
+	formats.push_back("timestamp.jpg");
+	formats.push_back("timestamp.png");
 	bool ok;
-	QString ext = QInputDialog::getItem(this, tr("Which RGB format?"), tr("Format:"), formats, 0, false, &ok);
+	QString format = QInputDialog::getItem(this, tr("Which RGB format?"), tr("Format:"), formats, 0, false, &ok);
 	if(!ok)
 	{
 		return;
 	}
 
+	QString ext = format.split('.').back();
+	bool useStamp = format.split('.').front().compare("timestamp") == 0;
+
 	QString path = QFileDialog::getExistingDirectory(this, tr("Select directory where to save images..."), QDir::homePath());
 	if(!path.isEmpty())
 	{
-		if(ids_.size())
-		{
-			int id = ids_.at(0);
-			SensorData data;
-			dbDriver_->getNodeData(id, data);
-			data.uncompressData();
-			if(!data.imageRaw().empty() && !data.rightRaw().empty())
-			{
-				QDir dir;
-				dir.mkdir(QString("%1/left").arg(path));
-				dir.mkdir(QString("%1/right").arg(path));
-				if(databaseFileName_.empty())
-				{
-					UERROR("Cannot save calibration file, database name is empty!");
-				}
-				else if(data.stereoCameraModel().isValidForProjection())
-				{
-					std::string cameraName = uSplit(databaseFileName_, '.').front();
-					StereoCameraModel model(
-							cameraName,
-							data.imageRaw().size(),
-							data.stereoCameraModel().left().K(),
-							data.stereoCameraModel().left().D(),
-							data.stereoCameraModel().left().R(),
-							data.stereoCameraModel().left().P(),
-							data.rightRaw().size(),
-							data.stereoCameraModel().right().K(),
-							data.stereoCameraModel().right().D(),
-							data.stereoCameraModel().right().R(),
-							data.stereoCameraModel().right().P(),
-							data.stereoCameraModel().R(),
-							data.stereoCameraModel().T(),
-							data.stereoCameraModel().E(),
-							data.stereoCameraModel().F(),
-							data.stereoCameraModel().left().localTransform());
-					if(model.save(path.toStdString()))
-					{
-						UINFO("Saved stereo calibration \"%s\"", (path.toStdString()+"/"+cameraName).c_str());
-					}
-					else
-					{
-						UERROR("Failed saving calibration \"%s\"", (path.toStdString()+"/"+cameraName).c_str());
-					}
-				}
-			}
-			else if(!data.imageRaw().empty())
-			{
-				if(!data.depthRaw().empty())
-				{
-					QDir dir;
-					dir.mkdir(QString("%1/rgb").arg(path));
-					dir.mkdir(QString("%1/depth").arg(path));
-				}
-
-				if(databaseFileName_.empty())
-				{
-					UERROR("Cannot save calibration file, database name is empty!");
-				}
-				else if(data.cameraModels().size() > 1)
-				{
-					UERROR("Only one camera calibration can be saved at this time (%d detected)", (int)data.cameraModels().size());
-				}
-				else if(data.cameraModels().size() == 1 && data.cameraModels().front().isValidForProjection())
-				{
-					std::string cameraName = uSplit(databaseFileName_, '.').front();
-					CameraModel model(cameraName,
-							data.imageRaw().size(),
-							data.cameraModels().front().K(),
-							data.cameraModels().front().D(),
-							data.cameraModels().front().R(),
-							data.cameraModels().front().P(),
-							data.cameraModels().front().localTransform());
-					if(model.save(path.toStdString()))
-					{
-						UINFO("Saved calibration \"%s\"", (path.toStdString()+"/"+cameraName).c_str());
-					}
-					else
-					{
-						UERROR("Failed saving calibration \"%s\"", (path.toStdString()+"/"+cameraName).c_str());
-					}
-				}
-			}
-		}
-
 		int imagesExported = 0;
+		bool calibrationSaved = false;
 		for(int i=0; i<ids_.size(); ++i)
 		{
-			int id = ids_.at(i);
+			QString id = QString::number(ids_.at(i));
+
 			SensorData data;
-			dbDriver_->getNodeData(id, data);
+			dbDriver_->getNodeData(ids_.at(i), data);
 			data.uncompressData();
+
+			if(!calibrationSaved)
+			{
+				//stereo
+				if(!data.imageRaw().empty() && !data.rightRaw().empty())
+				{
+					QDir dir;
+					dir.mkdir(QString("%1/left").arg(path));
+					dir.mkdir(QString("%1/right").arg(path));
+					if(databaseFileName_.empty())
+					{
+						UERROR("Cannot save calibration file, database name is empty!");
+					}
+					else if(data.stereoCameraModel().isValidForProjection())
+					{
+						std::string cameraName = uSplit(databaseFileName_, '.').front();
+						StereoCameraModel model(
+								cameraName,
+								data.imageRaw().size(),
+								data.stereoCameraModel().left().K(),
+								data.stereoCameraModel().left().D(),
+								data.stereoCameraModel().left().R(),
+								data.stereoCameraModel().left().P(),
+								data.rightRaw().size(),
+								data.stereoCameraModel().right().K(),
+								data.stereoCameraModel().right().D(),
+								data.stereoCameraModel().right().R(),
+								data.stereoCameraModel().right().P(),
+								data.stereoCameraModel().R(),
+								data.stereoCameraModel().T(),
+								data.stereoCameraModel().E(),
+								data.stereoCameraModel().F(),
+								data.stereoCameraModel().left().localTransform());
+						if(model.save(path.toStdString()))
+						{
+							calibrationSaved = true;
+							UINFO("Saved stereo calibration \"%s\"", (path.toStdString()+"/"+cameraName).c_str());
+						}
+						else
+						{
+							UERROR("Failed saving calibration \"%s\"", (path.toStdString()+"/"+cameraName).c_str());
+						}
+					}
+				}
+				else if(!data.imageRaw().empty())
+				{
+					if(!data.depthRaw().empty())
+					{
+						QDir dir;
+						dir.mkdir(QString("%1/rgb").arg(path));
+						dir.mkdir(QString("%1/depth").arg(path));
+					}
+
+					if(databaseFileName_.empty())
+					{
+						UERROR("Cannot save calibration file, database name is empty!");
+					}
+					else if(data.cameraModels().size() > 1)
+					{
+						UERROR("Only one camera calibration can be saved at this time (%d detected)", (int)data.cameraModels().size());
+					}
+					else if(data.cameraModels().size() == 1 && data.cameraModels().front().isValidForProjection())
+					{
+						std::string cameraName = uSplit(databaseFileName_, '.').front();
+						CameraModel model(cameraName,
+								data.imageRaw().size(),
+								data.cameraModels().front().K(),
+								data.cameraModels().front().D(),
+								data.cameraModels().front().R(),
+								data.cameraModels().front().P(),
+								data.cameraModels().front().localTransform());
+						if(model.save(path.toStdString()))
+						{
+							calibrationSaved = true;
+							UINFO("Saved calibration \"%s\"", (path.toStdString()+"/"+cameraName).c_str());
+						}
+						else
+						{
+							UERROR("Failed saving calibration \"%s\"", (path.toStdString()+"/"+cameraName).c_str());
+						}
+					}
+				}
+			}
+
+			if(!data.imageRaw().empty() && useStamp)
+			{
+				Transform p,gt;
+				int m,w;
+				std::string l;
+				double stamp;
+				std::vector<float> v;
+				GPS gps;
+				EnvSensors s;
+				dbDriver_->getNodeInfo(ids_.at(i), p, m, w, l, stamp, gt, v, gps, s);
+				if(stamp == 0.0)
+				{
+					UWARN("Node %d has null timestamp! Using id instead!", ids_.at(i));
+				}
+				else
+				{
+					id = QString::number(stamp, 'f');
+				}
+			}
+
 			if(!data.imageRaw().empty() && !data.rightRaw().empty())
 			{
-				cv::imwrite(QString("%1/left/%2.%3").arg(path).arg(id).arg(ext).toStdString(), data.imageRaw());
-				cv::imwrite(QString("%1/right/%2.%3").arg(path).arg(id).arg(ext).toStdString(), data.rightRaw());
+				if(!cv::imwrite(QString("%1/left/%2.%3").arg(path).arg(id).arg(ext).toStdString(), data.imageRaw()))
+					UWARN("Failed saving \"%s\"", QString("%1/left/%2.%3").arg(path).arg(id).arg(ext).toStdString().c_str());
+				if(!cv::imwrite(QString("%1/right/%2.%3").arg(path).arg(id).arg(ext).toStdString(), data.rightRaw()))
+					UWARN("Failed saving \"%s\"", QString("%1/right/%2.%3").arg(path).arg(id).arg(ext).toStdString().c_str());
 				UINFO(QString("Saved left/%1.%2 and right/%1.%2").arg(id).arg(ext).toStdString().c_str());
 				++imagesExported;
 			}
 			else if(!data.imageRaw().empty() && !data.depthRaw().empty())
 			{
-				cv::imwrite(QString("%1/rgb/%2.%3").arg(path).arg(id).arg(ext).toStdString(), data.imageRaw());
-				cv::imwrite(QString("%1/depth/%2.png").arg(path).arg(id).toStdString(), data.depthRaw().type()==CV_32FC1?util2d::cvtDepthFromFloat(data.depthRaw()):data.depthRaw());
+				if(!cv::imwrite(QString("%1/rgb/%2.%3").arg(path).arg(id).arg(ext).toStdString(), data.imageRaw()))
+					UWARN("Failed saving \"%s\"", QString("%1/rgb/%2.%3").arg(path).arg(id).arg(ext).toStdString().c_str());
+				if(!cv::imwrite(QString("%1/depth/%2.png").arg(path).arg(id).toStdString(), data.depthRaw().type()==CV_32FC1?util2d::cvtDepthFromFloat(data.depthRaw()):data.depthRaw()))
+					UWARN("Failed saving \"%s\"", QString("%1/depth/%2.png").arg(path).arg(id).toStdString().c_str());
 				UINFO(QString("Saved rgb/%1.%2 and depth/%1.png").arg(id).arg(ext).toStdString().c_str());
 				++imagesExported;
 			}
 			else if(!data.imageRaw().empty())
 			{
-				cv::imwrite(QString("%1/%2.%3").arg(path).arg(id).arg(ext).toStdString(), data.imageRaw());
-				UINFO(QString("Saved %1.%2").arg(id).arg(ext).toStdString().c_str());
+				if(!cv::imwrite(QString("%1/%2.%3").arg(path).arg(id).arg(ext).toStdString(), data.imageRaw()))
+					UWARN("Failed saving \"%s\"", QString("%1/%2.%3").arg(path).arg(id).arg(ext).toStdString().c_str());
+				else
+					UINFO(QString("Saved %1.%2").arg(id).arg(ext).toStdString().c_str());
 				++imagesExported;
 			}
 		}
+
+		if(!calibrationSaved)
+		{
+			UWARN("no calibration exported...");
+		}
+
 		QMessageBox::information(this, tr("Exporting"), tr("%1 images exported!").arg(imagesExported));
 	}
 }
@@ -1904,7 +1944,7 @@ void DatabaseViewer::updateIds()
 		}
 	}
 
-	ui_->menuExport_poses->setEnabled(false);
+	ui_->menuExport_poses->setEnabled(!odomPoses_.empty());
 	graphes_.clear();
 	graphLinks_.clear();
 	neighborLinks_.clear();
@@ -2246,7 +2286,18 @@ void DatabaseViewer::exportPosesKML()
 
 void DatabaseViewer::exportPoses(int format)
 {
-	if(graphes_.empty())
+	QStringList types;
+	types.push_back("Map's graph (see Graph View)");
+	types.push_back("Odometry");
+	bool ok;
+	QString type = QInputDialog::getItem(this, tr("Which poses?"), tr("Poses:"), types, 0, false, &ok);
+	if(!ok)
+	{
+		return;
+	}
+	bool odometry = type.compare("Odometry") == 0;
+
+	if(!odometry && graphes_.empty())
 	{
 		this->updateGraphView();
 		if(graphes_.empty() || ui_->horizontalSlider_iterations->maximum() != (int)graphes_.size()-1)
@@ -2254,6 +2305,11 @@ void DatabaseViewer::exportPoses(int format)
 			QMessageBox::warning(this, tr("Cannot export poses"), tr("No graph in database?!"));
 			return;
 		}
+	}
+	else if(odometry && odomPoses_.empty())
+	{
+		QMessageBox::warning(this, tr("Cannot export poses"), tr("No odometry poses in database?!"));
+		return;
 	}
 
 	if(format == 5)
@@ -2264,7 +2320,16 @@ void DatabaseViewer::exportPoses(int format)
 		}
 		else
 		{
-			std::map<int, rtabmap::Transform> graph = uValueAt(graphes_, ui_->horizontalSlider_iterations->value());
+			std::map<int, rtabmap::Transform> graph;
+			if(odometry)
+			{
+				graph = odomPoses_;
+			}
+			else
+			{
+				graph = uValueAt(graphes_, ui_->horizontalSlider_iterations->value());
+			}
+
 
 			//align with ground truth for more meaningful results
 			pcl::PointCloud<pcl::PointXYZ> cloud1, cloud2;
@@ -2362,7 +2427,14 @@ void DatabaseViewer::exportPoses(int format)
 	}
 	else
 	{
-		optimizedPoses = uValueAt(graphes_, ui_->horizontalSlider_iterations->value());
+		if(odometry)
+		{
+			optimizedPoses = odomPoses_;
+		}
+		else
+		{
+			optimizedPoses = uValueAt(graphes_, ui_->horizontalSlider_iterations->value());
+		}
 
 		if(ui_->checkBox_alignPosesWithGroundTruth->isChecked())
 		{
@@ -2494,7 +2566,10 @@ void DatabaseViewer::exportPoses(int format)
 		if(localTransforms.empty())
 		{
 			poses = optimizedPoses;
-			links = graphLinks_;
+			if(!odometry)
+			{
+				links = graphLinks_;
+			}
 		}
 		else
 		{
@@ -2503,14 +2578,17 @@ void DatabaseViewer::exportPoses(int format)
 			{
 				poses.insert(std::make_pair(iter->first, optimizedPoses.at(iter->first) * iter->second));
 			}
-			for(std::multimap<int, Link>::iterator iter=graphLinks_.begin(); iter!=graphLinks_.end(); ++iter)
+			if(!odometry)
 			{
-				if(uContains(poses, iter->second.from()) && uContains(poses, iter->second.to()))
+				for(std::multimap<int, Link>::iterator iter=graphLinks_.begin(); iter!=graphLinks_.end(); ++iter)
 				{
-					std::multimap<int, Link>::iterator inserted = links.insert(*iter);
-					int from = iter->second.from();
-					int to = iter->second.to();
-					inserted->second.setTransform(localTransforms.at(from).inverse()*iter->second.transform()*localTransforms.at(to));
+					if(uContains(poses, iter->second.from()) && uContains(poses, iter->second.to()))
+					{
+						std::multimap<int, Link>::iterator inserted = links.insert(*iter);
+						int from = iter->second.from();
+						int to = iter->second.to();
+						inserted->second.setTransform(localTransforms.at(from).inverse()*iter->second.transform()*localTransforms.at(to));
+					}
 				}
 			}
 		}
@@ -2541,7 +2619,9 @@ void DatabaseViewer::exportPoses(int format)
 			}
 		}
 
-		QString output = pathDatabase_ + QDir::separator() + (format==3?"toro.graph":format==4?"poses.g2o":"poses.txt");
+		QString output = pathDatabase_ + QDir::separator() + (format==3?"toro%1.graph":format==4?"poses%1.g2o":"poses%1.txt");
+		QString suffix = odometry?"_odom":"";
+		output = output.arg(suffix);
 
 		QString path = QFileDialog::getSaveFileName(
 				this,
@@ -3344,7 +3424,7 @@ void DatabaseViewer::updateOptimizedMesh()
 			else if(clouds.size())
 			{
 				dbDriver_->saveOptimizedPoses(optimizedPoses, lastlocalizationPose);
-				dbDriver_->saveOptimizedMesh(util3d::laserScanFromPointCloud(*clouds.at(0)));
+				dbDriver_->saveOptimizedMesh(util3d::laserScanFromPointCloud(*clouds.at(0)).data());
 				QMessageBox::information(this, tr("Update Optimized PointCloud"), tr("Updated!"));
 				ui_->actionView_optimized_mesh->setEnabled(true);
 				ui_->actionExport_optimized_mesh->setEnabled(true);
@@ -3557,7 +3637,7 @@ void DatabaseViewer::regenerateLocalMaps()
 						viewpoint = cv::Point3f(t.x(), t.y(), t.z());
 					}
 
-					grid.createLocalMap(LaserScan::backwardCompatibility(util3d::laserScanFromPointCloud(*cloud)), s.getPose(), ground, obstacles, empty, viewpoint);
+					grid.createLocalMap(util3d::laserScanFromPointCloud(*cloud), s.getPose(), ground, obstacles, empty, viewpoint);
 				}
 			}
 			else
@@ -3680,7 +3760,7 @@ void DatabaseViewer::regenerateCurrentLocalMaps()
 						viewpoint = cv::Point3f(t.x(), t.y(), t.z());
 					}
 
-					grid.createLocalMap(LaserScan::backwardCompatibility(util3d::laserScanFromPointCloud(*cloud)), s.getPose(), ground, obstacles, empty, viewpoint);
+					grid.createLocalMap(util3d::laserScanFromPointCloud(*cloud), s.getPose(), ground, obstacles, empty, viewpoint);
 				}
 			}
 			else
@@ -4449,14 +4529,7 @@ void DatabaseViewer::update(int value,
 				// 3d view
 				if(cloudViewer_->isVisible())
 				{
-					Transform pose = Transform::getIdentity();
-					if(signatures.size() && ui_->checkBox_odomFrame_3dview->isChecked())
-					{
-						float x, y, z, roll, pitch, yaw;
-						(*signatures.begin())->getPose().getTranslationAndEulerAngles(x, y, z, roll, pitch, yaw);
-						pose = Transform(0,0,z,roll,pitch,0);
-					}
-
+					cloudViewer_->removeAllLines();
 					cloudViewer_->removeAllFrustums();
 					cloudViewer_->removeCloud("mesh");
 					cloudViewer_->removeCloud("cloud");
@@ -4467,6 +4540,27 @@ void DatabaseViewer::update(int value,
 					cloudViewer_->removeCloud("empty_cells");
 					cloudViewer_->removeCloud("words");
 					cloudViewer_->removeOctomap();
+
+					Transform pose = Transform::getIdentity();
+					if(signatures.size() && ui_->checkBox_odomFrame_3dview->isChecked())
+					{
+						float x, y, z, roll, pitch, yaw;
+						(*signatures.begin())->getPose().getTranslationAndEulerAngles(x, y, z, roll, pitch, yaw);
+						pose = Transform(0,0,z,roll,pitch,0);
+					}
+
+					if(!gravityLink.empty() && ui_->checkBox_gravity_3dview->isChecked())
+					{
+						Transform gravityT = gravityLink.begin()->second.transform();
+						Eigen::Vector3f gravity(0,0,-1);
+						if(pose.isIdentity())
+						{
+							gravityT = gravityT.inverse();
+						}
+						gravity = (gravityT.rotation()*(pose).rotation().inverse()).toEigen3f()*gravity;
+						cloudViewer_->addOrUpdateLine("gravity", pose, (pose).translation()*Transform(gravity[0], gravity[1], gravity[2], 0, 0, 0)*pose.rotation().inverse(), Qt::yellow, true, false);
+					}
+
 					if(ui_->checkBox_showCloud->isChecked() || ui_->checkBox_showMesh->isChecked())
 					{
 						if(!data.depthOrRightRaw().empty())
@@ -4645,6 +4739,11 @@ void DatabaseViewer::update(int value,
 							pcl::PointCloud<pcl::PointXYZRGB>::Ptr scan = util3d::laserScanToPointCloudRGB(laserScanRaw, laserScanRaw.localTransform());
 							cloudViewer_->addCloud("scan", scan, pose, Qt::yellow);
 						}
+						else if(laserScanRaw.hasIntensity())
+						{
+							pcl::PointCloud<pcl::PointXYZI>::Ptr scan = util3d::laserScanToPointCloudI(laserScanRaw, laserScanRaw.localTransform());
+							cloudViewer_->addCloud("scan", scan, pose, Qt::yellow);
+						}
 						else
 						{
 							pcl::PointCloud<pcl::PointXYZ>::Ptr scan = util3d::laserScanToPointCloud(laserScanRaw, laserScanRaw.localTransform());
@@ -4811,6 +4910,8 @@ void DatabaseViewer::update(int value,
 #endif
 						}
 					}
+					cloudViewer_->updateCameraTargetPosition(pose);
+					cloudViewer_->clearTrajectory();
 					cloudViewer_->update();
 				}
 
@@ -5763,7 +5864,6 @@ void DatabaseViewer::updateConstraintView(
 		}
 
 		constraintsViewer_->removeCloud("scan2");
-		constraintsViewer_->removeCloud("scan2normals");
 		constraintsViewer_->removeGraph("scan2graph");
 		constraintsViewer_->removeCloud("scan0");
 		constraintsViewer_->removeCloud("scan1");
@@ -5771,7 +5871,8 @@ void DatabaseViewer::updateConstraintView(
 		{
 			//cloud 2d
 			if(link.type() == Link::kLocalSpaceClosure &&
-			   !link.userDataCompressed().empty())
+			   !link.userDataCompressed().empty() &&
+			   signatureTo.id()==0)
 			{
 				std::vector<int> ids;
 				cv::Mat userData = link.uncompressUserDataConst();
@@ -5857,6 +5958,8 @@ void DatabaseViewer::updateConstraintView(
 						Transform u = t * finalPoses.at(link.to()).inverse();
 						pcl::PointCloud<pcl::PointXYZ>::Ptr assembledScans(new pcl::PointCloud<pcl::PointXYZ>);
 						pcl::PointCloud<pcl::PointNormal>::Ptr assembledNormalScans(new pcl::PointCloud<pcl::PointNormal>);
+						pcl::PointCloud<pcl::PointXYZI>::Ptr assembledIScans(new pcl::PointCloud<pcl::PointXYZI>);
+						pcl::PointCloud<pcl::PointXYZINormal>::Ptr assembledINormalScans(new pcl::PointCloud<pcl::PointXYZINormal>);
 						pcl::PointCloud<pcl::PointXYZ>::Ptr graph(new pcl::PointCloud<pcl::PointXYZ>);
 						for(std::map<int, Transform>::iterator iter=finalPoses.begin(); iter!=finalPoses.end(); ++iter)
 						{
@@ -5870,9 +5973,17 @@ void DatabaseViewer::updateConstraintView(
 								data.uncompressDataConst(0, 0, &scan, 0);
 								if(!scan.isEmpty())
 								{
-									if(scan.hasNormals())
+									if(scan.hasNormals() && scan.hasIntensity())
+									{
+										*assembledINormalScans += *util3d::laserScanToPointCloudINormal(scan, iter->second*scan.localTransform());
+									}
+									else if(scan.hasNormals())
 									{
 										*assembledNormalScans += *util3d::laserScanToPointCloudNormal(scan, iter->second*scan.localTransform());
+									}
+									else if(scan.hasIntensity())
+									{
+										*assembledIScans += *util3d::laserScanToPointCloudI(scan, iter->second*scan.localTransform());
 									}
 									else
 									{
@@ -5880,17 +5991,27 @@ void DatabaseViewer::updateConstraintView(
 									}
 								}
 							}
-							graph->push_back(pcl::PointXYZ(iter->second.x(), iter->second.y(), iter->second.z()));
+							graph->push_back(util3d::transformPoint(pcl::PointXYZ(iter->second.x(), iter->second.y(), iter->second.z()), pose));
 						}
 
 						if(assembledNormalScans->size())
 						{
-							constraintsViewer_->addCloud("scan2normals", assembledNormalScans, pose, Qt::cyan);
-							constraintsViewer_->setCloudColorIndex("scan2normals", 2);
+							constraintsViewer_->addCloud("scan2", assembledNormalScans, pose, Qt::cyan);
+							constraintsViewer_->setCloudColorIndex("scan2", 2);
 						}
 						if(assembledScans->size())
 						{
 							constraintsViewer_->addCloud("scan2", assembledScans, pose, Qt::cyan);
+							constraintsViewer_->setCloudColorIndex("scan2", 2);
+						}
+						if(assembledINormalScans->size())
+						{
+							constraintsViewer_->addCloud("scan2", assembledINormalScans, pose, Qt::cyan);
+							constraintsViewer_->setCloudColorIndex("scan2", 2);
+						}
+						if(assembledIScans->size())
+						{
+							constraintsViewer_->addCloud("scan2", assembledIScans, pose, Qt::cyan);
 							constraintsViewer_->setCloudColorIndex("scan2", 2);
 						}
 						if(graph->size())
@@ -5906,10 +6027,24 @@ void DatabaseViewer::updateConstraintView(
 			constraintsViewer_->removeCloud("scan1");
 			if(!dataFrom.laserScanRaw().isEmpty())
 			{
-				if(dataFrom.laserScanRaw().hasNormals())
+				if(dataFrom.laserScanRaw().hasNormals() && dataFrom.laserScanRaw().hasIntensity())
+				{
+					pcl::PointCloud<pcl::PointXYZINormal>::Ptr scan;
+					scan = rtabmap::util3d::laserScanToPointCloudINormal(dataFrom.laserScanRaw(), dataFrom.laserScanRaw().localTransform());
+					constraintsViewer_->addCloud("scan0", scan, pose, Qt::yellow);
+					constraintsViewer_->setCloudColorIndex("scan0", 2);
+				}
+				else if(dataFrom.laserScanRaw().hasNormals())
 				{
 					pcl::PointCloud<pcl::PointNormal>::Ptr scan;
 					scan = rtabmap::util3d::laserScanToPointCloudNormal(dataFrom.laserScanRaw(), dataFrom.laserScanRaw().localTransform());
+					constraintsViewer_->addCloud("scan0", scan, pose, Qt::yellow);
+					constraintsViewer_->setCloudColorIndex("scan0", 2);
+				}
+				else if(dataFrom.laserScanRaw().hasIntensity())
+				{
+					pcl::PointCloud<pcl::PointXYZI>::Ptr scan;
+					scan = rtabmap::util3d::laserScanToPointCloudI(dataFrom.laserScanRaw(), dataFrom.laserScanRaw().localTransform());
 					constraintsViewer_->addCloud("scan0", scan, pose, Qt::yellow);
 					constraintsViewer_->setCloudColorIndex("scan0", 2);
 				}
@@ -5923,10 +6058,24 @@ void DatabaseViewer::updateConstraintView(
 			}
 			if(!dataTo.laserScanRaw().isEmpty())
 			{
-				if(dataTo.laserScanRaw().hasNormals())
+				if(dataTo.laserScanRaw().hasNormals() && dataTo.laserScanRaw().hasIntensity())
+				{
+					pcl::PointCloud<pcl::PointXYZINormal>::Ptr scan;
+					scan = rtabmap::util3d::laserScanToPointCloudINormal(dataTo.laserScanRaw(), t*dataTo.laserScanRaw().localTransform());
+					constraintsViewer_->addCloud("scan1", scan, pose, Qt::magenta);
+					constraintsViewer_->setCloudColorIndex("scan1", 2);
+				}
+				else if(dataTo.laserScanRaw().hasNormals())
 				{
 					pcl::PointCloud<pcl::PointNormal>::Ptr scan;
 					scan = rtabmap::util3d::laserScanToPointCloudNormal(dataTo.laserScanRaw(), t*dataTo.laserScanRaw().localTransform());
+					constraintsViewer_->addCloud("scan1", scan, pose, Qt::magenta);
+					constraintsViewer_->setCloudColorIndex("scan1", 2);
+				}
+				else if(dataTo.laserScanRaw().hasIntensity())
+				{
+					pcl::PointCloud<pcl::PointXYZI>::Ptr scan;
+					scan = rtabmap::util3d::laserScanToPointCloudI(dataTo.laserScanRaw(), t*dataTo.laserScanRaw().localTransform());
 					constraintsViewer_->addCloud("scan1", scan, pose, Qt::magenta);
 					constraintsViewer_->setCloudColorIndex("scan1", 2);
 				}
@@ -5971,6 +6120,7 @@ void DatabaseViewer::updateConstraintButtons()
 
 	if(ui_->label_type->text().toInt() == Link::kLandmark)
 	{
+		ui_->pushButton_reject->setEnabled(true);
 		return;
 	}
 
@@ -7136,7 +7286,7 @@ void DatabaseViewer::refineConstraint(int from, int to, bool silent)
 			}
 		}
 
-		cv::Mat assembledScan;
+		LaserScan assembledScan;
 		if(assembledToNormalClouds->size())
 		{
 			assembledScan = fromScan.is2d()?util3d::laserScan2dFromPointCloud(*assembledToNormalClouds):util3d::laserScanFromPointCloud(*assembledToNormalClouds);
@@ -7167,17 +7317,17 @@ void DatabaseViewer::refineConstraint(int from, int to, bool silent)
 		{
 			UWARN("Assembled scan is empty!");
 		}
-		SensorData assembledData;
+		SensorData assembledData(cv::Mat(), to);
 		// scans are in base frame but for 2d scans, set the height so that correspondences matching works
 		assembledData.setLaserScan(LaserScan(
 				assembledScan,
 				fromScan.maxPoints()?fromScan.maxPoints():maxPoints,
 				fromScan.rangeMax(),
-				fromScan.format(),
 				fromScan.is2d()?Transform(0,0,fromScan.localTransform().z(),0,0,0):Transform::getIdentity()));
 
+		toS = new Signature(assembledData);
 		RegistrationIcp registrationIcp(parameters);
-		transform = registrationIcp.computeTransformation(fromS->sensorData(), assembledData, currentLink.transform(), &info);
+		transform = registrationIcp.computeTransformationMod(*fromS, *toS, currentLink.transform(), &info);
 		if(!transform.isNull())
 		{
 			// local scan matching proximity detection should have higher variance (see Rtabmap::process())
@@ -7242,8 +7392,8 @@ void DatabaseViewer::refineConstraint(int from, int to, bool silent)
 						0,
 						ui_->parameters_toolbox->getParameters());
 				int maxLaserScans = cloudFrom->size();
-				fromS->sensorData().setLaserScan(LaserScan(util3d::laserScanFromPointCloud(*util3d::removeNaNFromPointCloud(cloudFrom), Transform()), maxLaserScans, 0, LaserScan::kXYZ));
-				toS->sensorData().setLaserScan(LaserScan(util3d::laserScanFromPointCloud(*util3d::removeNaNFromPointCloud(cloudTo), Transform()), maxLaserScans, 0, LaserScan::kXYZ));
+				fromS->sensorData().setLaserScan(LaserScan(util3d::laserScanFromPointCloud(*util3d::removeNaNFromPointCloud(cloudFrom), Transform()), maxLaserScans, 0));
+				toS->sensorData().setLaserScan(LaserScan(util3d::laserScanFromPointCloud(*util3d::removeNaNFromPointCloud(cloudTo), Transform()), maxLaserScans, 0));
 
 				if(!fromS->sensorData().laserScanCompressed().isEmpty() || !toS->sensorData().laserScanCompressed().isEmpty())
 				{
@@ -7819,6 +7969,14 @@ void DatabaseViewer::rejectConstraint()
 {
 	int from = ids_.at(ui_->horizontalSlider_A->value());
 	int to = ids_.at(ui_->horizontalSlider_B->value());
+	if(ui_->label_type->text().toInt() == Link::kLandmark)
+	{
+		int position = ui_->horizontalSlider_loops->value();
+		const rtabmap::Link & link = loopLinks_.at(position);
+		from = link.from();
+		to = link.to();
+	}
+
 	if(from < to)
 	{
 		int tmp = to;
@@ -7926,7 +8084,6 @@ std::multimap<int, rtabmap::Link> DatabaseViewer::updateLinksWithModifications(
 void DatabaseViewer::updateLoopClosuresSlider(int from, int to)
 {
 	UDEBUG("%d %d", from, to);
-	int size = loopLinks_.size();
 	loopLinks_.clear();
 	std::multimap<int, Link> links = updateLinksWithModifications(links_);
 	int position = ui_->horizontalSlider_loops->value();
@@ -7977,7 +8134,7 @@ void DatabaseViewer::updateLoopClosuresSlider(int from, int to)
 		{
 			ui_->horizontalSlider_loops->setValue(position);
 		}
-		else if(size != loopLinks_.size())
+		else
 		{
 			this->updateConstraintView(loopLinks_.at(position));
 		}

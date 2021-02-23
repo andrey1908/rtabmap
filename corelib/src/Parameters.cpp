@@ -167,7 +167,8 @@ bool Parameters::isFeatureParameter(const std::string & parameter)
 			group.compare("GFTT") == 0 ||
 			group.compare("BRISK") == 0 ||
 			group.compare("KAZE") == 0 ||
-			group.compare("SuperPoint") == 0;
+			group.compare("SuperPoint") == 0 ||
+			group.compare("PyDetector") == 0;
 }
 
 rtabmap::ParametersMap Parameters::getDefaultOdometryParameters(bool stereo, bool vis, bool icp)
@@ -186,7 +187,8 @@ rtabmap::ParametersMap Parameters::getDefaultOdometryParameters(bool stereo, boo
 			group.compare("g2o") == 0 ||
 			group.compare("GTSAM") == 0 ||
 			(vis && (group.compare("Vis") == 0 || group.compare("PyMatcher") == 0 || group.compare("GMS") == 0)) ||
-			iter->first.compare(kRtabmapPublishRAMUsage())==0)
+			iter->first.compare(kRtabmapPublishRAMUsage())==0 ||
+			iter->first.compare(kRtabmapImagesAlreadyRectified())==0)
 		{
 			odomParameters.insert(*iter);
 		}
@@ -624,13 +626,13 @@ ParametersMap Parameters::parseArguments(int argc, char * argv[], bool onlyParam
 				std::cout << str << std::setw(spacing - str.size()) << "false" << std::endl;
 #endif
 				str = "With SuperPoint Torch:";
-#ifdef RTABMAP_SUPERPOINT_TORCH
+#ifdef RTABMAP_TORCH
 				std::cout << str << std::setw(spacing - str.size()) << "true" << std::endl;
 #else
 				std::cout << str << std::setw(spacing - str.size()) << "false" << std::endl;
 #endif
 				str = "With Python3:";
-#ifdef RTABMAP_PYMATCHER
+#ifdef RTABMAP_PYTHON
 				std::cout << str << std::setw(spacing - str.size()) << "true" << std::endl;
 #else
 				std::cout << str << std::setw(spacing - str.size()) << "false" << std::endl;

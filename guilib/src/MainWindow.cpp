@@ -258,7 +258,7 @@ MainWindow::MainWindow(PreferencesDialog * prefDialog, QWidget * parent, bool sh
 	setupMainLayout(_preferencesDialog->isVerticalLayoutUsed());
 
 	ParametersMap parameters = _preferencesDialog->getAllParameters();
-	_occupancyGrid = new OccupancyGrid();
+	_occupancyGrid = new OccupancyGrid(parameters);
 #ifdef RTABMAP_OCTOMAP
 	_octomap = new OctoMap(parameters);
 #endif
@@ -435,12 +435,12 @@ MainWindow::MainWindow(PreferencesDialog * prefDialog, QWidget * parent, bool sh
 	connect(_ui->actionRealSense_R200, SIGNAL(triggered()), this, SLOT(selectRealSense()));
 	connect(_ui->actionRealSense_ZR300, SIGNAL(triggered()), this, SLOT(selectRealSense()));
 	connect(_ui->actionRealSense2_SR300, SIGNAL(triggered()), this, SLOT(selectRealSense2()));
-	connect(_ui->actionRealSense2_D415, SIGNAL(triggered()), this, SLOT(selectRealSense2()));
-	connect(_ui->actionRealSense2_D435, SIGNAL(triggered()), this, SLOT(selectRealSense2()));
+	connect(_ui->actionRealSense2_D400, SIGNAL(triggered()), this, SLOT(selectRealSense2()));
+	connect(_ui->actionRealSense2_L515, SIGNAL(triggered()), this, SLOT(selectRealSense2L515()));
 	connect(_ui->actionStereoDC1394, SIGNAL(triggered()), this, SLOT(selectStereoDC1394()));
 	connect(_ui->actionStereoFlyCapture2, SIGNAL(triggered()), this, SLOT(selectStereoFlyCapture2()));
 	connect(_ui->actionStereoZed, SIGNAL(triggered()), this, SLOT(selectStereoZed()));
-     connect(_ui->actionStereoTara, SIGNAL(triggered()), this, SLOT(selectStereoTara()));
+    connect(_ui->actionStereoTara, SIGNAL(triggered()), this, SLOT(selectStereoTara()));
 	connect(_ui->actionStereoUsb, SIGNAL(triggered()), this, SLOT(selectStereoUsb()));
 	connect(_ui->actionRealSense2_T265, SIGNAL(triggered()), this, SLOT(selectRealSense2Stereo()));
 	connect(_ui->actionMYNT_EYE_S_SDK, SIGNAL(triggered()), this, SLOT(selectMyntEyeS()));
@@ -456,8 +456,8 @@ MainWindow::MainWindow(PreferencesDialog * prefDialog, QWidget * parent, bool sh
 	_ui->actionRealSense_R200->setEnabled(CameraRealSense::available());
 	_ui->actionRealSense_ZR300->setEnabled(CameraRealSense::available());
 	_ui->actionRealSense2_SR300->setEnabled(CameraRealSense2::available());
-	_ui->actionRealSense2_D415->setEnabled(CameraRealSense2::available());
-	_ui->actionRealSense2_D435->setEnabled(CameraRealSense2::available());
+	_ui->actionRealSense2_D400->setEnabled(CameraRealSense2::available());
+	_ui->actionRealSense2_L515->setEnabled(CameraRealSense2::available());
 	_ui->actionRealSense2_T265->setEnabled(CameraRealSense2::available());
 	_ui->actionStereoDC1394->setEnabled(CameraStereoDC1394::available());
 	_ui->actionStereoFlyCapture2->setEnabled(CameraStereoFlyCapture2::available());
@@ -1153,17 +1153,42 @@ void MainWindow::processOdometry(const rtabmap::OdometryEvent & odom, bool dataI
 				{
 					if(!lost)
 					{
-						pcl::PointCloud<pcl::PointNormal>::Ptr cloud;
-						cloud = util3d::laserScanToPointCloudNormal(odom.info().localScanMap, odom.info().localScanMap.localTransform());
-						bool scanAdded = _cloudViewer->getAddedClouds().contains("scanMapOdom");
-						if(!_cloudViewer->addCloud("scanMapOdom", cloud, _odometryCorrection, Qt::blue))
+						bool scanAlreadyThere = _cloudViewer->getAddedClouds().contains("scanMapOdom");
+						bool scanAdded = false;
+						if(odom.info().localScanMap.hasIntensity() && odom.info().localScanMap.hasNormals())
+						{
+							scanAdded = _cloudViewer->addCloud("scanMapOdom",
+									util3d::laserScanToPointCloudINormal(odom.info().localScanMap, odom.info().localScanMap.localTransform()),
+									_odometryCorrection, Qt::blue);
+						}
+						else if(odom.info().localScanMap.hasNormals())
+						{
+							scanAdded = _cloudViewer->addCloud("scanMapOdom",
+									util3d::laserScanToPointCloudNormal(odom.info().localScanMap, odom.info().localScanMap.localTransform()),
+									_odometryCorrection, Qt::blue);
+						}
+						else if(odom.info().localScanMap.hasIntensity())
+						{
+							scanAdded = _cloudViewer->addCloud("scanMapOdom",
+									util3d::laserScanToPointCloudI(odom.info().localScanMap, odom.info().localScanMap.localTransform()),
+									_odometryCorrection, Qt::blue);
+						}
+						else
+						{
+							scanAdded = _cloudViewer->addCloud("scanMapOdom",
+									util3d::laserScanToPointCloud(odom.info().localScanMap, odom.info().localScanMap.localTransform()),
+									_odometryCorrection, Qt::blue);
+						}
+
+
+						if(!scanAdded)
 						{
 							UERROR("Adding scanMapOdom to viewer failed!");
 						}
 						else
 						{
 							_cloudViewer->setCloudVisibility("scanMapOdom", true);
-							_cloudViewer->setCloudColorIndex("scanMapOdom", scanAdded && _preferencesDialog->getScanColorScheme(1)==0 && odom.info().localScanMap.is2d()?2:_preferencesDialog->getScanColorScheme(1));
+							_cloudViewer->setCloudColorIndex("scanMapOdom", scanAlreadyThere && _preferencesDialog->getScanColorScheme(1)==0 && odom.info().localScanMap.is2d()?2:_preferencesDialog->getScanColorScheme(1));
 							_cloudViewer->setCloudOpacity("scanMapOdom", _preferencesDialog->getScanOpacity(1));
 							_cloudViewer->setCloudPointSize("scanMapOdom", _preferencesDialog->getScanPointSize(1));
 						}
@@ -1184,23 +1209,58 @@ void MainWindow::processOdometry(const rtabmap::OdometryEvent & odom, bool dataI
 								_preferencesDialog->getScanMinRange(1),
 								_preferencesDialog->getScanMaxRange(1));
 					}
+					bool scanAlreadyThere = _cloudViewer->getAddedClouds().contains("scanOdom");
+					bool scanAdded = false;
 
-					pcl::PointCloud<pcl::PointNormal>::Ptr cloud;
-					cloud = util3d::laserScanToPointCloudNormal(scan, pose*scan.localTransform());
-					if(_preferencesDialog->getCloudVoxelSizeScan(1) > 0.0)
+					if(odom.info().localScanMap.hasIntensity() && odom.info().localScanMap.hasNormals())
 					{
-						cloud = util3d::voxelize(cloud, _preferencesDialog->getCloudVoxelSizeScan(1));
+						pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud;
+						cloud = util3d::laserScanToPointCloudINormal(scan, pose*scan.localTransform());
+						if(_preferencesDialog->getCloudVoxelSizeScan(1) > 0.0)
+						{
+							cloud = util3d::voxelize(cloud, _preferencesDialog->getCloudVoxelSizeScan(1));
+						}
+						scanAdded = _cloudViewer->addCloud("scanOdom", cloud, _odometryCorrection, Qt::magenta);
+					}
+					else if(odom.info().localScanMap.hasNormals())
+					{
+						pcl::PointCloud<pcl::PointNormal>::Ptr cloud;
+						cloud = util3d::laserScanToPointCloudNormal(scan, pose*scan.localTransform());
+						if(_preferencesDialog->getCloudVoxelSizeScan(1) > 0.0)
+						{
+							cloud = util3d::voxelize(cloud, _preferencesDialog->getCloudVoxelSizeScan(1));
+						}
+						scanAdded = _cloudViewer->addCloud("scanOdom", cloud, _odometryCorrection, Qt::magenta);
+					}
+					else if(odom.info().localScanMap.hasIntensity())
+					{
+						pcl::PointCloud<pcl::PointXYZI>::Ptr cloud;
+						cloud = util3d::laserScanToPointCloudI(scan, pose*scan.localTransform());
+						if(_preferencesDialog->getCloudVoxelSizeScan(1) > 0.0)
+						{
+							cloud = util3d::voxelize(cloud, _preferencesDialog->getCloudVoxelSizeScan(1));
+						}
+						scanAdded = _cloudViewer->addCloud("scanOdom", cloud, _odometryCorrection, Qt::magenta);
+					}
+					else
+					{
+						pcl::PointCloud<pcl::PointXYZ>::Ptr cloud;
+						cloud = util3d::laserScanToPointCloud(scan, pose*scan.localTransform());
+						if(_preferencesDialog->getCloudVoxelSizeScan(1) > 0.0)
+						{
+							cloud = util3d::voxelize(cloud, _preferencesDialog->getCloudVoxelSizeScan(1));
+						}
+						scanAdded = _cloudViewer->addCloud("scanOdom", cloud, _odometryCorrection, Qt::magenta);
 					}
 
-					bool scanAdded = !_cloudViewer->getAddedClouds().contains("scanOdom");
-					if(!_cloudViewer->addCloud("scanOdom", cloud, _odometryCorrection, Qt::magenta))
+					if(!scanAdded)
 					{
 						UERROR("Adding scanOdom to viewer failed!");
 					}
 					else
 					{
 						_cloudViewer->setCloudVisibility("scanOdom", true);
-						_cloudViewer->setCloudColorIndex("scanOdom", scanAdded && _preferencesDialog->getScanColorScheme(1)==0 && scan.is2d()?2:_preferencesDialog->getScanColorScheme(1));
+						_cloudViewer->setCloudColorIndex("scanOdom", scanAlreadyThere && _preferencesDialog->getScanColorScheme(1)==0 && scan.is2d()?2:_preferencesDialog->getScanColorScheme(1));
 						_cloudViewer->setCloudOpacity("scanOdom", _preferencesDialog->getScanOpacity(1));
 						_cloudViewer->setCloudPointSize("scanOdom", _preferencesDialog->getScanPointSize(1));
 						scanUpdated = true;
@@ -1349,6 +1409,30 @@ void MainWindow::processOdometry(const rtabmap::OdometryEvent & odom, bool dataI
 		else if(odom.data().stereoCameraModel().isValidForProjection())
 		{
 			_cloudViewer->updateCameraFrustum(_odometryCorrection*odom.pose(), odom.data().stereoCameraModel());
+		}
+		else if(!odom.data().laserScanRaw().isEmpty() ||
+				!odom.data().laserScanCompressed().isEmpty())
+		{
+			Transform scanLocalTransform;
+			if(!odom.data().laserScanRaw().isEmpty())
+			{
+				scanLocalTransform = odom.data().laserScanRaw().localTransform();
+			}
+			else
+			{
+				scanLocalTransform = odom.data().laserScanCompressed().localTransform();
+			}
+			//fake frustum
+			CameraModel model(
+					2,
+					2,
+					2,
+					1.5,
+					scanLocalTransform*CameraModel::opticalRotation(),
+					0,
+					cv::Size(4,3));
+			_cloudViewer->updateCameraFrustum(_odometryCorrection*odom.pose(), model);
+
 		}
 #if PCL_VERSION_COMPARE(>=, 1, 7, 2)
 		if(_preferencesDialog->isFramesShown())
@@ -2122,6 +2206,29 @@ void MainWindow::processStats(const rtabmap::Statistics & stat)
 					{
 						_cloudViewer->updateCameraFrustum(poses.rbegin()->second, stat.getLastSignatureData().sensorData().stereoCameraModel());
 					}
+					else if(!stat.getLastSignatureData().sensorData().laserScanRaw().isEmpty() ||
+							!stat.getLastSignatureData().sensorData().laserScanCompressed().isEmpty())
+					{
+						Transform scanLocalTransform;
+						if(!stat.getLastSignatureData().sensorData().laserScanRaw().isEmpty())
+						{
+							scanLocalTransform = stat.getLastSignatureData().sensorData().laserScanRaw().localTransform();
+						}
+						else
+						{
+							scanLocalTransform = stat.getLastSignatureData().sensorData().laserScanCompressed().localTransform();
+						}
+						//fake frustum
+						CameraModel model(
+								2,
+								2,
+								2,
+								1.5,
+								scanLocalTransform*CameraModel::opticalRotation(),
+								0,
+								cv::Size(4,3));
+						_cloudViewer->updateCameraFrustum(poses.rbegin()->second, model);
+					}
 				}
 
 				_cloudViewer->updateCameraTargetPosition(poses.rbegin()->second);
@@ -2359,19 +2466,39 @@ void MainWindow::updateMapCloud(
 	}
 
 	int maxNodes = uStr2Int(_preferencesDialog->getParameter(Parameters::kGridGlobalMaxNodes()));
-	if(maxNodes > 0 && poses.size()>1)
+	int altitudeDelta = uStr2Int(_preferencesDialog->getParameter(Parameters::kGridGlobalAltitudeDelta()));
+	if((maxNodes > 0 || altitudeDelta>0.0) && poses.size()>1)
 	{
-		std::map<int, float> nodes = graph::findNearestNodes(poses, poses.rbegin()->second, maxNodes);
-		std::map<int, Transform> nearestPoses;
-		nearestPoses.insert(*poses.rbegin());
-		for(std::map<int, float>::iterator iter=nodes.begin(); iter!=nodes.end(); ++iter)
+		Transform currentPose = poses.rbegin()->second;
+		if(poses.find(0) != poses.end())
 		{
-			std::map<int, Transform>::iterator pter = poses.find(iter->first);
-			if(pter != poses.end())
+			currentPose = poses.at(0);
+		}
+
+		std::map<int, Transform> nearestPoses;
+		if(maxNodes > 0)
+		{
+			std::map<int, float> nodes = graph::findNearestNodes(poses, currentPose, maxNodes);
+			for(std::map<int, float>::iterator iter=nodes.begin(); iter!=nodes.end(); ++iter)
 			{
-				nearestPoses.insert(*pter);
+				if(altitudeDelta<=0.0 ||
+				   fabs(poses.at(iter->first).z()-currentPose.z())<altitudeDelta)
+				{
+					nearestPoses.insert(*poses.find(iter->first));
+				}
 			}
 		}
+		else // altitudeDelta>0.0
+		{
+			for(std::map<int, Transform>::const_iterator iter=poses.begin(); iter!=poses.end(); ++iter)
+			{
+				if(fabs(iter->second.z()-currentPose.z())<altitudeDelta)
+				{
+					nearestPoses.insert(*iter);
+				}
+			}
+		}
+
 		//add zero...
 		if(poses.find(0) != poses.end())
 		{
@@ -4665,12 +4792,12 @@ void MainWindow::updateSelectSourceMenu()
 	_ui->actionOpenNI2_sense->setChecked(_preferencesDialog->getSourceDriver() == PreferencesDialog::kSrcOpenNI2);
 	_ui->actionFreenect2->setChecked(_preferencesDialog->getSourceDriver() == PreferencesDialog::kSrcFreenect2);
 	_ui->actionKinect_for_Windows_SDK_v2->setChecked(_preferencesDialog->getSourceDriver() == PreferencesDialog::kSrcK4W2);
-	_ui->actionKinect_for_Azure->setChecked(_preferencesDialog->getSourceDriver() == PreferencesDialog::kSrcK4W2);
+	_ui->actionKinect_for_Azure->setChecked(_preferencesDialog->getSourceDriver() == PreferencesDialog::kSrcK4A);
 	_ui->actionRealSense_R200->setChecked(_preferencesDialog->getSourceDriver() == PreferencesDialog::kSrcRealSense);
 	_ui->actionRealSense_ZR300->setChecked(_preferencesDialog->getSourceDriver() == PreferencesDialog::kSrcRealSense);
 	_ui->actionRealSense2_SR300->setChecked(_preferencesDialog->getSourceDriver() == PreferencesDialog::kSrcRealSense2);
-	_ui->actionRealSense2_D415->setChecked(_preferencesDialog->getSourceDriver() == PreferencesDialog::kSrcRealSense2);
-	_ui->actionRealSense2_D435->setChecked(_preferencesDialog->getSourceDriver() == PreferencesDialog::kSrcRealSense2);
+	_ui->actionRealSense2_D400->setChecked(_preferencesDialog->getSourceDriver() == PreferencesDialog::kSrcRealSense2);
+	_ui->actionRealSense2_L515->setChecked(_preferencesDialog->getSourceDriver() == PreferencesDialog::kSrcRealSense2);
 	_ui->actionStereoDC1394->setChecked(_preferencesDialog->getSourceDriver() == PreferencesDialog::kSrcDC1394);
 	_ui->actionStereoFlyCapture2->setChecked(_preferencesDialog->getSourceDriver() == PreferencesDialog::kSrcFlyCapture2);
 	_ui->actionStereoZed->setChecked(_preferencesDialog->getSourceDriver() == PreferencesDialog::kSrcStereoZed);
@@ -5214,7 +5341,7 @@ void MainWindow::startDetection()
 			_preferencesDialog->getSourceScanVoxelSize(),
 			_preferencesDialog->getSourceScanNormalsK(),
 			_preferencesDialog->getSourceScanNormalsRadius(),
-			_preferencesDialog->isSourceScanForceGroundNormalsUp());
+			(float)_preferencesDialog->getSourceScanForceGroundNormalsUp());
 	if(_preferencesDialog->getIMUFilteringStrategy()>0 && dynamic_cast<DBReader*>(camera) == 0)
 	{
 		_camera->enableIMUFiltering(_preferencesDialog->getIMUFilteringStrategy()-1, parameters);
@@ -6421,6 +6548,10 @@ void MainWindow::selectRealSense2()
 {
 	_preferencesDialog->selectSourceDriver(PreferencesDialog::kSrcRealSense2);
 }
+void MainWindow::selectRealSense2L515()
+{
+	_preferencesDialog->selectSourceDriver(PreferencesDialog::kSrcRealSense2, 1);
+}
 
 void MainWindow::selectRealSense2Stereo()
 {
@@ -7224,15 +7355,20 @@ void MainWindow::exportImages()
 	}
 
 	QStringList formats;
-	formats.push_back("jpg");
-	formats.push_back("png");
+	formats.push_back("id.jpg");
+	formats.push_back("id.png");
+	formats.push_back("timestamp.jpg");
+	formats.push_back("timestamp.png");
 	bool ok;
-	QString ext = QInputDialog::getItem(this, tr("Which RGB format?"), tr("Format:"), formats, 0, false, &ok);
+	QString format = QInputDialog::getItem(this, tr("Which RGB format?"), tr("Format:"), formats, 0, false, &ok);
 	if(!ok)
 	{
 		return;
 	}
+	QString ext = format.split('.').back();
+	bool useStamp = format.split('.').front().compare("timestamp") == 0;
 
+	QMap<int, double> stamps;
 	QString path = QFileDialog::getExistingDirectory(this, tr("Select directory where to save images..."), this->getWorkingDirectory());
 	if(!path.isEmpty())
 	{
@@ -7242,113 +7378,134 @@ void MainWindow::exportImages()
 			data = _cachedSignatures.value(poses.rbegin()->first).sensorData();
 			data.uncompressData();
 		}
-		if(!data.imageRaw().empty() && !data.rightRaw().empty())
-		{
-			QDir dir;
-			dir.mkdir(QString("%1/left").arg(path));
-			dir.mkdir(QString("%1/right").arg(path));
-			if(data.stereoCameraModel().isValidForProjection())
-			{
-				std::string cameraName = "calibration";
-				StereoCameraModel model(
-						cameraName,
-						data.imageRaw().size(),
-						data.stereoCameraModel().left().K(),
-						data.stereoCameraModel().left().D(),
-						data.stereoCameraModel().left().R(),
-						data.stereoCameraModel().left().P(),
-						data.rightRaw().size(),
-						data.stereoCameraModel().right().K(),
-						data.stereoCameraModel().right().D(),
-						data.stereoCameraModel().right().R(),
-						data.stereoCameraModel().right().P(),
-						data.stereoCameraModel().R(),
-						data.stereoCameraModel().T(),
-						data.stereoCameraModel().E(),
-						data.stereoCameraModel().F(),
-						data.stereoCameraModel().left().localTransform());
-				if(model.save(path.toStdString()))
-				{
-					UINFO("Saved stereo calibration \"%s\"", (path.toStdString()+"/"+cameraName).c_str());
-				}
-				else
-				{
-					UERROR("Failed saving calibration \"%s\"", (path.toStdString()+"/"+cameraName).c_str());
-				}
-			}
-		}
-		else if(!data.imageRaw().empty())
-		{
-			if(!data.depthRaw().empty())
-			{
-				QDir dir;
-				dir.mkdir(QString("%1/rgb").arg(path));
-				dir.mkdir(QString("%1/depth").arg(path));
-			}
-
-			if(data.cameraModels().size() > 1)
-			{
-				UERROR("Only one camera calibration can be saved at this time (%d detected)", (int)data.cameraModels().size());
-			}
-			else if(data.cameraModels().size() == 1 && data.cameraModels().front().isValidForProjection())
-			{
-				std::string cameraName = "calibration";
-				CameraModel model(cameraName,
-						data.imageRaw().size(),
-						data.cameraModels().front().K(),
-						data.cameraModels().front().D(),
-						data.cameraModels().front().R(),
-						data.cameraModels().front().P(),
-						data.cameraModels().front().localTransform());
-				if(model.save(path.toStdString()))
-				{
-					UINFO("Saved calibration \"%s\"", (path.toStdString()+"/"+cameraName).c_str());
-				}
-				else
-				{
-					UERROR("Failed saving calibration \"%s\"", (path.toStdString()+"/"+cameraName).c_str());
-				}
-			}
-		}
-		else
-		{
-			QMessageBox::warning(this,
-					tr("Export images..."),
-					tr("Data in the cache don't seem to have images (tested node %1). Calibration file will not be saved. Try refreshing the cache (with clouds).").arg(poses.rbegin()->first));
-		}
 
 		_progressDialog->resetProgress();
 		_progressDialog->show();
 		_progressDialog->setMaximumSteps(_cachedSignatures.size());
 
 		unsigned int saved = 0;
+		bool calibrationSaved = false;
 		for(std::map<int, Transform>::iterator iter=poses.begin(); iter!=poses.end(); ++iter)
 		{
-			int id = iter->first;
+			QString id = QString::number(iter->first);
+
 			SensorData data;
 			if(_cachedSignatures.contains(iter->first))
 			{
 				data = _cachedSignatures.value(iter->first).sensorData();
 				data.uncompressData();
+
+				if(!calibrationSaved)
+				{
+					if(!data.imageRaw().empty() && !data.rightRaw().empty())
+					{
+						QDir dir;
+						dir.mkdir(QString("%1/left").arg(path));
+						dir.mkdir(QString("%1/right").arg(path));
+						if(data.stereoCameraModel().isValidForProjection())
+						{
+							std::string cameraName = "calibration";
+							StereoCameraModel model(
+									cameraName,
+									data.imageRaw().size(),
+									data.stereoCameraModel().left().K(),
+									data.stereoCameraModel().left().D(),
+									data.stereoCameraModel().left().R(),
+									data.stereoCameraModel().left().P(),
+									data.rightRaw().size(),
+									data.stereoCameraModel().right().K(),
+									data.stereoCameraModel().right().D(),
+									data.stereoCameraModel().right().R(),
+									data.stereoCameraModel().right().P(),
+									data.stereoCameraModel().R(),
+									data.stereoCameraModel().T(),
+									data.stereoCameraModel().E(),
+									data.stereoCameraModel().F(),
+									data.stereoCameraModel().left().localTransform());
+							if(model.save(path.toStdString()))
+							{
+								calibrationSaved = true;
+								UINFO("Saved stereo calibration \"%s\"", (path.toStdString()+"/"+cameraName).c_str());
+							}
+							else
+							{
+								UERROR("Failed saving calibration \"%s\"", (path.toStdString()+"/"+cameraName).c_str());
+							}
+						}
+					}
+					else if(!data.imageRaw().empty())
+					{
+						if(!data.depthRaw().empty())
+						{
+							QDir dir;
+							dir.mkdir(QString("%1/rgb").arg(path));
+							dir.mkdir(QString("%1/depth").arg(path));
+						}
+
+						if(data.cameraModels().size() > 1)
+						{
+							UERROR("Only one camera calibration can be saved at this time (%d detected)", (int)data.cameraModels().size());
+						}
+						else if(data.cameraModels().size() == 1 && data.cameraModels().front().isValidForProjection())
+						{
+							std::string cameraName = "calibration";
+							CameraModel model(cameraName,
+									data.imageRaw().size(),
+									data.cameraModels().front().K(),
+									data.cameraModels().front().D(),
+									data.cameraModels().front().R(),
+									data.cameraModels().front().P(),
+									data.cameraModels().front().localTransform());
+							if(model.save(path.toStdString()))
+							{
+								calibrationSaved = true;
+								UINFO("Saved calibration \"%s\"", (path.toStdString()+"/"+cameraName).c_str());
+							}
+							else
+							{
+								UERROR("Failed saving calibration \"%s\"", (path.toStdString()+"/"+cameraName).c_str());
+							}
+						}
+					}
+				}
+
+				if(!data.imageRaw().empty() && useStamp)
+				{
+					double stamp = _cachedSignatures.value(iter->first).getStamp();
+					if(stamp == 0.0)
+					{
+						UWARN("Node %d has null timestamp! Using id instead!", iter->first);
+					}
+					else
+					{
+						id = QString::number(stamp, 'f');
+					}
+				}
 			}
 			QString info;
 			bool warn = false;
 			if(!data.imageRaw().empty() && !data.rightRaw().empty())
 			{
-				cv::imwrite(QString("%1/left/%2.%3").arg(path).arg(id).arg(ext).toStdString(), data.imageRaw());
-				cv::imwrite(QString("%1/right/%2.%3").arg(path).arg(id).arg(ext).toStdString(), data.rightRaw());
+				if(!cv::imwrite(QString("%1/left/%2.%3").arg(path).arg(id).arg(ext).toStdString(), data.imageRaw()))
+					UWARN("Failed saving \"%s\"", QString("%1/left/%2.%3").arg(path).arg(id).arg(ext).toStdString().c_str());
+				if(!cv::imwrite(QString("%1/right/%2.%3").arg(path).arg(id).arg(ext).toStdString(), data.rightRaw()))
+					UWARN("Failed saving \"%s\"", QString("%1/right/%2.%3").arg(path).arg(id).arg(ext).toStdString().c_str());
 				info = tr("Saved left/%1.%2 and right/%1.%2.").arg(id).arg(ext);
 			}
 			else if(!data.imageRaw().empty() && !data.depthRaw().empty())
 			{
-				cv::imwrite(QString("%1/rgb/%2.%3").arg(path).arg(id).arg(ext).toStdString(), data.imageRaw());
-				cv::imwrite(QString("%1/depth/%2.png").arg(path).arg(id).toStdString(), data.depthRaw().type()==CV_32FC1?util2d::cvtDepthFromFloat(data.depthRaw()):data.depthRaw());
+				if(!cv::imwrite(QString("%1/rgb/%2.%3").arg(path).arg(id).arg(ext).toStdString(), data.imageRaw()))
+					UWARN("Failed saving \"%s\"", QString("%1/rgb/%2.%3").arg(path).arg(id).arg(ext).toStdString().c_str());
+				if(!cv::imwrite(QString("%1/depth/%2.png").arg(path).arg(id).toStdString(), data.depthRaw().type()==CV_32FC1?util2d::cvtDepthFromFloat(data.depthRaw()):data.depthRaw()))
+					UWARN("Failed saving \"%s\"", QString("%1/depth/%2.png").arg(path).arg(id).toStdString().c_str());
 				info = tr("Saved rgb/%1.%2 and depth/%1.png.").arg(id).arg(ext);
 			}
 			else if(!data.imageRaw().empty())
 			{
-				cv::imwrite(QString("%1/%2.%3").arg(path).arg(id).arg(ext).toStdString(), data.imageRaw());
-				info = tr("Saved %1.%2.").arg(id).arg(ext);
+				if(!cv::imwrite(QString("%1/%2.%3").arg(path).arg(id).arg(ext).toStdString(), data.imageRaw()))
+					UWARN("Failed saving \"%s\"", QString("%1/%2.%3").arg(path).arg(id).arg(ext).toStdString().c_str());
+				else
+					info = tr("Saved %1.%2.").arg(id).arg(ext);
 			}
 			else
 			{
@@ -7369,6 +7526,13 @@ void MainWindow::exportImages()
 		else
 		{
 			_progressDialog->appendText(tr("%1 images saved to \"%2\".").arg(saved).arg(path));
+		}
+
+		if(!calibrationSaved)
+		{
+			QMessageBox::warning(this,
+					tr("Export images..."),
+					tr("Data in the cache don't seem to have valid calibration. Calibration file will not be saved. Try refreshing the cache (with clouds)."));
 		}
 
 		_progressDialog->setValue(_progressDialog->maximumSteps());

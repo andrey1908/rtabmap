@@ -231,12 +231,14 @@ PreferencesDialog::PreferencesDialog(QWidget * parent) :
 		_ui->vis_feature_detector->setItemData(10, 0, Qt::UserRole - 1);
 #endif
 
-#ifndef RTABMAP_SUPERPOINT_TORCH
+#ifndef RTABMAP_TORCH
 	_ui->comboBox_detector_strategy->setItemData(11, 0, Qt::UserRole - 1);
 	_ui->vis_feature_detector->setItemData(11, 0, Qt::UserRole - 1);
 #endif
 
-#ifndef RTABMAP_PYMATCHER
+#ifndef RTABMAP_PYTHON
+	_ui->comboBox_detector_strategy->setItemData(15, 0, Qt::UserRole - 1);
+	_ui->vis_feature_detector->setItemData(15, 0, Qt::UserRole - 1);
 	_ui->reextract_nn->setItemData(6, 0, Qt::UserRole - 1);
 #endif
 
@@ -682,6 +684,9 @@ PreferencesDialog::PreferencesDialog(QWidget * parent) :
 	connect(_ui->spinBox_rs2_width, SIGNAL(valueChanged(int)), this, SLOT(makeObsoleteSourcePanel()));
 	connect(_ui->spinBox_rs2_height, SIGNAL(valueChanged(int)), this, SLOT(makeObsoleteSourcePanel()));
 	connect(_ui->spinBox_rs2_rate, SIGNAL(valueChanged(int)), this, SLOT(makeObsoleteSourcePanel()));
+	connect(_ui->spinBox_rs2_width_depth, SIGNAL(valueChanged(int)), this, SLOT(makeObsoleteSourcePanel()));
+	connect(_ui->spinBox_rs2_height_depth, SIGNAL(valueChanged(int)), this, SLOT(makeObsoleteSourcePanel()));
+	connect(_ui->spinBox_rs2_rate_depth, SIGNAL(valueChanged(int)), this, SLOT(makeObsoleteSourcePanel()));
 	connect(_ui->checkbox_rs2_globalTimeStync, SIGNAL(stateChanged(int)), this, SLOT(makeObsoleteSourcePanel()));
 	connect(_ui->checkbox_rs2_dualMode, SIGNAL(stateChanged(int)), this, SLOT(makeObsoleteSourcePanel()));
 	connect(_ui->lineEdit_rs2_dualModeExtrinsics, SIGNAL(textChanged(const QString &)), this, SLOT(makeObsoleteSourcePanel()));
@@ -794,7 +799,7 @@ PreferencesDialog::PreferencesDialog(QWidget * parent) :
 	connect(_ui->doubleSpinBox_source_scanVoxelSize, SIGNAL(valueChanged(double)), this, SLOT(makeObsoleteSourcePanel()));
 	connect(_ui->spinBox_source_scanNormalsK, SIGNAL(valueChanged(int)), this, SLOT(makeObsoleteSourcePanel()));
 	connect(_ui->doubleSpinBox_source_scanNormalsRadius, SIGNAL(valueChanged(double)), this, SLOT(makeObsoleteSourcePanel()));
-	connect(_ui->checkBox_source_scanForceGroundNormalsUp, SIGNAL(stateChanged(int)), this, SLOT(makeObsoleteSourcePanel()));
+	connect(_ui->doubleSpinBox_source_scanNormalsForceGroundUp, SIGNAL(valueChanged(double)), this, SLOT(makeObsoleteSourcePanel()));
 
 
 	//Rtabmap basic
@@ -881,6 +886,8 @@ PreferencesDialog::PreferencesDialog(QWidget * parent) :
 	_ui->comboBox_dbJournalMode->setObjectName(Parameters::kDbSqlite3JournalMode().c_str());
 	_ui->comboBox_dbSynchronous->setObjectName(Parameters::kDbSqlite3Synchronous().c_str());
 	_ui->comboBox_dbTempStore->setObjectName(Parameters::kDbSqlite3TempStore().c_str());
+	_ui->lineEdit_targetDatabaseVersion->setObjectName(Parameters::kDbTargetVersion().c_str());
+
 
 	// Create hypotheses
 	_ui->general_doubleSpinBox_hardThr->setObjectName(Parameters::kRtabmapLoopThr().c_str());
@@ -1004,7 +1011,12 @@ PreferencesDialog::PreferencesDialog(QWidget * parent) :
 	_ui->pymatcher_iterations->setObjectName(Parameters::kPyMatcherIterations().c_str());
 	_ui->checkBox_pymatcher_cuda->setObjectName(Parameters::kPyMatcherCuda().c_str());
 	_ui->lineEdit_pymatcher_model->setObjectName(Parameters::kPyMatcherModel().c_str());
-	connect(_ui->toolButton_pymatcher_model, SIGNAL(clicked()), this, SLOT(changePyMatcherPath()));
+	connect(_ui->toolButton_pymatcher_model, SIGNAL(clicked()), this, SLOT(changePyMatcherModel()));
+
+	// PyDetector
+	_ui->lineEdit_pydetector_path->setObjectName(Parameters::kPyDetectorPath().c_str());
+	connect(_ui->toolButton_pydetector_path, SIGNAL(clicked()), this, SLOT(changePyDetectorPath()));
+	_ui->checkBox_pydetector_cuda->setObjectName(Parameters::kPyDetectorCuda().c_str());
 
 	// GMS
 	_ui->checkBox_gms_withRotation->setObjectName(Parameters::kGMSWithRotation().c_str());
@@ -1130,7 +1142,9 @@ PreferencesDialog::PreferencesDialog(QWidget * parent) :
 	_ui->loopClosure_icpPointToPlane->setObjectName(Parameters::kIcpPointToPlane().c_str());
 	_ui->loopClosure_icpPointToPlaneNormals->setObjectName(Parameters::kIcpPointToPlaneK().c_str());
 	_ui->loopClosure_icpPointToPlaneNormalsRadius->setObjectName(Parameters::kIcpPointToPlaneRadius().c_str());
+	_ui->loopClosure_icpPointToPlaneGroundNormalsUp->setObjectName(Parameters::kIcpPointToPlaneGroundNormalsUp().c_str());
 	_ui->loopClosure_icpPointToPlaneNormalsMinComplexity->setObjectName(Parameters::kIcpPointToPlaneMinComplexity().c_str());
+	_ui->loopClosure_icpPointToPlaneLowComplexityStrategy->setObjectName(Parameters::kIcpPointToPlaneLowComplexityStrategy().c_str());
 
 	_ui->groupBox_libpointmatcher->setObjectName(Parameters::kIcpPM().c_str());
 	_ui->lineEdit_IcpPMConfigPath->setObjectName(Parameters::kIcpPMConfig().c_str());
@@ -1138,6 +1152,7 @@ PreferencesDialog::PreferencesDialog(QWidget * parent) :
 	_ui->doubleSpinBox_icpPMOutlierRatio->setObjectName(Parameters::kIcpPMOutlierRatio().c_str());
 	_ui->spinBox_icpPMMatcherKnn->setObjectName(Parameters::kIcpPMMatcherKnn().c_str());
 	_ui->doubleSpinBox_icpPMMatcherEpsilon->setObjectName(Parameters::kIcpPMMatcherEpsilon().c_str());
+	_ui->loopClosure_icpPMMatcherIntensity->setObjectName(Parameters::kIcpPMMatcherIntensity().c_str());
 
 	// Occupancy grid
 	_ui->groupBox_grid_3d->setObjectName(Parameters::kGrid3D().c_str());
@@ -1172,6 +1187,7 @@ PreferencesDialog::PreferencesDialog(QWidget * parent) :
 	_ui->doubleSpinBox_grid_updateError->setObjectName(Parameters::kGridGlobalUpdateError().c_str());
 	_ui->doubleSpinBox_grid_minMapSize->setObjectName(Parameters::kGridGlobalMinSize().c_str());
 	_ui->spinBox_grid_maxNodes->setObjectName(Parameters::kGridGlobalMaxNodes().c_str());
+	_ui->doubleSpinBox_grid_altitudeDelta->setObjectName(Parameters::kGridGlobalAltitudeDelta().c_str());
 	_ui->doubleSpinBox_grid_footprintRadius->setObjectName(Parameters::kGridGlobalFootprintRadius().c_str());
 	_ui->doubleSpinBox_grid_occThr->setObjectName(Parameters::kGridGlobalOccupancyThr().c_str());
 	_ui->doubleSpinBox_grid_probHit->setObjectName(Parameters::kGridGlobalProbHit().c_str());
@@ -1423,7 +1439,7 @@ PreferencesDialog::~PreferencesDialog() {
 	delete _ui;
 }
 
-void PreferencesDialog::init()
+void PreferencesDialog::init(const QString & iniFilePath)
 {
 	UDEBUG("");
 	//First set all default values
@@ -1433,7 +1449,7 @@ void PreferencesDialog::init()
 		this->setParameter(iter->first, iter->second);
 	}
 
-	this->readSettings();
+	this->readSettings(iniFilePath);
 	this->writeSettings(getTmpIniFilePath());
 
 	_initialized = true;
@@ -1903,6 +1919,9 @@ void PreferencesDialog::resetSettings(QGroupBox * groupBox)
 		_ui->spinBox_rs2_width->setValue(848);
 		_ui->spinBox_rs2_height->setValue(480);
 		_ui->spinBox_rs2_rate->setValue(60);
+		_ui->spinBox_rs2_width_depth->setValue(640);
+		_ui->spinBox_rs2_height_depth->setValue(480);
+		_ui->spinBox_rs2_rate_depth->setValue(30);
 		_ui->checkbox_rs2_globalTimeStync->setChecked(true);
 		_ui->checkbox_rs2_dualMode->setChecked(false);
 		_ui->lineEdit_rs2_dualModeExtrinsics->setText("0.009 0.021 0.027 0 -0.018 0.005");
@@ -1967,7 +1986,7 @@ void PreferencesDialog::resetSettings(QGroupBox * groupBox)
 		_ui->lineEdit_cameraImages_imu_transform->setText("0 0 1 0 -1 0 1 0 0");
 		_ui->spinBox_cameraImages_max_imu_rate->setValue(0);
 
-		_ui->comboBox_imuFilter_strategy->setCurrentIndex(0);
+		_ui->comboBox_imuFilter_strategy->setCurrentIndex(1);
 		_ui->doubleSpinBox_imuFilterMadgwickGain->setValue(Parameters::defaultImuFilterMadgwickGain());
 		_ui->doubleSpinBox_imuFilterMadgwickZeta->setValue(Parameters::defaultImuFilterMadgwickZeta());
 		_ui->doubleSpinBox_imuFilterComplementaryGainAcc->setValue(Parameters::defaultImuFilterComplementaryGainAcc());
@@ -1983,7 +2002,7 @@ void PreferencesDialog::resetSettings(QGroupBox * groupBox)
 		_ui->doubleSpinBox_source_scanVoxelSize->setValue(0.0f);
 		_ui->spinBox_source_scanNormalsK->setValue(0);
 		_ui->doubleSpinBox_source_scanNormalsRadius->setValue(0.0);
-		_ui->checkBox_source_scanForceGroundNormalsUp->setChecked(false);
+		_ui->doubleSpinBox_source_scanNormalsForceGroundUp->setValue(0);
 
 		_ui->groupBox_depthFromScan->setChecked(false);
 		_ui->groupBox_depthFromScan_fillHoles->setChecked(true);
@@ -2359,6 +2378,9 @@ void PreferencesDialog::readCameraSettings(const QString & filePath)
 	_ui->spinBox_rs2_width->setValue(settings.value("width", _ui->spinBox_rs2_width->value()).toInt());
 	_ui->spinBox_rs2_height->setValue(settings.value("height", _ui->spinBox_rs2_height->value()).toInt());
 	_ui->spinBox_rs2_rate->setValue(settings.value("rate", _ui->spinBox_rs2_rate->value()).toInt());
+	_ui->spinBox_rs2_width_depth->setValue(settings.value("width_depth", _ui->spinBox_rs2_width_depth->value()).toInt());
+	_ui->spinBox_rs2_height_depth->setValue(settings.value("height_depth", _ui->spinBox_rs2_height_depth->value()).toInt());
+	_ui->spinBox_rs2_rate_depth->setValue(settings.value("rate_depth", _ui->spinBox_rs2_rate_depth->value()).toInt());
 	_ui->checkbox_rs2_globalTimeStync->setChecked(settings.value("global_time_sync", _ui->checkbox_rs2_globalTimeStync->isChecked()).toBool());
 	_ui->checkbox_rs2_dualMode->setChecked(settings.value("dual_mode", _ui->checkbox_rs2_dualMode->isChecked()).toBool());
 	_ui->lineEdit_rs2_dualModeExtrinsics->setText(settings.value("dual_mode_extrinsics", _ui->lineEdit_rs2_dualModeExtrinsics->text()).toString());
@@ -2464,7 +2486,7 @@ void PreferencesDialog::readCameraSettings(const QString & filePath)
 	_ui->doubleSpinBox_source_scanVoxelSize->setValue(settings.value("voxelSize", _ui->doubleSpinBox_source_scanVoxelSize->value()).toDouble());
 	_ui->spinBox_source_scanNormalsK->setValue(settings.value("normalsK", _ui->spinBox_source_scanNormalsK->value()).toInt());
 	_ui->doubleSpinBox_source_scanNormalsRadius->setValue(settings.value("normalsRadius", _ui->doubleSpinBox_source_scanNormalsRadius->value()).toDouble());
-	_ui->checkBox_source_scanForceGroundNormalsUp->setChecked(settings.value("normalsUp", _ui->checkBox_source_scanForceGroundNormalsUp->isChecked()).toBool());
+	_ui->doubleSpinBox_source_scanNormalsForceGroundUp->setValue(settings.value("normalsUpF", _ui->doubleSpinBox_source_scanNormalsForceGroundUp->value()).toDouble());
 	settings.endGroup();//Scan
 
 	settings.beginGroup("DepthFromScan");
@@ -2842,6 +2864,9 @@ void PreferencesDialog::writeCameraSettings(const QString & filePath) const
 	settings.setValue("width",                  _ui->spinBox_rs2_width->value());
 	settings.setValue("height",                 _ui->spinBox_rs2_height->value());
 	settings.setValue("rate",                   _ui->spinBox_rs2_rate->value());
+	settings.setValue("width_depth",            _ui->spinBox_rs2_width_depth->value());
+	settings.setValue("height_depth",           _ui->spinBox_rs2_height_depth->value());
+	settings.setValue("rate_depth",             _ui->spinBox_rs2_rate_depth->value());
 	settings.setValue("global_time_sync",       _ui->checkbox_rs2_globalTimeStync->isChecked());
 	settings.setValue("dual_mode",              _ui->checkbox_rs2_dualMode->isChecked());
 	settings.setValue("dual_mode_extrinsics",   _ui->lineEdit_rs2_dualModeExtrinsics->text());
@@ -2945,7 +2970,7 @@ void PreferencesDialog::writeCameraSettings(const QString & filePath) const
 	settings.setValue("voxelSize", 			_ui->doubleSpinBox_source_scanVoxelSize->value());
 	settings.setValue("normalsK", 			_ui->spinBox_source_scanNormalsK->value());
 	settings.setValue("normalsRadius", 		_ui->doubleSpinBox_source_scanNormalsRadius->value());
-	settings.setValue("normalsUp", 	        _ui->checkBox_source_scanForceGroundNormalsUp->isChecked());
+	settings.setValue("normalsUpF", 	    _ui->doubleSpinBox_source_scanNormalsForceGroundUp->value());
 	settings.endGroup();
 
 	settings.beginGroup("DepthFromScan");
@@ -3703,8 +3728,12 @@ void PreferencesDialog::updateParameters(const ParametersMap & parameters, bool 
 	}
 }
 
-void PreferencesDialog::selectSourceDriver(Src src)
+void PreferencesDialog::selectSourceDriver(Src src, int variant)
 {
+	_ui->comboBox_imuFilter_strategy->setCurrentIndex(1);
+	_3dRenderingRoiRatios[0]->setText("0.0 0.0 0.0 0.0");
+	_3dRenderingRoiRatios[1]->setText("0.0 0.0 0.0 0.0");
+
 	if(src >= kSrcRGBD && src<kSrcStereo)
 	{
 		_ui->comboBox_sourceType->setCurrentIndex(0);
@@ -3720,12 +3749,35 @@ void PreferencesDialog::selectSourceDriver(Src src)
 		else if (src == kSrcK4A)
 		{
 			_ui->lineEdit_k4a_mkv->clear();
+			_3dRenderingRoiRatios[0]->setText("0.05 0.05 0.05 0.05");
+			_3dRenderingRoiRatios[1]->setText("0.05 0.05 0.05 0.05");
+		}
+		else if (src == kSrcRealSense2)
+		{
+			if(variant > 0) // L515
+			{
+				_ui->spinBox_rs2_width->setValue(1280);
+				_ui->spinBox_rs2_height->setValue(720);
+				_ui->spinBox_rs2_rate->setValue(30);
+			}
+			else
+			{
+				_ui->spinBox_rs2_width->setValue(848);
+				_ui->spinBox_rs2_height->setValue(480);
+				_ui->spinBox_rs2_rate->setValue(60);
+			}
 		}
 	}
 	else if(src >= kSrcStereo && src<kSrcRGB)
 	{
 		_ui->comboBox_sourceType->setCurrentIndex(1);
 		_ui->comboBox_cameraStereo->setCurrentIndex(src - kSrcStereo);
+
+		if(src == kSrcStereoZed) // Zedm, Zed2
+		{
+			// disable IMU filtering (zed sends already quaternion)
+			_ui->comboBox_imuFilter_strategy->setCurrentIndex(0);
+		}
 	}
 	else if(src >= kSrcRGB && src<kSrcDatabase)
 	{
@@ -4878,15 +4930,32 @@ void PreferencesDialog::changePyMatcherModel()
 	QString path;
 	if(_ui->lineEdit_pymatcher_model->text().isEmpty())
 	{
-		path = QFileDialog::getOpenFileName(this, tr("Select file"), this->getWorkingDirectory(), tr("PyTorch model (*.pth, *.pt)"));
+		path = QFileDialog::getOpenFileName(this, tr("Select file"), this->getWorkingDirectory(), tr("PyTorch model (*.pth *.pt)"));
 	}
 	else
 	{
-		path = QFileDialog::getOpenFileName(this, tr("Select file"), _ui->lineEdit_pymatcher_model->text(), tr("PyTorch model (*.pth, *.pt)"));
+		path = QFileDialog::getOpenFileName(this, tr("Select file"), _ui->lineEdit_pymatcher_model->text(), tr("PyTorch model (*.pth *.pt)"));
 	}
 	if(!path.isEmpty())
 	{
 		_ui->lineEdit_pymatcher_model->setText(path);
+	}
+}
+
+void PreferencesDialog::changePyDetectorPath()
+{
+	QString path;
+	if(_ui->lineEdit_pydetector_path->text().isEmpty())
+	{
+		path = QFileDialog::getOpenFileName(this, tr("Select file"), this->getWorkingDirectory(), tr("Python wrapper (*.py)"));
+	}
+	else
+	{
+		path = QFileDialog::getOpenFileName(this, tr("Select file"), _ui->lineEdit_pydetector_path->text(), tr("Python wrapper (*.py)"));
+	}
+	if(!path.isEmpty())
+	{
+		_ui->lineEdit_pydetector_path->setText(path);
 	}
 }
 
@@ -5579,9 +5648,9 @@ double PreferencesDialog::getSourceScanNormalsRadius() const
 {
 	return _ui->doubleSpinBox_source_scanNormalsRadius->value();
 }
-bool PreferencesDialog::isSourceScanForceGroundNormalsUp() const
+double PreferencesDialog::getSourceScanForceGroundNormalsUp() const
 {
-	return _ui->checkBox_source_scanForceGroundNormalsUp->isChecked();
+	return _ui->doubleSpinBox_source_scanNormalsForceGroundUp->value();
 }
 
 Camera * PreferencesDialog::createCamera(bool useRawImages, bool useColor)
@@ -5733,6 +5802,7 @@ Camera * PreferencesDialog::createCamera(bool useRawImages, bool useColor)
 				((CameraRealSense2*)camera)->setEmitterEnabled(_ui->checkbox_rs2_emitter->isChecked());
 				((CameraRealSense2*)camera)->setIRFormat(_ui->checkbox_rs2_irMode->isChecked(), _ui->checkbox_rs2_irDepth->isChecked());
 				((CameraRealSense2*)camera)->setResolution(_ui->spinBox_rs2_width->value(), _ui->spinBox_rs2_height->value(), _ui->spinBox_rs2_rate->value());
+				((CameraRealSense2*)camera)->setDepthResolution(_ui->spinBox_rs2_width_depth->value(), _ui->spinBox_rs2_height_depth->value(), _ui->spinBox_rs2_rate_depth->value());
 				((CameraRealSense2*)camera)->setGlobalTimeSync(_ui->checkbox_rs2_globalTimeStync->isChecked());
 				((CameraRealSense2*)camera)->setDualMode(_ui->checkbox_rs2_dualMode->isChecked(), Transform::fromString(_ui->lineEdit_rs2_dualModeExtrinsics->text().toStdString()));
 				((CameraRealSense2*)camera)->setJsonConfig(_ui->lineEdit_rs2_jsonFile->text().toStdString());
@@ -6263,7 +6333,7 @@ void PreferencesDialog::testOdometry()
 			_ui->doubleSpinBox_source_scanVoxelSize->value(),
 			_ui->spinBox_source_scanNormalsK->value(),
 			_ui->doubleSpinBox_source_scanNormalsRadius->value(),
-			_ui->checkBox_source_scanForceGroundNormalsUp->isChecked());
+			(float)_ui->doubleSpinBox_source_scanNormalsForceGroundUp->value());
 	if(_ui->comboBox_imuFilter_strategy->currentIndex()>0 && dynamic_cast<DBReader*>(camera) == 0)
 	{
 		cameraThread.enableIMUFiltering(_ui->comboBox_imuFilter_strategy->currentIndex()-1, this->getAllParameters());
@@ -6334,7 +6404,7 @@ void PreferencesDialog::testCamera()
 				_ui->doubleSpinBox_source_scanVoxelSize->value(),
 				_ui->spinBox_source_scanNormalsK->value(),
 				_ui->doubleSpinBox_source_scanNormalsRadius->value(),
-				_ui->checkBox_source_scanForceGroundNormalsUp->isChecked());
+				(float)_ui->doubleSpinBox_source_scanNormalsForceGroundUp->value());
 		if(_ui->comboBox_imuFilter_strategy->currentIndex()>0 && dynamic_cast<DBReader*>(camera) == 0)
 		{
 			cameraThread.enableIMUFiltering(_ui->comboBox_imuFilter_strategy->currentIndex()-1, this->getAllParameters());

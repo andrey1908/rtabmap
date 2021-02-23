@@ -129,6 +129,39 @@ void CameraThread::disableIMUFiltering()
 	_imuFilter = 0;
 }
 
+void CameraThread::setScanParameters(
+	bool fromDepth,
+	int downsampleStep,
+	float rangeMin,
+	float rangeMax,
+	float voxelSize,
+	int normalsK,
+	int normalsRadius,
+	bool forceGroundNormalsUp)
+{
+	setScanParameters(fromDepth, downsampleStep, rangeMin, rangeMax, voxelSize, normalsK, normalsRadius, forceGroundNormalsUp?0.8f:0.0f);
+}
+
+void CameraThread::setScanParameters(
+			bool fromDepth,
+			int downsampleStep, // decimation of the depth image in case the scan is from depth image
+			float rangeMin,
+			float rangeMax,
+			float voxelSize,
+			int normalsK,
+			int normalsRadius,
+			float groundNormalsUp)
+{
+	_scanFromDepth = fromDepth;
+	_scanDownsampleStep=downsampleStep;
+	_scanRangeMin = rangeMin;
+	_scanRangeMax = rangeMax;
+	_scanVoxelSize = voxelSize;
+	_scanNormalsK = normalsK;
+	_scanNormalsRadius = normalsRadius;
+	_scanForceGroundNormalsUp = groundNormalsUp;
+}
+
 void CameraThread::mainLoopBegin()
 {
 	ULogger::registerCurrentThread("Camera");
@@ -141,7 +174,7 @@ void CameraThread::mainLoop()
 	CameraInfo info;
 	SensorData data = _camera->takeImage(&info);
 
-	if(!data.imageRaw().empty() || (dynamic_cast<DBReader*>(_camera) != 0 && data.id()>0)) // intermediate nodes could not have image set
+	if(!data.imageRaw().empty() || !data.laserScanRaw().empty() || (dynamic_cast<DBReader*>(_camera) != 0 && data.id()>0)) // intermediate nodes could not have image set
 	{
 		postUpdate(&data, &info);
 
@@ -373,9 +406,8 @@ void CameraThread::postUpdate(SensorData * dataPtr, CameraInfo * info) const
 					_scanRangeMin,
 					validIndices.get());
 			float maxPoints = (data.depthRaw().rows/_scanDownsampleStep)*(data.depthRaw().cols/_scanDownsampleStep);
-			cv::Mat scan;
+			LaserScan scan;
 			const Transform & baseToScan = data.cameraModels()[0].localTransform();
-			LaserScan::Format format = LaserScan::kXYZRGB;
 			if(validIndices->size())
 			{
 				if(_scanVoxelSize>0.0f)
@@ -400,7 +432,6 @@ void CameraThread::postUpdate(SensorData * dataPtr, CameraInfo * info) const
 						pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloudNormals(new pcl::PointCloud<pcl::PointXYZRGBNormal>);
 						pcl::concatenateFields(*cloud, *normals, *cloudNormals);
 						scan = util3d::laserScanFromPointCloud(*cloudNormals, baseToScan.inverse());
-						format = LaserScan::kXYZRGBNormal;
 					}
 					else
 					{
@@ -408,7 +439,7 @@ void CameraThread::postUpdate(SensorData * dataPtr, CameraInfo * info) const
 					}
 				}
 			}
-			data.setLaserScan(LaserScan(scan, (int)maxPoints, _scanRangeMax, format, baseToScan));
+			data.setLaserScan(LaserScan(scan, (int)maxPoints, _scanRangeMax, baseToScan));
 			if(info) info->timeScanFromDepth = timer.ticks();
 		}
 		else

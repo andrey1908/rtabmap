@@ -195,11 +195,13 @@ IF(Python3_FOUND)
 	)
 	SET(SRC_FILES
 		${SRC_FILES}
-		pymatcher/PyMatcher.cpp
+		python/PythonInterface.cpp
+		python/PyMatcher.cpp
+		python/PyDetector.cpp
 	)
 	 SET(INCLUDE_DIRS
 	    ${TORCH_INCLUDE_DIRS}
-	    ${CMAKE_CURRENT_SOURCE_DIR}/pymatcher
+	    ${CMAKE_CURRENT_SOURCE_DIR}/python
 		${INCLUDE_DIRS}
 	)
 ENDIF(Python3_FOUND)
@@ -416,6 +418,25 @@ IF(FastCV_FOUND)
 	)
 ENDIF(FastCV_FOUND)
 
+IF(PDAL_FOUND)
+	SET(INCLUDE_DIRS
+		${INCLUDE_DIRS}
+		${PDAL_INCLUDE_DIRS}
+	)
+	SET(LIBRARIES
+		${LIBRARIES}
+		${PDAL_LIBRARIES}
+	)
+	SET(SRC_FILES
+		${SRC_FILES}
+		PDALWriter.cpp
+	)
+	IF(PDAL_VERSION VERSION_LESS "1.7")
+	    add_definitions("-DRTABMAP_PDAL_16")
+	ENDIF(PDAL_VERSION VERSION_LESS "1.7")
+ENDIF(PDAL_FOUND)
+
+
 IF(loam_velodyne_FOUND)
 	SET(INCLUDE_DIRS 
 		${INCLUDE_DIRS} 
@@ -592,18 +613,24 @@ ENDIF(WITH_MADGWICK)
 ####################################
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/resources/DatabaseSchema.sql.in ${CMAKE_CURRENT_SOURCE_DIR}/resources/DatabaseSchema.sql)
 
-SET(R
+SET(RESOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/resources/DatabaseSchema.sql
+	${CMAKE_CURRENT_SOURCE_DIR}/resources/backward_compatibility/DatabaseSchema_0_18_3.sql
+	${CMAKE_CURRENT_SOURCE_DIR}/resources/backward_compatibility/DatabaseSchema_0_18_0.sql
+	${CMAKE_CURRENT_SOURCE_DIR}/resources/backward_compatibility/DatabaseSchema_0_17_0.sql
+	${CMAKE_CURRENT_SOURCE_DIR}/resources/backward_compatibility/DatabaseSchema_0_16_2.sql
+	${CMAKE_CURRENT_SOURCE_DIR}/resources/backward_compatibility/DatabaseSchema_0_16_1.sql
+	${CMAKE_CURRENT_SOURCE_DIR}/resources/backward_compatibility/DatabaseSchema_0_16_0.sql
 )
 
-#replace semicolons by spaces
-foreach(arg ${R})
-   set(RESOURCES "${RESOURCES}" "${arg}")
-endforeach(arg ${R})
+foreach(arg ${RESOURCES})
+   get_filename_component(filename ${arg} NAME)
+   string(REPLACE "." "_" output ${filename})
+   set(RESOURCES_HEADERS "${RESOURCES_HEADERS}" "${CMAKE_CURRENT_BINARY_DIR}/${output}.h")
+endforeach(arg ${RESOURCES})
 
-SET(RESOURCES_HEADERS 
-	${CMAKE_CURRENT_BINARY_DIR}/DatabaseSchema_sql.h 
-)
+#MESSAGE(STATUS "RESOURCES = ${RESOURCES}")
+#MESSAGE(STATUS "RESOURCES_HEADERS = ${RESOURCES_HEADERS}")
 
 IF(ANDROID)
 
@@ -618,14 +645,14 @@ IF(ANDROID)
       OUTPUT ${RESOURCES_HEADERS}
       COMMAND ${RTABMAP_RES_TOOL} -n rtabmap -p ${CMAKE_CURRENT_BINARY_DIR} ${RESOURCES}
       COMMENT "[Creating resources]"
-      DEPENDS ${R}
+      DEPENDS ${RESOURCES}
    )
 ELSE()
    ADD_CUSTOM_COMMAND(
       OUTPUT ${RESOURCES_HEADERS}
       COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/rtabmap-res_tool -n rtabmap -p ${CMAKE_CURRENT_BINARY_DIR} ${RESOURCES}
       COMMENT "[Creating resources]"
-      DEPENDS ${R} res_tool
+      DEPENDS ${RESOURCES} res_tool
    )
 ENDIF()
 

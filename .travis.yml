@@ -1,14 +1,19 @@
-sudo: true
 language: cpp
-group: deprecated-2017Q3
-
-compiler:
-  - gcc
-
-matrix:
+   
+jobs:
   include:
-
-    - dist: trusty
+#    - name: osx
+#      compiler: clang
+#      os: osx
+#      install:
+#        - brew install sqlite
+#        - brew install pcl
+#        - brew install opencv@3
+    
+    - name: linux-trusty
+      compiler: gcc
+      os: linux
+      dist: trusty
       install:
         - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list'
         - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
@@ -17,13 +22,13 @@ matrix:
         - sudo apt-get -y install ros-indigo-rtabmap-ros
         - sudo apt-get -y remove ros-indigo-rtabmap
 
-      script: 
+      before_script: 
         - source /opt/ros/indigo/setup.bash
-        - mkdir -p build && cd build
-        - cmake .. 
-        - make
 
-    - dist: xenial
+    - name: linux-xenial
+      compiler: gcc
+      os: linux
+      dist: xenial
       install:
         - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu xenial main" > /etc/apt/sources.list.d/ros-latest.list'
         - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
@@ -32,13 +37,13 @@ matrix:
         - sudo apt-get -y install ros-kinetic-rtabmap-ros
         - sudo apt-get -y remove ros-kinetic-rtabmap
 
-      script: 
+      before_script: 
         - source /opt/ros/kinetic/setup.bash
-        - mkdir -p build && cd build
-        - cmake .. 
-        - make
 
-    - dist: bionic
+    - name: linux-bionic
+      compiler: gcc
+      os: linux
+      dist: bionic
       install:
         - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu bionic main" > /etc/apt/sources.list.d/ros-latest.list'
         - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
@@ -47,13 +52,13 @@ matrix:
         - sudo apt-get -y install ros-melodic-rtabmap-ros
         - sudo apt-get -y remove ros-melodic-rtabmap
 
-      script: 
+      before_script: 
         - source /opt/ros/melodic/setup.bash
-        - mkdir -p build && cd build
-        - cmake .. 
-        - make
-        
-    - dist: focal
+
+    - name: linux-focal
+      compiler: gcc
+      os: linux
+      dist: focal
       install:
         - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu focal main" > /etc/apt/sources.list.d/ros-latest.list'
         - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
@@ -62,11 +67,13 @@ matrix:
         - sudo apt-get -y install ros-noetic-rtabmap-ros
         - sudo apt-get -y remove ros-noetic-rtabmap
 
-      script: 
+      before_script: 
         - source /opt/ros/noetic/setup.bash
-        - mkdir -p build && cd build
-        - cmake .. 
-        - make
+
+script:
+  - mkdir -p build && cd build
+  - cmake .. 
+  - make
 
 notifications:
   email:

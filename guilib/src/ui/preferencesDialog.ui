@@ -63,9 +63,9 @@
           <property name="geometry">
            <rect>
             <x>0</x>
-            <y>-501</y>
+            <y>0</y>
             <width>686</width>
-            <height>3286</height>
+            <height>3357</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_16">
@@ -95,7 +95,7 @@
                 <enum>QFrame::Raised</enum>
                </property>
                <property name="currentIndex">
-                <number>5</number>
+                <number>16</number>
                </property>
                <widget class="QWidget" name="page_22">
                 <layout class="QVBoxLayout" name="verticalLayout_29" stretch="0,1">
@@ -3109,7 +3109,7 @@ when using the file type, logs are saved in LogRtabmap.txt (located in the worki
                     <item>
                      <widget class="QStackedWidget" name="stackedWidget_src">
                       <property name="currentIndex">
-                       <number>0</number>
+                       <number>1</number>
                       </property>
                       <widget class="QWidget" name="page_41">
                        <layout class="QVBoxLayout" name="verticalLayout_64">
@@ -4173,26 +4173,52 @@ when using the file type, logs are saved in LogRtabmap.txt (located in the worki
                                   <string>RealSense2</string>
                                  </property>
                                  <layout class="QGridLayout" name="gridLayout_100" columnstretch="0,0,1">
-                                  <item row="9" column="1">
+                                  <item row="6" column="1">
+                                   <widget class="QSpinBox" name="spinBox_rs2_width_depth">
+                                    <property name="suffix">
+                                     <string> pix</string>
+                                    </property>
+                                    <property name="maximum">
+                                     <number>9999</number>
+                                    </property>
+                                   </widget>
+                                  </item>
+                                  <item row="7" column="1">
+                                   <widget class="QSpinBox" name="spinBox_rs2_height_depth">
+                                    <property name="suffix">
+                                     <string> pix</string>
+                                    </property>
+                                    <property name="maximum">
+                                     <number>9999</number>
+                                    </property>
+                                   </widget>
+                                  </item>
+                                  <item row="12" column="1">
                                    <widget class="QLineEdit" name="lineEdit_rs2_jsonFile"/>
                                   </item>
-                                  <item row="7" column="2">
+                                  <item row="10" column="2">
                                    <widget class="QLabel" name="label_565">
                                     <property name="text">
-                                     <string>Dual Mode (D400+T265): Odometry is computed by T265 and RGB-D frames are from D400.</string>
+                                     <string>Dual Mode (D400/L500+T265): Odometry is computed by T265 and RGB-D frames are from D400/L500.</string>
                                     </property>
                                     <property name="wordWrap">
                                      <bool>true</bool>
+                                    </property>
+                                    <property name="textInteractionFlags">
+                                     <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
                                     </property>
                                    </widget>
                                   </item>
                                   <item row="3" column="2">
                                    <widget class="QLabel" name="label_549">
                                     <property name="text">
-                                     <string>Stream width.</string>
+                                     <string>RGB/IR stream width. Set 1280 for L515.</string>
                                     </property>
                                     <property name="wordWrap">
                                      <bool>true</bool>
+                                    </property>
+                                    <property name="textInteractionFlags">
+                                     <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
                                     </property>
                                    </widget>
                                   </item>
@@ -4234,6 +4260,9 @@ when using the file type, logs are saved in LogRtabmap.txt (located in the worki
                                     <property name="wordWrap">
                                      <bool>true</bool>
                                     </property>
+                                    <property name="textInteractionFlags">
+                                     <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
+                                    </property>
                                    </widget>
                                   </item>
                                   <item row="1" column="1">
@@ -4254,6 +4283,9 @@ when using the file type, logs are saved in LogRtabmap.txt (located in the worki
                                     <property name="wordWrap">
                                      <bool>true</bool>
                                     </property>
+                                    <property name="textInteractionFlags">
+                                     <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
+                                    </property>
                                    </widget>
                                   </item>
                                   <item row="3" column="1">
@@ -4269,14 +4301,17 @@ when using the file type, logs are saved in LogRtabmap.txt (located in the worki
                                   <item row="4" column="2">
                                    <widget class="QLabel" name="label_550">
                                     <property name="text">
-                                     <string>Stream height.</string>
+                                     <string>RGB/IR stream height. Set 720 for L515.</string>
                                     </property>
                                     <property name="wordWrap">
                                      <bool>true</bool>
                                     </property>
+                                    <property name="textInteractionFlags">
+                                     <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
+                                    </property>
                                    </widget>
                                   </item>
-                                  <item row="10" column="1">
+                                  <item row="13" column="1">
                                    <spacer name="verticalSpacer_71">
                                     <property name="orientation">
                                      <enum>Qt::Vertical</enum>
@@ -4292,10 +4327,13 @@ when using the file type, logs are saved in LogRtabmap.txt (located in the worki
                                   <item row="5" column="2">
                                    <widget class="QLabel" name="label_551">
                                     <property name="text">
-                                     <string>Stream rate.</string>
+                                     <string>RGB/IR stream rate. Set 30 for L515.</string>
                                     </property>
                                     <property name="wordWrap">
                                      <bool>true</bool>
+                                    </property>
+                                    <property name="textInteractionFlags">
+                                     <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
                                     </property>
                                    </widget>
                                   </item>
@@ -4306,6 +4344,9 @@ when using the file type, logs are saved in LogRtabmap.txt (located in the worki
                                     </property>
                                     <property name="wordWrap">
                                      <bool>true</bool>
+                                    </property>
+                                    <property name="textInteractionFlags">
+                                     <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
                                     </property>
                                    </widget>
                                   </item>
@@ -4319,7 +4360,7 @@ when using the file type, logs are saved in LogRtabmap.txt (located in the worki
                                     </property>
                                    </widget>
                                   </item>
-                                  <item row="7" column="1">
+                                  <item row="10" column="1">
                                    <widget class="QCheckBox" name="checkbox_rs2_dualMode">
                                     <property name="text">
                                      <string/>
@@ -4329,7 +4370,7 @@ when using the file type, logs are saved in LogRtabmap.txt (located in the worki
                                     </property>
                                    </widget>
                                   </item>
-                                  <item row="8" column="1">
+                                  <item row="11" column="1">
                                    <widget class="QLineEdit" name="lineEdit_rs2_dualModeExtrinsics">
                                     <property name="toolTip">
                                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Format (3 values): x y z&lt;br/&gt;Format (6 values): x y z roll pitch yaw&lt;br/&gt;Format (7 values): x y z qx qy qz qw&lt;br/&gt;Format (9 values, 3x3 rotation): r11 r12 r13 r21 r22 r23 r31 r32 r33&lt;br/&gt;Format (12 values, 3x4 transform): r11 r12 r13 tx r21 r22 r23 ty r31 r32 r33 tz&lt;/p&gt;&lt;p&gt;KITTI: /base_link to /gray_camera = 0 0 1 -1 0 0 0 -1 0&lt;br/&gt;KITTI: /base_link to /color_camera = 0 0 1 0 -1 0 0 -0.06 0 -1 0 0&lt;br/&gt;KITTI: /base_footprint to /gray_camera = 0 0 1 0 -1 0 0 0 0 -1 0 1.67&lt;br/&gt;KITTI: /base_footprint to /color_camera = 0 0 1 0 -1 0 0 -0.06 0 -1 0 1.67&lt;/p&gt;&lt;p&gt;EuRoC MAV: /base_link to /cam0 = T_BS*T_SC0 = -0.0257742 0.00375623 0.999661 0.00981073 -0.999557 -0.0149672 -0.0257155 0.064677 0.0148655 -0.999881 0.00414038 -0.0216401&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -4339,20 +4380,7 @@ when using the file type, logs are saved in LogRtabmap.txt (located in the worki
                                     </property>
                                    </widget>
                                   </item>
-                                  <item row="8" column="2">
-                                   <widget class="QLabel" name="label_566">
-                                    <property name="text">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Dual Mode extrinsics (T265's pose frame to D400's left IR camera). Default extrinsics match the 3D printed bracket &lt;a href=&quot; https://www.intelrealsense.com/depth-and-tracking-combined-get-started/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;here&lt;/span&gt;&lt;/a&gt; (&lt;a href=&quot;https://github.com/IntelRealSense/realsense-ros/blob/occupancy-mapping/realsense2_camera/meshes/mount_t265_d435.stl&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;stl&lt;/span&gt;&lt;/a&gt;).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                                    </property>
-                                    <property name="wordWrap">
-                                     <bool>true</bool>
-                                    </property>
-                                    <property name="openExternalLinks">
-                                     <bool>true</bool>
-                                    </property>
-                                   </widget>
-                                  </item>
-                                  <item row="9" column="2">
+                                  <item row="12" column="2">
                                    <widget class="QLabel" name="label_571">
                                     <property name="text">
                                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;D400 Series Visual Presets. See this &lt;a href=&quot;https://github.com/IntelRealSense/librealsense/wiki/D400-Series-Visual-Presets&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;page&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -4363,16 +4391,19 @@ when using the file type, logs are saved in LogRtabmap.txt (located in the worki
                                     <property name="openExternalLinks">
                                      <bool>true</bool>
                                     </property>
+                                    <property name="textInteractionFlags">
+                                     <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
+                                    </property>
                                    </widget>
                                   </item>
-                                  <item row="9" column="0">
+                                  <item row="12" column="0">
                                    <widget class="QToolButton" name="toolButton_rs2_jsonFile">
                                     <property name="text">
                                      <string>...</string>
                                     </property>
                                    </widget>
                                   </item>
-                                  <item row="6" column="2">
+                                  <item row="9" column="2">
                                    <widget class="QLabel" name="label_606">
                                     <property name="text">
                                      <string>Global time sync. This will make sure IMU data is interpolated at image timestamp, otherwise latest received IMU is synchronized to current frame. Set to off if your firmware of your camera cannot synchronize timestamps.</string>
@@ -4380,15 +4411,83 @@ when using the file type, logs are saved in LogRtabmap.txt (located in the worki
                                     <property name="wordWrap">
                                      <bool>true</bool>
                                     </property>
+                                    <property name="textInteractionFlags">
+                                     <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
+                                    </property>
                                    </widget>
                                   </item>
-                                  <item row="6" column="1">
+                                  <item row="9" column="1">
                                    <widget class="QCheckBox" name="checkbox_rs2_globalTimeStync">
                                     <property name="text">
                                      <string/>
                                     </property>
                                     <property name="checked">
                                      <bool>false</bool>
+                                    </property>
+                                   </widget>
+                                  </item>
+                                  <item row="6" column="2">
+                                   <widget class="QLabel" name="label_611">
+                                    <property name="text">
+                                     <string>(L515) Depth stream width.</string>
+                                    </property>
+                                    <property name="wordWrap">
+                                     <bool>true</bool>
+                                    </property>
+                                    <property name="textInteractionFlags">
+                                     <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
+                                    </property>
+                                   </widget>
+                                  </item>
+                                  <item row="8" column="1">
+                                   <widget class="QSpinBox" name="spinBox_rs2_rate_depth">
+                                    <property name="suffix">
+                                     <string> Hz</string>
+                                    </property>
+                                    <property name="maximum">
+                                     <number>999</number>
+                                    </property>
+                                   </widget>
+                                  </item>
+                                  <item row="7" column="2">
+                                   <widget class="QLabel" name="label_612">
+                                    <property name="text">
+                                     <string>(L515) Depth stream height.</string>
+                                    </property>
+                                    <property name="wordWrap">
+                                     <bool>true</bool>
+                                    </property>
+                                    <property name="textInteractionFlags">
+                                     <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
+                                    </property>
+                                   </widget>
+                                  </item>
+                                  <item row="8" column="2">
+                                   <widget class="QLabel" name="label_613">
+                                    <property name="text">
+                                     <string>(L515) Depth stream rate.</string>
+                                    </property>
+                                    <property name="wordWrap">
+                                     <bool>true</bool>
+                                    </property>
+                                    <property name="textInteractionFlags">
+                                     <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
+                                    </property>
+                                   </widget>
+                                  </item>
+                                  <item row="11" column="2">
+                                   <widget class="QLabel" name="label_566">
+                                    <property name="text">
+                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Dual Mode extrinsics (T265's pose frame to D400's left IR camera). Default extrinsics match the 3D printed bracket &lt;a href=&quot; https://www.intelrealsense.com/depth-and-tracking-combined-get-started/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;here&lt;/span&gt;&lt;/a&gt; (&lt;a href=&quot;https://github.com/IntelRealSense/realsense-ros/blob/occupancy-mapping/realsense2_camera/meshes/mount_t265_d435.stl&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;stl&lt;/span&gt;&lt;/a&gt;).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                                    </property>
+                                    <property name="wordWrap">
+                                     <bool>true</bool>
+                                    </property>
+                                    <property name="openExternalLinks">
+                                     <bool>true</bool>
+                                    </property>
+                                    <property name="textInteractionFlags">
+                                     <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
                                     </property>
                                    </widget>
                                   </item>
@@ -4445,6 +4544,9 @@ when using the file type, logs are saved in LogRtabmap.txt (located in the worki
                                    <widget class="QLabel" name="label_601">
                                     <property name="text">
                                      <string>Frames per second</string>
+                                    </property>
+                                    <property name="textInteractionFlags">
+                                     <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
                                     </property>
                                    </widget>
                                   </item>
@@ -4537,10 +4639,13 @@ when using the file type, logs are saved in LogRtabmap.txt (located in the worki
                                   <item row="3" column="2">
                                    <widget class="QLabel" name="label_558">
                                     <property name="text">
-                                     <string>Use IR for RGB image (odometry may be better)</string>
+                                     <string>Use IR for RGB image (may work better in dark areas).</string>
                                     </property>
                                     <property name="wordWrap">
                                      <bool>true</bool>
+                                    </property>
+                                    <property name="textInteractionFlags">
+                                     <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
                                     </property>
                                    </widget>
                                   </item>
@@ -4576,12 +4681,21 @@ when using the file type, logs are saved in LogRtabmap.txt (located in the worki
                                     <property name="wordWrap">
                                      <bool>true</bool>
                                     </property>
+                                    <property name="textInteractionFlags">
+                                     <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
+                                    </property>
                                    </widget>
                                   </item>
                                   <item row="0" column="2">
                                    <widget class="QLabel" name="label_600">
                                     <property name="text">
-                                     <string>RGB camera resolution</string>
+                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;RGB camera resolution. Note that when color camera is used (IR mode is not checked below), to &lt;span style=&quot; font-weight:600;&quot;&gt;avoid black borders in point clouds&lt;/span&gt; generated, set ROI ratios under 3D Rendering settings to &amp;quot;0.05 0.05 0.05 0.05&amp;quot; under Map and Odom columns.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                                    </property>
+                                    <property name="wordWrap">
+                                     <bool>true</bool>
+                                    </property>
+                                    <property name="textInteractionFlags">
+                                     <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
                                     </property>
                                    </widget>
                                   </item>
@@ -4782,7 +4896,7 @@ when using the file type, logs are saved in LogRtabmap.txt (located in the worki
                            <item>
                             <widget class="QStackedWidget" name="stackedWidget_stereo">
                              <property name="currentIndex">
-                              <number>8</number>
+                              <number>4</number>
                              </property>
                              <widget class="QWidget" name="page_49">
                               <layout class="QVBoxLayout" name="verticalLayout_91">
@@ -5135,11 +5249,6 @@ when using the file type, logs are saved in LogRtabmap.txt (located in the worki
                                     </item>
                                     <item>
                                      <property name="text">
-                                      <string>MEDIUM</string>
-                                     </property>
-                                    </item>
-                                    <item>
-                                     <property name="text">
                                       <string>QUALITY</string>
                                      </property>
                                     </item>
@@ -5153,7 +5262,7 @@ when using the file type, logs are saved in LogRtabmap.txt (located in the worki
                                   <item row="4" column="1">
                                    <widget class="QLabel" name="label_306">
                                     <property name="text">
-                                     <string>Filtering value for the disparity map (and by extension the depth map). A lower value means more confidence and precision (but less density), an upper value reduces the filtering (more density, less certainty).</string>
+                                     <string>Depth confidence. Filtering value for the disparity map (and by extension the depth map). A lower value means more confidence and precision (but less density), an upper value reduces the filtering (more density, less certainty).</string>
                                     </property>
                                     <property name="wordWrap">
                                      <bool>true</bool>
@@ -5257,7 +5366,7 @@ when using the file type, logs are saved in LogRtabmap.txt (located in the worki
                                   <item row="5" column="1">
                                    <widget class="QLabel" name="label_570">
                                     <property name="text">
-                                     <string>[SDK3] Threshold to reject depth values based on their textureness confidence. A lower value means more confidence and precision (but less density). An upper value reduces filtering (more density, less certainty.).</string>
+                                     <string>[SDK3] Texture confidence. Threshold to reject depth values based on their textureness confidence. A lower value means more confidence and precision (but less density). An upper value reduces filtering (more density, less certainty.).</string>
                                     </property>
                                     <property name="wordWrap">
                                      <bool>true</bool>
@@ -7287,20 +7396,13 @@ when using the file type, logs are saved in LogRtabmap.txt (located in the worki
                          <item row="7" column="1">
                           <widget class="QLabel" name="label_453">
                            <property name="text">
-                            <string>Force ground normals to be all upward. Useful to make sure Velodyne's scans on ground have all normals upward.</string>
+                            <string>Force ground normals to be all upward (e.g., 0.8). Useful to make sure Velodyne's scans on ground have all normals upward. 0 means disabled.</string>
                            </property>
                            <property name="wordWrap">
                             <bool>true</bool>
                            </property>
                            <property name="textInteractionFlags">
                             <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
-                           </property>
-                          </widget>
-                         </item>
-                         <item row="7" column="0">
-                          <widget class="QCheckBox" name="checkBox_source_scanForceGroundNormalsUp">
-                           <property name="text">
-                            <string/>
                            </property>
                           </widget>
                          </item>
@@ -7357,6 +7459,19 @@ when using the file type, logs are saved in LogRtabmap.txt (located in the worki
                            </property>
                            <property name="textInteractionFlags">
                             <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="7" column="0">
+                          <widget class="QDoubleSpinBox" name="doubleSpinBox_source_scanNormalsForceGroundUp">
+                           <property name="toolTip">
+                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;KITTI: 130 000 points&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                           </property>
+                           <property name="maximum">
+                            <double>1.000000000000000</double>
+                           </property>
+                           <property name="singleStep">
+                            <double>0.010000000000000</double>
                            </property>
                           </widget>
                          </item>
@@ -9039,6 +9154,11 @@ generate the number of words requested.</string>
                              <string>SURF+DAISY</string>
                             </property>
                            </item>
+                           <item>
+                            <property name="text">
+                             <string>PyDetector</string>
+                            </property>
+                           </item>
                           </widget>
                          </item>
                          <item row="7" column="0">
@@ -9778,7 +9898,7 @@ When set to false, no new words are added to dictionary, so no more updates are 
                       </property>
                      </widget>
                     </item>
-                    <item row="5" column="0">
+                    <item row="6" column="0">
                      <widget class="QComboBox" name="comboBox_dbJournalMode">
                       <item>
                        <property name="text">
@@ -9820,7 +9940,7 @@ When set to false, no new words are added to dictionary, so no more updates are 
                       </property>
                      </widget>
                     </item>
-                    <item row="7" column="1">
+                    <item row="8" column="1">
                      <widget class="QLabel" name="label_120">
                       <property name="text">
                        <string>Sqlite3 temp store,
@@ -9834,7 +9954,7 @@ see Sqlite3 doc 'PRAGMA temp_store'.</string>
                       </property>
                      </widget>
                     </item>
-                    <item row="7" column="0">
+                    <item row="8" column="0">
                      <widget class="QComboBox" name="comboBox_dbTempStore">
                       <item>
                        <property name="text">
@@ -9863,7 +9983,7 @@ see Sqlite3 doc 'PRAGMA temp_store'.</string>
                       </property>
                      </widget>
                     </item>
-                    <item row="4" column="0">
+                    <item row="5" column="0">
                      <widget class="QSpinBox" name="spinBox_dbCacheSize">
                       <property name="minimum">
                        <number>10</number>
@@ -9879,7 +9999,7 @@ see Sqlite3 doc 'PRAGMA temp_store'.</string>
                       </property>
                      </widget>
                     </item>
-                    <item row="4" column="1">
+                    <item row="5" column="1">
                      <widget class="QLabel" name="label_75">
                       <property name="text">
                        <string>Sqlite3 cache size,
@@ -9893,7 +10013,7 @@ see Sqlite3 doc 'PRAGMA cache_size'.</string>
                       </property>
                      </widget>
                     </item>
-                    <item row="5" column="1">
+                    <item row="6" column="1">
                      <widget class="QLabel" name="label_77">
                       <property name="text">
                        <string>Sqlite3 journal mode,
@@ -9907,7 +10027,7 @@ see Sqlite3 doc 'PRAGMA journal_mode'.</string>
                       </property>
                      </widget>
                     </item>
-                    <item row="6" column="1">
+                    <item row="7" column="1">
                      <widget class="QLabel" name="label_89">
                       <property name="text">
                        <string>Sqlite3 synchronous,
@@ -9921,7 +10041,7 @@ see Sqlite3 doc 'PRAGMA synchronous'.</string>
                       </property>
                      </widget>
                     </item>
-                    <item row="6" column="0">
+                    <item row="7" column="0">
                      <widget class="QComboBox" name="comboBox_dbSynchronous">
                       <property name="currentIndex">
                        <number>2</number>
@@ -9971,6 +10091,26 @@ see Sqlite3 doc 'PRAGMA synchronous'.</string>
                     </item>
                     <item row="3" column="0">
                      <widget class="QLineEdit" name="lineEdit_rgbCompressionFormat"/>
+                    </item>
+                    <item row="4" column="1">
+                     <widget class="QLabel" name="label_610">
+                      <property name="text">
+                       <string>Target database version for backward compatibility purpose. Only Major and minor versions are used and should be set (e.g., &quot;0.19&quot; vs &quot;0.20&quot; or &quot;1.0&quot; vs &quot;2.0&quot;). Patch version is ignored (e.g., &quot;0.20.1&quot; and &quot;0.20.3&quot; will generate a &quot;0.20&quot; database).</string>
+                      </property>
+                      <property name="wordWrap">
+                       <bool>true</bool>
+                      </property>
+                      <property name="textInteractionFlags">
+                       <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="4" column="0">
+                     <widget class="QLineEdit" name="lineEdit_targetDatabaseVersion">
+                      <property name="placeholderText">
+                       <string>major.minor</string>
+                      </property>
+                     </widget>
                     </item>
                    </layout>
                   </widget>
@@ -12098,7 +12238,7 @@ If set to false, classic RTAB-Map loop closure detection is done using only imag
                    <layout class="QVBoxLayout" name="verticalLayout_115">
                     <item>
                      <layout class="QGridLayout" name="gridLayout_88" columnstretch="0,1">
-                      <item row="8" column="1">
+                      <item row="9" column="1">
                        <widget class="QLabel" name="label_484">
                         <property name="text">
                          <string>Probability clamping threshold minimum.</string>
@@ -12134,7 +12274,7 @@ If set to false, classic RTAB-Map loop closure detection is done using only imag
                         </property>
                        </widget>
                       </item>
-                      <item row="10" column="1">
+                      <item row="11" column="1">
                        <widget class="QLabel" name="label_224">
                         <property name="text">
                          <string>Erode obstacle cells.</string>
@@ -12147,7 +12287,7 @@ If set to false, classic RTAB-Map loop closure detection is done using only imag
                         </property>
                        </widget>
                       </item>
-                      <item row="6" column="1">
+                      <item row="7" column="1">
                        <widget class="QLabel" name="label_482">
                         <property name="text">
                          <string>Probability of a hit.</string>
@@ -12160,7 +12300,7 @@ If set to false, classic RTAB-Map loop closure detection is done using only imag
                         </property>
                        </widget>
                       </item>
-                      <item row="4" column="1">
+                      <item row="5" column="1">
                        <widget class="QLabel" name="label_319">
                         <property name="text">
                          <string>Footprint radius used to clear all obstacles under the graph.</string>
@@ -12173,7 +12313,7 @@ If set to false, classic RTAB-Map loop closure detection is done using only imag
                         </property>
                        </widget>
                       </item>
-                      <item row="10" column="0">
+                      <item row="11" column="0">
                        <widget class="QCheckBox" name="checkBox_grid_erode">
                         <property name="text">
                          <string/>
@@ -12190,7 +12330,7 @@ If set to false, classic RTAB-Map loop closure detection is done using only imag
                         </property>
                        </widget>
                       </item>
-                      <item row="4" column="0">
+                      <item row="5" column="0">
                        <widget class="QDoubleSpinBox" name="doubleSpinBox_grid_footprintRadius">
                         <property name="suffix">
                          <string> m</string>
@@ -12292,7 +12432,7 @@ If set to false, classic RTAB-Map loop closure detection is done using only imag
                         </property>
                        </widget>
                       </item>
-                      <item row="5" column="1">
+                      <item row="6" column="1">
                        <widget class="QLabel" name="label_457">
                         <property name="text">
                          <string>Occupancy threshold.</string>
@@ -12305,7 +12445,7 @@ If set to false, classic RTAB-Map loop closure detection is done using only imag
                         </property>
                        </widget>
                       </item>
-                      <item row="5" column="0">
+                      <item row="6" column="0">
                        <widget class="QDoubleSpinBox" name="doubleSpinBox_grid_occThr">
                         <property name="suffix">
                          <string/>
@@ -12324,7 +12464,7 @@ If set to false, classic RTAB-Map loop closure detection is done using only imag
                         </property>
                        </widget>
                       </item>
-                      <item row="7" column="1">
+                      <item row="8" column="1">
                        <widget class="QLabel" name="label_483">
                         <property name="text">
                          <string>Probability of a miss.</string>
@@ -12337,7 +12477,7 @@ If set to false, classic RTAB-Map loop closure detection is done using only imag
                         </property>
                        </widget>
                       </item>
-                      <item row="6" column="0">
+                      <item row="7" column="0">
                        <widget class="QDoubleSpinBox" name="doubleSpinBox_grid_probHit">
                         <property name="suffix">
                          <string/>
@@ -12356,7 +12496,7 @@ If set to false, classic RTAB-Map loop closure detection is done using only imag
                         </property>
                        </widget>
                       </item>
-                      <item row="7" column="0">
+                      <item row="8" column="0">
                        <widget class="QDoubleSpinBox" name="doubleSpinBox_grid_probMiss">
                         <property name="suffix">
                          <string/>
@@ -12375,7 +12515,7 @@ If set to false, classic RTAB-Map loop closure detection is done using only imag
                         </property>
                        </widget>
                       </item>
-                      <item row="9" column="1">
+                      <item row="10" column="1">
                        <widget class="QLabel" name="label_485">
                         <property name="text">
                          <string>Probability clamping threshold maximum.</string>
@@ -12388,7 +12528,7 @@ If set to false, classic RTAB-Map loop closure detection is done using only imag
                         </property>
                        </widget>
                       </item>
-                      <item row="8" column="0">
+                      <item row="9" column="0">
                        <widget class="QDoubleSpinBox" name="doubleSpinBox_grid_clampingMin">
                         <property name="suffix">
                          <string/>
@@ -12410,7 +12550,7 @@ If set to false, classic RTAB-Map loop closure detection is done using only imag
                         </property>
                        </widget>
                       </item>
-                      <item row="9" column="0">
+                      <item row="10" column="0">
                        <widget class="QDoubleSpinBox" name="doubleSpinBox_grid_clampingMax">
                         <property name="suffix">
                          <string/>
@@ -12429,6 +12569,41 @@ If set to false, classic RTAB-Map loop closure detection is done using only imag
                         </property>
                         <property name="value">
                          <double>0.500000000000000</double>
+                        </property>
+                       </widget>
+                      </item>
+                      <item row="4" column="1">
+                       <widget class="QLabel" name="label_616">
+                        <property name="text">
+                         <string>Altitude delta. Assemble only nodes that have the same altitude of +-delta meters of the current pose (0=disabled). This is used to generate 2D occupancy grid based on the current altitude (e.g., multi-floor building).</string>
+                        </property>
+                        <property name="wordWrap">
+                         <bool>true</bool>
+                        </property>
+                        <property name="textInteractionFlags">
+                         <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
+                        </property>
+                       </widget>
+                      </item>
+                      <item row="4" column="0">
+                       <widget class="QDoubleSpinBox" name="doubleSpinBox_grid_altitudeDelta">
+                        <property name="suffix">
+                         <string> m</string>
+                        </property>
+                        <property name="decimals">
+                         <number>2</number>
+                        </property>
+                        <property name="minimum">
+                         <double>0.000000000000000</double>
+                        </property>
+                        <property name="maximum">
+                         <double>99.000000000000000</double>
+                        </property>
+                        <property name="singleStep">
+                         <double>0.100000000000000</double>
+                        </property>
+                        <property name="value">
+                         <double>0.000000000000000</double>
                         </property>
                        </widget>
                       </item>
@@ -17646,7 +17821,7 @@ Lower the ratio -&gt; higher the precision.</string>
                           <item>
                            <widget class="QLabel" name="label_586">
                             <property name="text">
-                             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Python wrapper for python matcher like &lt;a href=&quot;https://github.com/magicleap/SuperGluePretrainedNetwork&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;SuperGlue&lt;/span&gt;&lt;/a&gt; or &lt;a href=&quot;https://github.com/zjhthu/OANet&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;OANet&lt;/span&gt;&lt;/a&gt;. Download the &lt;a href=&quot;https://github.com/introlab/rtabmap/tree/master/corelib/src/pymatcher&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;scripts&lt;/span&gt;&lt;/a&gt; and copy them at the root folder of SuperGlue git or in demo folder of OANet respectively, then set its path below. &lt;span style=&quot; font-weight:600;&quot;&gt;Important&lt;/span&gt;: Only float descriptors are allowed and SuperGlue works only with SuperPoint descriptors! You may have to train a new model for the feature used.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Python wrapper for python matcher like &lt;a href=&quot;https://github.com/magicleap/SuperGluePretrainedNetwork&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;SuperGlue&lt;/span&gt;&lt;/a&gt; or &lt;a href=&quot;https://github.com/zjhthu/OANet&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;OANet&lt;/span&gt;&lt;/a&gt;. Download the &lt;a href=&quot;https://github.com/introlab/rtabmap/tree/master/corelib/src/python&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;scripts&lt;/span&gt;&lt;/a&gt; and copy them at the root folder of SuperGlue git or in demo folder of OANet respectively, then set its path below. &lt;span style=&quot; font-weight:600;&quot;&gt;Important&lt;/span&gt;: Only float descriptors are allowed and SuperGlue works only with SuperPoint descriptors! You may have to train a new model for the feature used.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                             </property>
                             <property name="wordWrap">
                              <bool>true</bool>
@@ -18399,6 +18574,11 @@ Lower the ratio -&gt; higher the precision.</string>
                              <string>SURF+DAISY</string>
                             </property>
                            </item>
+                           <item>
+                            <property name="text">
+                             <string>PyDetector</string>
+                            </property>
+                           </item>
                           </widget>
                          </item>
                          <item row="3" column="0">
@@ -19007,10 +19187,10 @@ Lower the ratio -&gt; higher the precision.</string>
                         </property>
                        </widget>
                       </item>
-                      <item row="13" column="1">
+                      <item row="14" column="1">
                        <widget class="QLabel" name="label_429">
                         <property name="text">
-                         <string>Minimum structural complexity (0.0=low, 1.0=high) of the scan to do point to plane registration, otherwise point to point registration is done instead.</string>
+                         <string>Minimum structural complexity (0.0=low, 1.0=high) of the scan to do PointToPlane registration, otherwise PointToPoint registration is done instead and strategy from %s is used. This check is done only when PointToPlane is enabled.</string>
                         </property>
                         <property name="wordWrap">
                          <bool>true</bool>
@@ -19020,7 +19200,7 @@ Lower the ratio -&gt; higher the precision.</string>
                         </property>
                        </widget>
                       </item>
-                      <item row="13" column="0">
+                      <item row="14" column="0">
                        <widget class="QDoubleSpinBox" name="loopClosure_icpPointToPlaneNormalsMinComplexity">
                         <property name="decimals">
                          <number>3</number>
@@ -19098,6 +19278,64 @@ Lower the ratio -&gt; higher the precision.</string>
                         <property name="value">
                          <double>0.000000000000000</double>
                         </property>
+                       </widget>
+                      </item>
+                      <item row="15" column="1">
+                       <widget class="QLabel" name="label_607">
+                        <property name="text">
+                         <string>Stuctural complexity strategy. If structural complexity is below the minimum complexity threshold: set to 0 to so that the transform is automatically rejected, set to 1 to limit ICP correction in axes with most constraints (e.g., for a corridor-like environment, the resulting transform will be limited in y and yaw, x will taken from the guess), set to 2 to accept &quot;as is&quot; the transform computed by PointToPoint.</string>
+                        </property>
+                        <property name="wordWrap">
+                         <bool>true</bool>
+                        </property>
+                        <property name="textInteractionFlags">
+                         <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
+                        </property>
+                       </widget>
+                      </item>
+                      <item row="13" column="0">
+                       <widget class="QDoubleSpinBox" name="loopClosure_icpPointToPlaneGroundNormalsUp">
+                        <property name="decimals">
+                         <number>2</number>
+                        </property>
+                        <property name="maximum">
+                         <double>1.000000000000000</double>
+                        </property>
+                        <property name="singleStep">
+                         <double>0.010000000000000</double>
+                        </property>
+                       </widget>
+                      </item>
+                      <item row="13" column="1">
+                       <widget class="QLabel" name="label_608">
+                        <property name="text">
+                         <string>Invert normals on ground if they are pointing down (useful for ring-like 3D LiDARs). 0 means disabled, 1 means only normals perfectly aligned with -z axis. This is only done with 3D scans.</string>
+                        </property>
+                        <property name="wordWrap">
+                         <bool>true</bool>
+                        </property>
+                        <property name="textInteractionFlags">
+                         <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
+                        </property>
+                       </widget>
+                      </item>
+                      <item row="15" column="0">
+                       <widget class="QComboBox" name="loopClosure_icpPointToPlaneLowComplexityStrategy">
+                        <item>
+                         <property name="text">
+                          <string>Reject</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                          <string>Constrained PointToPoint</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                          <string>PointToPoint</string>
+                         </property>
+                        </item>
                        </widget>
                       </item>
                      </layout>
@@ -19243,6 +19481,26 @@ Lower the ratio -&gt; higher the precision.</string>
                           <widget class="QSpinBox" name="spinBox_icpPMMatcherKnn">
                            <property name="minimum">
                             <number>1</number>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="3" column="1">
+                          <widget class="QLabel" name="label_609">
+                           <property name="text">
+                            <string>KDTreeMatcher:  among nearest neighbors, keep only the one with the most similar intensity. This only work with knn&gt;1.</string>
+                           </property>
+                           <property name="wordWrap">
+                            <bool>true</bool>
+                           </property>
+                           <property name="textInteractionFlags">
+                            <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="3" column="0">
+                          <widget class="QCheckBox" name="loopClosure_icpPMMatcherIntensity">
+                           <property name="text">
+                            <string/>
                            </property>
                           </widget>
                          </item>
@@ -22131,7 +22389,96 @@ Lower the ratio -&gt; higher the precision.</string>
                    <property name="sizeHint" stdset="0">
                     <size>
                      <width>20</width>
-                     <height>2964</height>
+                     <height>0</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="page_87">
+                <layout class="QVBoxLayout" name="verticalLayout_153">
+                 <item>
+                  <widget class="QGroupBox" name="groupBox_pydetector2">
+                   <property name="title">
+                    <string>PyDetector</string>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_152">
+                    <item>
+                     <widget class="QLabel" name="label_614">
+                      <property name="text">
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Python wrapper for python feature detector like &lt;a href=&quot;https://github.com/magicleap/SuperPointPretrainedNetwork&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;SuperPoint&lt;/span&gt;&lt;/a&gt;. Download the &lt;a href=&quot;https://github.com/introlab/rtabmap/tree/master/corelib/src/python&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;script&lt;/span&gt;&lt;/a&gt; and copy it at the root folder of SuperPoint git, then set its path below.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      </property>
+                      <property name="wordWrap">
+                       <bool>true</bool>
+                      </property>
+                      <property name="openExternalLinks">
+                       <bool>true</bool>
+                      </property>
+                      <property name="textInteractionFlags">
+                       <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <layout class="QGridLayout" name="gridLayout_118" columnstretch="0,0,1">
+                      <item row="0" column="2">
+                       <widget class="QLabel" name="label_615">
+                        <property name="text">
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;[Required] Path to python script file.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                        </property>
+                        <property name="wordWrap">
+                         <bool>true</bool>
+                        </property>
+                        <property name="textInteractionFlags">
+                         <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
+                        </property>
+                       </widget>
+                      </item>
+                      <item row="0" column="1">
+                       <widget class="QLineEdit" name="lineEdit_pydetector_path"/>
+                      </item>
+                      <item row="0" column="0">
+                       <widget class="QToolButton" name="toolButton_pydetector_path">
+                        <property name="text">
+                         <string>...</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item row="1" column="1">
+                       <widget class="QCheckBox" name="checkBox_pydetector_cuda">
+                        <property name="text">
+                         <string/>
+                        </property>
+                       </widget>
+                      </item>
+                      <item row="1" column="2">
+                       <widget class="QLabel" name="label_618">
+                        <property name="text">
+                         <string>Use Cuda device for Torch, otherwise CPU device is used by default.</string>
+                        </property>
+                        <property name="wordWrap">
+                         <bool>true</bool>
+                        </property>
+                        <property name="textInteractionFlags">
+                         <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="verticalSpacer_88">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>3128</height>
                     </size>
                    </property>
                   </spacer>

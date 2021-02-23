@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2010-2016, Mathieu Labbe - IntRoLab - Universite de Sherbrooke
+Copyright (c) 2010-2021, Mathieu Labbe - IntRoLab - Universite de Sherbrooke
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -25,42 +25,23 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef OBJDELETIONHANDLER_H_
-#define OBJDELETIONHANDLER_H_
+#ifndef CORELIB_INCLUDE_RTABMAP_CORE_PDALWRITER_H_
+#define CORELIB_INCLUDE_RTABMAP_CORE_PDALWRITER_H_
 
-#include "rtabmap/utilite/UEventsHandler.h"
-#include "rtabmap/utilite/UEvent.h"
-#include <QtCore/QObject>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 
-class ObjDeletionHandler : public QObject, public UEventsHandler
-{
-	Q_OBJECT
+namespace rtabmap {
 
-public:
-	ObjDeletionHandler(int watchedId, QObject * receiver = 0, const char * member = 0) : _watchedId(watchedId)
-	{
-		if(receiver && member)
-		{
-			connect(this, SIGNAL(objDeletionEventReceived(int)), receiver, member);
-		}
-	}
-	virtual ~ObjDeletionHandler() {}
+std::string getPDALSupportedWriters();
 
-Q_SIGNALS:
-	void objDeletionEventReceived(int);
+int savePDALFile(const std::string & filePath, const pcl::PointCloud<pcl::PointXYZ> & cloud);
+int savePDALFile(const std::string & filePath, const pcl::PointCloud<pcl::PointXYZRGB> & cloud);
+int savePDALFile(const std::string & filePath, const pcl::PointCloud<pcl::PointXYZRGBNormal> & cloud);
+int savePDALFile(const std::string & filePath, const pcl::PointCloud<pcl::PointXYZI> & cloud);
+int savePDALFile(const std::string & filePath, const pcl::PointCloud<pcl::PointXYZINormal> & cloud);
 
-protected:
-	virtual bool handleEvent(UEvent * event)
-	{
-		if(event->getClassName().compare("UObjDeletedEvent") == 0 &&
-		   event->getCode() == _watchedId)
-		{
-			Q_EMIT objDeletionEventReceived(_watchedId);
-		}
-		return false;
-	}
-private:
-	int _watchedId;
-};
+}
 
-#endif /* OBJDELETIONHANDLER_H_ */
+
+#endif /* CORELIB_INCLUDE_RTABMAP_CORE_PDALWRITER_H_ */
