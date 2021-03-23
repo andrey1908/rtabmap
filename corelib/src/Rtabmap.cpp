@@ -1001,6 +1001,26 @@ bool Rtabmap::process(
 	//============================================================
 	// Initialization
 	//============================================================
+	// read env variable RABMAP_USE_CUSTOM_LOOP_CLOSURE to set working mode
+	static int use_custom_loop_closure = -1;
+	if (use_custom_loop_closure == -1)
+	{
+	    const char* use_custom_loop_closure_str = std::getenv("RABMAP_USE_CUSTOM_LOOP_CLOSURE");
+	    if (use_custom_loop_closure_str == 0)
+	    {
+	        use_custom_loop_closure_str = "0";
+	    }
+	    if (strcmp(use_custom_loop_closure_str, "1") == 0)
+	    {
+	        use_custom_loop_closure = 1;
+	    }
+	    else
+	    {
+	        use_custom_loop_closure = 0;
+	    }
+	}
+	// file to save loop closure information
+	static const char* transforms_file_name = "/home/cds-jetson-host/catkin_ws/loop_closure_transforms.txt";
 	UTimer timer;
 	UTimer timerTotal;
 	double timeMemoryUpdate = 0;
@@ -2635,6 +2655,31 @@ bool Rtabmap::process(
 			{
 				loopClosureLinksAdded.push_back(std::make_pair(signature->id(), _loopClosureHypothesis.first));
 			}
+			// save loop closure information
+			if (!use_custom_loop_closure)
+			{
+			    static std::ofstream output;
+			    if (!output.is_open())
+			    {
+			        output.open(transforms_file_name, std::ios::trunc);
+			    }
+			    
+			    output << signature->id() << ' ' << _loopClosureHypothesis.first << ' ';
+			    
+			    float x, y, z, roll, pitch, yaw;
+			    transform.getTranslationAndEulerAngles(x, y, z, roll, pitch, yaw);
+			    output << x << ' ' << y << ' ' << z << ' ' << roll << ' ' << pitch << ' ' << yaw << ' ';
+			    
+			    output << information.rows << ' ' << information.cols << ' ';
+			    for (int i = 0; i < information.rows; i++)
+			    {
+			        for (int j = 0; j < information.cols; j++)
+			        {
+			            output << information.at<double>(i, j) << ' ';
+			        }
+			    }
+			    output << std::endl;
+			}
 		}
 
 		if(rejectedGlobalLoopClosure)
@@ -2671,6 +2716,110 @@ bool Rtabmap::process(
 			}
 		}
 	}
+
+
+    //============================================================
+	// Custom loop closure
+	//============================================================
+	if (use_custom_loop_closure)
+	{
+	    // remove added links
+	    // if parameter RGBD/ProximityByTime is set True (default False) or if a path is activated, there might be links not added to loopClosureLinksAdded, so they won't be removed
+	    for(std::list<std::pair<int, int> >::iterator iter=loopClosureLinksAdded.begin(); iter!=loopClosureLinksAdded.end(); ++iter)
+	    {
+		     _memory->removeLink(iter->first, iter->second);
+	    }
+	    loopClosureLinksAdded.clear();
+	    
+	    // Remove closure information
+	    _loopClosureHypothesis.first = 0;
+	    lastProximitySpaceClosureId = 0;
+	    
+	    // load loop closure information
+	    static std::list<std::pair<int, int>> nodes_ids;
+	    static std::list<Transform> transforms;
+	    static std::list<cv::Mat> informations;
+	    static int num = 0;
+	    if (nodes_ids.size() == 0)
+	    {
+	        std::ifstream input;
+	        input.open(transforms_file_name);
+	        num = std::count(std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>(), '\n');
+	        input.seekg(0);
+	        for (int i = 0; i < num; i++)
+	        {
+	            int from, to;
+	            input >> from >> to;
+	            
+	            float x, y, z, roll, pitch, yaw;
+	            input >> x >> y >> z >> roll >> pitch >> yaw;
+	            Transform transform(x, y, z, roll, pitch, yaw);
+	            
+	            int rows, cols;
+	            input >> rows >> cols;
+	            cv::Mat information(rows, cols, CV_64FC1);
+	            for (int i = 0; i < information.rows; i++)
+			    {
+			        for (int j = 0; j < information.cols; j++)
+			        {
+			            input >> information.at<double>(i, j);
+			        }
+			    }
+			    
+			    nodes_ids.push_back(std::make_pair(from, to));
+			    transforms.push_back(transform);
+			    informations.push_back(information);
+	        }
+	        input.close();
+	    }
+        
+        // close loops
+        static int current = 0;
+        static auto nodes_ids_it = nodes_ids.begin();
+        static auto transforms_it = transforms.begin();
+        static auto informations_it = informations.begin();
+        if (current != num)
+        {
+            auto signature_ids = _memory->getAllSignatureIds();
+            if (signature_ids.size() > 0)
+            {
+                int from = nodes_ids_it->first;
+                int to = nodes_ids_it->second;
+                int max_id = from > to ? from : to;
+                // check if it's time to close a new loop
+                if (*signature_ids.rbegin() == max_id)
+                {
+                    // make sure that signatures that are used in loop closure haven't been removed
+                    while (signature_ids.find(from) == signature_ids.end())
+	                {
+	                    from--;
+	                }
+	                while (signature_ids.find(to) == signature_ids.end())
+	                {
+	                    to--;
+	                }
+	                // add loop closure
+	                _memory->addLink(Link(from, to, Link::kUserClosure, *transforms_it, *informations_it));
+	                loopClosureLinksAdded.push_back(std::make_pair(from, to));
+	                // to trigger graph optimization
+                    proximityDetectionsInTimeFound++;
+                    // otherwise the last node (which is used in loop closure) might be removed
+                    smallDisplacement = false;
+                    tooFastMovement = false;
+                    // next loop closure
+                    current++;
+                    nodes_ids_it++;
+                    transforms_it++;
+                    informations_it++;
+                }
+                else
+                {
+                    UASSERT(*signature_ids.rbegin() < max_id);
+                }
+            }
+        }
+	}
+    
 
 	//============================================================
 	// Optimize map graph
