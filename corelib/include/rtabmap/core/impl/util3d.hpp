@@ -29,6 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define UTIL3D_HPP_
 
 #include <rtabmap/core/util3d_transforms.h>
+#include <rtabmap/utilite/ULogger.h>
 
 namespace rtabmap{
 namespace util3d{
@@ -40,6 +41,17 @@ LaserScan laserScanFromPointCloud(const PointCloud2T & cloud, bool filterNaNs, b
 	{
 		return LaserScan();
 	}
+	auto cloud_row_step = cloud.row_step;
+	if (cloud.row_step == 0 && cloud.height == 1) {
+		static bool warned = false;
+		if (!warned) {
+			UWARN("data=%d row_step=%d height=%d in point cloud data. Condition data = row_step * height is not met. \
+It will be fixed. This warning is printed only once.", cloud.data.size(), cloud.row_step, cloud.height);
+			warned = true;
+		}
+		cloud_row_step = cloud.data.size();
+	}
+
 	//determine the output type
 	int fieldStates[8] = {0}; // x,y,z,normal_x,normal_y,normal_z,rgb,intensity
 #if PCL_VERSION_COMPARE(>=, 1, 10, 0)
@@ -185,7 +197,7 @@ LaserScan laserScanFromPointCloud(const PointCloud2T & cloud, bool filterNaNs, b
 	int oi=0;
 	for (uint32_t row = 0; row < (uint32_t)cloud.height; ++row)
 	{
-		const uint8_t* row_data = &cloud.data[row * cloud.row_step];
+		const uint8_t* row_data = &cloud.data[row * cloud_row_step];
 		for (uint32_t col = 0; col < (uint32_t)cloud.width; ++col)
 		{
 			const uint8_t* msg_data = row_data + col * cloud.point_step;
