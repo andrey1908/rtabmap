@@ -137,6 +137,7 @@ public:
 	int getNormalsOffset() const {return hasNormals()?(2 + (is2d()?0:1) + ((hasRGB() || hasIntensity())?1:0)):-1;}
 
 	float & field(unsigned int pointIndex, unsigned int channelOffset);
+	const float & field(unsigned int pointIndex, unsigned int channelOffset) const;
 
 	void clear() {data_ = cv::Mat();}
 

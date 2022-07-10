@@ -167,11 +167,27 @@ void occupancy2DFromLaserScan(
 	// copy directly obstacles precise positions
 	if(scanMaxRange > cellSize)
 	{
-		occupied = util3d::rangeFiltering(LaserScan::backwardCompatibility(scanHit), 0.0f, scanMaxRange).data();
+		occupied = scanHitIn.clone();
+		if (occupied.channels() == 3)
+		{
+			std::vector<cv::Mat> channels;
+			cv::split(occupied, channels);
+			cv::Mat zero_z = cv::Mat::zeros(occupied.rows, occupied.cols, CV_32F);
+			channels.insert(channels.begin() + 2, zero_z);
+			cv::merge(channels, occupied);
+		}
+		occupied = util3d::rangeFiltering(LaserScan::backwardCompatibility(occupied), 0.0f, scanMaxRange).data();
+		if (occupied.channels() == 4)
+		{
+			std::vector<cv::Mat> channels;
+			cv::split(occupied, channels);
+			channels.erase(channels.begin() + 2);
+			cv::merge(channels, occupied);
+		}
 	}
 	else
 	{
-		occupied = scanHit;
+		occupied = scanHitIn.clone();
 	}
 }
 

@@ -1070,7 +1070,16 @@ bool OccupancyGrid::update(const std::map<int, Transform> & posesIn)
 
 						if(cloudAssembling_)
 						{
-							*assembledObstacles_ += *util3d::laserScanToPointCloudRGB(LaserScan::backwardCompatibility(pair.first.second), iter->second, 255, 0, 0);
+							cv::Mat obstacles = pair.first.second.clone();
+							if (obstacles.channels() == 3)
+							{
+								std::vector<cv::Mat> channels;
+								cv::split(obstacles, channels);
+								cv::Mat zero_z = cv::Mat::zeros(obstacles.rows, obstacles.cols, CV_32F);
+								channels.insert(channels.begin() + 2, zero_z);
+								cv::merge(channels, obstacles);
+							}
+							*assembledObstacles_ += *util3d::laserScanToPointCloudRGB(LaserScan::backwardCompatibility(obstacles), iter->second, 255, 0, 0);
 							assembledObstaclesUpdated = true;
 						}
 					}

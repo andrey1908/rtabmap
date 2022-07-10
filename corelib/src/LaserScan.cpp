@@ -373,6 +373,13 @@ float & LaserScan::field(unsigned int pointIndex, unsigned int channelOffset)
 	return data_.ptr<float>(0, pointIndex)[channelOffset];
 }
 
+const float & LaserScan::field(unsigned int pointIndex, unsigned int channelOffset) const
+{
+	UASSERT(pointIndex < data_.cols);
+	UASSERT(channelOffset < data_.channels());
+	return data_.ptr<float>(0, pointIndex)[channelOffset];
+}
+
 LaserScan & LaserScan::operator+=(const LaserScan & scan)
 {
 	*this = *this+scan;
