@@ -962,7 +962,7 @@ bool OccupancyGrid::update(const std::map<int, Transform> & posesIn)
 							const float * vi = pair.first.first.ptr<float>(0,i);
 							float * vo = ground.ptr<float>(0,i);
 							cv::Point3f vt;
-							if(pair.first.first.channels() != 2 && pair.first.first.channels() != 5)
+							if(false && pair.first.first.channels() != 2 && pair.first.first.channels() != 5)
 							{
 								vt = util3d::transformPoint(cv::Point3f(vi[0], vi[1], vi[2]), iter->second);
 							}
@@ -1004,7 +1004,7 @@ bool OccupancyGrid::update(const std::map<int, Transform> & posesIn)
 							const float * vi = pair.second.ptr<float>(0,i);
 							float * vo = ground.ptr<float>(0,i);
 							cv::Point3f vt;
-							if(pair.second.channels() != 2 && pair.second.channels() != 5)
+							if(false && pair.second.channels() != 2 && pair.second.channels() != 5)
 							{
 								vt = util3d::transformPoint(cv::Point3f(vi[0], vi[1], vi[2]), iter->second);
 							}
@@ -1046,7 +1046,7 @@ bool OccupancyGrid::update(const std::map<int, Transform> & posesIn)
 							const float * vi = pair.first.second.ptr<float>(0,i);
 							float * vo = obstacles.ptr<float>(0,i);
 							cv::Point3f vt;
-							if(pair.first.second.channels() != 2 && pair.first.second.channels() != 5)
+							if(false && pair.first.second.channels() != 2 && pair.first.second.channels() != 5)
 							{
 								vt = util3d::transformPoint(cv::Point3f(vi[0], vi[1], vi[2]), iter->second);
 							}
