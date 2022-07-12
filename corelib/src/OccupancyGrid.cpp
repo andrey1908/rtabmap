@@ -253,6 +253,8 @@ void OccupancyGrid::setMap(const cv::Mat & map, float xMin, float yMin, float ce
 		cellSize_ = cellSize;
 		addedNodes_.insert(poses.lower_bound(1), poses.end());
 	}
+
+	colors_ = cv::Mat::zeros(map_.size(), CV_8UC3);
 }
 
 void OccupancyGrid::setCellSize(float cellSize)
@@ -596,6 +598,7 @@ void OccupancyGrid::clear()
 	cache_.clear();
 	map_ = cv::Mat();
 	mapInfo_ = cv::Mat();
+	colors_ = cv::Mat();
 	cellCount_.clear();
 	xMin_ = 0.0f;
 	yMin_ = 0.0f;
@@ -677,6 +680,23 @@ cv::Mat OccupancyGrid::getProbMap(float & xMin, float & yMin) const
 		UWARN("Map info is empty, cannot generate probabilistic occupancy grid");
 	}
 	return map;
+}
+
+cv::Mat OccupancyGrid::getColors(float & xMin, float & yMin) const
+{
+	xMin = xMin_;
+	yMin = yMin_;
+
+	cv::Mat colors;
+	if(!colors_.empty())
+	{
+		colors = colors_.clone();
+	}
+	else
+	{
+		UWARN("Colors are empty");
+	}
+	return colors;
 }
 
 void OccupancyGrid::addToCache(
@@ -956,7 +976,7 @@ bool OccupancyGrid::update(const std::map<int, Transform> & posesIn)
 						{
 							UFATAL("Occupancy local maps should be 1 row and X cols! (rows=%d cols=%d)", pair.first.first.rows, pair.first.first.cols);
 						}
-						cv::Mat ground(1, pair.first.first.cols, CV_32FC2);
+						cv::Mat ground(1, pair.first.first.cols, CV_32FC3);
 						for(int i=0; i<ground.cols; ++i)
 						{
 							const float * vi = pair.first.first.ptr<float>(0,i);
@@ -972,6 +992,10 @@ bool OccupancyGrid::update(const std::map<int, Transform> & posesIn)
 							}
 							vo[0] = vt.x;
 							vo[1] = vt.y;
+							if (pair.first.first.channels() == 3)
+								vo[2] = vi[2];
+							else
+								*(int*)(vo + 2) = 0;
 							if(minX > vo[0])
 								minX = vo[0];
 							else if(maxX < vo[0])
@@ -998,7 +1022,7 @@ bool OccupancyGrid::update(const std::map<int, Transform> & posesIn)
 						{
 							UFATAL("Occupancy local maps should be 1 row and X cols! (rows=%d cols=%d)", pair.second.rows, pair.second.cols);
 						}
-						cv::Mat ground(1, pair.second.cols, CV_32FC2);
+						cv::Mat ground(1, pair.second.cols, CV_32FC3);
 						for(int i=0; i<ground.cols; ++i)
 						{
 							const float * vi = pair.second.ptr<float>(0,i);
@@ -1014,6 +1038,10 @@ bool OccupancyGrid::update(const std::map<int, Transform> & posesIn)
 							}
 							vo[0] = vt.x;
 							vo[1] = vt.y;
+							if (pair.second.channels() == 3)
+								vo[2] = vi[2];
+							else
+								*(int*)(vo + 2) = 0;
 							if(minX > vo[0])
 								minX = vo[0];
 							else if(maxX < vo[0])
@@ -1040,7 +1068,7 @@ bool OccupancyGrid::update(const std::map<int, Transform> & posesIn)
 						{
 							UFATAL("Occupancy local maps should be 1 row and X cols! (rows=%d cols=%d)", pair.first.second.rows, pair.first.second.cols);
 						}
-						cv::Mat obstacles(1, pair.first.second.cols, CV_32FC2);
+						cv::Mat obstacles(1, pair.first.second.cols, CV_32FC3);
 						for(int i=0; i<obstacles.cols; ++i)
 						{
 							const float * vi = pair.first.second.ptr<float>(0,i);
@@ -1056,6 +1084,10 @@ bool OccupancyGrid::update(const std::map<int, Transform> & posesIn)
 							}
 							vo[0] = vt.x;
 							vo[1] = vt.y;
+							if (pair.first.second.channels() == 3)
+								vo[2] = vi[2];
+							else
+								*(int*)(vo + 2) = 0;
 							if(minX > vo[0])
 								minX = vo[0];
 							else if(maxX < vo[0])
@@ -1089,6 +1121,7 @@ bool OccupancyGrid::update(const std::map<int, Transform> & posesIn)
 
 		cv::Mat map;
 		cv::Mat mapInfo;
+		cv::Mat colors;
 		if(minX != maxX && minY != maxY)
 		{
 			//Get map size
@@ -1115,6 +1148,7 @@ bool OccupancyGrid::update(const std::map<int, Transform> & posesIn)
 					UDEBUG("Map empty!");
 					map = cv::Mat::ones(newMapSize, CV_8S)*-1;
 					mapInfo = cv::Mat::zeros(newMapSize, CV_32FC4);
+					colors = cv::Mat::zeros(newMapSize, CV_8UC3);
 				}
 				else
 				{
@@ -1126,6 +1160,7 @@ bool OccupancyGrid::update(const std::map<int, Transform> & posesIn)
 						UDEBUG("Map same size!");
 						map = map_;
 						mapInfo = mapInfo_;
+						colors = colors_;
 					}
 					else
 					{
@@ -1158,8 +1193,10 @@ bool OccupancyGrid::update(const std::map<int, Transform> & posesIn)
 						UASSERT(deltaX>=0 && deltaY>=0);
 						map = cv::Mat::ones(newMapSize, CV_8S)*-1;
 						mapInfo = cv::Mat::zeros(newMapSize, mapInfo_.type());
+						colors = cv::Mat::zeros(newMapSize, CV_8UC3);
 						map_.copyTo(map(cv::Rect(deltaX, deltaY, map_.cols, map_.rows)));
 						mapInfo_.copyTo(mapInfo(cv::Rect(deltaX, deltaY, map_.cols, map_.rows)));
+						colors_.copyTo(colors(cv::Rect(deltaX, deltaY, map_.cols, map_.rows)));
 					}
 				}
 				UASSERT(map.cols == mapInfo.cols && map.rows == mapInfo.rows);
@@ -1191,6 +1228,7 @@ bool OccupancyGrid::update(const std::map<int, Transform> & posesIn)
 									uFormat("%d: pt=(%d,%d) map=%dx%d rawPt=(%f,%f) xMin=%f yMin=%f channels=%dvs%d (graph modified=%d)",
 											kter->first, pt.x, pt.y, map.cols, map.rows, ptf[0], ptf[1], xMin, yMin, iter->second.channels(), mapInfo.channels()-1, (graphOptimized || graphChanged)?1:0).c_str());
 							char & value = map.at<char>(pt.y, pt.x);
+							cv::Vec3b & color = colors.at<cv::Vec3b>(pt.y, pt.x);
 							if(value != -2 && (!incrementalGraphUpdate || value==-1))
 							{
 								float * info = mapInfo.ptr<float>(pt.y, pt.x);
@@ -1226,6 +1264,13 @@ bool OccupancyGrid::update(const std::map<int, Transform> & posesIn)
 									info[1] = ptf[0];
 									info[2] = ptf[1];
 									cter->second.first+=1;
+									int icolor = *(int*)(ptf + 2);
+									if (icolor != 0)
+									{
+										color[0] = (unsigned char)(icolor & 0xFF);
+										color[1] = (unsigned char)((icolor >> 8) & 0xFF);
+										color[2] = (unsigned char)((icolor >> 16) & 0xFF);
+									}
 								}
 								value = 0; // free space
 
@@ -1317,6 +1362,7 @@ bool OccupancyGrid::update(const std::map<int, Transform> & posesIn)
 										uFormat("%d: pt=(%d,%d) map=%dx%d rawPt=(%f,%f) xMin=%f yMin=%f channels=%dvs%d (graph modified=%d)",
 												kter->first, pt.x, pt.y, map.cols, map.rows, ptf[0], ptf[1], xMin, yMin, jter->second.channels(), mapInfo.channels()-1, (graphOptimized || graphChanged)?1:0).c_str());
 							char & value = map.at<char>(pt.y, pt.x);
+							cv::Vec3b & color = colors.at<cv::Vec3b>(pt.y, pt.x);
 							if(value != -2)
 							{
 								float * info = mapInfo.ptr<float>(pt.y, pt.x);
@@ -1352,6 +1398,13 @@ bool OccupancyGrid::update(const std::map<int, Transform> & posesIn)
 									info[1] = ptf[0];
 									info[2] = ptf[1];
 									cter->second.second+=1;
+									int icolor = *(int*)(ptf + 2);
+									if (icolor != 0)
+									{
+										color[0] = (unsigned char)(icolor & 0xFF);
+										color[1] = (unsigned char)((icolor >> 8) & 0xFF);
+										color[2] = (unsigned char)((icolor >> 16) & 0xFF);
+									}
 								}
 
 								// update odds
@@ -1489,6 +1542,7 @@ bool OccupancyGrid::update(const std::map<int, Transform> & posesIn)
 
 				map_ = map;
 				mapInfo_ = mapInfo;
+				colors_ = colors;
 				xMin_ = xMin;
 				yMin_ = yMin;
 

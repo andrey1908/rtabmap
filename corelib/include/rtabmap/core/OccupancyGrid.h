@@ -100,6 +100,7 @@ public:
 	bool update(const std::map<int, Transform> & poses); // return true if map has changed
 	cv::Mat getMap(float & xMin, float & yMin) const;
 	cv::Mat getProbMap(float & xMin, float & yMin) const;
+	cv::Mat getColors(float & xMin, float & yMin) const;
 	const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & getMapGround() const {return assembledGround_;}
 	const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & getMapObstacles() const {return assembledObstacles_;}
 	const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & getMapEmptyCells() const {return assembledEmptyCells_;}
@@ -153,6 +154,7 @@ private:
 	float xMin_;
 	float yMin_;
 	std::map<int, Transform> addedNodes_;
+	cv::Mat colors_;  // b, g, r
 
 	bool cloudAssembling_;
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr assembledGround_;
