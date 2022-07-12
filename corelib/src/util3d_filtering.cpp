@@ -536,7 +536,7 @@ typename pcl::PointCloud<PointT>::Ptr voxelizeImpl(
 
 		if ((dx*dy*dz) > static_cast<std::int64_t>(std::numeric_limits<std::int32_t>::max()))
 		{
-			UWARN("Leaf size is too small for the input dataset. Integer indices would overflow. "
+			UFATAL("Leaf size is too small for the input dataset. Integer indices would overflow. "
 				  "We will split space to be able to voxelize (lvl=%d cloud=%d min=[%f %f %f] max=[%f %f %f] voxel=%f).",
 				  level,
 				  (int)(indices->empty()?cloud->size():indices->size()),
@@ -579,18 +579,83 @@ typename pcl::PointCloud<PointT>::Ptr voxelizeImpl(
 		}
 		else
 		{
-			pcl::VoxelGrid<PointT> filter;
-			filter.setLeafSize(voxelSize, voxelSize, voxelSize);
-			filter.setInputCloud(cloud);
 #ifdef WIN32
 			// Pre-allocating the cloud helps to avoid crash when freeing memory allocated inside pcl library
 			output->resize(cloud->size());
 #endif
-			if(!indices->empty())
+			if constexpr(std::is_same<PointT, pcl::PointXYZRGB>() || std::is_same<PointT, pcl::PointXYZRGBNormal>())
 			{
-				filter.setIndices(indices);
+				pcl::IndicesPtr black_indices(new pcl::Indices);
+				pcl::IndicesPtr colored_indices(new pcl::Indices);
+				pcl::IndicesPtr cloud_indices;
+				if (indices->empty())
+				{
+					cloud_indices.reset(new pcl::Indices());
+					for (int i = 0; i < cloud->size(); i++)
+					{
+						cloud_indices->push_back(i);
+					}
+				}
+				else
+				{
+					cloud_indices = indices;
+				}
+				for (int i : *cloud_indices)
+				{
+					unsigned char r = cloud->points[i].r;
+					unsigned char g = cloud->points[i].g;
+					unsigned char b = cloud->points[i].b;
+					if (r == 0 && g == 0 && b == 0)
+					{
+						black_indices->push_back(i);
+					}
+					else
+					{
+						colored_indices->push_back(i);
+					}
+				}
+
+				pcl::VoxelGrid<PointT> black_filter;
+				black_filter.setLeafSize(voxelSize, voxelSize, voxelSize);
+				black_filter.setInputCloud(cloud);
+				black_filter.setIndices(black_indices);
+				black_filter.setSaveLeafLayout(true);
+				pcl::VoxelGrid<PointT> colored_filter;
+				colored_filter.setLeafSize(voxelSize, voxelSize, voxelSize);
+				colored_filter.setInputCloud(cloud);
+				colored_filter.setIndices(colored_indices);
+				colored_filter.setSaveLeafLayout(true);
+
+				pcl::PointCloud<PointT> black_cloud_filtered;
+				pcl::PointCloud<PointT> colored_cloud_filtered;
+				black_filter.filter(black_cloud_filtered);
+				colored_filter.filter(colored_cloud_filtered);
+
+				*output = colored_cloud_filtered;
+				for (int i = 0; i < black_cloud_filtered.size(); i++)
+				{
+					const PointT& black_point = black_cloud_filtered[i];
+					Eigen::Vector3i ijk = colored_filter.getGridCoordinates(black_point.x, black_point.y, black_point.z);
+					int colored_centroid_index = colored_filter.getCentroidIndexAt(ijk);
+					if (colored_centroid_index < 0 ||
+						colored_centroid_index >= colored_filter.getLeafLayout().size() ||
+						colored_filter.getLeafLayout()[colored_centroid_index] == -1)
+					{
+						output->push_back(black_point);
+					}
+				}
 			}
-			filter.filter(*output);
+			else
+			{
+				pcl::VoxelGrid<PointT> filter;
+				filter.setLeafSize(voxelSize, voxelSize, voxelSize);
+				filter.setInputCloud(cloud);
+				if(!indices->empty())
+				{
+					filter.setIndices(indices);
+				}
+				filter.filter(*output);
+			}
 		}
 	}
 	else if(cloud->size() && !cloud->is_dense && indices->size() == 0)
