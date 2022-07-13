@@ -615,35 +615,20 @@ typename pcl::PointCloud<PointT>::Ptr voxelizeImpl(
 					}
 				}
 
-				pcl::VoxelGrid<PointT> black_filter;
-				black_filter.setLeafSize(voxelSize, voxelSize, voxelSize);
-				black_filter.setInputCloud(cloud);
-				black_filter.setIndices(black_indices);
-				black_filter.setSaveLeafLayout(true);
-				pcl::VoxelGrid<PointT> colored_filter;
-				colored_filter.setLeafSize(voxelSize, voxelSize, voxelSize);
-				colored_filter.setInputCloud(cloud);
-				colored_filter.setIndices(colored_indices);
-				colored_filter.setSaveLeafLayout(true);
+				pcl::VoxelGrid<PointT> filter;
+				filter.setLeafSize(voxelSize, voxelSize, voxelSize);
 
 				pcl::PointCloud<PointT> black_cloud_filtered;
-				pcl::PointCloud<PointT> colored_cloud_filtered;
-				black_filter.filter(black_cloud_filtered);
-				colored_filter.filter(colored_cloud_filtered);
+				filter.setInputCloud(cloud);
+				filter.setIndices(black_indices);
+				filter.filter(black_cloud_filtered);
 
-				*output = colored_cloud_filtered;
-				for (int i = 0; i < black_cloud_filtered.size(); i++)
-				{
-					const PointT& black_point = black_cloud_filtered[i];
-					Eigen::Vector3i ijk = colored_filter.getGridCoordinates(black_point.x, black_point.y, black_point.z);
-					int colored_centroid_index = colored_filter.getCentroidIndexAt(ijk);
-					if (colored_centroid_index < 0 ||
-						colored_centroid_index >= colored_filter.getLeafLayout().size() ||
-						colored_filter.getLeafLayout()[colored_centroid_index] == -1)
-					{
-						output->push_back(black_point);
-					}
-				}
+				pcl::PointCloud<PointT> colored_cloud_filtered;
+				filter.setInputCloud(cloud);
+				filter.setIndices(colored_indices);
+				filter.filter(colored_cloud_filtered);
+
+				*output = colored_cloud_filtered + black_cloud_filtered;
 			}
 			else
 			{
