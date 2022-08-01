@@ -26,6 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "rtabmap/core/util3d_filtering.h"
+#include "rtabmap/core/util3d_colored_voxel_grid.h"
 
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/voxel_grid.h>
@@ -583,64 +584,14 @@ typename pcl::PointCloud<PointT>::Ptr voxelizeImpl(
 			// Pre-allocating the cloud helps to avoid crash when freeing memory allocated inside pcl library
 			output->resize(cloud->size());
 #endif
-			if constexpr(std::is_same<PointT, pcl::PointXYZRGB>() || std::is_same<PointT, pcl::PointXYZRGBNormal>())
+			ColoredVoxelGrid<PointT> filter;
+			filter.setLeafSize(voxelSize, voxelSize, voxelSize);
+			filter.setInputCloud(cloud);
+			if(!indices->empty())
 			{
-				pcl::IndicesPtr black_indices(new pcl::Indices);
-				pcl::IndicesPtr colored_indices(new pcl::Indices);
-				pcl::IndicesPtr cloud_indices;
-				if (indices->empty())
-				{
-					cloud_indices.reset(new pcl::Indices());
-					for (int i = 0; i < cloud->size(); i++)
-					{
-						cloud_indices->push_back(i);
-					}
-				}
-				else
-				{
-					cloud_indices = indices;
-				}
-				for (int i : *cloud_indices)
-				{
-					unsigned char r = cloud->points[i].r;
-					unsigned char g = cloud->points[i].g;
-					unsigned char b = cloud->points[i].b;
-					if (r == 0 && g == 0 && b == 0)
-					{
-						black_indices->push_back(i);
-					}
-					else
-					{
-						colored_indices->push_back(i);
-					}
-				}
-
-				pcl::VoxelGrid<PointT> filter;
-				filter.setLeafSize(voxelSize, voxelSize, voxelSize);
-
-				pcl::PointCloud<PointT> black_cloud_filtered;
-				filter.setInputCloud(cloud);
-				filter.setIndices(black_indices);
-				filter.filter(black_cloud_filtered);
-
-				pcl::PointCloud<PointT> colored_cloud_filtered;
-				filter.setInputCloud(cloud);
-				filter.setIndices(colored_indices);
-				filter.filter(colored_cloud_filtered);
-
-				*output = colored_cloud_filtered + black_cloud_filtered;
+				filter.setIndices(indices);
 			}
-			else
-			{
-				pcl::VoxelGrid<PointT> filter;
-				filter.setLeafSize(voxelSize, voxelSize, voxelSize);
-				filter.setInputCloud(cloud);
-				if(!indices->empty())
-				{
-					filter.setIndices(indices);
-				}
-				filter.filter(*output);
-			}
+			filter.filter(*output);
 		}
 	}
 	else if(cloud->size() && !cloud->is_dense && indices->size() == 0)

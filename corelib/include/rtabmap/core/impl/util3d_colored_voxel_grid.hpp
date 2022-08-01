@@ -46,6 +46,113 @@
 namespace rtabmap{
 namespace util3d{
 
+struct AccumulatorRGBA
+{
+  // Requires that point type has rgb or rgba field
+  using IsCompatible = pcl::traits::has_color<boost::mpl::_1>;
+
+  // Storage
+  std::uint8_t r = 0, g = 0, b = 0, a = 0;
+  int brightness = 0;
+
+  template <typename PointT> void
+  add (const PointT& t)
+  {
+    if (t.r + t.g + t.b > brightness)
+    {
+      r = t.r;
+      g = t.g;
+      b = t.b;
+      a = t.a;
+      brightness = r + g + b;
+    }
+  }
+
+  template <typename PointT> void
+  get (PointT& t, std::size_t n) const
+  {
+    t.rgba = static_cast<std::uint32_t>(a) << 24 |
+             static_cast<std::uint32_t>(r) << 16 |
+             static_cast<std::uint32_t>(g) <<  8 |
+             static_cast<std::uint32_t>(b);
+  }
+};
+
+template <typename PointT>
+struct Accumulators
+{
+  using type =
+    typename boost::fusion::result_of::as_vector<
+      typename boost::mpl::filter_view<
+        boost::mpl::vector<
+          pcl::detail::AccumulatorXYZ
+        , pcl::detail::AccumulatorNormal
+        , pcl::detail::AccumulatorCurvature
+        , AccumulatorRGBA
+        , pcl::detail::AccumulatorIntensity
+        , pcl::detail::AccumulatorLabel
+        >
+      , pcl::detail::IsAccumulatorCompatible<PointT>
+      >
+    >::type;
+};
+
+template <typename PointT>
+class CentroidPoint
+{
+  public:
+
+    CentroidPoint () = default;
+
+    /** Add a new point to the centroid computation.
+      *
+      * In this function only the accumulators and point counter are updated,
+      * actual centroid computation does not happen until get() is called. */
+    void
+    add (const PointT& point)
+    {
+      // Invoke add point on each accumulator
+      boost::fusion::for_each (accumulators_, pcl::detail::AddPoint<PointT> (point));
+      ++num_points_;
+    }
+
+    /** Retrieve the current centroid.
+      *
+      * Computation (division of accumulated values by the number of points
+      * and normalization where applicable) happens here. The result is not
+      * cached, so any subsequent call to this function will trigger
+      * re-computation.
+      *
+      * If the number of accumulated points is zero, then the point will be
+      * left untouched. */
+    template <typename PointOutT> void
+    get (PointOutT& point) const
+    {
+      if (num_points_ != 0)
+      {
+        // Filter accumulators so that only those that are compatible with
+        // both PointT and requested point type remain
+        auto ca = boost::fusion::filter_if<pcl::detail::IsAccumulatorCompatible<PointT, PointOutT>> (accumulators_);
+        // Invoke get point on each accumulator in filtered list
+        boost::fusion::for_each (ca, pcl::detail::GetPoint<PointOutT> (point, num_points_));
+      }
+    }
+
+    /** Get the total number of points that were added. */
+    inline std::size_t
+    getSize () const
+    {
+      return (num_points_);
+    }
+
+    PCL_MAKE_ALIGNED_OPERATOR_NEW
+
+  private:
+
+    std::size_t num_points_ = 0;
+    typename Accumulators<PointT>::type accumulators_;
+};
+
 struct cloud_point_index_idx 
 {
   unsigned int idx;
@@ -262,7 +369,7 @@ ColoredVoxelGrid<PointT>::applyFilter (PointCloud &output)
     }
     else
     {
-      pcl::CentroidPoint<PointT> centroid;
+      CentroidPoint<PointT> centroid;
 
       // fill in the accumulator with leaf points
       for (unsigned int li = first_index; li < last_index; ++li)
