@@ -52,29 +52,24 @@ struct AccumulatorRGBA
   using IsCompatible = pcl::traits::has_color<boost::mpl::_1>;
 
   // Storage
-  std::uint8_t r = 0, g = 0, b = 0, a = 0;
-  int brightness = 0;
+  std::uint32_t rgba = 0;
+  int max_brightness = -1;
 
   template <typename PointT> void
   add (const PointT& t)
   {
-    if (t.r + t.g + t.b > brightness)
+    int brightness = (int)t.r + (int)t.g + (int)t.b;
+    if (brightness > max_brightness)
     {
-      r = t.r;
-      g = t.g;
-      b = t.b;
-      a = t.a;
-      brightness = r + g + b;
+      rgba = t.rgba;
+      max_brightness = brightness;
     }
   }
 
   template <typename PointT> void
   get (PointT& t, std::size_t n) const
   {
-    t.rgba = static_cast<std::uint32_t>(a) << 24 |
-             static_cast<std::uint32_t>(r) << 16 |
-             static_cast<std::uint32_t>(g) <<  8 |
-             static_cast<std::uint32_t>(b);
+    t.rgba = rgba;
   }
 };
 
