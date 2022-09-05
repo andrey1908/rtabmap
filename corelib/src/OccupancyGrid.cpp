@@ -345,7 +345,7 @@ void OccupancyGrid::createLocalMap(
 #endif
 				if(cloudMinDepth_ > 0.0f || maxRange > 0.0f)
 				{
-					scan = util3d::rangeFiltering(scan, cloudMinDepth_, maxRange);
+					scan = util3d::rangeFiltering(scan, cloudMinDepth_, 0);
 				}
 
 				// update viewpoint
