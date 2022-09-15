@@ -130,6 +130,11 @@ public:
 	Eigen::Affine3f toEigen3f() const;
 	Eigen::Affine3d toEigen3d() const;
 
+	Eigen::Matrix3f toEigen3fRotation() const;
+	Eigen::Matrix3d toEigen3dRotation() const;
+	Eigen::Vector3f toEigen3fTranslation() const;
+	Eigen::Vector3d toEigen3dTranslation() const;
+
 	Eigen::Quaternionf getQuaternionf() const;
 	Eigen::Quaterniond getQuaterniond() const;
 

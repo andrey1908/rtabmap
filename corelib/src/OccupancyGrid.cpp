@@ -223,35 +223,31 @@ void OccupancyGrid::parseParameters(const ParametersMap & parameters)
 
 void OccupancyGrid::setMap(const cv::Mat & map, float xMin, float yMin, float cellSize, const std::map<int, Transform> & poses)
 {
-	UDEBUG("map=%d/%d xMin=%f yMin=%f cellSize=%f poses=%d",
-			map.cols, map.rows, xMin, yMin, cellSize, (int)poses.size());
-	this->clear();
+	clear();
 	if(!poses.empty() && !map.empty())
 	{
 		UASSERT(cellSize > 0.0f);
-		UASSERT(map.type() == CV_8SC1);
+		UASSERT(map.type() == CV_32FC1);
 		map_ = map.clone();
-		mapInfo_ = cv::Mat::zeros(map.size(), CV_32FC4);
 		for(int i=0; i<map_.rows; ++i)
 		{
 			for(int j=0; j<map_.cols; ++j)
 			{
-				const char value = map_.at<char>(i,j);
-				float * info = mapInfo_.ptr<float>(i,j);
-				if(value == 0)
+				float & logodds = map_.at<float>(i,j);;
+				if (logodds < probClampingMin_)
 				{
-					info[3] = probClampingMin_;
+					logodds = probClampingMin_;
 				}
-				else if(value == 100)
+				if (logodds > probClampingMax_)
 				{
-					info[3] = probClampingMax_;
+					logodds = probClampingMax_;
 				}
 			}
 		}
 		xMin_ = xMin;
 		yMin_ = yMin;
 		cellSize_ = cellSize;
-		addedNodes_.insert(poses.lower_bound(1), poses.end());
+		addedPoses_.insert(poses.begin(), poses.end());
 	}
 
 	colors_ = cv::Mat::zeros(map_.size(), CV_8UC3);
@@ -595,14 +591,12 @@ void OccupancyGrid::createLocalMap(
 
 void OccupancyGrid::clear()
 {
-	cache_.clear();
+	localMaps_.clear();
 	map_ = cv::Mat();
-	mapInfo_ = cv::Mat();
 	colors_ = cv::Mat();
-	cellCount_.clear();
 	xMin_ = 0.0f;
 	yMin_ = 0.0f;
-	addedNodes_.clear();
+	addedPoses_.clear();
 	assembledGround_->clear();
 	assembledObstacles_->clear();
 }
@@ -612,24 +606,23 @@ cv::Mat OccupancyGrid::getMap(float & xMin, float & yMin) const
 	xMin = xMin_;
 	yMin = yMin_;
 
-	cv::Mat map = map_;
+	cv::Mat map;
 
 	UTimer t;
-	if(occupancyThr_ != 0.0f && !map.empty())
+	if(occupancyThr_ != 0.0f && !map_.empty())
 	{
 		float occThr = logodds(occupancyThr_);
-		map = cv::Mat(map.size(), map.type());
-		UASSERT(mapInfo_.cols == map.cols && mapInfo_.rows == map.rows);
+		map = cv::Mat(map_.size(), CV_8SC1);
 		for(int i=0; i<map.rows; ++i)
 		{
 			for(int j=0; j<map.cols; ++j)
 			{
-				const float * info = mapInfo_.ptr<float>(i, j);
-				if(info[3] == 0.0f)
+				float logodds = map_.at<float>(i, j);
+				if(logodds == 0.0f)
 				{
 					map.at<char>(i, j) = -1; // unknown
 				}
-				else if(info[3] >= occThr)
+				else if(logodds >= occThr)
 				{
 					map.at<char>(i, j) = 100; // unknown
 				}
@@ -639,13 +632,11 @@ cv::Mat OccupancyGrid::getMap(float & xMin, float & yMin) const
 				}
 			}
 		}
-		UDEBUG("Converting map from probabilities (thr=%f) = %fs", occupancyThr_, t.ticks());
 	}
 
 	if(erode_ && !map.empty())
 	{
 		map = util3d::erodeMap(map);
-		UDEBUG("Eroding map = %fs", t.ticks());
 	}
 	return map;
 }
@@ -656,28 +647,27 @@ cv::Mat OccupancyGrid::getProbMap(float & xMin, float & yMin) const
 	yMin = yMin_;
 
 	cv::Mat map;
-	if(!mapInfo_.empty())
+
+	UTimer t;
+	if(occupancyThr_ != 0.0f && !map.empty())
 	{
-		map = cv::Mat(mapInfo_.size(), map_.type());
+		float occThr = logodds(occupancyThr_);
+		map = cv::Mat(map.size(), CV_8SC1);
 		for(int i=0; i<map.rows; ++i)
 		{
 			for(int j=0; j<map.cols; ++j)
 			{
-				const float * info = mapInfo_.ptr<float>(i, j);
-				if(info[3] == 0.0f)
+				float logodds = map_.at<float>(i, j);
+				if(logodds == 0.0f)
 				{
 					map.at<char>(i, j) = -1; // unknown
 				}
-				else
+				else if(logodds >= occThr)
 				{
-					map.at<char>(i, j) = char(probability(info[3])*100.0f); // empty
+					map.at<char>(i, j) = probability(logodds);
 				}
 			}
 		}
-	}
-	else
-	{
-		UWARN("Map info is empty, cannot generate probabilistic occupancy grid");
 	}
 	return map;
 }
@@ -705,935 +695,355 @@ void OccupancyGrid::addToCache(
 		const cv::Mat & obstacles,
 		const cv::Mat & empty)
 {
-	UDEBUG("nodeId=%d", nodeId);
-	if(nodeId < 0)
+	OccupancyGrid::LocalMap localMap;
+	localMap.points.resize(3, ground.cols + empty.cols + obstacles.cols);
+	localMap.colors.reserve(ground.cols + empty.cols + obstacles.cols);
+	int shift = 0;
+
+	for (int i = 0; i < ground.cols; i++)
 	{
-		UWARN("Cannot add nodes with negative id (nodeId=%d)", nodeId);
-		return;
+		const float * point = ground.ptr<float>(0, i);
+		localMap.points(0, i) = point[0];
+		localMap.points(1, i) = point[1];
+		localMap.points(2, i) = 0;
+		if (ground.channels() == 2)
+		{
+			localMap.colors.push_back(-1);
+		}
+		else
+		{
+			localMap.colors.push_back(*(int*)(point + 2));
+		}
 	}
-	uInsert(cache_, std::make_pair(nodeId==0?-1:nodeId, std::make_pair(std::make_pair(ground, obstacles), empty)));
+	localMap.num_ground = ground.cols;
+
+	shift = localMap.num_ground;
+	for (int i = 0; i < empty.cols; i++)
+	{
+		const float * point = empty.ptr<float>(0, i);
+		localMap.points(0, i + shift) = point[0];
+		localMap.points(1, i + shift) = point[1];
+		localMap.points(2, i + shift) = 0;
+		if (ground.channels() == 2)
+		{
+			localMap.colors.push_back(-1);
+		}
+		else
+		{
+			localMap.colors.push_back(*(int*)(point + 2));
+		}
+	}
+	localMap.num_empty = empty.cols;
+
+	shift = localMap.num_ground + localMap.num_empty;
+	for (int i = 0; i < obstacles.cols; i++)
+	{
+		const float * point = obstacles.ptr<float>(0, i);
+		localMap.points(0, i + shift) = point[0];
+		localMap.points(1, i + shift) = point[1];
+		localMap.points(2, i + shift) = 0;
+		if (ground.channels() == 2)
+		{
+			localMap.colors.push_back(-1);
+		}
+		else
+		{
+			localMap.colors.push_back(*(int*)(point + 2));
+		}
+	}
+	localMap.num_obstacles = obstacles.cols;
+
+	localMaps_[nodeId] = std::move(localMap);
 }
 
-bool OccupancyGrid::update(const std::map<int, Transform> & posesIn)
+bool OccupancyGrid::update(const std::map<int, Transform> & poses)
 {
 	UTimer timer;
-	UDEBUG("Update (poses=%d addedNodes_=%d)", (int)posesIn.size(), (int)addedNodes_.size());
 
-	float margin = cellSize_*10.0f+(footprintRadius_>cellSize_*1.5f?float(int(footprintRadius_/cellSize_)+1):0.0f)*cellSize_;
+	bool graphChanged = checkIfGraphChanged(poses);
 
-	float minX=-minMapSize_/2.0f;
-	float minY=-minMapSize_/2.0f;
-	float maxX=minMapSize_/2.0f;
-	float maxY=minMapSize_/2.0f;
-	bool undefinedSize = minMapSize_ == 0.0f;
-	std::map<int, cv::Mat> emptyLocalMaps;
-	std::map<int, cv::Mat> occupiedLocalMaps;
-
-	// First, check of the graph has changed. If so, re-create the map by moving all occupied nodes (fullUpdate==false).
-	bool graphOptimized = false; // If a loop closure happened (e.g., poses are modified)
-	bool graphChanged = !addedNodes_.empty(); // If the new map doesn't have any node from the previous map
-	std::map<int, Transform> transforms;
-	float updateErrorSqrd = updateError_*updateError_;
-	for(std::map<int, Transform>::iterator iter=addedNodes_.begin(); iter!=addedNodes_.end(); ++iter)
+	if(graphChanged)
 	{
-		std::map<int, Transform>::const_iterator jter = posesIn.find(iter->first);
-		if(jter != posesIn.end())
-		{
-			graphChanged = false;
+		map_ = cv::Mat();
+		addedPoses_.clear();
+	}
 
-			UASSERT(!iter->second.isNull() && !jter->second.isNull());
-			Transform t = Transform::getIdentity();
+	std::vector<int> newNodeIds;
+	newNodeIds.reserve(poses.size() - addedPoses_.size());
+	auto from = poses.begin();
+	if(!addedPoses_.empty())
+	{
+		from = poses.lower_bound(addedPoses_.rbegin()->first + 1);
+	}
+	for(auto iter=from; iter!=poses.end(); ++iter)
+	{
+		newNodeIds.push_back(iter->first);
+		addedPoses_.insert(*iter);
+	}
+
+	auto newTransformedLocalMaps = transformLocalMaps(newNodeIds);
+
+	float xMin, yMin, xMax, yMax;
+	getNewMapSize(newTransformedLocalMaps, xMin, yMin, xMax, yMax);
+	if(xMin != xMax && yMin != yMax)
+	{
+		createOrExtendMapIfNeeded(xMin, yMin, xMax, yMax);
+		for(auto newNodeId : newNodeIds)
+		{
+			deployTransformedLocalMap(newTransformedLocalMaps.at(newNodeId), localMaps_.at(newNodeId).colors);
+		}
+	}
+
+	return graphChanged;
+}
+
+bool OccupancyGrid::checkIfGraphChanged(const std::map<int, Transform> & poses)
+{
+	if(addedPoses_.empty())
+	{
+		return false;
+	}
+
+	bool graphChanged = false;
+	float updateErrorSqrd = updateError_ * updateError_;
+	int posesCounter = 0;
+	for(auto iter=addedPoses_.begin(); iter!=addedPoses_.end(); ++iter)
+	{
+		auto jter = poses.find(iter->first);
+		if(jter != poses.end())
+		{
 			if(iter->second.getDistanceSquared(jter->second) > updateErrorSqrd)
 			{
-				t = jter->second * iter->second.inverse();
-				graphOptimized = true;
-			}
-			transforms.insert(std::make_pair(jter->first, t));
-
-			float x = jter->second.x();
-			float y  =jter->second.y();
-			if(undefinedSize)
-			{
-				minX = maxX = x;
-				minY = maxY = y;
-				undefinedSize = false;
-			}
-			else
-			{
-				if(minX > x)
-					minX = x;
-				else if(maxX < x)
-					maxX = x;
-
-				if(minY > y)
-					minY = y;
-				else if(maxY < y)
-					maxY = y;
-			}
-		}
-		else
-		{
-			UDEBUG("Updated pose for node %d is not found, some points may not be copied if graph has changed.", iter->first);
-		}
-	}
-
-	bool assembledGroundUpdated = false;
-	bool assembledObstaclesUpdated = false;
-	bool assembledEmptyCellsUpdated = false;
-
-	if(graphOptimized || graphChanged)
-	{
-		if(graphChanged)
-		{
-			UWARN("Graph has changed! The whole map should be rebuilt.");
-		}
-		else
-		{
-			UINFO("Graph optimized!");
-		}
-
-		if(cloudAssembling_)
-		{
-			assembledGround_->clear();
-			assembledObstacles_->clear();
-		}
-
-		if(!fullUpdate_ && !graphChanged && !map_.empty()) // incremental, just move cells
-		{
-			// 1) recreate all local maps
-			UASSERT(map_.cols == mapInfo_.cols &&
-					map_.rows == mapInfo_.rows);
-			std::map<int, std::pair<int, int> > tmpIndices;
-			for(std::map<int, std::pair<int, int> >::iterator iter=cellCount_.begin(); iter!=cellCount_.end(); ++iter)
-			{
-				if(!uContains(cache_, iter->first) && transforms.find(iter->first) != transforms.end())
-				{
-					if(iter->second.first)
-					{
-						emptyLocalMaps.insert(std::make_pair( iter->first, cv::Mat(1, iter->second.first, CV_32FC2)));
-					}
-					if(iter->second.second)
-					{
-						occupiedLocalMaps.insert(std::make_pair( iter->first, cv::Mat(1, iter->second.second, CV_32FC2)));
-					}
-					tmpIndices.insert(std::make_pair(iter->first, std::make_pair(0,0)));
-				}
-			}
-			for(int y=0; y<map_.rows; ++y)
-			{
-				for(int x=0; x<map_.cols; ++x)
-				{
-					float * info = mapInfo_.ptr<float>(y,x);
-					int nodeId = (int)info[0];
-					if(nodeId > 0 && map_.at<char>(y,x) >= 0)
-					{
-						if(tmpIndices.find(nodeId)!=tmpIndices.end())
-						{
-							std::map<int, Transform>::iterator tter = transforms.find(nodeId);
-							UASSERT(tter != transforms.end());
-
-							cv::Point3f pt(info[1], info[2], 0.0f);
-							pt = util3d::transformPoint(pt, tter->second);
-
-							if(minX > pt.x)
-								minX = pt.x;
-							else if(maxX < pt.x)
-								maxX = pt.x;
-
-							if(minY > pt.y)
-								minY = pt.y;
-							else if(maxY < pt.y)
-								maxY = pt.y;
-
-							std::map<int, std::pair<int, int> >::iterator jter = tmpIndices.find(nodeId);
-							if(map_.at<char>(y, x) == 0)
-							{
-								// ground
-								std::map<int, cv::Mat>::iterator iter = emptyLocalMaps.find(nodeId);
-								UASSERT(iter != emptyLocalMaps.end());
-								UASSERT(jter->second.first < iter->second.cols);
-								float * ptf = iter->second.ptr<float>(0,jter->second.first++);
-								ptf[0] = pt.x;
-								ptf[1] = pt.y;
-							}
-							else
-							{
-								// obstacle
-								std::map<int, cv::Mat>::iterator iter = occupiedLocalMaps.find(nodeId);
-								UASSERT(iter != occupiedLocalMaps.end());
-								UASSERT(iter!=occupiedLocalMaps.end());
-								UASSERT(jter->second.second < iter->second.cols);
-								float * ptf = iter->second.ptr<float>(0,jter->second.second++);
-								ptf[0] = pt.x;
-								ptf[1] = pt.y;
-							}
-						}
-					}
-					else if(nodeId > 0)
-					{
-						UERROR("Cell referred b node %d is unknown!?", nodeId);
-					}
-				}
-			}
-
-			//verify if all cells were added
-			for(std::map<int, std::pair<int, int> >::iterator iter=tmpIndices.begin(); iter!=tmpIndices.end(); ++iter)
-			{
-				std::map<int, cv::Mat>::iterator jter = emptyLocalMaps.find(iter->first);
-				UASSERT_MSG((iter->second.first == 0 && (jter==emptyLocalMaps.end() || jter->second.empty())) ||
-						(iter->second.first != 0 && jter!=emptyLocalMaps.end() && jter->second.cols == iter->second.first),
-						uFormat("iter->second.first=%d jter->second.cols=%d", iter->second.first, jter!=emptyLocalMaps.end()?jter->second.cols:-1).c_str());
-				jter = occupiedLocalMaps.find(iter->first);
-				UASSERT_MSG((iter->second.second == 0 && (jter==occupiedLocalMaps.end() || jter->second.empty())) ||
-						(iter->second.second != 0 && jter!=occupiedLocalMaps.end() && jter->second.cols == iter->second.second),
-						uFormat("iter->second.first=%d jter->second.cols=%d", iter->second.first, jter!=emptyLocalMaps.end()?jter->second.cols:-1).c_str());
-			}
-
-			UDEBUG("min (%f,%f) max(%f,%f)", minX, minY, maxX, maxY);
-		}
-
-		addedNodes_.clear();
-		map_ = cv::Mat();
-		mapInfo_ = cv::Mat();
-		cellCount_.clear();
-		xMin_ = 0.0f;
-		yMin_ = 0.0f;
-	}
-	else if(!map_.empty())
-	{
-		// update
-		minX=xMin_+margin+cellSize_/2.0f;
-		minY=yMin_+margin+cellSize_/2.0f;
-		maxX=xMin_+float(map_.cols)*cellSize_ - margin;
-		maxY=yMin_+float(map_.rows)*cellSize_ - margin;
-		undefinedSize = false;
-	}
-
-	bool incrementalGraphUpdate = graphOptimized && !fullUpdate_ && !graphChanged;
-
-	std::list<std::pair<int, Transform> > poses;
-	int lastId = addedNodes_.size()?addedNodes_.rbegin()->first:0;
-	UDEBUG("Last id = %d", lastId);
-
-	// add old poses that were not in the current map (they were just retrieved from LTM)
-	for(std::map<int, Transform>::const_iterator iter=posesIn.lower_bound(1); iter!=posesIn.end(); ++iter)
-	{
-		if(addedNodes_.find(iter->first) == addedNodes_.end())
-		{
-			UDEBUG("Pose %d not found in current added poses, it will be added to map", iter->first);
-			poses.push_back(*iter);
-		}
-	}
-
-	// insert zero after
-	if(posesIn.find(0) != posesIn.end())
-	{
-		poses.push_back(std::make_pair(-1, posesIn.at(0)));
-	}
-
-	if(!poses.empty())
-	{
-		for(std::list<std::pair<int, Transform> >::const_iterator iter = poses.begin(); iter!=poses.end(); ++iter)
-		{
-			UASSERT(!iter->second.isNull());
-
-			float x = iter->second.x();
-			float y  =iter->second.y();
-			if(undefinedSize)
-			{
-				minX = maxX = x;
-				minY = maxY = y;
-				undefinedSize = false;
-			}
-			else
-			{
-				if(minX > x)
-					minX = x;
-				else if(maxX < x)
-					maxX = x;
-
-				if(minY > y)
-					minY = y;
-				else if(maxY < y)
-					maxY = y;
-			}
-		}
-
-		if(!cache_.empty())
-		{
-			for(std::list<std::pair<int, Transform> >::const_iterator iter = poses.begin(); iter!=poses.end(); ++iter)
-			{
-				if(uContains(cache_, iter->first))
-				{
-					const std::pair<std::pair<cv::Mat, cv::Mat>, cv::Mat> & pair = cache_.at(iter->first);
-
-					UDEBUG("Adding grid %d: ground=%d obstacles=%d empty=%d", iter->first, pair.first.first.cols, pair.first.second.cols, pair.second.cols);
-
-					//ground
-					if(pair.first.first.cols)
-					{
-						if(pair.first.first.rows > 1 && pair.first.first.cols == 1)
-						{
-							UFATAL("Occupancy local maps should be 1 row and X cols! (rows=%d cols=%d)", pair.first.first.rows, pair.first.first.cols);
-						}
-						cv::Mat ground(1, pair.first.first.cols, CV_32FC3);
-						for(int i=0; i<ground.cols; ++i)
-						{
-							const float * vi = pair.first.first.ptr<float>(0,i);
-							float * vo = ground.ptr<float>(0,i);
-							cv::Point3f vt;
-							if(false && pair.first.first.channels() != 2 && pair.first.first.channels() != 5)
-							{
-								vt = util3d::transformPoint(cv::Point3f(vi[0], vi[1], vi[2]), iter->second);
-							}
-							else
-							{
-								vt = util3d::transformPoint(cv::Point3f(vi[0], vi[1], 0), iter->second);
-							}
-							vo[0] = vt.x;
-							vo[1] = vt.y;
-							if (pair.first.first.channels() == 3)
-								vo[2] = vi[2];
-							else
-								*(int*)(vo + 2) = 0;
-							if(minX > vo[0])
-								minX = vo[0];
-							else if(maxX < vo[0])
-								maxX = vo[0];
-
-							if(minY > vo[1])
-								minY = vo[1];
-							else if(maxY < vo[1])
-								maxY = vo[1];
-						}
-						uInsert(emptyLocalMaps, std::make_pair(iter->first, ground));
-
-						if(cloudAssembling_)
-						{
-							*assembledGround_ += *util3d::laserScanToPointCloudRGB(LaserScan::backwardCompatibility(pair.first.first), iter->second, 0, 255, 0);
-							assembledGroundUpdated = true;
-						}
-					}
-
-					//empty
-					if(pair.second.cols)
-					{
-						if(pair.second.rows > 1 && pair.second.cols == 1)
-						{
-							UFATAL("Occupancy local maps should be 1 row and X cols! (rows=%d cols=%d)", pair.second.rows, pair.second.cols);
-						}
-						cv::Mat ground(1, pair.second.cols, CV_32FC3);
-						for(int i=0; i<ground.cols; ++i)
-						{
-							const float * vi = pair.second.ptr<float>(0,i);
-							float * vo = ground.ptr<float>(0,i);
-							cv::Point3f vt;
-							if(false && pair.second.channels() != 2 && pair.second.channels() != 5)
-							{
-								vt = util3d::transformPoint(cv::Point3f(vi[0], vi[1], vi[2]), iter->second);
-							}
-							else
-							{
-								vt = util3d::transformPoint(cv::Point3f(vi[0], vi[1], 0), iter->second);
-							}
-							vo[0] = vt.x;
-							vo[1] = vt.y;
-							if (pair.second.channels() == 3)
-								vo[2] = vi[2];
-							else
-								*(int*)(vo + 2) = 0;
-							if(minX > vo[0])
-								minX = vo[0];
-							else if(maxX < vo[0])
-								maxX = vo[0];
-
-							if(minY > vo[1])
-								minY = vo[1];
-							else if(maxY < vo[1])
-								maxY = vo[1];
-						}
-						uInsert(emptyLocalMaps, std::make_pair(iter->first, ground));
-
-						if(cloudAssembling_)
-						{
-							*assembledEmptyCells_ += *util3d::laserScanToPointCloudRGB(LaserScan::backwardCompatibility(pair.second), iter->second, 0, 255, 0);
-							assembledEmptyCellsUpdated = true;
-						}
-					}
-
-					//obstacles
-					if(pair.first.second.cols)
-					{
-						if(pair.first.second.rows > 1 && pair.first.second.cols == 1)
-						{
-							UFATAL("Occupancy local maps should be 1 row and X cols! (rows=%d cols=%d)", pair.first.second.rows, pair.first.second.cols);
-						}
-						cv::Mat obstacles(1, pair.first.second.cols, CV_32FC3);
-						for(int i=0; i<obstacles.cols; ++i)
-						{
-							const float * vi = pair.first.second.ptr<float>(0,i);
-							float * vo = obstacles.ptr<float>(0,i);
-							cv::Point3f vt;
-							if(false && pair.first.second.channels() != 2 && pair.first.second.channels() != 5)
-							{
-								vt = util3d::transformPoint(cv::Point3f(vi[0], vi[1], vi[2]), iter->second);
-							}
-							else
-							{
-								vt = util3d::transformPoint(cv::Point3f(vi[0], vi[1], 0), iter->second);
-							}
-							vo[0] = vt.x;
-							vo[1] = vt.y;
-							if (pair.first.second.channels() == 3)
-								vo[2] = vi[2];
-							else
-								*(int*)(vo + 2) = 0;
-							if(minX > vo[0])
-								minX = vo[0];
-							else if(maxX < vo[0])
-								maxX = vo[0];
-
-							if(minY > vo[1])
-								minY = vo[1];
-							else if(maxY < vo[1])
-								maxY = vo[1];
-						}
-						uInsert(occupiedLocalMaps, std::make_pair(iter->first, obstacles));
-
-						if(cloudAssembling_)
-						{
-							cv::Mat obstacles = pair.first.second.clone();
-							if (obstacles.channels() == 3)
-							{
-								std::vector<cv::Mat> channels;
-								cv::split(obstacles, channels);
-								cv::Mat zero_z = cv::Mat::zeros(obstacles.rows, obstacles.cols, CV_32F);
-								channels.insert(channels.begin() + 2, zero_z);
-								cv::merge(channels, obstacles);
-							}
-							*assembledObstacles_ += *util3d::laserScanToPointCloudRGB(LaserScan::backwardCompatibility(obstacles), iter->second, 255, 0, 0);
-							assembledObstaclesUpdated = true;
-						}
-					}
-				}
-			}
-		}
-
-		cv::Mat map;
-		cv::Mat mapInfo;
-		cv::Mat colors;
-		if(minX != maxX && minY != maxY)
-		{
-			//Get map size
-			float xMin = minX-margin;
-			xMin -= cellSize_/2.0f;
-			float yMin = minY-margin;
-			yMin -= cellSize_/2.0f;
-			float xMax = maxX+margin;
-			float yMax = maxY+margin;
-
-			if(fabs((yMax - yMin) / cellSize_) > 99999 ||
-			   fabs((xMax - xMin) / cellSize_) > 99999)
-			{
-				UERROR("Large map size!! map min=(%f, %f) max=(%f,%f). "
-						"There's maybe an error with the poses provided! The map will not be created!",
-						xMin, yMin, xMax, yMax);
-			}
-			else
-			{
-				UDEBUG("map min=(%f, %f) odlMin(%f,%f) max=(%f,%f)", xMin, yMin, xMin_, yMin_, xMax, yMax);
-				cv::Size newMapSize((xMax - xMin) / cellSize_+0.5f, (yMax - yMin) / cellSize_+0.5f);
-				if(map_.empty())
-				{
-					UDEBUG("Map empty!");
-					map = cv::Mat::ones(newMapSize, CV_8S)*-1;
-					mapInfo = cv::Mat::zeros(newMapSize, CV_32FC4);
-					colors = cv::Mat::zeros(newMapSize, CV_8UC3);
-				}
-				else
-				{
-					if(xMin == xMin_ && yMin == yMin_ &&
-							newMapSize.width == map_.cols &&
-							newMapSize.height == map_.rows)
-					{
-						// same map size and origin, don't do anything
-						UDEBUG("Map same size!");
-						map = map_;
-						mapInfo = mapInfo_;
-						colors = colors_;
-					}
-					else
-					{
-						UASSERT_MSG(xMin <= xMin_+cellSize_/2, uFormat("xMin=%f, xMin_=%f, cellSize_=%f", xMin, xMin_, cellSize_).c_str());
-						UASSERT_MSG(yMin <= yMin_+cellSize_/2, uFormat("yMin=%f, yMin_=%f, cellSize_=%f", yMin, yMin_, cellSize_).c_str());
-						UASSERT_MSG(xMax >= xMin_+float(map_.cols)*cellSize_ - cellSize_/2, uFormat("xMin=%f, xMin_=%f, cols=%d cellSize_=%f", xMin, xMin_, map_.cols, cellSize_).c_str());
-						UASSERT_MSG(yMax >= yMin_+float(map_.rows)*cellSize_ - cellSize_/2, uFormat("yMin=%f, yMin_=%f, cols=%d cellSize_=%f", yMin, yMin_, map_.rows, cellSize_).c_str());
-
-						UDEBUG("Copy map");
-						// copy the old map in the new map
-						// make sure the translation is cellSize
-						int deltaX = 0;
-						if(xMin < xMin_)
-						{
-							deltaX = (xMin_ - xMin) / cellSize_ + 1.0f;
-							xMin = xMin_-float(deltaX)*cellSize_;
-						}
-						int deltaY = 0;
-						if(yMin < yMin_)
-						{
-							deltaY = (yMin_ - yMin) / cellSize_ + 1.0f;
-							yMin = yMin_-float(deltaY)*cellSize_;
-						}
-						UDEBUG("deltaX=%d, deltaY=%d", deltaX, deltaY);
-						newMapSize.width = (xMax - xMin) / cellSize_+0.5f;
-						newMapSize.height = (yMax - yMin) / cellSize_+0.5f;
-						UDEBUG("%d/%d -> %d/%d", map_.cols, map_.rows, newMapSize.width, newMapSize.height);
-						UASSERT(newMapSize.width >= map_.cols && newMapSize.height >= map_.rows);
-						UASSERT(newMapSize.width >= map_.cols+deltaX && newMapSize.height >= map_.rows+deltaY);
-						UASSERT(deltaX>=0 && deltaY>=0);
-						map = cv::Mat::ones(newMapSize, CV_8S)*-1;
-						mapInfo = cv::Mat::zeros(newMapSize, mapInfo_.type());
-						colors = cv::Mat::zeros(newMapSize, CV_8UC3);
-						map_.copyTo(map(cv::Rect(deltaX, deltaY, map_.cols, map_.rows)));
-						mapInfo_.copyTo(mapInfo(cv::Rect(deltaX, deltaY, map_.cols, map_.rows)));
-						colors_.copyTo(colors(cv::Rect(deltaX, deltaY, map_.cols, map_.rows)));
-					}
-				}
-				UASSERT(map.cols == mapInfo.cols && map.rows == mapInfo.rows);
-				UDEBUG("map %d %d", map.cols, map.rows);
-				if(poses.size())
-				{
-					UDEBUG("first pose= %d last pose=%d", poses.begin()->first, poses.rbegin()->first);
-				}
-				for(std::list<std::pair<int, Transform> >::const_iterator kter = poses.begin(); kter!=poses.end(); ++kter)
-				{
-					if(kter->first > 0)
-					{
-						uInsert(addedNodes_, *kter);
-					}
-					std::map<int, cv::Mat >::iterator iter = emptyLocalMaps.find(kter->first);
-					std::map<int, cv::Mat >::iterator jter = occupiedLocalMaps.find(kter->first);
-					std::map<int, std::pair<int, int> >::iterator cter = cellCount_.find(kter->first);
-					if(cter == cellCount_.end() && kter->first > 0)
-					{
-						cter = cellCount_.insert(std::make_pair(kter->first, std::pair<int,int>(0,0))).first;
-					}
-					if(iter!=emptyLocalMaps.end())
-					{
-						for(int i=0; i<iter->second.cols; ++i)
-						{
-							float * ptf = iter->second.ptr<float>(0,i);
-							cv::Point2i pt((ptf[0]-xMin)/cellSize_, (ptf[1]-yMin)/cellSize_);
-							UASSERT_MSG(pt.y >=0 && pt.y < map.rows && pt.x >= 0 && pt.x < map.cols,
-									uFormat("%d: pt=(%d,%d) map=%dx%d rawPt=(%f,%f) xMin=%f yMin=%f channels=%dvs%d (graph modified=%d)",
-											kter->first, pt.x, pt.y, map.cols, map.rows, ptf[0], ptf[1], xMin, yMin, iter->second.channels(), mapInfo.channels()-1, (graphOptimized || graphChanged)?1:0).c_str());
-							char & value = map.at<char>(pt.y, pt.x);
-							cv::Vec3b & color = colors.at<cv::Vec3b>(pt.y, pt.x);
-							if(value != -2 && (!incrementalGraphUpdate || value==-1))
-							{
-								float * info = mapInfo.ptr<float>(pt.y, pt.x);
-								int nodeId = (int)info[0];
-								if(value != -1)
-								{
-									if(kter->first > 0 && (kter->first <  nodeId || nodeId < 0))
-									{
-										// cannot rewrite on cells referred by more recent nodes
-										continue;
-									}
-									if(nodeId > 0)
-									{
-										std::map<int, std::pair<int, int> >::iterator eter = cellCount_.find(nodeId);
-										UASSERT_MSG(eter != cellCount_.end(), uFormat("current pose=%d nodeId=%d", kter->first, nodeId).c_str());
-										if(value == 0)
-										{
-											eter->second.first -= 1;
-										}
-										else if(value == 100)
-										{
-											eter->second.second -= 1;
-										}
-										if(kter->first < 0)
-										{
-											eter->second.first += 1;
-										}
-									}
-								}
-								if(kter->first > 0)
-								{
-									info[0] = (float)kter->first;
-									info[1] = ptf[0];
-									info[2] = ptf[1];
-									cter->second.first+=1;
-									int icolor = *(int*)(ptf + 2);
-									if (icolor != 0)
-									{
-										color[0] = (unsigned char)(icolor & 0xFF);
-										color[1] = (unsigned char)((icolor >> 8) & 0xFF);
-										color[2] = (unsigned char)((icolor >> 16) & 0xFF);
-									}
-								}
-								value = 0; // free space
-
-								// update odds
-								if(nodeId != kter->first)
-								{
-									info[3] += probMiss_;
-									if (info[3] < probClampingMin_)
-									{
-										info[3] = probClampingMin_;
-									}
-									if (info[3] > probClampingMax_)
-									{
-										info[3] = probClampingMax_;
-									}
-								}
-							}
-						}
-					}
-
-					if(footprintRadius_ >= cellSize_*1.5f)
-					{
-						// place free space under the footprint of the robot
-						cv::Point2i ptBegin((kter->second.x()-footprintRadius_-xMin)/cellSize_, (kter->second.y()-footprintRadius_-yMin)/cellSize_);
-						cv::Point2i ptEnd((kter->second.x()+footprintRadius_-xMin)/cellSize_, (kter->second.y()+footprintRadius_-yMin)/cellSize_);
-						if(ptBegin.x < 0)
-							ptBegin.x = 0;
-						if(ptEnd.x >= map.cols)
-							ptEnd.x = map.cols-1;
-
-						if(ptBegin.y < 0)
-							ptBegin.y = 0;
-						if(ptEnd.y >= map.rows)
-							ptEnd.y = map.rows-1;
-
-						for(int i=ptBegin.x; i<ptEnd.x; ++i)
-						{
-							for(int j=ptBegin.y; j<ptEnd.y; ++j)
-							{
-								UASSERT(j < map.rows && i < map.cols);
-								char & value = map.at<char>(j, i);
-								float * info = mapInfo.ptr<float>(j, i);
-								int nodeId = (int)info[0];
-								if(value != -1)
-								{
-									if(kter->first > 0 && (kter->first <  nodeId || nodeId < 0))
-									{
-										// cannot rewrite on cells referred by more recent nodes
-										continue;
-									}
-									if(nodeId>0)
-									{
-										std::map<int, std::pair<int, int> >::iterator eter = cellCount_.find(nodeId);
-										UASSERT_MSG(eter != cellCount_.end(), uFormat("current pose=%d nodeId=%d", kter->first, nodeId).c_str());
-										if(value == 0)
-										{
-											eter->second.first -= 1;
-										}
-										else if(value == 100)
-										{
-											eter->second.second -= 1;
-										}
-										if(kter->first < 0)
-										{
-											eter->second.first += 1;
-										}
-									}
-								}
-								if(kter->first > 0)
-								{
-									info[0] = (float)kter->first;
-									info[1] = float(i) * cellSize_ + xMin;
-									info[2] = float(j) * cellSize_ + yMin;
-									info[3] = probClampingMin_;
-									cter->second.first+=1;
-								}
-								value = -2; // free space (footprint)
-							}
-						}
-					}
-
-					if(jter!=occupiedLocalMaps.end())
-					{
-						for(int i=0; i<jter->second.cols; ++i)
-						{
-							float * ptf = jter->second.ptr<float>(0,i);
-							cv::Point2i pt((ptf[0]-xMin)/cellSize_, (ptf[1]-yMin)/cellSize_);
-							UASSERT_MSG(pt.y>=0 && pt.y < map.rows && pt.x>=0 && pt.x < map.cols,
-										uFormat("%d: pt=(%d,%d) map=%dx%d rawPt=(%f,%f) xMin=%f yMin=%f channels=%dvs%d (graph modified=%d)",
-												kter->first, pt.x, pt.y, map.cols, map.rows, ptf[0], ptf[1], xMin, yMin, jter->second.channels(), mapInfo.channels()-1, (graphOptimized || graphChanged)?1:0).c_str());
-							char & value = map.at<char>(pt.y, pt.x);
-							cv::Vec3b & color = colors.at<cv::Vec3b>(pt.y, pt.x);
-							if(value != -2)
-							{
-								float * info = mapInfo.ptr<float>(pt.y, pt.x);
-								int nodeId = (int)info[0];
-								if(value != -1)
-								{
-									if(kter->first > 0 && (kter->first <  nodeId || nodeId < 0))
-									{
-										// cannot rewrite on cells referred by more recent nodes
-										continue;
-									}
-									if(nodeId>0)
-									{
-										std::map<int, std::pair<int, int> >::iterator eter = cellCount_.find(nodeId);
-										UASSERT_MSG(eter != cellCount_.end(), uFormat("current pose=%d nodeId=%d", kter->first, nodeId).c_str());
-										if(value == 0)
-										{
-											eter->second.first -= 1;
-										}
-										else if(value == 100)
-										{
-											eter->second.second -= 1;
-										}
-										if(kter->first < 0)
-										{
-											eter->second.second += 1;
-										}
-									}
-								}
-								if(kter->first > 0)
-								{
-									info[0] = (float)kter->first;
-									info[1] = ptf[0];
-									info[2] = ptf[1];
-									cter->second.second+=1;
-									int icolor = *(int*)(ptf + 2);
-									if (icolor != 0)
-									{
-										color[0] = (unsigned char)(icolor & 0xFF);
-										color[1] = (unsigned char)((icolor >> 8) & 0xFF);
-										color[2] = (unsigned char)((icolor >> 16) & 0xFF);
-									}
-								}
-
-								// update odds
-								if(nodeId != kter->first || value!=100)
-								{
-									info[3] += probHit_;
-									if (info[3] < probClampingMin_)
-									{
-										info[3] = probClampingMin_;
-									}
-									if (info[3] > probClampingMax_)
-									{
-										info[3] = probClampingMax_;
-									}
-								}
-
-								value = 100; // obstacles
-							}
-						}
-					}
-				}
-
-				if(footprintRadius_ >= cellSize_*1.5f || incrementalGraphUpdate)
-				{
-					for(int i=1; i<map.rows-1; ++i)
-					{
-						for(int j=1; j<map.cols-1; ++j)
-						{
-							char & value = map.at<char>(i, j);
-							if(value == -2)
-							{
-								value = 0;
-							}
-
-							if(incrementalGraphUpdate && value == -1)
-							{
-								float * info = mapInfo.ptr<float>(i, j);
-
-								// fill obstacle
-								if(map.at<char>(i+1, j) == 100 && map.at<char>(i-1, j) == 100)
-								{
-									value = 100;
-									// associate with the nearest pose
-									if(mapInfo.ptr<float>(i+1, j)[0]>0.0f)
-									{
-										info[0] = mapInfo.ptr<float>(i+1, j)[0];
-										info[1] = float(j) * cellSize_ + xMin;
-										info[2] = float(i) * cellSize_ + yMin;
-										std::map<int, std::pair<int, int> >::iterator cter = cellCount_.find(int(info[0]));
-										UASSERT(cter!=cellCount_.end());
-										cter->second.second+=1;
-									}
-									else if(mapInfo.ptr<float>(i-1, j)[0]>0.0f)
-									{
-										info[0] = mapInfo.ptr<float>(i-1, j)[0];
-										info[1] = float(j) * cellSize_ + xMin;
-										info[2] = float(i) * cellSize_ + yMin;
-										std::map<int, std::pair<int, int> >::iterator cter = cellCount_.find(int(info[0]));
-										UASSERT(cter!=cellCount_.end());
-										cter->second.second+=1;
-									}
-								}
-								else if(map.at<char>(i, j+1) == 100 && map.at<char>(i, j-1) == 100)
-								{
-									value = 100;
-									// associate with the nearest pose
-									if(mapInfo.ptr<float>(i, j+1)[0]>0.0f)
-									{
-										info[0] = mapInfo.ptr<float>(i, j+1)[0];
-										info[1] = float(j) * cellSize_ + xMin;
-										info[2] = float(i) * cellSize_ + yMin;
-										std::map<int, std::pair<int, int> >::iterator cter = cellCount_.find(int(info[0]));
-										UASSERT(cter!=cellCount_.end());
-										cter->second.second+=1;
-									}
-									else if(mapInfo.ptr<float>(i, j-1)[0]>0.0f)
-									{
-										info[0] = mapInfo.ptr<float>(i, j-1)[0];
-										info[1] = float(j) * cellSize_ + xMin;
-										info[2] = float(i) * cellSize_ + yMin;
-										std::map<int, std::pair<int, int> >::iterator cter = cellCount_.find(int(info[0]));
-										UASSERT(cter!=cellCount_.end());
-										cter->second.second+=1;
-									}
-								}
-								else
-								{
-									// fill empty
-									char sum =  (map.at<char>(i+1, j) == 0?1:0) +
-												(map.at<char>(i-1, j) == 0?1:0) +
-												(map.at<char>(i, j+1) == 0?1:0) +
-												(map.at<char>(i, j-1) == 0?1:0);
-									if(sum >=3)
-									{
-										value = 0;
-										// associate with the nearest pose, only check two cases (as 3 are required)
-										if(map.at<char>(i+1, j) != -1 && mapInfo.ptr<float>(i+1, j)[0]>0.0f)
-										{
-											info[0] = mapInfo.ptr<float>(i+1, j)[0];
-											info[1] = float(j) * cellSize_ + xMin;
-											info[2] = float(i) * cellSize_ + yMin;
-											std::map<int, std::pair<int, int> >::iterator cter = cellCount_.find(int(info[0]));
-											UASSERT(cter!=cellCount_.end());
-											cter->second.first+=1;
-										}
-										else if(map.at<char>(i-1, j) != -1 && mapInfo.ptr<float>(i-1, j)[0]>0.0f)
-										{
-											info[0] = mapInfo.ptr<float>(i-1, j)[0];
-											info[1] = float(j) * cellSize_ + xMin;
-											info[2] = float(i) * cellSize_ + yMin;
-											std::map<int, std::pair<int, int> >::iterator cter = cellCount_.find(int(info[0]));
-											UASSERT(cter!=cellCount_.end());
-											cter->second.first+=1;
-										}
-									}
-								}
-							}
-
-							//float * info = mapInfo.ptr<float>(i,j);
-							//if(info[0] > 0)
-							//{
-							//	cloud->at(oi).x = info[1];
-							//	cloud->at(oi).y = info[2];
-							//	oi++;
-							//}
-						}
-					}
-				}
-				//if(graphChanged)
-				//{
-				//	cloud->resize(oi);
-				//	pcl::io::savePCDFileBinary("mapInfo.pcd", *cloud);
-				//	UWARN("Saved mapInfo.pcd");
-				//}
-
-				map_ = map;
-				mapInfo_ = mapInfo;
-				colors_ = colors;
-				xMin_ = xMin;
-				yMin_ = yMin;
-
-				// clean cellCount_
-				for(std::map<int, std::pair<int, int> >::iterator iter= cellCount_.begin(); iter!=cellCount_.end();)
-				{
-					UASSERT(iter->second.first >= 0 && iter->second.second >= 0);
-					if(iter->second.first == 0 && iter->second.second == 0)
-					{
-						cellCount_.erase(iter++);
-					}
-					else
-					{
-						++iter;
-					}
-				}
-			}
-		}
-
-		if(cloudAssembling_)
-		{
-			if(assembledGroundUpdated && assembledGround_->size() > 1)
-			{
-				assembledGround_ = util3d::voxelize(assembledGround_, cellSize_);
-			}
-			if(assembledObstaclesUpdated && assembledGround_->size() > 1)
-			{
-				assembledObstacles_ = util3d::voxelize(assembledObstacles_, cellSize_);
-			}
-			if(assembledEmptyCellsUpdated && assembledEmptyCells_->size() > 1)
-			{
-				assembledEmptyCells_ = util3d::voxelize(assembledEmptyCells_, cellSize_);
-			}
-		}
-	}
-
-	if(!fullUpdate_ && !cloudAssembling_)
-	{
-		cache_.clear();
-	}
-	else
-	{
-		//clear only negative ids
-		for(std::map<int, std::pair<std::pair<cv::Mat, cv::Mat>, cv::Mat> >::iterator iter=cache_.begin(); iter!=cache_.end();)
-		{
-			if(iter->first < 0)
-			{
-				cache_.erase(iter++);
-			}
-			else
-			{
+				graphChanged = true;
 				break;
 			}
+			posesCounter++;
+		}
+		else
+		{
+			graphChanged = true;
+			break;
+		}
+	}
+	if(!graphChanged)
+	{
+		for(auto iter=poses.lower_bound(addedPoses_.rbegin()->first + 1); iter!=poses.end(); ++iter)
+		{
+			posesCounter++;
+		}
+		if(posesCounter != poses.size())
+		{
+			graphChanged = true;
+		}
+	}
+	return graphChanged;
+}
+
+std::map<int, OccupancyGrid::LocalMap> OccupancyGrid::transformLocalMaps(const std::vector<int> & nodeIds)
+{
+	std::map<int, OccupancyGrid::LocalMap> transformedLocalMaps;
+	for(auto nodeId : nodeIds)
+	{
+		const OccupancyGrid::LocalMap & localMap = localMaps_.at(nodeId);
+		OccupancyGrid::LocalMap transformedLocalMap;
+		transformedLocalMap.num_ground = localMap.num_ground;
+		transformedLocalMap.num_empty = localMap.num_empty;
+		transformedLocalMap.num_obstacles = localMap.num_obstacles;
+
+		const Transform & pose = addedPoses_.at(nodeId);
+		transformedLocalMap.points = (pose.toEigen3fRotation() * localMap.points).colwise() + pose.toEigen3fTranslation();
+
+		transformedLocalMaps[nodeId] = std::move(transformedLocalMap);
+	}
+	return transformedLocalMaps;
+}
+
+void OccupancyGrid::getNewMapSize(const std::map<int, OccupancyGrid::LocalMap> & transformedLocalMaps,
+		float & xMin, float & yMin, float & xMax, float & yMax)
+{
+	bool undefinedSize = true;
+	const float border = cellSize_ * 10;
+	if(!map_.empty())
+	{
+		xMin = xMin_ + border;
+		yMin = yMin_ + border;
+		xMax = xMin_ + map_.cols * cellSize_ - border;
+		yMax = yMin_ + map_.rows * cellSize_ - border;
+		undefinedSize = false;
+	}
+	for(auto iter = transformedLocalMaps.begin(); iter!=transformedLocalMaps.end(); ++iter)
+	{
+		const OccupancyGrid::LocalMap & localMap = iter->second;
+		for (int i = 0; i < localMap.points.cols(); i++)
+		{
+			float x = localMap.points(0, i);
+			float y = localMap.points(1, i);
+
+			if(undefinedSize)
+			{
+				xMin = x;
+				yMin = y;
+				xMax = x;
+				yMax = y;
+				undefinedSize = false;
+			}
+
+			if(xMin > x)
+				xMin = x;
+			else if(xMax < x)
+				xMax = x;
+
+			if(yMin > y)
+				yMin = y;
+			else if(yMax < y)
+				yMax = y;
 		}
 	}
 
-	bool updated = !poses.empty() || graphOptimized || graphChanged;
-	UDEBUG("Occupancy Grid update time = %f s (updated=%s)", timer.ticks(), updated?"true":"false");
-	return updated;
+	xMin -= border;
+	yMin -= border;
+	xMax += border;
+	yMax += border;
+}
+
+void OccupancyGrid::createOrExtendMapIfNeeded(float xMin, float yMin, float xMax, float yMax)
+{
+	cv::Size newMapSize((xMax - xMin) / cellSize_ + 0.5f, (yMax - yMin) / cellSize_ + 0.5f);
+	if(map_.empty())
+	{
+		map_ = cv::Mat::zeros(newMapSize, CV_32FC1);
+		colors_ = cv::Mat::zeros(newMapSize, CV_8UC3);
+		xMin_ = xMin;
+		yMin_ = yMin;
+	}
+	else if(xMin != xMin_ || yMin != yMin_ ||
+			newMapSize.width != map_.cols ||
+			newMapSize.height != map_.rows)
+	{
+		int deltaX = 0;
+		if(xMin < xMin_)
+		{
+			deltaX = (xMin_ - xMin) / cellSize_ + 1.0f;
+			xMin = xMin_ - deltaX * cellSize_;
+		}
+		int deltaY = 0;
+		if(yMin < yMin_)
+		{
+			deltaY = (yMin_ - yMin) / cellSize_ + 1.0f;
+			yMin = yMin_ - deltaY * cellSize_;
+		}
+		newMapSize.width = (xMax - xMin) / cellSize_ + 1.0f;
+		newMapSize.height = (yMax - yMin) / cellSize_ + 1.0f;
+
+		cv::Mat newMap = cv::Mat::zeros(newMapSize, CV_32FC1);
+		cv::Mat newColors = cv::Mat::zeros(newMapSize, CV_8UC3);
+
+		map_.copyTo(newMap(cv::Rect(deltaX, deltaY, map_.cols, map_.rows)));
+		colors_.copyTo(newColors(cv::Rect(deltaX, deltaY, map_.cols, map_.rows)));
+
+		map_ = newMap;
+		colors_ = newColors;
+		xMin_ = xMin;
+		yMin_ = yMin;
+	}
+}
+
+void OccupancyGrid::deployTransformedLocalMap(const OccupancyGrid::LocalMap & transformedLocalMap, const std::vector<int> & colors)
+{
+	for (int i = 0; i < transformedLocalMap.num_ground + transformedLocalMap.num_empty; i++)
+	{
+		float x = transformedLocalMap.points(0, i);
+		float y = transformedLocalMap.points(1, i);
+		cv::Point2i point((x-xMin_)/cellSize_, (y-yMin_)/cellSize_);
+		UASSERT(point.y >= 0 && point.y < map_.rows && point.x >= 0 && point.x < map_.cols);
+
+		float & logodds = map_.at<float>(point.y, point.x);
+		logodds += probMiss_;
+		if (logodds < probClampingMin_)
+		{
+			logodds = probClampingMin_;
+		}
+		if (logodds > probClampingMax_)
+		{
+			logodds = probClampingMax_;
+		}
+
+		cv::Vec3b & color = colors_.at<cv::Vec3b>(point.y, point.x);
+		int c = colors[i];
+		if (c != -1)
+		{
+			color[0] = (unsigned char)(c & 0xFF);
+			color[1] = (unsigned char)((c >> 8) & 0xFF);
+			color[2] = (unsigned char)((c >> 16) & 0xFF);
+		}
+	}
+
+	for (int i = transformedLocalMap.num_ground + transformedLocalMap.num_empty; i < transformedLocalMap.points.cols(); i++)
+	{
+		float x = transformedLocalMap.points(0, i);
+		float y = transformedLocalMap.points(1, i);
+		cv::Point2i point((x-xMin_)/cellSize_, (y-yMin_)/cellSize_);
+		UASSERT(point.y >= 0 && point.y < map_.rows && point.x >= 0 && point.x < map_.cols);
+
+		float & logodds = map_.at<float>(point.y, point.x);
+		logodds += probHit_;
+		if (logodds < probClampingMin_)
+		{
+			logodds = probClampingMin_;
+		}
+		if (logodds > probClampingMax_)
+		{
+			logodds = probClampingMax_;
+		}
+
+		cv::Vec3b & color = colors_.at<cv::Vec3b>(point.y, point.x);
+		int c = colors[i];
+		if (c != -1)
+		{
+			color[0] = (unsigned char)(c & 0xFF);
+			color[1] = (unsigned char)((c >> 8) & 0xFF);
+			color[2] = (unsigned char)((c >> 16) & 0xFF);
+		}
+	}
+}
+
+void OccupancyGrid::deployLocalMap(int nodeId)
+{
+	const OccupancyGrid::LocalMap & localMap = localMaps_.at(nodeId);
+	std::vector<int> nodeIds;
+	nodeIds.push_back(nodeId);
+	const OccupancyGrid::LocalMap & transformedLocalMap = transformLocalMaps(nodeIds).at(nodeId);
+	deployTransformedLocalMap(transformedLocalMap, localMap.colors);
 }
 
 unsigned long OccupancyGrid::getMemoryUsed() const
 {
-	unsigned long memoryUsage = sizeof(OccupancyGrid);
-	memoryUsage += parameters_.size()*(sizeof(std::string)*2+sizeof(ParametersMap::iterator)) + sizeof(ParametersMap);
+	// unsigned long memoryUsage = sizeof(OccupancyGrid);
+	// memoryUsage += parameters_.size()*(sizeof(std::string)*2+sizeof(ParametersMap::iterator)) + sizeof(ParametersMap);
 
-	memoryUsage += cache_.size()*(sizeof(int) + sizeof(std::pair<std::pair<cv::Mat, cv::Mat>, cv::Mat>) + sizeof(std::map<int, std::pair<std::pair<cv::Mat, cv::Mat>, cv::Mat> >::iterator)) + sizeof(std::map<int, std::pair<std::pair<cv::Mat, cv::Mat>, cv::Mat> >);
-	for(std::map<int, std::pair<std::pair<cv::Mat, cv::Mat>, cv::Mat> >::const_iterator iter=cache_.begin(); iter!=cache_.end(); ++iter)
-	{
-		memoryUsage += iter->second.first.first.total() * iter->second.first.first.elemSize();
-		memoryUsage += iter->second.first.second.total() * iter->second.first.second.elemSize();
-		memoryUsage += iter->second.second.total() * iter->second.second.elemSize();
-	}
-	memoryUsage += map_.total() * map_.elemSize();
-	memoryUsage += mapInfo_.total() * mapInfo_.elemSize();
-	memoryUsage += cellCount_.size()*(sizeof(int)*3 + sizeof(std::pair<int, int>) + sizeof(std::map<int, std::pair<int, int> >::iterator)) + sizeof(std::map<int, std::pair<int, int> >);
-	memoryUsage += addedNodes_.size()*(sizeof(int) + sizeof(Transform)+ sizeof(float)*12 + sizeof(std::map<int, Transform>::iterator)) + sizeof(std::map<int, Transform>);
+	// memoryUsage += localMaps_.size()*(sizeof(int) + sizeof(std::pair<std::pair<cv::Mat, cv::Mat>, cv::Mat>) + sizeof(std::map<int, std::pair<std::pair<cv::Mat, cv::Mat>, cv::Mat> >::iterator)) + sizeof(std::map<int, std::pair<std::pair<cv::Mat, cv::Mat>, cv::Mat> >);
+	// for(std::map<int, std::pair<std::pair<cv::Mat, cv::Mat>, cv::Mat> >::const_iterator iter=localMaps_.begin(); iter!=localMaps_.end(); ++iter)
+	// {
+	// 	memoryUsage += iter->second.first.first.total() * iter->second.first.first.elemSize();
+	// 	memoryUsage += iter->second.first.second.total() * iter->second.first.second.elemSize();
+	// 	memoryUsage += iter->second.second.total() * iter->second.second.elemSize();
+	// }
+	// memoryUsage += map_.total() * map_.elemSize();
+	// memoryUsage += addedPoses_.size()*(sizeof(int) + sizeof(Transform)+ sizeof(float)*12 + sizeof(std::map<int, Transform>::iterator)) + sizeof(std::map<int, Transform>);
 
-	if(assembledGround_.get())
-	{
-		memoryUsage += assembledGround_->points.size() * sizeof(pcl::PointXYZRGB);
-	}
-	if(assembledObstacles_.get())
-	{
-		memoryUsage += assembledObstacles_->points.size() * sizeof(pcl::PointXYZRGB);
-	}
-	if(assembledEmptyCells_.get())
-	{
-		memoryUsage += assembledEmptyCells_->points.size() * sizeof(pcl::PointXYZRGB);
-	}
-	return memoryUsage;
+	// if(assembledGround_.get())
+	// {
+	// 	memoryUsage += assembledGround_->points.size() * sizeof(pcl::PointXYZRGB);
+	// }
+	// if(assembledObstacles_.get())
+	// {
+	// 	memoryUsage += assembledObstacles_->points.size() * sizeof(pcl::PointXYZRGB);
+	// }
+	// if(assembledEmptyCells_.get())
+	// {
+	// 	memoryUsage += assembledEmptyCells_->points.size() * sizeof(pcl::PointXYZRGB);
+	// }
+	// return memoryUsage;
 }
 
 }

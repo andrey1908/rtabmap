@@ -354,6 +354,7 @@ Eigen::Matrix4f Transform::toEigen4f() const
 		 0,0,0,1;
 	return m;
 }
+
 Eigen::Matrix4d Transform::toEigen4d() const
 {
 	Eigen::Matrix4d m;
@@ -372,6 +373,38 @@ Eigen::Affine3f Transform::toEigen3f() const
 Eigen::Affine3d Transform::toEigen3d() const
 {
 	return Eigen::Affine3d(toEigen4d());
+}
+
+Eigen::Matrix3f Transform::toEigen3fRotation() const
+{
+	Eigen::Matrix3f m;
+	m << data()[0], data()[1], data()[2],
+		 data()[4], data()[5], data()[6],
+		 data()[8], data()[9], data()[10];
+	return m;
+}
+
+Eigen::Matrix3d Transform::toEigen3dRotation() const
+{
+	Eigen::Matrix3d m;
+	m << data()[0], data()[1], data()[2],
+		 data()[4], data()[5], data()[6],
+		 data()[8], data()[9], data()[10];
+	return m;
+}
+
+Eigen::Vector3f Transform::toEigen3fTranslation() const
+{
+	Eigen::Vector3f m;
+	m << data()[3], data()[7], data()[11];
+	return m;
+}
+
+Eigen::Vector3d Transform::toEigen3dTranslation() const
+{
+	Eigen::Vector3d m;
+	m << data()[3], data()[7], data()[11];
+	return m;
 }
 
 Eigen::Quaternionf Transform::getQuaternionf() const

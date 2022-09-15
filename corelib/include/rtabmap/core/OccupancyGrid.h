@@ -50,6 +50,13 @@ public:
 		return 1. - ( 1. / (1. + exp(logodds)));
 	}
 
+	struct LocalMap
+	{
+		int num_ground, num_empty, num_obstacles;
+		Eigen::Matrix3Xf points;
+		std::vector<int> colors;
+	};
+
 public:
 	OccupancyGrid(const ParametersMap & parameters = ParametersMap());
 	void parseParameters(const ParametersMap & parameters);
@@ -62,9 +69,11 @@ public:
 	bool isFullUpdate() const {return fullUpdate_;}
 	float getUpdateError() const {return updateError_;}
 	bool isMapFrameProjection() const {return projMapFrame_;}
-	const std::map<int, Transform> & addedNodes() const {return addedNodes_;}
-	int cacheSize() const {return (int)cache_.size();}
-	const std::map<int, std::pair<std::pair<cv::Mat, cv::Mat>, cv::Mat> > & getCache() const {return cache_;}
+	const std::map<int, Transform> & addedPoses() const {return addedPoses_;}
+	const std::map<int, Transform> & addedNodes() const {return addedPoses_;}
+	int cacheSize() const {return (int)localMaps_.size();}
+	std::map<int, std::pair<std::pair<cv::Mat, cv::Mat>, cv::Mat> > getCache() const
+			{return std::map<int, std::pair<std::pair<cv::Mat, cv::Mat>, cv::Mat> >();}
 
 	template<typename PointT>
 	typename pcl::PointCloud<PointT>::Ptr segmentCloud(
@@ -108,6 +117,14 @@ public:
 	unsigned long getMemoryUsed() const;
 
 private:
+	bool checkIfGraphChanged(const std::map<int, Transform> & poses);
+	std::map<int, LocalMap> transformLocalMaps(const std::vector<int> & nodeIds);
+	void getNewMapSize(const std::map<int, LocalMap> & transformedLocalMaps,
+			float & xMin, float & yMin, float & xMax, float & yMax);
+	void createOrExtendMapIfNeeded(float xMin, float yMin, float xMax, float yMax);
+	void deployTransformedLocalMap(const LocalMap & transformedLocalMap, const std::vector<int> & colors);
+	void deployLocalMap(int nodeId);
+
 	ParametersMap parameters_;
 	unsigned int cloudDecimation_;
 	float cloudMaxDepth_;
@@ -147,13 +164,11 @@ private:
 	float probClampingMin_;
 	float probClampingMax_;
 
-	std::map<int, std::pair<std::pair<cv::Mat, cv::Mat>, cv::Mat> > cache_; //<node id, < <ground, obstacles>, empty> >
+	std::map<int, LocalMap> localMaps_;
 	cv::Mat map_;
-	cv::Mat mapInfo_;
-	std::map<int, std::pair<int, int> > cellCount_; //<node Id, cells>
 	float xMin_;
 	float yMin_;
-	std::map<int, Transform> addedNodes_;
+	std::map<int, Transform> addedPoses_;
 	cv::Mat colors_;  // b, g, r
 
 	bool cloudAssembling_;
