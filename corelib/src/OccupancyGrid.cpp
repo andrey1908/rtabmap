@@ -79,8 +79,8 @@ OccupancyGrid::OccupancyGrid(const ParametersMap & parameters) :
 	probMiss_(logodds(Parameters::defaultGridGlobalProbMiss())),
 	probClampingMin_(logodds(Parameters::defaultGridGlobalProbClampingMin())),
 	probClampingMax_(logodds(Parameters::defaultGridGlobalProbClampingMax())),
-	xMin_(0.0f),
-	yMin_(0.0f),
+	xMin_(0),
+	yMin_(0),
 	cloudAssembling_(false),
 	assembledGround_(new pcl::PointCloud<pcl::PointXYZRGB>),
 	assembledObstacles_(new pcl::PointCloud<pcl::PointXYZRGB>),
@@ -221,38 +221,6 @@ void OccupancyGrid::parseParameters(const ParametersMap & parameters)
 	}
 }
 
-void OccupancyGrid::setMap(const cv::Mat & map, float xMin, float yMin, float cellSize, const std::map<int, Transform> & poses)
-{
-	clear();
-	if(!poses.empty() && !map.empty())
-	{
-		UASSERT(cellSize > 0.0f);
-		UASSERT(map.type() == CV_32FC1);
-		map_ = map.clone();
-		for(int i=0; i<map_.rows; ++i)
-		{
-			for(int j=0; j<map_.cols; ++j)
-			{
-				float & logodds = map_.at<float>(i,j);;
-				if (logodds < probClampingMin_)
-				{
-					logodds = probClampingMin_;
-				}
-				if (logodds > probClampingMax_)
-				{
-					logodds = probClampingMax_;
-				}
-			}
-		}
-		xMin_ = xMin;
-		yMin_ = yMin;
-		cellSize_ = cellSize;
-		addedPoses_.insert(poses.begin(), poses.end());
-	}
-
-	colors_ = cv::Mat::zeros(map_.size(), CV_8UC3);
-}
-
 void OccupancyGrid::setCellSize(float cellSize)
 {
 	UASSERT_MSG(cellSize > 0.0f, uFormat("Param name is \"%s\"", Parameters::kGridCellSize().c_str()).c_str());
@@ -262,7 +230,7 @@ void OccupancyGrid::setCellSize(float cellSize)
 		{
 			UWARN("Grid cell size has changed, the map is cleared!");
 		}
-		this->clear();
+		clear();
 		cellSize_ = cellSize;
 	}
 }
@@ -594,8 +562,8 @@ void OccupancyGrid::clear()
 	localMaps_.clear();
 	map_ = cv::Mat();
 	colors_ = cv::Mat();
-	xMin_ = 0.0f;
-	yMin_ = 0.0f;
+	xMin_ = 0;
+	yMin_ = 0;
 	addedPoses_.clear();
 	assembledGround_->clear();
 	assembledObstacles_->clear();
@@ -603,8 +571,8 @@ void OccupancyGrid::clear()
 
 cv::Mat OccupancyGrid::getMap(float & xMin, float & yMin) const
 {
-	xMin = xMin_;
-	yMin = yMin_;
+	xMin = xMin_ * cellSize_;
+	yMin = yMin_ * cellSize_;
 
 	cv::Mat map;
 
@@ -643,8 +611,8 @@ cv::Mat OccupancyGrid::getMap(float & xMin, float & yMin) const
 
 cv::Mat OccupancyGrid::getProbMap(float & xMin, float & yMin) const
 {
-	xMin = xMin_;
-	yMin = yMin_;
+	xMin = xMin_ * cellSize_;
+	yMin = yMin_ * cellSize_;
 
 	cv::Mat map;
 
@@ -674,8 +642,8 @@ cv::Mat OccupancyGrid::getProbMap(float & xMin, float & yMin) const
 
 cv::Mat OccupancyGrid::getColors(float & xMin, float & yMin) const
 {
-	xMin = xMin_;
-	yMin = yMin_;
+	xMin = xMin_ * cellSize_;
+	yMin = yMin_ * cellSize_;
 
 	cv::Mat colors;
 	if(!colors_.empty())
@@ -697,6 +665,7 @@ void OccupancyGrid::addToCache(
 {
 	OccupancyGrid::LocalMap localMap;
 	localMap.points.resize(3, ground.cols + empty.cols + obstacles.cols);
+	localMap.transformedPoints2d.resize(2, 0);
 	localMap.colors.reserve(ground.cols + empty.cols + obstacles.cols);
 	int shift = 0;
 
@@ -712,7 +681,15 @@ void OccupancyGrid::addToCache(
 		}
 		else
 		{
-			localMap.colors.push_back(*(int*)(point + 2));
+			int color = *(int*)(point + 2);
+			if (color == 0)
+			{
+				localMap.colors.push_back(-1);
+			}
+			else
+			{
+				localMap.colors.push_back(color);
+			}
 		}
 	}
 	localMap.num_ground = ground.cols;
@@ -724,13 +701,21 @@ void OccupancyGrid::addToCache(
 		localMap.points(0, i + shift) = point[0];
 		localMap.points(1, i + shift) = point[1];
 		localMap.points(2, i + shift) = 0;
-		if (ground.channels() == 2)
+		if (empty.channels() == 2)
 		{
 			localMap.colors.push_back(-1);
 		}
 		else
 		{
-			localMap.colors.push_back(*(int*)(point + 2));
+			int color = *(int*)(point + 2);
+			if (color == 0)
+			{
+				localMap.colors.push_back(-1);
+			}
+			else
+			{
+				localMap.colors.push_back(color);
+			}
 		}
 	}
 	localMap.num_empty = empty.cols;
@@ -742,13 +727,21 @@ void OccupancyGrid::addToCache(
 		localMap.points(0, i + shift) = point[0];
 		localMap.points(1, i + shift) = point[1];
 		localMap.points(2, i + shift) = 0;
-		if (ground.channels() == 2)
+		if (obstacles.channels() == 2)
 		{
 			localMap.colors.push_back(-1);
 		}
 		else
 		{
-			localMap.colors.push_back(*(int*)(point + 2));
+			int color = *(int*)(point + 2);
+			if (color == 0)
+			{
+				localMap.colors.push_back(-1);
+			}
+			else
+			{
+				localMap.colors.push_back(color);
+			}
 		}
 	}
 	localMap.num_obstacles = obstacles.cols;
@@ -781,17 +774,15 @@ bool OccupancyGrid::update(const std::map<int, Transform> & poses)
 		addedPoses_.insert(*iter);
 	}
 
-	auto newTransformedLocalMaps = transformLocalMaps(newNodeIds);
+	transformLocalMaps(newNodeIds);
 
-	float xMin, yMin, xMax, yMax;
-	getNewMapSize(newTransformedLocalMaps, xMin, yMin, xMax, yMax);
-	if(xMin != xMax && yMin != yMax)
+	int xMin, yMin, xMax, yMax;
+	getNewMapSize(newNodeIds, xMin, yMin, xMax, yMax);
+	createOrExtendMapIfNeeded(xMin, yMin, xMax, yMax);
+
+	for(auto newNodeId : newNodeIds)
 	{
-		createOrExtendMapIfNeeded(xMin, yMin, xMax, yMax);
-		for(auto newNodeId : newNodeIds)
-		{
-			deployTransformedLocalMap(newTransformedLocalMaps.at(newNodeId), localMaps_.at(newNodeId).colors);
-		}
+		deployLocalMap(newNodeId);
 	}
 
 	return graphChanged;
@@ -839,45 +830,53 @@ bool OccupancyGrid::checkIfGraphChanged(const std::map<int, Transform> & poses)
 	return graphChanged;
 }
 
-std::map<int, OccupancyGrid::LocalMap> OccupancyGrid::transformLocalMaps(const std::vector<int> & nodeIds)
+void OccupancyGrid::transformLocalMap(int nodeId)
 {
-	std::map<int, OccupancyGrid::LocalMap> transformedLocalMaps;
-	for(auto nodeId : nodeIds)
+	OccupancyGrid::LocalMap & localMap = localMaps_.at(nodeId);
+	localMap.transformedPoints2d.resize(2, localMap.points.cols());
+
+	const Transform & pose = addedPoses_.at(nodeId);
+	Eigen::Matrix3Xf transformedPoints = (pose.toEigen3fRotation() * localMap.points).colwise() + pose.toEigen3fTranslation();
+	for (int i = 0; i < transformedPoints.cols(); i++)
 	{
-		const OccupancyGrid::LocalMap & localMap = localMaps_.at(nodeId);
-		OccupancyGrid::LocalMap transformedLocalMap;
-		transformedLocalMap.num_ground = localMap.num_ground;
-		transformedLocalMap.num_empty = localMap.num_empty;
-		transformedLocalMap.num_obstacles = localMap.num_obstacles;
-
-		const Transform & pose = addedPoses_.at(nodeId);
-		transformedLocalMap.points = (pose.toEigen3fRotation() * localMap.points).colwise() + pose.toEigen3fTranslation();
-
-		transformedLocalMaps[nodeId] = std::move(transformedLocalMap);
+		localMap.transformedPoints2d(0, i) = std::floor(transformedPoints(0, i) / cellSize_);
+		localMap.transformedPoints2d(1, i) = std::floor(transformedPoints(1, i) / cellSize_);
 	}
-	return transformedLocalMaps;
 }
 
-void OccupancyGrid::getNewMapSize(const std::map<int, OccupancyGrid::LocalMap> & transformedLocalMaps,
-		float & xMin, float & yMin, float & xMax, float & yMax)
+void OccupancyGrid::transformLocalMaps(const std::vector<int> & nodeIds)
+{
+	for(auto nodeId : nodeIds)
+	{
+		transformLocalMap(nodeId);
+	}
+}
+
+bool OccupancyGrid::isLocalMapTransformed(int nodeId)
+{
+	return localMaps_.at(nodeId).transformedPoints2d.cols() != 0;
+}
+
+void OccupancyGrid::getNewMapSize(const std::vector<int> & newNodeIds, int & xMin, int & yMin, int & xMax, int & yMax)
 {
 	bool undefinedSize = true;
-	const float border = cellSize_ * 10;
+	const int border = 10;
 	if(!map_.empty())
 	{
 		xMin = xMin_ + border;
 		yMin = yMin_ + border;
-		xMax = xMin_ + map_.cols * cellSize_ - border;
-		yMax = yMin_ + map_.rows * cellSize_ - border;
+		xMax = xMin_ + map_.cols - border;
+		yMax = yMin_ + map_.rows - border;
 		undefinedSize = false;
 	}
-	for(auto iter = transformedLocalMaps.begin(); iter!=transformedLocalMaps.end(); ++iter)
+	for(int nodeId : newNodeIds)
 	{
-		const OccupancyGrid::LocalMap & localMap = iter->second;
+		UASSERT(isLocalMapTransformed(nodeId));
+		const OccupancyGrid::LocalMap & localMap = localMaps_.at(nodeId);
 		for (int i = 0; i < localMap.points.cols(); i++)
 		{
-			float x = localMap.points(0, i);
-			float y = localMap.points(1, i);
+			int x = localMap.transformedPoints2d(0, i);
+			int y = localMap.transformedPoints2d(1, i);
 
 			if(undefinedSize)
 			{
@@ -906,9 +905,9 @@ void OccupancyGrid::getNewMapSize(const std::map<int, OccupancyGrid::LocalMap> &
 	yMax += border;
 }
 
-void OccupancyGrid::createOrExtendMapIfNeeded(float xMin, float yMin, float xMax, float yMax)
+void OccupancyGrid::createOrExtendMapIfNeeded(int xMin, int yMin, int xMax, int yMax)
 {
-	cv::Size newMapSize((xMax - xMin) / cellSize_ + 0.5f, (yMax - yMin) / cellSize_ + 0.5f);
+	cv::Size newMapSize(xMax - xMin + 1, yMax - yMin + 1);
 	if(map_.empty())
 	{
 		map_ = cv::Mat::zeros(newMapSize, CV_32FC1);
@@ -920,20 +919,8 @@ void OccupancyGrid::createOrExtendMapIfNeeded(float xMin, float yMin, float xMax
 			newMapSize.width != map_.cols ||
 			newMapSize.height != map_.rows)
 	{
-		int deltaX = 0;
-		if(xMin < xMin_)
-		{
-			deltaX = (xMin_ - xMin) / cellSize_ + 1.0f;
-			xMin = xMin_ - deltaX * cellSize_;
-		}
-		int deltaY = 0;
-		if(yMin < yMin_)
-		{
-			deltaY = (yMin_ - yMin) / cellSize_ + 1.0f;
-			yMin = yMin_ - deltaY * cellSize_;
-		}
-		newMapSize.width = (xMax - xMin) / cellSize_ + 1.0f;
-		newMapSize.height = (yMax - yMin) / cellSize_ + 1.0f;
+		int deltaX = xMin_ - xMin;
+		int deltaY = yMin_ - yMin;
 
 		cv::Mat newMap = cv::Mat::zeros(newMapSize, CV_32FC1);
 		cv::Mat newColors = cv::Mat::zeros(newMapSize, CV_8UC3);
@@ -948,27 +935,25 @@ void OccupancyGrid::createOrExtendMapIfNeeded(float xMin, float yMin, float xMax
 	}
 }
 
-void OccupancyGrid::deployTransformedLocalMap(const OccupancyGrid::LocalMap & transformedLocalMap, const std::vector<int> & colors)
+void OccupancyGrid::deployLocalMap(int nodeId)
 {
-	for (int i = 0; i < transformedLocalMap.num_ground + transformedLocalMap.num_empty; i++)
+	UASSERT(isLocalMapTransformed(nodeId));
+	const OccupancyGrid::LocalMap & localMap = localMaps_.at(nodeId);
+	for (int i = 0; i < localMap.num_ground + localMap.num_empty; i++)
 	{
-		float x = transformedLocalMap.points(0, i);
-		float y = transformedLocalMap.points(1, i);
-		cv::Point2i point((x-xMin_)/cellSize_, (y-yMin_)/cellSize_);
-		UASSERT(point.y >= 0 && point.y < map_.rows && point.x >= 0 && point.x < map_.cols);
+		int x = localMap.transformedPoints2d(0, i) - xMin_;
+		int y = localMap.transformedPoints2d(1, i) - yMin_;
+		UASSERT(y >= 0 && y < map_.rows && x >= 0 && x < map_.cols);
 
-		float & logodds = map_.at<float>(point.y, point.x);
+		float & logodds = map_.at<float>(y, x);
 		logodds += probMiss_;
 		if (logodds < probClampingMin_)
 		{
 			logodds = probClampingMin_;
 		}
-		if (logodds > probClampingMax_)
-		{
-			logodds = probClampingMax_;
-		}
 
-		cv::Vec3b & color = colors_.at<cv::Vec3b>(point.y, point.x);
+		const auto & colors = localMap.colors;
+		cv::Vec3b & color = colors_.at<cv::Vec3b>(y, x);
 		int c = colors[i];
 		if (c != -1)
 		{
@@ -978,25 +963,21 @@ void OccupancyGrid::deployTransformedLocalMap(const OccupancyGrid::LocalMap & tr
 		}
 	}
 
-	for (int i = transformedLocalMap.num_ground + transformedLocalMap.num_empty; i < transformedLocalMap.points.cols(); i++)
+	for (int i = localMap.num_ground + localMap.num_empty; i < localMap.points.cols(); i++)
 	{
-		float x = transformedLocalMap.points(0, i);
-		float y = transformedLocalMap.points(1, i);
-		cv::Point2i point((x-xMin_)/cellSize_, (y-yMin_)/cellSize_);
-		UASSERT(point.y >= 0 && point.y < map_.rows && point.x >= 0 && point.x < map_.cols);
+		int x = localMap.transformedPoints2d(0, i) - xMin_;
+		int y = localMap.transformedPoints2d(1, i) - yMin_;
+		UASSERT(y >= 0 && y < map_.rows && x >= 0 && x < map_.cols);
 
-		float & logodds = map_.at<float>(point.y, point.x);
+		float & logodds = map_.at<float>(y, x);
 		logodds += probHit_;
-		if (logodds < probClampingMin_)
-		{
-			logodds = probClampingMin_;
-		}
 		if (logodds > probClampingMax_)
 		{
 			logodds = probClampingMax_;
 		}
 
-		cv::Vec3b & color = colors_.at<cv::Vec3b>(point.y, point.x);
+		const auto & colors = localMap.colors;
+		cv::Vec3b & color = colors_.at<cv::Vec3b>(y, x);
 		int c = colors[i];
 		if (c != -1)
 		{
@@ -1005,15 +986,6 @@ void OccupancyGrid::deployTransformedLocalMap(const OccupancyGrid::LocalMap & tr
 			color[2] = (unsigned char)((c >> 16) & 0xFF);
 		}
 	}
-}
-
-void OccupancyGrid::deployLocalMap(int nodeId)
-{
-	const OccupancyGrid::LocalMap & localMap = localMaps_.at(nodeId);
-	std::vector<int> nodeIds;
-	nodeIds.push_back(nodeId);
-	const OccupancyGrid::LocalMap & transformedLocalMap = transformLocalMaps(nodeIds).at(nodeId);
-	deployTransformedLocalMap(transformedLocalMap, localMap.colors);
 }
 
 unsigned long OccupancyGrid::getMemoryUsed() const

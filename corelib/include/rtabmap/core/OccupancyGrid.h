@@ -54,13 +54,14 @@ public:
 	{
 		int num_ground, num_empty, num_obstacles;
 		Eigen::Matrix3Xf points;
+		Eigen::Matrix2Xi transformedPoints2d;
 		std::vector<int> colors;
 	};
 
 public:
 	OccupancyGrid(const ParametersMap & parameters = ParametersMap());
 	void parseParameters(const ParametersMap & parameters);
-	void setMap(const cv::Mat & map, float xMin, float yMin, float cellSize, const std::map<int, Transform> & poses);
+	void setMap(const cv::Mat & map, float xMin, float yMin, float cellSize, const std::map<int, Transform> & poses) {};
 	void setCellSize(float cellSize);
 	float getCellSize() const {return cellSize_;}
 	void setCloudAssembling(bool enabled);
@@ -118,11 +119,11 @@ public:
 
 private:
 	bool checkIfGraphChanged(const std::map<int, Transform> & poses);
-	std::map<int, LocalMap> transformLocalMaps(const std::vector<int> & nodeIds);
-	void getNewMapSize(const std::map<int, LocalMap> & transformedLocalMaps,
-			float & xMin, float & yMin, float & xMax, float & yMax);
-	void createOrExtendMapIfNeeded(float xMin, float yMin, float xMax, float yMax);
-	void deployTransformedLocalMap(const LocalMap & transformedLocalMap, const std::vector<int> & colors);
+	void transformLocalMap(int nodeId);
+	void transformLocalMaps(const std::vector<int> & nodeIds);
+	bool isLocalMapTransformed(int nodeId);
+	void getNewMapSize(const std::vector<int> & newNodeIds, int & xMin, int & yMin, int & xMax, int & yMax);
+	void createOrExtendMapIfNeeded(int xMin, int yMin, int xMax, int yMax);
 	void deployLocalMap(int nodeId);
 
 	ParametersMap parameters_;
@@ -166,8 +167,8 @@ private:
 
 	std::map<int, LocalMap> localMaps_;
 	cv::Mat map_;
-	float xMin_;
-	float yMin_;
+	int xMin_;
+	int yMin_;
 	std::map<int, Transform> addedPoses_;
 	cv::Mat colors_;  // b, g, r
 
