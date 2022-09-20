@@ -865,8 +865,8 @@ void OccupancyGrid::getNewMapSize(const std::vector<int> & newNodeIds, int & xMi
 	{
 		xMin = xMin_ + border;
 		yMin = yMin_ + border;
-		xMax = xMin_ + map_.cols - border;
-		yMax = yMin_ + map_.rows - border;
+		xMax = xMin_ + map_.cols - 1 - border;
+		yMax = yMin_ + map_.rows - 1 - border;
 		undefinedSize = false;
 	}
 	for(int nodeId : newNodeIds)
