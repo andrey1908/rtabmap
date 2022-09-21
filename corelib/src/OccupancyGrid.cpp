@@ -749,6 +749,24 @@ void OccupancyGrid::addToCache(
 	localMaps_[nodeId] = std::move(localMap);
 }
 
+void OccupancyGrid::addToCache(
+			int nodeId,
+			int num_ground,
+			int num_empty,
+			int num_obstacles,
+			const Eigen::Matrix3Xf & points,
+			const std::vector<int> & colors)
+{
+	UASSERT(num_ground + num_empty + num_obstacles == points.cols());
+	OccupancyGrid::LocalMap localMap;
+	localMap.num_ground = num_ground;
+	localMap.num_empty = num_empty;
+	localMap.num_obstacles = num_obstacles;
+	localMap.points = points;
+	localMap.colors = colors;
+	localMaps_[nodeId] = std::move(localMap);
+}
+
 bool OccupancyGrid::update(const std::map<int, Transform> & poses)
 {
 	UTimer timer;
@@ -803,7 +821,7 @@ bool OccupancyGrid::checkIfGraphChanged(const std::map<int, Transform> & poses)
 		auto jter = poses.find(iter->first);
 		if(jter != poses.end())
 		{
-			if(iter->second.getDistanceSquared(jter->second) > updateErrorSqrd)
+			if(iter->second != jter->second)
 			{
 				graphChanged = true;
 				break;

@@ -75,6 +75,7 @@ public:
 	int cacheSize() const {return (int)localMaps_.size();}
 	std::map<int, std::pair<std::pair<cv::Mat, cv::Mat>, cv::Mat> > getCache() const
 			{return std::map<int, std::pair<std::pair<cv::Mat, cv::Mat>, cv::Mat> >();}
+	const std::map<int, LocalMap> & localMaps() const { return localMaps_; }
 
 	template<typename PointT>
 	typename pcl::PointCloud<PointT>::Ptr segmentCloud(
@@ -107,6 +108,13 @@ public:
 			const cv::Mat & ground,
 			const cv::Mat & obstacles,
 			const cv::Mat & empty);
+	void addToCache(
+			int nodeId,
+			int num_ground,
+			int num_empty,
+			int num_obstacles,
+			const Eigen::Matrix3Xf & points,
+			const std::vector<int> & colors);
 	bool update(const std::map<int, Transform> & poses); // return true if map has changed
 	cv::Mat getMap(float & xMin, float & yMin) const;
 	cv::Mat getProbMap(float & xMin, float & yMin) const;
