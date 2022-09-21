@@ -767,6 +767,50 @@ void OccupancyGrid::addToCache(
 	localMaps_[nodeId] = std::move(localMap);
 }
 
+void OccupancyGrid::cacheCurrentMap()
+{
+	OccupancyGrid::CachedMap * cachedMap = new OccupancyGrid::CachedMap();
+	cachedMap->map = map_.clone();
+	cachedMap->xMin = xMin_;
+	cachedMap->yMin = yMin_;
+	cachedMap->colors = colors_.clone();
+	cachedMap->poses = addedPoses_;
+	cachedMap_.reset(cachedMap);
+}
+
+bool OccupancyGrid::tryToUseCachedMap(const std::map<int, Transform> & poses)
+{
+	if (cachedMap_ == nullptr)
+	{
+		return false;
+	}
+
+	bool cachedMapCanBeUsed = true;
+	auto it = poses.begin();
+	const auto & cachedPoses = cachedMap_->poses;
+	auto cachedIt = cachedPoses.begin();
+	while (cachedIt != cachedPoses.end())
+	{
+		if (it == poses.end())
+		{
+			return false;
+		}
+		if (*it != *cachedIt)
+		{
+			return false;
+		}
+		++it;
+		++cachedIt;
+	}
+
+	map_ = cachedMap_->map.clone();
+	xMin_ = cachedMap_->xMin;
+	yMin_ = cachedMap_->yMin;
+	colors_ = cachedMap_->colors.clone();
+	addedPoses_ = cachedMap_->poses;
+	return true;
+}
+
 bool OccupancyGrid::update(const std::map<int, Transform> & poses)
 {
 	UTimer timer;
@@ -777,6 +821,7 @@ bool OccupancyGrid::update(const std::map<int, Transform> & poses)
 	{
 		map_ = cv::Mat();
 		addedPoses_.clear();
+		bool usedCachedMap = tryToUseCachedMap(poses);
 	}
 
 	std::vector<int> newNodeIds;

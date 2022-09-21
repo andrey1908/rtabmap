@@ -35,6 +35,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <rtabmap/core/Parameters.h>
 #include <rtabmap/core/Signature.h>
 
+#include <memory>
+
 namespace rtabmap {
 
 class RTABMAP_EXP OccupancyGrid
@@ -56,6 +58,15 @@ public:
 		Eigen::Matrix3Xf points;
 		Eigen::Matrix2Xi transformedPoints2d;
 		std::vector<int> colors;
+	};
+
+	struct CachedMap
+	{
+		cv::Mat map;
+		int xMin;
+		int yMin;
+		cv::Mat colors;
+		std::map<int, Transform> poses;
 	};
 
 public:
@@ -123,9 +134,13 @@ public:
 	const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & getMapObstacles() const {return assembledObstacles_;}
 	const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & getMapEmptyCells() const {return assembledEmptyCells_;}
 
+	void cacheCurrentMap();
+
 	unsigned long getMemoryUsed() const;
 
 private:
+	bool tryToUseCachedMap(const std::map<int, Transform> & poses);
+
 	bool checkIfGraphChanged(const std::map<int, Transform> & poses);
 	void transformLocalMap(int nodeId);
 	void transformLocalMaps(const std::vector<int> & nodeIds);
@@ -179,6 +194,8 @@ private:
 	int yMin_;
 	std::map<int, Transform> addedPoses_;
 	cv::Mat colors_;  // b, g, r
+
+	std::unique_ptr<CachedMap> cachedMap_;
 
 	bool cloudAssembling_;
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr assembledGround_;
