@@ -54,7 +54,7 @@ public:
 
 	struct LocalMap
 	{
-		int num_ground, num_empty, num_obstacles;
+		int numGround, numEmpty, numObstacles;
 		Eigen::Matrix3Xf points;
 		Eigen::Matrix2Xi transformedPoints2d;
 		std::vector<int> colors;
@@ -121,9 +121,9 @@ public:
 			const cv::Mat & empty);
 	void addToCache(
 			int nodeId,
-			int num_ground,
-			int num_empty,
-			int num_obstacles,
+			int numGround,
+			int numEmpty,
+			int numObstacles,
 			const Eigen::Matrix3Xf & points,
 			const std::vector<int> & colors);
 	bool update(const std::map<int, Transform> & poses); // return true if map has changed

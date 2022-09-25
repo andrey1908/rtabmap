@@ -692,9 +692,9 @@ void OccupancyGrid::addToCache(
 			}
 		}
 	}
-	localMap.num_ground = ground.cols;
+	localMap.numGround = ground.cols;
 
-	shift = localMap.num_ground;
+	shift = localMap.numGround;
 	for (int i = 0; i < empty.cols; i++)
 	{
 		const float * point = empty.ptr<float>(0, i);
@@ -718,9 +718,9 @@ void OccupancyGrid::addToCache(
 			}
 		}
 	}
-	localMap.num_empty = empty.cols;
+	localMap.numEmpty = empty.cols;
 
-	shift = localMap.num_ground + localMap.num_empty;
+	shift = localMap.numGround + localMap.numEmpty;
 	for (int i = 0; i < obstacles.cols; i++)
 	{
 		const float * point = obstacles.ptr<float>(0, i);
@@ -744,24 +744,24 @@ void OccupancyGrid::addToCache(
 			}
 		}
 	}
-	localMap.num_obstacles = obstacles.cols;
+	localMap.numObstacles = obstacles.cols;
 
 	localMaps_[nodeId] = std::move(localMap);
 }
 
 void OccupancyGrid::addToCache(
 			int nodeId,
-			int num_ground,
-			int num_empty,
-			int num_obstacles,
+			int numGround,
+			int numEmpty,
+			int numObstacles,
 			const Eigen::Matrix3Xf & points,
 			const std::vector<int> & colors)
 {
-	UASSERT(num_ground + num_empty + num_obstacles == points.cols());
+	UASSERT(numGround + numEmpty + numObstacles == points.cols());
 	OccupancyGrid::LocalMap localMap;
-	localMap.num_ground = num_ground;
-	localMap.num_empty = num_empty;
-	localMap.num_obstacles = num_obstacles;
+	localMap.numGround = numGround;
+	localMap.numEmpty = numEmpty;
+	localMap.numObstacles = numObstacles;
 	localMap.points = points;
 	localMap.colors = colors;
 	localMaps_[nodeId] = std::move(localMap);
@@ -1002,7 +1002,7 @@ void OccupancyGrid::deployLocalMap(int nodeId)
 {
 	UASSERT(isLocalMapTransformed(nodeId));
 	const OccupancyGrid::LocalMap & localMap = localMaps_.at(nodeId);
-	for (int i = 0; i < localMap.num_ground + localMap.num_empty; i++)
+	for (int i = 0; i < localMap.numGround + localMap.numEmpty; i++)
 	{
 		int x = localMap.transformedPoints2d(0, i) - xMin_;
 		int y = localMap.transformedPoints2d(1, i) - yMin_;
@@ -1026,7 +1026,7 @@ void OccupancyGrid::deployLocalMap(int nodeId)
 		}
 	}
 
-	for (int i = localMap.num_ground + localMap.num_empty; i < localMap.points.cols(); i++)
+	for (int i = localMap.numGround + localMap.numEmpty; i < localMap.points.cols(); i++)
 	{
 		int x = localMap.transformedPoints2d(0, i) - xMin_;
 		int y = localMap.transformedPoints2d(1, i) - yMin_;
