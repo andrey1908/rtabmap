@@ -602,6 +602,13 @@ cv::Mat OccupancyGrid::getMap(float & xMin, float & yMin) const
 		}
 	}
 
+	for (const auto& pair : temporarilyOccupiedCells_)
+	{
+		int x = pair.first;
+		int y = pair.second;
+		map.at<char>(y, x) = 100;
+	}
+
 	if(erode_ && !map.empty())
 	{
 		map = util3d::erodeMap(map);
@@ -637,6 +644,14 @@ cv::Mat OccupancyGrid::getProbMap(float & xMin, float & yMin) const
 			}
 		}
 	}
+
+	for (const auto& pair : temporarilyOccupiedCells_)
+	{
+		int x = pair.first;
+		int y = pair.second;
+		map.at<char>(y, x) = 100;
+	}
+
 	return map;
 }
 
@@ -1001,6 +1016,7 @@ void OccupancyGrid::createOrExtendMapIfNeeded(int xMin, int yMin, int xMax, int 
 void OccupancyGrid::deployLocalMap(int nodeId)
 {
 	UASSERT(isLocalMapTransformed(nodeId));
+	temporarilyOccupiedCells_.clear();
 	const OccupancyGrid::LocalMap & localMap = localMaps_.at(nodeId);
 	for (int i = 0; i < localMap.numGround + localMap.numEmpty; i++)
 	{
@@ -1031,6 +1047,16 @@ void OccupancyGrid::deployLocalMap(int nodeId)
 		int x = localMap.transformedPoints2d(0, i) - xMin_;
 		int y = localMap.transformedPoints2d(1, i) - yMin_;
 		UASSERT(y >= 0 && y < map_.rows && x >= 0 && x < map_.cols);
+
+		{
+			const auto & colors = localMap.colors;
+			int c = colors[i];
+			if (c == personColor_)
+			{
+				temporarilyOccupiedCells_.emplace_back(x, y);
+				continue;
+			}
+		}
 
 		float & logodds = map_.at<float>(y, x);
 		logodds += probHit_;

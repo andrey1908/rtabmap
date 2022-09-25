@@ -197,6 +197,9 @@ private:
 
 	std::unique_ptr<CachedMap> cachedMap_;
 
+	static constexpr int personColor_ = 9831741;
+	std::list<std::pair<int, int>> temporarilyOccupiedCells_;
+
 	bool cloudAssembling_;
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr assembledGround_;
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr assembledObstacles_;
