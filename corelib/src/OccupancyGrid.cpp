@@ -800,7 +800,6 @@ bool OccupancyGrid::tryToUseCachedMap(const std::map<int, Transform> & poses)
 		return false;
 	}
 
-	bool cachedMapCanBeUsed = true;
 	auto it = poses.begin();
 	const auto & cachedPoses = cachedMap_->poses;
 	auto cachedIt = cachedPoses.begin();
@@ -874,7 +873,6 @@ bool OccupancyGrid::checkIfGraphChanged(const std::map<int, Transform> & poses)
 	}
 
 	bool graphChanged = false;
-	float updateErrorSqrd = updateError_ * updateError_;
 	int posesCounter = 0;
 	for(auto iter=addedPoses_.begin(); iter!=addedPoses_.end(); ++iter)
 	{
