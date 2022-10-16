@@ -62,86 +62,59 @@ public:
 
 	struct CachedMap
 	{
-		cv::Mat map;
+		std::map<int, Transform> poses;
+
 		int xMin;
 		int yMin;
+		cv::Mat map;
 		cv::Mat colors;
-		std::map<int, Transform> poses;
 	};
 
 public:
 	OccupancyGrid(const ParametersMap & parameters = ParametersMap());
 	void parseParameters(const ParametersMap & parameters);
-	void setMap(const cv::Mat & map, float xMin, float yMin, float cellSize, const std::map<int, Transform> & poses) {};
-	void setCellSize(float cellSize);
-	float getCellSize() const {return cellSize_;}
-	void setCloudAssembling(bool enabled);
-	float getMinMapSize() const {return minMapSize_;}
-	bool isGridFromDepth() const {return occupancyFromDepth_;}
-	bool isFullUpdate() const {return fullUpdate_;}
-	float getUpdateError() const {return updateError_;}
-	bool isMapFrameProjection() const {return projMapFrame_;}
-	const std::map<int, Transform> & addedPoses() const {return addedPoses_;}
-	const std::map<int, Transform> & addedNodes() const {return addedPoses_;}
-	int cacheSize() const {return (int)localMaps_.size();}
-	std::map<int, std::pair<std::pair<cv::Mat, cv::Mat>, cv::Mat> > getCache() const
-			{return std::map<int, std::pair<std::pair<cv::Mat, cv::Mat>, cv::Mat> >();}
-	const std::map<int, LocalMap> & localMaps() const { return localMaps_; }
 
+	LocalMap createLocalMap(const Signature & signature) const;
+	void addLocalMap(int nodeId, LocalMap localMap);
+	bool update(const std::map<int, Transform> & updatedPoses);
+
+	void cacheCurrentMap();
+
+	cv::Mat getMap(float & xMin, float & yMin) const;
+	cv::Mat getProbMap(float & xMin, float & yMin) const;
+	cv::Mat getColors(float & xMin, float & yMin) const;
+
+	float getCellSize() const;
+	int localMapsNum() const;
+	const std::map<int, LocalMap> & localMaps();
+
+	void clear();
+
+private:
 	template<typename PointT>
 	typename pcl::PointCloud<PointT>::Ptr segmentCloud(
 			const typename pcl::PointCloud<PointT>::Ptr & cloud,
 			const pcl::IndicesPtr & indices,
 			const Transform & pose,
 			const cv::Point3f & viewPoint,
-			pcl::IndicesPtr & groundIndices,        // output cloud indices
-			pcl::IndicesPtr & obstaclesIndices,     // output cloud indices
-			pcl::IndicesPtr * flatObstacles = 0) const; // output cloud indices
-
-	void createLocalMap(
-			const Signature & node,
-			cv::Mat & groundCells,
-			cv::Mat & obstacleCells,
-			cv::Mat & emptyCells,
-			cv::Point3f & viewPoint) const;
-
+			pcl::IndicesPtr & groundIndices,
+			pcl::IndicesPtr & obstaclesIndices,
+			pcl::IndicesPtr * flatObstacles = nullptr) const;
 	void createLocalMap(
 			const LaserScan & cloud,
 			const Transform & pose,
 			cv::Mat & groundCells,
-			cv::Mat & obstacleCells,
 			cv::Mat & emptyCells,
-			cv::Point3f & viewPointInOut) const;
+			cv::Mat & obstacleCells,
+			cv::Point3f & viewPoint) const;
+	LocalMap cvMatsToLocalMap(
+			const cv::Mat & groundCells,
+			const cv::Mat & emptyCells,
+			const cv::Mat & obstacleCells) const;
 
-	void clear();
-	void addToCache(
-			int nodeId,
-			const cv::Mat & ground,
-			const cv::Mat & obstacles,
-			const cv::Mat & empty);
-	void addToCache(
-			int nodeId,
-			int numGround,
-			int numEmpty,
-			int numObstacles,
-			const Eigen::Matrix3Xf & points,
-			const std::vector<int> & colors);
-	bool update(const std::map<int, Transform> & poses); // return true if map has changed
-	cv::Mat getMap(float & xMin, float & yMin) const;
-	cv::Mat getProbMap(float & xMin, float & yMin) const;
-	cv::Mat getColors(float & xMin, float & yMin) const;
-	const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & getMapGround() const {return assembledGround_;}
-	const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & getMapObstacles() const {return assembledObstacles_;}
-	const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & getMapEmptyCells() const {return assembledEmptyCells_;}
+	bool tryToUseCachedMap(const std::map<int, Transform> & updatedPoses);
 
-	void cacheCurrentMap();
-
-	unsigned long getMemoryUsed() const;
-
-private:
-	bool tryToUseCachedMap(const std::map<int, Transform> & poses);
-
-	bool checkIfGraphChanged(const std::map<int, Transform> & poses);
+	bool checkIfGraphChanged(const std::map<int, Transform> & updatedPoses);
 	void transformLocalMap(int nodeId);
 	void transformLocalMaps(const std::vector<int> & nodeIds);
 	bool isLocalMapTransformed(int nodeId);
@@ -171,17 +144,12 @@ private:
 	float minGroundHeight_;
 	float maxGroundHeight_;
 	bool normalsSegmentation_;
-	bool grid3D_;
-	bool groundIsObstacle_;
 	float noiseFilteringRadius_;
 	int noiseFilteringMinNeighbors_;
 	bool scan2dUnknownSpaceFilled_;
 	bool rayTracing_;
-	bool fullUpdate_;
-	float minMapSize_;
 	bool erode_; // false по умолчанию
 	float footprintRadius_;
-	float updateError_;
 	float occupancyThr_;
 	float probHit_;
 	float probMiss_;
@@ -189,21 +157,17 @@ private:
 	float probClampingMax_;
 
 	std::map<int, LocalMap> localMaps_;
-	cv::Mat map_;
+	std::map<int, Transform> poses_;
+
 	int xMin_;
 	int yMin_;
-	std::map<int, Transform> addedPoses_;
+	cv::Mat map_;
 	cv::Mat colors_;  // b, g, r
 
 	std::unique_ptr<CachedMap> cachedMap_;
 
 	static constexpr int personColor_ = 9831741;
 	std::list<std::pair<int, int>> temporarilyOccupiedCells_;
-
-	bool cloudAssembling_;
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr assembledGround_;
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr assembledObstacles_;
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr assembledEmptyCells_;
 };
 
 }
