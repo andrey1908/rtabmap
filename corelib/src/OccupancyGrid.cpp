@@ -38,6 +38,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <pcl/io/pcd_io.h>
 
+#include <rtabmap/core/impl/OccupancyGrid.hpp>
+
 namespace rtabmap {
 
 OccupancyGrid::OccupancyGrid(const ParametersMap & parameters) :

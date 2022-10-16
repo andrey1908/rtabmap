@@ -208,6 +208,4 @@ private:
 
 }
 
-#include <rtabmap/core/impl/OccupancyGrid.hpp>
-
 #endif /* CORELIB_SRC_OCCUPANCYGRID_H_ */

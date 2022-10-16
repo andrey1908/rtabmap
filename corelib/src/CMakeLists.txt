@@ -1,53 +1,53 @@
 
 SET(SRC_FILES
-    Rtabmap.cpp
-    RtabmapThread.cpp
+    # Rtabmap.cpp
+    # RtabmapThread.cpp
     
-    Statistics.cpp
+    # Statistics.cpp
     
-    Memory.cpp
+    # Memory.cpp
     
-    DBDriver.cpp
-    DBDriverSqlite3.cpp
-    DBReader.cpp
+    # DBDriver.cpp
+    # DBDriverSqlite3.cpp
+    # DBReader.cpp
     
-    Recovery.cpp
+    # Recovery.cpp
     
-    Camera.cpp
-    CameraThread.cpp
+    # Camera.cpp
+    # CameraThread.cpp
     CameraModel.cpp
     
-    camera/CameraFreenect.cpp
-    camera/CameraFreenect2.cpp
-    camera/CameraImages.cpp
-    camera/CameraK4W2.cpp
-    camera/CameraK4A.cpp
-    camera/CameraOpenni.cpp
-    camera/CameraOpenNI2.cpp
-    camera/CameraOpenNICV.cpp
-    camera/CameraRealSense.cpp
-    camera/CameraRealSense2.cpp
-    camera/CameraRGBDImages.cpp
-    camera/CameraStereoDC1394.cpp
-    camera/CameraStereoFlyCapture2.cpp
-    camera/CameraStereoImages.cpp
-    camera/CameraStereoVideo.cpp
-    camera/CameraStereoZed.cpp
-    camera/CameraStereoZedOC.cpp
-    camera/CameraStereoTara.cpp
-    camera/CameraVideo.cpp
-    camera/CameraMyntEye.cpp
-    camera/CameraDepthAI.cpp
+    # camera/CameraFreenect.cpp
+    # camera/CameraFreenect2.cpp
+    # camera/CameraImages.cpp
+    # camera/CameraK4W2.cpp
+    # camera/CameraK4A.cpp
+    # camera/CameraOpenni.cpp
+    # camera/CameraOpenNI2.cpp
+    # camera/CameraOpenNICV.cpp
+    # camera/CameraRealSense.cpp
+    # camera/CameraRealSense2.cpp
+    # camera/CameraRGBDImages.cpp
+    # camera/CameraStereoDC1394.cpp
+    # camera/CameraStereoFlyCapture2.cpp
+    # camera/CameraStereoImages.cpp
+    # camera/CameraStereoVideo.cpp
+    # camera/CameraStereoZed.cpp
+    # camera/CameraStereoZedOC.cpp
+    # camera/CameraStereoTara.cpp
+    # camera/CameraVideo.cpp
+    # camera/CameraMyntEye.cpp
+    # camera/CameraDepthAI.cpp
     
-    EpipolarGeometry.cpp
-    VisualWord.cpp
-    VWDictionary.cpp
-    BayesFilter.cpp
+    # EpipolarGeometry.cpp
+    # VisualWord.cpp
+    # VWDictionary.cpp
+    # BayesFilter.cpp
     Parameters.cpp
     Signature.cpp
-    Features2d.cpp
+    # Features2d.cpp
     Transform.cpp
-    GeodeticCoords.cpp
+    # GeodeticCoords.cpp
     
     util2d.cpp
     
@@ -55,50 +55,50 @@ SET(SRC_FILES
     util3d_filtering.cpp
     util3d_mapping.cpp
     util3d_transforms.cpp
-    util3d_registration.cpp
+    # util3d_registration.cpp
     util3d_surface.cpp
-    util3d_features.cpp
-    util3d_correspondences.cpp
-    util3d_motion_estimation.cpp
+    # util3d_features.cpp
+    # util3d_correspondences.cpp
+    # util3d_motion_estimation.cpp
     
     SensorData.cpp
-    Graph.cpp
+    # Graph.cpp
     Compression.cpp
-    Link.cpp
+    # Link.cpp
     LaserScan.cpp
     
-    Optimizer.cpp
-    optimizer/OptimizerTORO.cpp
-    optimizer/OptimizerG2O.cpp
-    optimizer/OptimizerGTSAM.cpp
-    optimizer/OptimizerCVSBA.cpp
-    optimizer/OptimizerCeres.cpp
+    # Optimizer.cpp
+    # optimizer/OptimizerTORO.cpp
+    # optimizer/OptimizerG2O.cpp
+    # optimizer/OptimizerGTSAM.cpp
+    # optimizer/OptimizerCVSBA.cpp
+    # optimizer/OptimizerCeres.cpp
     
-    Registration.cpp
-    RegistrationIcp.cpp
-    RegistrationVis.cpp
+    # Registration.cpp
+    # RegistrationIcp.cpp
+    # RegistrationVis.cpp
     
-    Odometry.cpp
-    OdometryThread.cpp
-    odometry/OdometryF2M.cpp
-    odometry/OdometryMono.cpp
-    odometry/OdometryF2F.cpp
-    odometry/OdometryFovis.cpp
-    odometry/OdometryViso2.cpp
-    odometry/OdometryDVO.cpp
-    odometry/OdometryOkvis.cpp
-    odometry/OdometryORBSLAM.cpp
-    odometry/OdometryLOAM.cpp
-    odometry/OdometryMSCKF.cpp
-    odometry/OdometryVINS.cpp
-    odometry/OdometryOpenVINS.cpp
+    # Odometry.cpp
+    # OdometryThread.cpp
+    # odometry/OdometryF2M.cpp
+    # odometry/OdometryMono.cpp
+    # odometry/OdometryF2F.cpp
+    # odometry/OdometryFovis.cpp
+    # odometry/OdometryViso2.cpp
+    # odometry/OdometryDVO.cpp
+    # odometry/OdometryOkvis.cpp
+    # odometry/OdometryORBSLAM.cpp
+    # odometry/OdometryLOAM.cpp
+    # odometry/OdometryMSCKF.cpp
+    # odometry/OdometryVINS.cpp
+    # odometry/OdometryOpenVINS.cpp
     
     IMU.cpp
-    IMUThread.cpp
-    IMUFilter.cpp
-    imufilter/ComplementaryFilter.cpp
+    # IMUThread.cpp
+    # IMUFilter.cpp
+    # imufilter/ComplementaryFilter.cpp
     
-    Stereo.cpp
+    # Stereo.cpp
     StereoDense.cpp
     StereoCameraModel.cpp
     stereo/StereoBM.cpp
@@ -106,23 +106,23 @@ SET(SRC_FILES
     
     OccupancyGrid.cpp
     
-    MarkerDetector.cpp
+    # MarkerDetector.cpp
     
-    GainCompensator.cpp
+    # GainCompensator.cpp
 
-    rtflann/ext/lz4.c
-    rtflann/ext/lz4hc.c
-    FlannIndex.cpp
+    # rtflann/ext/lz4.c
+    # rtflann/ext/lz4hc.c
+    # FlannIndex.cpp
     
-    #clams stuff
-    clams/discrete_depth_distortion_model_helpers.cpp
-    clams/discrete_depth_distortion_model.cpp
-    clams/frame_projector.cpp
-    clams/slam_calibrator.cpp
+    # # clams stuff
+    # clams/discrete_depth_distortion_model_helpers.cpp
+    # clams/discrete_depth_distortion_model.cpp
+    # clams/frame_projector.cpp
+    # clams/slam_calibrator.cpp
     
-    opencv/ORBextractor.cc
-    opencv/solvepnp.cpp
-    opencv/five-point.cpp
+    # opencv/ORBextractor.cc
+    # opencv/solvepnp.cpp
+    # opencv/five-point.cpp
 )
 
 IF(OpenCV_VERSION_MAJOR EQUAL 2)
@@ -156,25 +156,25 @@ SET(LIBRARIES
 	${ZLIB_LIBRARIES} 
 )
 
-IF(Sqlite3_FOUND)
-    SET(INCLUDE_DIRS
-		${INCLUDE_DIRS}
-		${Sqlite3_INCLUDE_DIRS}
-	)
-	SET(LIBRARIES
-		${LIBRARIES}
-		${Sqlite3_LIBRARIES}
-	)
-ELSE()
-	SET(SRC_FILES
-		${SRC_FILES}
-		sqlite3/sqlite3.c
-	)
-	 SET(INCLUDE_DIRS
-	    ${CMAKE_CURRENT_SOURCE_DIR}/sqlite3
-		${INCLUDE_DIRS}
-	)
-ENDIF()
+# IF(Sqlite3_FOUND)
+#     SET(INCLUDE_DIRS
+# 		${INCLUDE_DIRS}
+# 		${Sqlite3_INCLUDE_DIRS}
+# 	)
+# 	SET(LIBRARIES
+# 		${LIBRARIES}
+# 		${Sqlite3_LIBRARIES}
+# 	)
+# ELSE()
+# 	SET(SRC_FILES
+# 		${SRC_FILES}
+# 		sqlite3/sqlite3.c
+# 	)
+# 	SET(INCLUDE_DIRS
+# 	    ${CMAKE_CURRENT_SOURCE_DIR}/sqlite3
+# 		${INCLUDE_DIRS}
+# 	)
+# ENDIF()
 
 IF(TORCH_FOUND)
 	SET(LIBRARIES
@@ -185,7 +185,7 @@ IF(TORCH_FOUND)
 		${SRC_FILES}
 		superpoint_torch/SuperPoint.cc
 	)
-	 SET(INCLUDE_DIRS
+	SET(INCLUDE_DIRS
 	    ${TORCH_INCLUDE_DIRS}
 	    ${CMAKE_CURRENT_SOURCE_DIR}/superpoint_torch
 		${INCLUDE_DIRS}
@@ -203,14 +203,12 @@ IF(Python3_FOUND)
 		python/PyMatcher.cpp
 		python/PyDetector.cpp
 	)
-	 SET(INCLUDE_DIRS
+	SET(INCLUDE_DIRS
 	    ${TORCH_INCLUDE_DIRS}
 	    ${CMAKE_CURRENT_SOURCE_DIR}/python
 		${INCLUDE_DIRS}
 	)
 ENDIF(Python3_FOUND)
-
-
 
 IF(Freenect_FOUND)
 	IF(Freenect_DASH_INCLUDES)
@@ -477,7 +475,6 @@ IF(PDAL_FOUND)
 	ENDIF(PDAL_VERSION VERSION_LESS "1.7")
 ENDIF(PDAL_FOUND)
 
-
 IF(loam_velodyne_FOUND)
 	SET(INCLUDE_DIRS 
 		${INCLUDE_DIRS} 
@@ -698,7 +695,6 @@ endforeach(arg ${RESOURCES})
 #MESSAGE(STATUS "RESOURCES_HEADERS = ${RESOURCES_HEADERS}")
 
 IF(ANDROID)
-
    IF(NOT RTABMAP_RES_TOOL)
       find_host_program(RTABMAP_RES_TOOL rtabmap-res_tool PATHS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
       IF(NOT RTABMAP_RES_TOOL)

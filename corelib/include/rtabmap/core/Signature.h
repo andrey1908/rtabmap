@@ -40,7 +40,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <rtabmap/core/Transform.h>
 #include <rtabmap/core/SensorData.h>
-#include <rtabmap/core/Link.h>
 
 namespace rtabmap
 {
@@ -64,7 +63,6 @@ public:
 	/**
 	 * Must return a value between >=0 and <=1 (1 means 100% similarity).
 	 */
-	float compareTo(const Signature & signature) const;
 	bool isBadSignature() const;
 
 	int id() const {return _id;}
@@ -78,29 +76,11 @@ public:
 
 	double getStamp() const {return _stamp;}
 
-	void addLinks(const std::list<Link> & links);
-	void addLinks(const std::map<int, Link> & links);
-	void addLink(const Link & link);
-
-	bool hasLink(int idTo, Link::Type type = Link::kUndef) const;
-
-	void changeLinkIds(int idFrom, int idTo);
-
-	void removeLinks(bool keepSelfReferringLinks = false);
-	void removeLink(int idTo);
-	void removeVirtualLinks();
-
-	void addLandmark(const Link & landmark) {_landmarks.insert(std::make_pair(landmark.to(), landmark));}
-	const std::map<int, Link> & getLandmarks() const {return _landmarks;}
-	void removeLandmarks() {_landmarks.clear();}
-
 	void setSaved(bool saved) {_saved = saved;}
-	void setModified(bool modified) {_modified = modified; _linksModified = modified;}
+	void setModified(bool modified) {_modified = modified;}
 
-	const std::multimap<int, Link> & getLinks() const {return _links;}
 	bool isSaved() const {return _saved;}
-	bool isModified() const {return _modified || _linksModified;}
-	bool isLinksModified() const {return _linksModified;}
+	bool isModified() const {return _modified;}
 
 	//visual words stuff
 	void removeAllWords();
@@ -143,14 +123,11 @@ private:
 	int _id;
 	int _mapId;
 	double _stamp;
-	std::multimap<int, Link> _links; // id, transform
-									 // first - id узла, к которому присоединён линк. Все линки, хранящиеся в узле, выходят из этого же узла.
-	std::map<int, Link> _landmarks; // first - id узла, к которому присоединён лендмарк. Все лендмарки, хранящиеся в узле, выходят из этого же узла.
+
 	int _weight;
 	std::string _label;
 	bool _saved; // If it's saved to bd
 	bool _modified;
-	bool _linksModified; // Optimization when updating signatures in database
 
 	// Contains all words (Some can be duplicates -> if a word appears 2
 	// times in the signature, it will be 2 times in this list)

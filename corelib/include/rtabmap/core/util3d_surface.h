@@ -46,8 +46,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace rtabmap
 {
 
-class Memory;
-class DBDriver;
 
 namespace util3d
 {
@@ -210,8 +208,8 @@ cv::Mat RTABMAP_EXP mergeTextures(
 		pcl::TextureMesh & mesh,
 		const std::map<int, cv::Mat> & images, // raw or compressed, can be empty if memory or dbDriver should be used
 		const std::map<int, CameraModel> & calibrations, // Should match images
-		const Memory * memory = 0,             // Should be set if images are not set
-		const DBDriver * dbDriver = 0,         // Should be set if images and memory are not set
+		const void * memory = 0,             // Should be set if images are not set
+		const void * dbDriver = 0,         // Should be set if images and memory are not set
 		int textureSize = 4096,
 		int textureCount = 1,
 		const std::vector<std::map<int, pcl::PointXY> > & vertexToPixels = std::vector<std::map<int, pcl::PointXY> >(), // needed for parameters below
@@ -232,8 +230,8 @@ cv::Mat RTABMAP_EXP mergeTextures(
 		pcl::TextureMesh & mesh,
 		const std::map<int, cv::Mat> & images, // raw or compressed, can be empty if memory or dbDriver should be used
 		const std::map<int, std::vector<CameraModel> > & calibrations, // Should match images
-		const Memory * memory = 0,             // Should be set if images are not set
-		const DBDriver * dbDriver = 0,         // Should be set if images and memory are not set
+		const void * memory = 0,             // Should be set if images are not set
+		const void * dbDriver = 0,         // Should be set if images and memory are not set
 		int textureSize = 4096,
 		int textureCount = 1,
 		const std::vector<std::map<int, pcl::PointXY> > & vertexToPixels = std::vector<std::map<int, pcl::PointXY> >(), // needed for parameters below
@@ -261,8 +259,8 @@ bool RTABMAP_EXP multiBandTexturing(
 		const std::vector<std::map<int, pcl::PointXY> > & vertexToPixels, // required output of util3d::createTextureMesh()
 		const std::map<int, cv::Mat> & images,        // raw or compressed, can be empty if memory or dbDriver should be used
 		const std::map<int, std::vector<CameraModel> > & cameraModels, // Should match images
-		const Memory * memory = 0,                    // Should be set if images are not set
-		const DBDriver * dbDriver = 0,                // Should be set if images and memory are not set
+		const void * memory = 0,                    // Should be set if images are not set
+		const void * dbDriver = 0,                // Should be set if images and memory are not set
 		int textureSize = 8192,
 		const std::string & textureFormat = "jpg",    // png, jpg
 		const std::map<int, std::map<int, cv::Vec4d> > & gains = std::map<int, std::map<int, cv::Vec4d> >(),       // optional output of util3d::mergeTextures()

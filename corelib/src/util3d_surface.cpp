@@ -30,8 +30,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtabmap/core/util3d_transforms.h"
 #include "rtabmap/core/util3d.h"
 #include "rtabmap/core/util2d.h"
-#include "rtabmap/core/Memory.h"
-#include "rtabmap/core/DBDriver.h"
 #include "rtabmap/core/Compression.h"
 #include "rtabmap/utilite/ULogger.h"
 #include "rtabmap/utilite/UDirectory.h"
@@ -1438,8 +1436,8 @@ cv::Mat mergeTextures(
 		pcl::TextureMesh & mesh,
 		const std::map<int, cv::Mat> & images,
 		const std::map<int, CameraModel> & calibrations,
-		const Memory * memory,
-		const DBDriver * dbDriver,
+		const void * memory,
+		const void * dbDriver,
 		int textureSize,
 		int textureCount,
 		const std::vector<std::map<int, pcl::PointXY> > & vertexToPixels,
@@ -1490,8 +1488,8 @@ cv::Mat mergeTextures(
 		pcl::TextureMesh & mesh,
 		const std::map<int, cv::Mat> & images,
 		const std::map<int, std::vector<CameraModel> > & calibrations,
-		const Memory * memory,
-		const DBDriver * dbDriver,
+		const void * memory,
+		const void * dbDriver,
 		int textureSize,
 		int textureCount,
 		const std::vector<std::map<int, pcl::PointXY> > & vertexToPixels,
@@ -1561,64 +1559,6 @@ cv::Mat mergeTextures(
 							if(models.size()>1)
 							{
 								imageSize.width/=models.size();
-							}
-						}
-					}
-					else if(memory)
-					{
-						SensorData data = memory->getNodeData(textureId, true, false, false, false);
-						std::vector<CameraModel> models = data.cameraModels();
-						StereoCameraModel stereoModel = data.stereoCameraModel();
-						if(models.size()>=1 &&
-							models[0].imageHeight()>0 &&
-							models[0].imageWidth()>0)
-						{
-							imageSize = models[0].imageSize();
-						}
-						else if(stereoModel.left().imageHeight() > 0 &&
-								stereoModel.left().imageWidth() > 0)
-						{
-							imageSize = stereoModel.left().imageSize();
-						}
-						else // backward compatibility for image size not set in CameraModel
-						{
-							cv::Mat image;
-							data.uncompressDataConst(&image, 0);
-							UASSERT(!image.empty());
-							imageSize = image.size();
-							if(data.cameraModels().size()>1)
-							{
-								imageSize.width/=data.cameraModels().size();
-							}
-						}
-					}
-					else if(dbDriver)
-					{
-						std::vector<CameraModel> models;
-						StereoCameraModel stereoModel;
-						dbDriver->getCalibration(textureId, models, stereoModel);
-						if(models.size()>=1 &&
-							models[0].imageHeight()>0 &&
-							models[0].imageWidth()>0)
-						{
-							imageSize = models[0].imageSize();
-						}
-						else if(stereoModel.left().imageHeight() > 0 &&
-								stereoModel.left().imageWidth() > 0)
-						{
-							imageSize = stereoModel.left().imageSize();
-						}
-						else // backward compatibility for image size not set in CameraModel
-						{
-							SensorData data;
-							dbDriver->getNodeData(textureId, data, true, false, false, false);
-							cv::Mat image;
-							data.uncompressDataConst(&image, 0);
-							UASSERT(!image.empty());
-							imageSize = image.size();
-							if(data.cameraModels().size()>1)
-							{
-								imageSize.width/=data.cameraModels().size();
 							}
 						}
 					}
@@ -1692,20 +1632,6 @@ cv::Mat mergeTextures(
 										image = uncompressImage(image);
 									}
 									models = calibrations.find(textures[t].first)->second;
-								}
-								else if(memory)
-								{
-									SensorData data = memory->getNodeData(textures[t].first, true, false, false, false);
-									models = data.cameraModels();
-									data.uncompressDataConst(&image, 0);
-								}
-								else if(dbDriver)
-								{
-									SensorData data;
-									dbDriver->getNodeData(textures[t].first, data, true, false, false, false);
-									data.uncompressDataConst(&image, 0);
-									StereoCameraModel stereoModel;
-									dbDriver->getCalibration(textures[t].first, models, stereoModel);
 								}
 
 								previousImage = image;
@@ -2222,8 +2148,8 @@ bool multiBandTexturing(
 		const std::vector<std::map<int, pcl::PointXY> > & vertexToPixels, // required output of util3d::createTextureMesh()
 		const std::map<int, cv::Mat> & images,        // raw or compressed, can be empty if memory or dbDriver should be used
 		const std::map<int, std::vector<CameraModel> > & cameraModels, // Should match images
-		const Memory * memory,                    // Should be set if images are not set
-		const DBDriver * dbDriver,                // Should be set if images and memory are not set
+		const void * memory,                    // Should be set if images are not set
+		const void * dbDriver,                // Should be set if images and memory are not set
 		int textureSize,
 		const std::string & textureFormat,
 		const std::map<int, std::map<int, cv::Vec4d> > & gains,       // optional output of util3d::mergeTextures()
@@ -2328,43 +2254,6 @@ bool multiBandTexturing(
 		{
 			image = images.find(camId)->second;
 			models = cameraModels.find(camId)->second;
-		}
-		else if(memory)
-		{
-			SensorData data = memory->getNodeData(camId, true, false, false, false);
-			models = data.cameraModels();
-			if(models.empty() && data.stereoCameraModel().isValidForProjection())
-			{
-				models.push_back(data.stereoCameraModel().left());
-			}
-			if(data.imageRaw().empty())
-			{
-				image = data.imageCompressed();
-			}
-			else
-			{
-				image = data.imageRaw();
-			}
-		}
-		else if(dbDriver)
-		{
-			StereoCameraModel stereoModel;
-			dbDriver->getCalibration(camId, models, stereoModel);
-			if(models.empty() && stereoModel.isValidForProjection())
-			{
-				models.push_back(stereoModel.left());
-			}
-
-			SensorData data;
-			dbDriver->getNodeData(camId, data, true, false, false, false);
-			if(data.imageRaw().empty())
-			{
-				image = data.imageCompressed();
-			}
-			else
-			{
-				image = data.imageRaw();
-			}
 		}
 		if(models.empty())
 		{
