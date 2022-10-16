@@ -107,6 +107,8 @@ private:
 			cv::Mat & emptyCells,
 			cv::Mat & obstacleCells,
 			cv::Point3f & viewPoint) const;
+	LaserScan addSemanticToLaserScan(const LaserScan& scan, const cv::Mat& rgb,
+			const std::vector<CameraModel>& cameraModels) const;
 	LocalMap cvMatsToLocalMap(
 			const cv::Mat & groundCells,
 			const cv::Mat & emptyCells,
@@ -155,6 +157,10 @@ private:
 	float probMiss_;
 	float probClampingMin_;
 	float probClampingMax_;
+	float minSemanticRange_;
+	float maxSemanticRange_;
+	float minSemanticRangeSqr_;
+	float maxSemanticRangeSqr_;
 
 	std::map<int, LocalMap> localMaps_;
 	std::map<int, Transform> poses_;
