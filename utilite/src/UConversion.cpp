@@ -21,6 +21,7 @@
 #include "rtabmap/utilite/UStl.h"
 
 #include <sstream>
+#include <iomanip>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -104,14 +105,14 @@ std::string uNumber2Str(int number)
 std::string uNumber2Str(float number)
 {
 	std::stringstream s;
-	s << number;
+	s << std::setprecision(12) << number;
 	return s.str();
 }
 
 std::string uNumber2Str(double number)
 {
 	std::stringstream s;
-	s << number;
+	s << std::setprecision(12) << number;
 	return s.str();
 }
 
@@ -312,7 +313,7 @@ unsigned char uAscii2Hex(const unsigned char & c)
 	}
 }
 
-std::string uFormatv (const char *fmt, va_list args)
+std::string uFormatv(const char *fmt, va_list args)
 {
     // Allocate a buffer on the stack that's big enough for us almost
     // all the time.  Be prepared to allocate dynamically if it doesn't fit.
@@ -355,7 +356,7 @@ std::string uFormatv (const char *fmt, va_list args)
     return std::string(); // would not reach this, but for compiler complaints...
 }
 
-std::string uFormat (const char *fmt, ...)
+std::string uFormat(const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);

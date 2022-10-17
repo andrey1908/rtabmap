@@ -73,6 +73,8 @@ OccupancyGrid::OccupancyGrid(const ParametersMap & parameters) :
 	probClampingMax_(logodds(Parameters::defaultGridGlobalProbClampingMax())),
 	minSemanticRange_(Parameters::defaultGridMinSemanticRange()),
 	maxSemanticRange_(Parameters::defaultGridMaxSemanticRange()),
+	temporarilyOccupiedCellsColor_(Parameters::defaultGridTemporarilyOccupiedCellsColor()),
+	showTemporarilyOccupiedCells_(Parameters::defaultGridShowTemporarilyOccupiedCells()),
 	xMin_(0),
 	yMin_(0)
 {
@@ -144,13 +146,15 @@ void OccupancyGrid::parseParameters(const ParametersMap & parameters)
 	{
 		minSemanticRangeSqr_ = minSemanticRange_ * minSemanticRange_;
 	}
-
 	Parameters::parse(parameters, Parameters::kGridMaxSemanticRange(), maxSemanticRange_);
 	maxSemanticRangeSqr_ = 0.0f;
 	if(maxSemanticRange_ > 0.0f)
 	{
 		maxSemanticRangeSqr_ = maxSemanticRange_ * maxSemanticRange_;
 	}
+
+	Parameters::parse(parameters, Parameters::kGridTemporarilyOccupiedCellsColor(), temporarilyOccupiedCellsColor_);
+	Parameters::parse(parameters, Parameters::kGridShowTemporarilyOccupiedCells(), showTemporarilyOccupiedCells_);
 
 	// convert ROI from string to vector
 	ParametersMap::const_iterator iter;
@@ -980,10 +984,11 @@ void OccupancyGrid::deployLocalMap(int nodeId)
 		int y = localMap.transformedPoints2d(1, i) - yMin_;
 		UASSERT(y >= 0 && y < map_.rows && x >= 0 && x < map_.cols);
 
+		if (temporarilyOccupiedCellsColor_ >= 0)
 		{
 			const auto & colors = localMap.colors;
 			int c = colors[i];
-			if (c == personColor_)
+			if (c == temporarilyOccupiedCellsColor_)
 			{
 				temporarilyOccupiedCells_.emplace_back(x, y);
 				continue;
@@ -1042,11 +1047,14 @@ cv::Mat OccupancyGrid::getMap(float & xMin, float & yMin) const
 		}
 	}
 
-	for (const auto& pair : temporarilyOccupiedCells_)
+	if (showTemporarilyOccupiedCells_)
 	{
-		int x = pair.first;
-		int y = pair.second;
-		map.at<char>(y, x) = 100;
+		for (const auto& pair : temporarilyOccupiedCells_)
+		{
+			int x = pair.first;
+			int y = pair.second;
+			map.at<char>(y, x) = 100;
+		}
 	}
 
 	if(erode_ && !map.empty())
@@ -1085,11 +1093,14 @@ cv::Mat OccupancyGrid::getProbMap(float & xMin, float & yMin) const
 		}
 	}
 
-	for (const auto& pair : temporarilyOccupiedCells_)
+	if (showTemporarilyOccupiedCells_)
 	{
-		int x = pair.first;
-		int y = pair.second;
-		map.at<char>(y, x) = 100;
+		for (const auto& pair : temporarilyOccupiedCells_)
+		{
+			int x = pair.first;
+			int y = pair.second;
+			map.at<char>(y, x) = 100;
+		}
 	}
 
 	return map;
@@ -1109,6 +1120,20 @@ cv::Mat OccupancyGrid::getColors(float & xMin, float & yMin) const
 	{
 		UWARN("Colors are empty");
 	}
+
+	if (showTemporarilyOccupiedCells_)
+	{
+		for (const auto& pair : temporarilyOccupiedCells_)
+		{
+			int x = pair.first;
+			int y = pair.second;
+			cv::Vec3b & color = colors.at<cv::Vec3b>(y, x);
+			color[0] = (unsigned char)(temporarilyOccupiedCellsColor_ & 0xFF);
+			color[1] = (unsigned char)((temporarilyOccupiedCellsColor_ >> 8) & 0xFF);
+			color[2] = (unsigned char)((temporarilyOccupiedCellsColor_ >> 16) & 0xFF);
+		}
+	}
+
 	return colors;
 }
 

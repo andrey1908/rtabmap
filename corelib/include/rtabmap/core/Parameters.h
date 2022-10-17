@@ -749,6 +749,8 @@ class RTABMAP_EXP Parameters
     RTABMAP_PARAM(Grid, RayTracing,                 bool,   false,   "Ray tracing is done for each occupied cell, filling unknown space between the sensor and occupied cells.");
     RTABMAP_PARAM(Grid, MinSemanticRange,           float,   0.0,    "Minimum range for semantic to be added to laser scan.");
     RTABMAP_PARAM(Grid, MaxSemanticRange,           float,   0.0,    "Maximum range for semantic to be added to laser scan. 0=inf.");
+    RTABMAP_PARAM(Grid, TemporarilyOccupiedCellsColor, int,  -1,     "Color of temporarily occupied cells. (-1) - do not extract temporarily occupied cells.");
+    RTABMAP_PARAM(Grid, ShowTemporarilyOccupiedCells,  bool, true,   "Show temporarily occupied cells.");
 
     RTABMAP_PARAM(GridGlobal, FootprintRadius,      float,  0.0,     "Footprint radius (m) used to clear all obstacles under the graph.");
     RTABMAP_PARAM(GridGlobal, Eroded,               bool,   false,   "Erode obstacle cells.");

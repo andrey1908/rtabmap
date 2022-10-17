@@ -161,6 +161,8 @@ private:
 	float maxSemanticRange_;
 	float minSemanticRangeSqr_;
 	float maxSemanticRangeSqr_;
+	int temporarilyOccupiedCellsColor_;
+	bool showTemporarilyOccupiedCells_;
 
 	std::map<int, LocalMap> localMaps_;
 	std::map<int, Transform> poses_;
@@ -172,7 +174,6 @@ private:
 
 	std::unique_ptr<CachedMap> cachedMap_;
 
-	static constexpr int personColor_ = 9831741;
 	std::list<std::pair<int, int>> temporarilyOccupiedCells_;
 };
 
