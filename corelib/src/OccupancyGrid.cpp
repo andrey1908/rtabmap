@@ -519,7 +519,7 @@ typename pcl::PointCloud<PointT>::Ptr OccupancyGrid::segmentCloud(
 	// add pose rotation without yaw
 	float roll, pitch, yaw;
 	pose.getEulerAngles(roll, pitch, yaw);
-	cloud = util3d::transformPointCloud(cloud, Transform(0,0, projMapFrame_?pose.z():0, roll, pitch, 0));
+	// cloud = util3d::transformPointCloud(cloud, Transform(0,0, projMapFrame_?pose.z():0, roll, pitch, 0));
 
 	// filter footprint
 	if(footprintLength_ > 0.0f || footprintWidth_ > 0.0f || footprintHeight_ > 0.0f)
