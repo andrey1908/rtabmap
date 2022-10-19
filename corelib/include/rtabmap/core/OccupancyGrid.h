@@ -68,6 +68,8 @@ public:
 		int yMin;
 		cv::Mat map;
 		cv::Mat colors;
+
+		std::list<std::pair<int, int>> temporarilyOccupiedCells;
 	};
 
 public:
@@ -76,6 +78,7 @@ public:
 
 	LocalMap createLocalMap(const Signature & signature) const;
 	void addLocalMap(int nodeId, LocalMap localMap);
+	void addTemporaryLocalMap(const Transform & temporaryPose, LocalMap temporaryLocalMap);
 	bool update(const std::map<int, Transform> & updatedPoses);
 
 	void cacheCurrentMap();
@@ -91,6 +94,15 @@ public:
 	void clear();
 
 private:
+	LaserScan addSemanticToLaserScan(const LaserScan& scan, const cv::Mat& rgb,
+			const std::vector<CameraModel>& cameraModels) const;
+	void createLocalMap(
+			const LaserScan & cloud,
+			const Transform & pose,
+			cv::Mat & groundCells,
+			cv::Mat & emptyCells,
+			cv::Mat & obstacleCells,
+			cv::Point3f & viewPoint) const;
 	template<typename PointT>
 	typename pcl::PointCloud<PointT>::Ptr segmentCloud(
 			const typename pcl::PointCloud<PointT>::Ptr & cloud,
@@ -100,15 +112,6 @@ private:
 			pcl::IndicesPtr & groundIndices,
 			pcl::IndicesPtr & obstaclesIndices,
 			pcl::IndicesPtr * flatObstacles = nullptr) const;
-	void createLocalMap(
-			const LaserScan & cloud,
-			const Transform & pose,
-			cv::Mat & groundCells,
-			cv::Mat & emptyCells,
-			cv::Mat & obstacleCells,
-			cv::Point3f & viewPoint) const;
-	LaserScan addSemanticToLaserScan(const LaserScan& scan, const cv::Mat& rgb,
-			const std::vector<CameraModel>& cameraModels) const;
 	LocalMap cvMatsToLocalMap(
 			const cv::Mat & groundCells,
 			const cv::Mat & emptyCells,
@@ -123,6 +126,9 @@ private:
 	void getNewMapSize(const std::vector<int> & newNodeIds, int & xMin, int & yMin, int & xMax, int & yMax);
 	void createOrExtendMapIfNeeded(int xMin, int yMin, int xMax, int yMax);
 	void deployLocalMap(int nodeId);
+
+	void addTemporaryInfoOnMap(cv::Mat map) const;
+	void addTemporaryInfoOnColors(cv::Mat colors) const;
 
 	ParametersMap parameters_;
 	unsigned int cloudDecimation_;
@@ -175,6 +181,7 @@ private:
 	std::unique_ptr<CachedMap> cachedMap_;
 
 	std::list<std::pair<int, int>> temporarilyOccupiedCells_;
+	std::unique_ptr<LocalMap> temporaryLocalMap_;
 };
 
 }

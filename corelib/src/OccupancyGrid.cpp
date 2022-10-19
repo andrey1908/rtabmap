@@ -218,6 +218,256 @@ void OccupancyGrid::parseParameters(const ParametersMap & parameters)
 	}
 }
 
+OccupancyGrid::LocalMap OccupancyGrid::createLocalMap(const Signature & signature) const
+{
+	cv::Mat groundCells;
+	cv::Mat emptyCells;
+	cv::Mat obstacleCells;
+	cv::Point3f viewPoint;
+
+	if(signature.sensorData().laserScanRaw().is2d() && !occupancyFromDepth_)
+	{
+		UDEBUG("2D laser scan");
+		//2D
+		viewPoint = cv::Point3f(
+				signature.sensorData().laserScanRaw().localTransform().x(),
+				signature.sensorData().laserScanRaw().localTransform().y(),
+				signature.sensorData().laserScanRaw().localTransform().z());
+
+		LaserScan scan = signature.sensorData().laserScanRaw();
+		if(cloudMinDepth_ > 0.0f)
+		{
+			scan = util3d::rangeFiltering(scan, cloudMinDepth_, 0.0f);
+		}
+
+		float maxRange = cloudMaxDepth_;
+		if(cloudMaxDepth_>0.0f && signature.sensorData().laserScanRaw().rangeMax()>0.0f)
+		{
+			maxRange = cloudMaxDepth_ < signature.sensorData().laserScanRaw().rangeMax()?cloudMaxDepth_:signature.sensorData().laserScanRaw().rangeMax();
+		}
+		else if(scan2dUnknownSpaceFilled_ && signature.sensorData().laserScanRaw().rangeMax()>0.0f)
+		{
+			maxRange = signature.sensorData().laserScanRaw().rangeMax();
+		}
+		util3d::occupancy2DFromLaserScan(
+				util3d::transformLaserScan(scan, signature.sensorData().laserScanRaw().localTransform()).data(),
+				cv::Mat(),
+				viewPoint,
+				emptyCells,
+				obstacleCells,
+				cellSize_,
+				scan2dUnknownSpaceFilled_,
+				maxRange);
+	}
+	else
+	{
+		if(!occupancyFromDepth_)
+		{
+			if(!signature.sensorData().laserScanRaw().isEmpty())
+			{
+				UDEBUG("3D laser scan");
+				const Transform & t = signature.sensorData().laserScanRaw().localTransform();
+				LaserScan scan = util3d::downsample(signature.sensorData().laserScanRaw(), scanDecimation_);
+				if(cloudMinDepth_ > 0.0f || cloudMaxDepth_ > 0.0f)
+				{
+					scan = util3d::rangeFiltering(scan, cloudMinDepth_, 0);
+				}
+
+				if(!signature.sensorData().imageRaw().empty() && signature.sensorData().cameraModels().size())
+				{
+					scan = addSemanticToLaserScan(scan, signature.sensorData().imageRaw(), signature.sensorData().cameraModels());
+				}
+
+				// update viewpoint
+				viewPoint = cv::Point3f(t.x(), t.y(), t.z());
+
+				UDEBUG("scan format=%d", scan.format());
+				createLocalMap(scan, signature.getPose(), groundCells, emptyCells, obstacleCells, viewPoint);
+			}
+			else
+			{
+				UWARN("Cannot create local map, scan is empty (signature=%d, %s=false).", signature.id(), Parameters::kGridFromDepth().c_str());
+			}
+		}
+		else
+		{
+			pcl::IndicesPtr indices(new std::vector<int>);
+			pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud;
+			UDEBUG("Depth image : decimation=%d max=%f min=%f",
+					cloudDecimation_,
+					cloudMaxDepth_,
+					cloudMinDepth_);
+			cloud = util3d::cloudRGBFromSensorData(
+					signature.sensorData(),
+					cloudDecimation_,
+					cloudMaxDepth_,
+					cloudMinDepth_,
+					indices.get(),
+					parameters_,
+					roiRatios_);
+
+			// update viewpoint
+			if(signature.sensorData().cameraModels().size())
+			{
+				// average of all local transforms
+				float sum = 0;
+				for(unsigned int i=0; i<signature.sensorData().cameraModels().size(); ++i)
+				{
+					const Transform & t = signature.sensorData().cameraModels()[i].localTransform();
+					if(!t.isNull())
+					{
+						viewPoint.x += t.x();
+						viewPoint.y += t.y();
+						viewPoint.z += t.z();
+						sum += 1.0f;
+					}
+				}
+				if(sum > 0.0f)
+				{
+					viewPoint.x /= sum;
+					viewPoint.y /= sum;
+					viewPoint.z /= sum;
+				}
+			}
+			else
+			{
+				const Transform & t = signature.sensorData().stereoCameraModel().localTransform();
+				viewPoint = cv::Point3f(t.x(), t.y(), t.z());
+			}
+			createLocalMap(LaserScan(util3d::laserScanFromPointCloud(*cloud, indices), 0, 0.0f), signature.getPose(), groundCells, emptyCells, obstacleCells, viewPoint);
+		}
+	}
+
+	return cvMatsToLocalMap(groundCells, emptyCells, obstacleCells);
+}
+
+LaserScan OccupancyGrid::addSemanticToLaserScan(
+		const LaserScan& scan, const cv::Mat& rgb,
+		const std::vector<rtabmap::CameraModel>& cameraModels) const
+{
+	cv::Mat scanRGB_data = cv::Mat(1, scan.size(),
+		CV_32FC(rtabmap::LaserScan::channels(rtabmap::LaserScan::Format::kXYZRGB)));
+	UASSERT(scan.format() == rtabmap::LaserScan::Format::kXYZ || scan.format() == rtabmap::LaserScan::Format::kXYZI);
+	UASSERT(rgb.type() == CV_8UC3);
+	rtabmap::Transform camera2LaserScan = cameraModels[0].localTransform().inverse() * scan.localTransform();
+	for (int i = 0; i < scan.size(); i++)
+	{
+		float* ptr = scanRGB_data.ptr<float>(0, i);
+		ptr[0] = scan.field(i, 0);
+		ptr[1] = scan.field(i, 1);
+		ptr[2] = scan.field(i, 2);
+
+		cv::Point3f cameraPoint = rtabmap::util3d::transformPoint(*(cv::Point3f*)(scan.data().ptr<float>(0, i)), camera2LaserScan);
+		int u, v;
+		cameraModels[0].reproject(cameraPoint.x, cameraPoint.y, cameraPoint.z, u, v);
+		float cameraPointRangeSqr = cameraPoint.x * cameraPoint.x + cameraPoint.y * cameraPoint.y +
+			cameraPoint.z * cameraPoint.z;
+		if (cameraModels[0].inFrame(u, v) && cameraPoint.z > 0 &&
+			(minSemanticRangeSqr_ == 0.0f || cameraPointRangeSqr > minSemanticRangeSqr_) &&
+			(maxSemanticRangeSqr_ == 0.0f || cameraPointRangeSqr < maxSemanticRangeSqr_))
+		{
+			int* ptrInt = (int*)ptr;
+			std::uint8_t b, g, r;
+			const std::uint8_t* bgrColor = rgb.ptr<std::uint8_t>(v, u);
+			b = std::max(bgrColor[0], (std::uint8_t)1);
+			g = std::max(bgrColor[1], (std::uint8_t)1);
+			r = std::max(bgrColor[2], (std::uint8_t)1);
+			ptrInt[3] = int(b) | (int(g) << 8) | (int(r) << 16);
+
+			pcl::PointXYZRGB coloredPoint;
+			coloredPoint.x = ptr[0];
+			coloredPoint.y = ptr[1];
+			coloredPoint.z = ptr[2];
+			coloredPoint.r = r;
+			coloredPoint.g = g;
+			coloredPoint.b = b;
+		}
+		else
+		{
+			int* ptrInt = (int*)ptr;
+			ptrInt[3] = 0;
+		}
+	}
+
+	LaserScan scanRGB = LaserScan(scanRGB_data, scan.maxPoints(), scan.rangeMax(),
+		LaserScan::Format::kXYZRGB, scan.localTransform());
+	return scanRGB;
+}
+
+void OccupancyGrid::createLocalMap(
+		const LaserScan & scan,
+		const Transform & pose,
+		cv::Mat & groundCells,
+		cv::Mat & emptyCells,
+		cv::Mat & obstacleCells,
+		cv::Point3f & viewPoint) const
+{
+	if(projMapFrame_)
+	{
+		//we should rotate viewPoint in /map frame
+		float roll, pitch, yaw;
+		pose.getEulerAngles(roll, pitch, yaw);
+		Transform viewpointRotated = Transform(0,0,0,roll,pitch,0) * Transform(viewPoint.x, viewPoint.y, viewPoint.z, 0,0,0);
+		viewPoint.x = viewpointRotated.x();
+		viewPoint.y = viewpointRotated.y();
+		viewPoint.z = viewpointRotated.z();
+	}
+
+	if(scan.size())
+	{
+		pcl::IndicesPtr groundIndices(new std::vector<int>);
+		pcl::IndicesPtr obstaclesIndices(new std::vector<int>);
+		cv::Mat groundCloud;
+		cv::Mat obstaclesCloud;
+
+		if(scan.hasRGB() && scan.hasNormals())
+		{
+			pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud = util3d::laserScanToPointCloudRGBNormal(scan, scan.localTransform());
+			pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloudSegmented = segmentCloud<pcl::PointXYZRGBNormal>(cloud, pcl::IndicesPtr(new std::vector<int>), pose, viewPoint, groundIndices, obstaclesIndices);
+			UDEBUG("groundIndices=%d, obstaclesIndices=%d", (int)groundIndices->size(), (int)obstaclesIndices->size());
+			util3d::occupancy2DFromGroundObstacles<pcl::PointXYZRGBNormal>(cloudSegmented, groundIndices, obstaclesIndices, groundCells, obstacleCells, cellSize_);
+		}
+		else if(scan.hasRGB())
+		{
+			pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = util3d::laserScanToPointCloudRGB(scan, scan.localTransform());
+			pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudSegmented = segmentCloud<pcl::PointXYZRGB>(cloud, pcl::IndicesPtr(new std::vector<int>), pose, viewPoint, groundIndices, obstaclesIndices);
+			UDEBUG("groundIndices=%d, obstaclesIndices=%d", (int)groundIndices->size(), (int)obstaclesIndices->size());
+			util3d::occupancy2DFromGroundObstacles<pcl::PointXYZRGB>(cloudSegmented, groundIndices, obstaclesIndices, groundCells, obstacleCells, cellSize_);
+		}
+		else if(scan.hasNormals())
+		{
+			pcl::PointCloud<pcl::PointNormal>::Ptr cloud = util3d::laserScanToPointCloudNormal(scan, scan.localTransform());
+			pcl::PointCloud<pcl::PointNormal>::Ptr cloudSegmented = segmentCloud<pcl::PointNormal>(cloud, pcl::IndicesPtr(new std::vector<int>), pose, viewPoint, groundIndices, obstaclesIndices);
+			UDEBUG("groundIndices=%d, obstaclesIndices=%d", (int)groundIndices->size(), (int)obstaclesIndices->size());
+			util3d::occupancy2DFromGroundObstacles<pcl::PointNormal>(cloudSegmented, groundIndices, obstaclesIndices, groundCells, obstacleCells, cellSize_);
+		}
+		else
+		{
+			pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = util3d::laserScanToPointCloud(scan, scan.localTransform());
+			pcl::PointCloud<pcl::PointXYZ>::Ptr cloudSegmented = segmentCloud<pcl::PointXYZ>(cloud, pcl::IndicesPtr(new std::vector<int>), pose, viewPoint, groundIndices, obstaclesIndices);
+			UDEBUG("groundIndices=%d, obstaclesIndices=%d", (int)groundIndices->size(), (int)obstaclesIndices->size());
+			util3d::occupancy2DFromGroundObstacles<pcl::PointXYZ>(cloudSegmented, groundIndices, obstaclesIndices, groundCells, obstacleCells, cellSize_);
+		}
+
+		if(rayTracing_ && (!obstacleCells.empty() || !groundCells.empty()))
+		{
+			cv::Mat laserScanNoHit = groundCells;
+			cv::Mat laserScan = obstacleCells;
+			groundCells = cv::Mat();
+			obstacleCells = cv::Mat();
+			util3d::occupancy2DFromLaserScan(
+					laserScan,
+					laserScanNoHit,
+					viewPoint,
+					emptyCells,
+					obstacleCells,
+					cellSize_,
+					false, // don't fill unknown space
+					cloudMaxDepth_);
+		}
+	}
+}
+
 template<typename PointT>
 typename pcl::PointCloud<PointT>::Ptr OccupancyGrid::segmentCloud(
 		const typename pcl::PointCloud<PointT>::Ptr & cloudIn,
@@ -346,7 +596,7 @@ typename pcl::PointCloud<PointT>::Ptr OccupancyGrid::segmentCloud(
 
 		UDEBUG("groundIndices=%d obstaclesIndices=%d", (int)groundIndices->size(), (int)obstaclesIndices->size());
 
-		// Do radius filtering after voxel filtering ( a lot faster)
+		// Do radius filtering after voxel filtering (a lot faster)
 		if(noiseFilteringRadius_ > 0.0 && noiseFilteringMinNeighbors_ > 0)
 		{
 			UDEBUG("");
@@ -374,256 +624,6 @@ typename pcl::PointCloud<PointT>::Ptr OccupancyGrid::segmentCloud(
 		}
 	}
 	return cloud;
-}
-
-OccupancyGrid::LocalMap OccupancyGrid::createLocalMap(const Signature & signature) const
-{
-	cv::Mat groundCells;
-	cv::Mat emptyCells;
-	cv::Mat obstacleCells;
-	cv::Point3f viewPoint;
-
-	if(signature.sensorData().laserScanRaw().is2d() && !occupancyFromDepth_)
-	{
-		UDEBUG("2D laser scan");
-		//2D
-		viewPoint = cv::Point3f(
-				signature.sensorData().laserScanRaw().localTransform().x(),
-				signature.sensorData().laserScanRaw().localTransform().y(),
-				signature.sensorData().laserScanRaw().localTransform().z());
-
-		LaserScan scan = signature.sensorData().laserScanRaw();
-		if(cloudMinDepth_ > 0.0f)
-		{
-			scan = util3d::rangeFiltering(scan, cloudMinDepth_, 0.0f);
-		}
-
-		float maxRange = cloudMaxDepth_;
-		if(cloudMaxDepth_>0.0f && signature.sensorData().laserScanRaw().rangeMax()>0.0f)
-		{
-			maxRange = cloudMaxDepth_ < signature.sensorData().laserScanRaw().rangeMax()?cloudMaxDepth_:signature.sensorData().laserScanRaw().rangeMax();
-		}
-		else if(scan2dUnknownSpaceFilled_ && signature.sensorData().laserScanRaw().rangeMax()>0.0f)
-		{
-			maxRange = signature.sensorData().laserScanRaw().rangeMax();
-		}
-		util3d::occupancy2DFromLaserScan(
-				util3d::transformLaserScan(scan, signature.sensorData().laserScanRaw().localTransform()).data(),
-				cv::Mat(),
-				viewPoint,
-				emptyCells,
-				obstacleCells,
-				cellSize_,
-				scan2dUnknownSpaceFilled_,
-				maxRange);
-	}
-	else
-	{
-		if(!occupancyFromDepth_)
-		{
-			if(!signature.sensorData().laserScanRaw().isEmpty())
-			{
-				UDEBUG("3D laser scan");
-				const Transform & t = signature.sensorData().laserScanRaw().localTransform();
-				LaserScan scan = util3d::downsample(signature.sensorData().laserScanRaw(), scanDecimation_);
-				if(cloudMinDepth_ > 0.0f || cloudMaxDepth_ > 0.0f)
-				{
-					scan = util3d::rangeFiltering(scan, cloudMinDepth_, 0);
-				}
-
-				if(!signature.sensorData().imageRaw().empty() && signature.sensorData().cameraModels().size())
-				{
-					scan = addSemanticToLaserScan(scan, signature.sensorData().imageRaw(), signature.sensorData().cameraModels());
-				}
-
-				// update viewpoint
-				viewPoint = cv::Point3f(t.x(), t.y(), t.z());
-
-				UDEBUG("scan format=%d", scan.format());
-				createLocalMap(scan, signature.getPose(), groundCells, emptyCells, obstacleCells, viewPoint);
-			}
-			else
-			{
-				UWARN("Cannot create local map, scan is empty (signature=%d, %s=false).", signature.id(), Parameters::kGridFromDepth().c_str());
-			}
-		}
-		else
-		{
-			pcl::IndicesPtr indices(new std::vector<int>);
-			pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud;
-			UDEBUG("Depth image : decimation=%d max=%f min=%f",
-					cloudDecimation_,
-					cloudMaxDepth_,
-					cloudMinDepth_);
-			cloud = util3d::cloudRGBFromSensorData(
-					signature.sensorData(),
-					cloudDecimation_,
-					cloudMaxDepth_,
-					cloudMinDepth_,
-					indices.get(),
-					parameters_,
-					roiRatios_);
-
-			// update viewpoint
-			if(signature.sensorData().cameraModels().size())
-			{
-				// average of all local transforms
-				float sum = 0;
-				for(unsigned int i=0; i<signature.sensorData().cameraModels().size(); ++i)
-				{
-					const Transform & t = signature.sensorData().cameraModels()[i].localTransform();
-					if(!t.isNull())
-					{
-						viewPoint.x += t.x();
-						viewPoint.y += t.y();
-						viewPoint.z += t.z();
-						sum += 1.0f;
-					}
-				}
-				if(sum > 0.0f)
-				{
-					viewPoint.x /= sum;
-					viewPoint.y /= sum;
-					viewPoint.z /= sum;
-				}
-			}
-			else
-			{
-				const Transform & t = signature.sensorData().stereoCameraModel().localTransform();
-				viewPoint = cv::Point3f(t.x(), t.y(), t.z());
-			}
-			createLocalMap(LaserScan(util3d::laserScanFromPointCloud(*cloud, indices), 0, 0.0f), signature.getPose(), groundCells, emptyCells, obstacleCells, viewPoint);
-		}
-	}
-
-	return cvMatsToLocalMap(groundCells, emptyCells, obstacleCells);
-}
-
-void OccupancyGrid::createLocalMap(
-		const LaserScan & scan,
-		const Transform & pose,
-		cv::Mat & groundCells,
-		cv::Mat & emptyCells,
-		cv::Mat & obstacleCells,
-		cv::Point3f & viewPoint) const
-{
-	if(projMapFrame_)
-	{
-		//we should rotate viewPoint in /map frame
-		float roll, pitch, yaw;
-		pose.getEulerAngles(roll, pitch, yaw);
-		Transform viewpointRotated = Transform(0,0,0,roll,pitch,0) * Transform(viewPoint.x, viewPoint.y, viewPoint.z, 0,0,0);
-		viewPoint.x = viewpointRotated.x();
-		viewPoint.y = viewpointRotated.y();
-		viewPoint.z = viewpointRotated.z();
-	}
-
-	if(scan.size())
-	{
-		pcl::IndicesPtr groundIndices(new std::vector<int>);
-		pcl::IndicesPtr obstaclesIndices(new std::vector<int>);
-		cv::Mat groundCloud;
-		cv::Mat obstaclesCloud;
-
-		if(scan.hasRGB() && scan.hasNormals())
-		{
-			pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud = util3d::laserScanToPointCloudRGBNormal(scan, scan.localTransform());
-			pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloudSegmented = segmentCloud<pcl::PointXYZRGBNormal>(cloud, pcl::IndicesPtr(new std::vector<int>), pose, viewPoint, groundIndices, obstaclesIndices);
-			UDEBUG("groundIndices=%d, obstaclesIndices=%d", (int)groundIndices->size(), (int)obstaclesIndices->size());
-			util3d::occupancy2DFromGroundObstacles<pcl::PointXYZRGBNormal>(cloudSegmented, groundIndices, obstaclesIndices, groundCells, obstacleCells, cellSize_);
-		}
-		else if(scan.hasRGB())
-		{
-			pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = util3d::laserScanToPointCloudRGB(scan, scan.localTransform());
-			pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudSegmented = segmentCloud<pcl::PointXYZRGB>(cloud, pcl::IndicesPtr(new std::vector<int>), pose, viewPoint, groundIndices, obstaclesIndices);
-			UDEBUG("groundIndices=%d, obstaclesIndices=%d", (int)groundIndices->size(), (int)obstaclesIndices->size());
-			util3d::occupancy2DFromGroundObstacles<pcl::PointXYZRGB>(cloudSegmented, groundIndices, obstaclesIndices, groundCells, obstacleCells, cellSize_);
-		}
-		else if(scan.hasNormals())
-		{
-			pcl::PointCloud<pcl::PointNormal>::Ptr cloud = util3d::laserScanToPointCloudNormal(scan, scan.localTransform());
-			pcl::PointCloud<pcl::PointNormal>::Ptr cloudSegmented = segmentCloud<pcl::PointNormal>(cloud, pcl::IndicesPtr(new std::vector<int>), pose, viewPoint, groundIndices, obstaclesIndices);
-			UDEBUG("groundIndices=%d, obstaclesIndices=%d", (int)groundIndices->size(), (int)obstaclesIndices->size());
-			util3d::occupancy2DFromGroundObstacles<pcl::PointNormal>(cloudSegmented, groundIndices, obstaclesIndices, groundCells, obstacleCells, cellSize_);
-		}
-		else
-		{
-			pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = util3d::laserScanToPointCloud(scan, scan.localTransform());
-			pcl::PointCloud<pcl::PointXYZ>::Ptr cloudSegmented = segmentCloud<pcl::PointXYZ>(cloud, pcl::IndicesPtr(new std::vector<int>), pose, viewPoint, groundIndices, obstaclesIndices);
-			UDEBUG("groundIndices=%d, obstaclesIndices=%d", (int)groundIndices->size(), (int)obstaclesIndices->size());
-			util3d::occupancy2DFromGroundObstacles<pcl::PointXYZ>(cloudSegmented, groundIndices, obstaclesIndices, groundCells, obstacleCells, cellSize_);
-		}
-
-		if(rayTracing_ && (!obstacleCells.empty() || !groundCells.empty()))
-		{
-			cv::Mat laserScanNoHit = groundCells;
-			cv::Mat laserScan = obstacleCells;
-			groundCells = cv::Mat();
-			obstacleCells = cv::Mat();
-			util3d::occupancy2DFromLaserScan(
-					laserScan,
-					laserScanNoHit,
-					viewPoint,
-					emptyCells,
-					obstacleCells,
-					cellSize_,
-					false, // don't fill unknown space
-					cloudMaxDepth_);
-		}
-	}
-}
-
-LaserScan OccupancyGrid::addSemanticToLaserScan(
-		const LaserScan& scan, const cv::Mat& rgb,
-		const std::vector<rtabmap::CameraModel>& cameraModels) const
-{
-	cv::Mat scanRGB_data = cv::Mat(1, scan.size(),
-		CV_32FC(rtabmap::LaserScan::channels(rtabmap::LaserScan::Format::kXYZRGB)));
-	UASSERT(scan.format() == rtabmap::LaserScan::Format::kXYZ || scan.format() == rtabmap::LaserScan::Format::kXYZI);
-	UASSERT(rgb.type() == CV_8UC3);
-	rtabmap::Transform camera2LaserScan = cameraModels[0].localTransform().inverse() * scan.localTransform();
-	for (int i = 0; i < scan.size(); i++)
-	{
-		float* ptr = scanRGB_data.ptr<float>(0, i);
-		ptr[0] = scan.field(i, 0);
-		ptr[1] = scan.field(i, 1);
-		ptr[2] = scan.field(i, 2);
-
-		cv::Point3f cameraPoint = rtabmap::util3d::transformPoint(*(cv::Point3f*)(scan.data().ptr<float>(0, i)), camera2LaserScan);
-		int u, v;
-		cameraModels[0].reproject(cameraPoint.x, cameraPoint.y, cameraPoint.z, u, v);
-		float cameraPointRangeSqr = cameraPoint.x * cameraPoint.x + cameraPoint.y * cameraPoint.y +
-			cameraPoint.z * cameraPoint.z;
-		if (cameraModels[0].inFrame(u, v) && cameraPoint.z > 0 &&
-			(minSemanticRangeSqr_ == 0.0f || cameraPointRangeSqr > minSemanticRangeSqr_) &&
-			(maxSemanticRangeSqr_ == 0.0f || cameraPointRangeSqr < maxSemanticRangeSqr_))
-		{
-			int* ptrInt = (int*)ptr;
-			std::uint8_t b, g, r;
-			const std::uint8_t* bgrColor = rgb.ptr<std::uint8_t>(v, u);
-			b = std::max(bgrColor[0], (std::uint8_t)1);
-			g = std::max(bgrColor[1], (std::uint8_t)1);
-			r = std::max(bgrColor[2], (std::uint8_t)1);
-			ptrInt[3] = int(b) | (int(g) << 8) | (int(r) << 16);
-
-			pcl::PointXYZRGB coloredPoint;
-			coloredPoint.x = ptr[0];
-			coloredPoint.y = ptr[1];
-			coloredPoint.z = ptr[2];
-			coloredPoint.r = r;
-			coloredPoint.g = g;
-			coloredPoint.b = b;
-		}
-		else
-		{
-			int* ptrInt = (int*)ptr;
-			ptrInt[3] = 0;
-		}
-	}
-
-	LaserScan scanRGB = LaserScan(scanRGB_data, scan.maxPoints(), scan.rangeMax(),
-		LaserScan::Format::kXYZRGB, scan.localTransform());
-	return scanRGB;
 }
 
 OccupancyGrid::LocalMap OccupancyGrid::cvMatsToLocalMap(
@@ -723,6 +723,16 @@ void OccupancyGrid::addLocalMap(int nodeId, OccupancyGrid::LocalMap localMap)
 	localMaps_[nodeId] = std::move(localMap);
 }
 
+void OccupancyGrid::addTemporaryLocalMap(const Transform & temporaryPose, OccupancyGrid::LocalMap temporaryLocalMap)
+{
+	poses_[-1] = temporaryPose;
+	addLocalMap(-1, std::move(temporaryLocalMap));
+	transformLocalMap(-1);
+	temporaryLocalMap_ = std::make_unique<OccupancyGrid::LocalMap>(std::move(localMaps_.at(-1)));
+	poses_.erase(-1);
+	localMaps_.erase(-1);
+}
+
 void OccupancyGrid::cacheCurrentMap()
 {
 	cachedMap_ = std::make_unique<OccupancyGrid::CachedMap>();
@@ -731,6 +741,7 @@ void OccupancyGrid::cacheCurrentMap()
 	cachedMap_->yMin = yMin_;
 	cachedMap_->map = map_.clone();
 	cachedMap_->colors = colors_.clone();
+	cachedMap_->temporarilyOccupiedCells = temporarilyOccupiedCells_;
 }
 
 bool OccupancyGrid::tryToUseCachedMap(const std::map<int, Transform> & updatedPoses)
@@ -757,16 +768,19 @@ bool OccupancyGrid::tryToUseCachedMap(const std::map<int, Transform> & updatedPo
 		++cachedIt;
 	}
 
+	poses_ = cachedMap_->poses;
 	xMin_ = cachedMap_->xMin;
 	yMin_ = cachedMap_->yMin;
 	map_ = cachedMap_->map.clone();
 	colors_ = cachedMap_->colors.clone();
-	poses_ = cachedMap_->poses;
+	temporarilyOccupiedCells_ = cachedMap_->temporarilyOccupiedCells;
 	return true;
 }
 
 bool OccupancyGrid::update(const std::map<int, Transform> & updatedPoses)
 {
+	temporaryLocalMap_.reset();
+
 	bool graphChanged = checkIfGraphChanged(updatedPoses);
 
 	if(graphChanged)
@@ -954,62 +968,50 @@ void OccupancyGrid::deployLocalMap(int nodeId)
 	UASSERT(isLocalMapTransformed(nodeId));
 	temporarilyOccupiedCells_.clear();
 	const OccupancyGrid::LocalMap & localMap = localMaps_.at(nodeId);
-	for (int i = 0; i < localMap.numGround + localMap.numEmpty; i++)
+	for (int i = 0; i < localMap.points.cols(); i++)
 	{
 		int x = localMap.transformedPoints2d(0, i) - xMin_;
 		int y = localMap.transformedPoints2d(1, i) - yMin_;
 		UASSERT(y >= 0 && y < map_.rows && x >= 0 && x < map_.cols);
 
-		float & logodds = map_.at<float>(y, x);
-		logodds += probMiss_;
-		if (logodds < probClampingMin_)
+		bool free = (i < localMap.numGround + localMap.numEmpty);
+		if (free)
 		{
-			logodds = probClampingMin_;
-		}
-
-		const auto & colors = localMap.colors;
-		cv::Vec3b & color = colors_.at<cv::Vec3b>(y, x);
-		int c = colors[i];
-		if (c != -1)
-		{
-			color[0] = (unsigned char)(c & 0xFF);
-			color[1] = (unsigned char)((c >> 8) & 0xFF);
-			color[2] = (unsigned char)((c >> 16) & 0xFF);
-		}
-	}
-
-	for (int i = localMap.numGround + localMap.numEmpty; i < localMap.points.cols(); i++)
-	{
-		int x = localMap.transformedPoints2d(0, i) - xMin_;
-		int y = localMap.transformedPoints2d(1, i) - yMin_;
-		UASSERT(y >= 0 && y < map_.rows && x >= 0 && x < map_.cols);
-
-		if (temporarilyOccupiedCellsColor_ >= 0)
-		{
-			const auto & colors = localMap.colors;
-			int c = colors[i];
-			if (c == temporarilyOccupiedCellsColor_)
+			float & logodds = map_.at<float>(y, x);
+			logodds += probMiss_;
+			if (logodds < probClampingMin_)
 			{
-				temporarilyOccupiedCells_.emplace_back(x, y);
-				continue;
+				logodds = probClampingMin_;
+			}
+		}
+		else
+		{
+			if (temporarilyOccupiedCellsColor_ >= 0)
+			{
+				const auto & colors = localMap.colors;
+				int c = colors[i];
+				if (c == temporarilyOccupiedCellsColor_)
+				{
+					temporarilyOccupiedCells_.emplace_back(x, y);
+					continue;
+				}
+			}
+
+			float & logodds = map_.at<float>(y, x);
+			logodds += probHit_;
+			if (logodds > probClampingMax_)
+			{
+				logodds = probClampingMax_;
 			}
 		}
 
-		float & logodds = map_.at<float>(y, x);
-		logodds += probHit_;
-		if (logodds > probClampingMax_)
+		int localMapColor = localMap.colors[i];
+		if (localMapColor != -1)
 		{
-			logodds = probClampingMax_;
-		}
-
-		const auto & colors = localMap.colors;
-		cv::Vec3b & color = colors_.at<cv::Vec3b>(y, x);
-		int c = colors[i];
-		if (c != -1)
-		{
-			color[0] = (unsigned char)(c & 0xFF);
-			color[1] = (unsigned char)((c >> 8) & 0xFF);
-			color[2] = (unsigned char)((c >> 16) & 0xFF);
+			cv::Vec3b & color = colors_.at<cv::Vec3b>(y, x);
+			color[0] = (unsigned char)(localMapColor & 0xFF);
+			color[1] = (unsigned char)((localMapColor >> 8) & 0xFF);
+			color[2] = (unsigned char)((localMapColor >> 16) & 0xFF);
 		}
 	}
 }
@@ -1047,15 +1049,7 @@ cv::Mat OccupancyGrid::getMap(float & xMin, float & yMin) const
 		}
 	}
 
-	if (showTemporarilyOccupiedCells_)
-	{
-		for (const auto& pair : temporarilyOccupiedCells_)
-		{
-			int x = pair.first;
-			int y = pair.second;
-			map.at<char>(y, x) = 100;
-		}
-	}
+	addTemporaryInfoOnMap(map);
 
 	if(erode_ && !map.empty())
 	{
@@ -1093,15 +1087,7 @@ cv::Mat OccupancyGrid::getProbMap(float & xMin, float & yMin) const
 		}
 	}
 
-	if (showTemporarilyOccupiedCells_)
-	{
-		for (const auto& pair : temporarilyOccupiedCells_)
-		{
-			int x = pair.first;
-			int y = pair.second;
-			map.at<char>(y, x) = 100;
-		}
-	}
+	addTemporaryInfoOnMap(map);
 
 	return map;
 }
@@ -1121,6 +1107,49 @@ cv::Mat OccupancyGrid::getColors(float & xMin, float & yMin) const
 		UWARN("Colors are empty");
 	}
 
+	addTemporaryInfoOnColors(colors);
+
+	return colors;
+}
+
+void OccupancyGrid::addTemporaryInfoOnMap(cv::Mat map) const
+{
+	if (showTemporarilyOccupiedCells_)
+	{
+		for (const auto& pair : temporarilyOccupiedCells_)
+		{
+			int x = pair.first;
+			int y = pair.second;
+			map.at<char>(y, x) = 100;
+		}
+	}
+
+	if (temporaryLocalMap_)
+	{
+		for (int i = 0; i < temporaryLocalMap_->points.cols(); i++)
+		{
+			int x = temporaryLocalMap_->transformedPoints2d(0, i) - xMin_;
+			int y = temporaryLocalMap_->transformedPoints2d(1, i) - yMin_;
+			if (!(y >= 0 && y < map.rows && x >= 0 && x < map.cols))
+			{
+				continue;
+			}
+
+			bool free = (i < temporaryLocalMap_->numGround + temporaryLocalMap_->numEmpty);
+			if (free)
+			{
+				map.at<char>(y, x) = 0;
+			}
+			else
+			{
+				map.at<char>(y, x) = 100;
+			}
+		}
+	}
+}
+
+void OccupancyGrid::addTemporaryInfoOnColors(cv::Mat colors) const
+{
 	if (showTemporarilyOccupiedCells_)
 	{
 		for (const auto& pair : temporarilyOccupiedCells_)
@@ -1134,7 +1163,28 @@ cv::Mat OccupancyGrid::getColors(float & xMin, float & yMin) const
 		}
 	}
 
-	return colors;
+	if (temporaryLocalMap_)
+	{
+		for (int i = temporaryLocalMap_->numGround + temporaryLocalMap_->numEmpty; i < temporaryLocalMap_->points.cols(); i++)
+		{
+			int x = temporaryLocalMap_->transformedPoints2d(0, i) - xMin_;
+			int y = temporaryLocalMap_->transformedPoints2d(1, i) - yMin_;
+			if (!(y >= 0 && y < colors.rows && x >= 0 && x < colors.cols))
+			{
+				continue;
+			}
+
+			const auto & temporaryLocalMapColors = temporaryLocalMap_->colors;
+			int temporaryLocalMapColor = temporaryLocalMapColors[i];
+			if (temporaryLocalMapColor != -1)
+			{
+				cv::Vec3b & color = colors.at<cv::Vec3b>(y, x);
+				color[0] = (unsigned char)(temporaryLocalMapColor & 0xFF);
+				color[1] = (unsigned char)((temporaryLocalMapColor >> 8) & 0xFF);
+				color[2] = (unsigned char)((temporaryLocalMapColor >> 16) & 0xFF);
+			}
+		}
+	}
 }
 
 float OccupancyGrid::getCellSize() const
@@ -1165,6 +1215,7 @@ void OccupancyGrid::clear()
 	cachedMap_.reset();
 
 	temporarilyOccupiedCells_.clear();
+	temporaryLocalMap_.reset();
 }
 
 }
