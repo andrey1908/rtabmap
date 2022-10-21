@@ -857,8 +857,12 @@ void OccupancyGrid::updatePoses(const std::map<int, Transform> & updatedPoses,
 		getNewMapSize(temporaryLocalMap, xMin, yMin, xMax, yMax, definedSize);
 		definedSize = true;
 	}
-	createOrExtendMapIfNeeded(xMin, yMin, xMax, yMax);
-	
+
+	if(definedSize)
+	{
+		createOrExtendMapIfNeeded(xMin, yMin, xMax, yMax);
+	}
+
 	for(auto updatedNodeId : updatedNodeIds)
 	{
 		deployLocalMap(updatedNodeId);
