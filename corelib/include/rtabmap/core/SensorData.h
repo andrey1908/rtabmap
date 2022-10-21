@@ -135,7 +135,8 @@ public:
 
 	bool isValid() const {
 		return !(_id == 0 &&
-			_stamp == 0.0 &&
+			_sec == 0 &&
+			_nsec == 0 &&
 			_imageRaw.empty() &&
 			_imageCompressed.empty() &&
 			_depthOrRightRaw.empty() &&
@@ -153,8 +154,11 @@ public:
 
 	int id() const {return _id;}
 	void setId(int id) {_id = id;}
-	double stamp() const {return _stamp;}
-	void setStamp(double stamp) {_stamp = stamp;}
+	double stamp() const {return uSecNSecStamp2Double(_sec, _nsec);}
+	uint32_t sec() const {return _sec;}
+	uint32_t nsec() const {return _nsec;}
+	void setStamp(double stamp) {std::tie(_sec, _nsec) = uDoubleStamp2SecNSec(stamp);}
+	void setStamp(uint32_t sec, uint32_t nsec) {_sec = sec; _nsec = nsec;}
 
 	const cv::Mat & imageCompressed() const {return _imageCompressed;}
 	const cv::Mat & depthOrRightCompressed() const {return _depthOrRightCompressed;}
@@ -290,7 +294,8 @@ public:
 
 private:
 	int _id;
-	double _stamp;
+	uint32_t _sec;
+	uint32_t _nsec;
 
 	cv::Mat _imageCompressed;          // compressed image
 	cv::Mat _depthOrRightCompressed;   // compressed image

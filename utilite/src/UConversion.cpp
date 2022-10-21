@@ -19,12 +19,14 @@
 
 #include "rtabmap/utilite/UConversion.h"
 #include "rtabmap/utilite/UStl.h"
+#include "rtabmap/utilite/ULogger.h"
 
 #include <sstream>
 #include <iomanip>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <cmath>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -384,3 +386,22 @@ char * createCharFromWChar(const wchar_t * wText)
 	return text;
 }
 #endif
+
+std::pair<uint32_t, uint32_t> UTILITE_EXP uDoubleStamp2SecNSec(double stamp)
+{
+	int64_t sec64 = static_cast<int64_t>(std::floor(stamp));
+	UASSERT(sec64 >= 0 && sec64 <= std::numeric_limits<uint32_t>::max());
+
+	uint32_t sec, nsec;
+	sec = static_cast<uint32_t>(sec64);
+	nsec = static_cast<uint32_t>(std::round((stamp - sec) * 1e9));
+	// avoid rounding errors
+	sec += (nsec / 1000000000ul);
+	nsec %= 1000000000ul;
+	return std::make_pair(sec, nsec);
+}
+
+double UTILITE_EXP uSecNSecStamp2Double(uint32_t sec, uint32_t nsec)
+{
+	return static_cast<double>(sec) + static_cast<double>(nsec) * 1e-9;
+}

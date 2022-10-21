@@ -57,6 +57,15 @@ public:
 			const Transform & pose = Transform(),
 			const Transform & groundTruthPose = Transform(),
 			const SensorData & sensorData = SensorData());
+	Signature(int id,
+			int mapId = -1,
+			int weight = 0,
+			uint32_t sec = 0,
+			uint32_t nsec = 0,
+			const std::string & label = std::string(),
+			const Transform & pose = Transform(),
+			const Transform & groundTruthPose = Transform(),
+			const SensorData & sensorData = SensorData());
 	Signature(const SensorData & data);
 	virtual ~Signature();
 
@@ -74,7 +83,9 @@ public:
 	void setLabel(const std::string & label) {_modified=_label.compare(label)!=0;_label = label;}
 	const std::string & getLabel() const {return _label;}
 
-	double getStamp() const {return _stamp;}
+	double getStamp() const {return uSecNSecStamp2Double(_sec, _nsec);}
+	uint32_t getSec() const {return _sec;}
+	uint32_t getNSec() const {return _nsec;}
 
 	void setSaved(bool saved) {_saved = saved;}
 	void setModified(bool modified) {_modified = modified;}
@@ -122,7 +133,8 @@ public:
 private:
 	int _id;
 	int _mapId;
-	double _stamp;
+	uint32_t _sec;
+	uint32_t _nsec;
 
 	int _weight;
 	std::string _label;

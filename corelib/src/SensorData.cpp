@@ -39,7 +39,8 @@ namespace rtabmap
 // empty constructor
 SensorData::SensorData() :
 		_id(0),
-		_stamp(0.0),
+		_sec(0),
+		_nsec(0),
 		_cellSize(0.0f)
 {
 }
@@ -51,9 +52,11 @@ SensorData::SensorData(
 		double stamp,
 		const cv::Mat & userData) :
 		_id(id),
-		_stamp(stamp),
+		_sec(0),
+		_nsec(0),
 		_cellSize(0.0f)
 {
+	std::tie(_sec, _nsec) = uDoubleStamp2SecNSec(stamp);
 	setRGBDImage(image, cv::Mat(), CameraModel());
 	setUserData(userData);
 }
@@ -66,9 +69,11 @@ SensorData::SensorData(
 		double stamp,
 		const cv::Mat & userData) :
 		_id(id),
-		_stamp(stamp),
+		_sec(0),
+		_nsec(0),
 		_cellSize(0.0f)
 {
+	std::tie(_sec, _nsec) = uDoubleStamp2SecNSec(stamp);
 	setRGBDImage(image, cv::Mat(), cameraModel);
 	setUserData(userData);
 }
@@ -82,9 +87,11 @@ SensorData::SensorData(
 		double stamp,
 		const cv::Mat & userData) :
 		_id(id),
-		_stamp(stamp),
+		_sec(0),
+		_nsec(0),
 		_cellSize(0.0f)
 {
+	std::tie(_sec, _nsec) = uDoubleStamp2SecNSec(stamp);
 	setRGBDImage(rgb, depth, cameraModel);
 	setUserData(userData);
 }
@@ -99,9 +106,11 @@ SensorData::SensorData(
 		double stamp,
 		const cv::Mat & userData) :
 		_id(id),
-		_stamp(stamp),
+		_sec(0),
+		_nsec(0),
 		_cellSize(0.0f)
 {
+	std::tie(_sec, _nsec) = uDoubleStamp2SecNSec(stamp);
 	setRGBDImage(rgb, depth, cameraModel);
 	setLaserScan(laserScan);
 	setUserData(userData);
@@ -116,9 +125,11 @@ SensorData::SensorData(
 		double stamp,
 		const cv::Mat & userData) :
 		_id(id),
-		_stamp(stamp),
+		_sec(0),
+		_nsec(0),
 		_cellSize(0.0f)
 {
+	std::tie(_sec, _nsec) = uDoubleStamp2SecNSec(stamp);
 	setRGBDImage(rgb, depth, cameraModels);
 	setUserData(userData);
 }
@@ -133,9 +144,11 @@ SensorData::SensorData(
 		double stamp,
 		const cv::Mat & userData) :
 		_id(id),
-		_stamp(stamp),
+		_sec(0),
+		_nsec(0),
 		_cellSize(0.0f)
 {
+	std::tie(_sec, _nsec) = uDoubleStamp2SecNSec(stamp);
 	setRGBDImage(rgb, depth, cameraModels);
 	setLaserScan(laserScan);
 	setUserData(userData);
@@ -150,9 +163,11 @@ SensorData::SensorData(
 		double stamp,
 		const cv::Mat & userData):
 		_id(id),
-		_stamp(stamp),
+		_sec(0),
+		_nsec(0),
 		_cellSize(0.0f)
 {
+	std::tie(_sec, _nsec) = uDoubleStamp2SecNSec(stamp);
 	setStereoImage(left, right, cameraModel);
 	setUserData(userData);
 }
@@ -167,9 +182,11 @@ SensorData::SensorData(
 		double stamp,
 		const cv::Mat & userData) :
 		_id(id),
-		_stamp(stamp),
+		_sec(0),
+		_nsec(0),
 		_cellSize(0.0f)
 {
+	std::tie(_sec, _nsec) = uDoubleStamp2SecNSec(stamp);
 	setStereoImage(left, right, cameraModel);
 	setLaserScan(laserScan);
 	setUserData(userData);
@@ -180,9 +197,11 @@ SensorData::SensorData(
 	int id,
 	double stamp) :
 		_id(id),
-		_stamp(stamp),
+		_sec(0),
+		_nsec(0),
 		_cellSize(0.0f)
 {
+	std::tie(_sec, _nsec) = uDoubleStamp2SecNSec(stamp);
 	imu_ = imu;
 }
 

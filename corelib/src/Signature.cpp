@@ -37,7 +37,8 @@ namespace rtabmap
 Signature::Signature() :
 	_id(0), // invalid id
 	_mapId(-1),
-	_stamp(0.0),
+	_sec(0),
+	_nsec(0),
 	_weight(0),
 	_saved(false),
 	_modified(true),
@@ -57,7 +58,8 @@ Signature::Signature(
 		const SensorData & sensorData):
 	_id(id),
 	_mapId(mapId),
-	_stamp(stamp),
+	_sec(0),
+	_nsec(0),
 	_weight(weight),
 	_label(label),
 	_saved(false),
@@ -68,6 +70,8 @@ Signature::Signature(
 	_groundTruthPose(groundTruthPose),
 	_sensorData(sensorData)
 {
+	std::tie(_sec, _nsec) = uDoubleStamp2SecNSec(stamp);
+
 	if(_sensorData.id() == 0)
 	{
 		_sensorData.setId(id);
@@ -78,7 +82,8 @@ Signature::Signature(
 Signature::Signature(const SensorData & data) :
 	_id(data.id()),
 	_mapId(-1),
-	_stamp(data.stamp()),
+	_sec(data.sec()),
+	_nsec(data.nsec()),
 	_weight(0),
 	_label(""),
 	_saved(false),

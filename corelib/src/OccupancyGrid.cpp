@@ -159,6 +159,7 @@ void OccupancyGrid::parseParameters(const ParametersMap & parameters)
 	Parameters::parse(parameters, Parameters::kGridTemporarilyOccupiedCellsColor(), temporarilyOccupiedCellsColor_);
 	Parameters::parse(parameters, Parameters::kGridShowTemporarilyOccupiedCells(), showTemporarilyOccupiedCells_);
 	Parameters::parse(parameters, Parameters::kGridMaxTemporaryLocalMaps(), maxTemporaryLocalMaps_);
+	UASSERT(maxTemporaryLocalMaps_ >= 0);
 
 	// convert ROI from string to vector
 	ParametersMap::const_iterator iter;
@@ -1195,6 +1196,11 @@ void OccupancyGrid::addTemporaryInfoOnColors(cv::Mat colors) const
 float OccupancyGrid::getCellSize() const
 {
 	return cellSize_;
+}
+
+int OccupancyGrid::getMaxTemporaryLocalMaps() const
+{
+	return maxTemporaryLocalMaps_;
 }
 
 int OccupancyGrid::localMapsNum() const

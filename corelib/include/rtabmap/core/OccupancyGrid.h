@@ -91,6 +91,7 @@ public:
 	cv::Mat getColors(float & xMin, float & yMin) const;
 
 	float getCellSize() const;
+	int getMaxTemporaryLocalMaps() const;
 	int localMapsNum() const;
 	const std::map<int, LocalMap> & localMaps();
 

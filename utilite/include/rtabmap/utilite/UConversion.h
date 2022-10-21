@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 #include <stdarg.h>
+#include <utility>
 
 /**
  * \file UConversion.h
@@ -286,5 +287,15 @@ UTILITE_EXP wchar_t * createWCharFromChar(const char * text);
  */
 UTILITE_EXP char * createCharFromWChar(const wchar_t * wText);
 #endif
+
+/**
+ * Converts time stamp from double to seconds and nano seconds
+ */
+std::pair<uint32_t, uint32_t> UTILITE_EXP uDoubleStamp2SecNSec(double stamp);
+
+/**
+ * Converts time stamp from seconds and nano seconds to double
+ */
+double UTILITE_EXP uSecNSecStamp2Double(uint32_t sec, uint32_t nsec);
 
 #endif /* UCONVERSION_H */
