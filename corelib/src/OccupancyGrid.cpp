@@ -36,6 +36,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <pcl/io/pcd_io.h>
 
+#include "time_measurer/time_measurer.h"
+
 namespace rtabmap {
 
 OccupancyGrid::OccupancyGrid(const ParametersMap & parameters) :
@@ -810,6 +812,7 @@ bool OccupancyGrid::tryToUseCachedMap(const std::map<int, Transform> & updatedPo
 void OccupancyGrid::updatePoses(const std::map<int, Transform> & updatedPoses,
 		const std::list<Transform> & updatedTemporaryPoses /* std::list<Transform>() */)
 {
+	MEASURE_BLOCK_TIME(OccupancyGrid__updatePoses);
 	UASSERT(temporaryPoses_.size() == updatedTemporaryPoses.size());
 
 	map_ = cv::Mat();
@@ -943,6 +946,7 @@ void OccupancyGrid::createOrExtendMapIfNeeded(int xMin, int yMin, int xMax, int 
 	cv::Size newMapSize(xMax - xMin + 1, yMax - yMin + 1);
 	if(map_.empty())
 	{
+		MEASURE_BLOCK_TIME(OccupancyGrid__createOrExtendMapIfNeeded__create_map);
 		xMin_ = xMin;
 		yMin_ = yMin;
 		map_ = cv::Mat::zeros(newMapSize, CV_32FC1);
@@ -952,6 +956,7 @@ void OccupancyGrid::createOrExtendMapIfNeeded(int xMin, int yMin, int xMax, int 
 			newMapSize.width != map_.cols ||
 			newMapSize.height != map_.rows)
 	{
+		MEASURE_BLOCK_TIME(OccupancyGrid__createOrExtendMapIfNeeded__extend_map);
 		int deltaX = xMin_ - xMin;
 		int deltaY = yMin_ - yMin;
 
