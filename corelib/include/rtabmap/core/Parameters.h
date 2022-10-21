@@ -751,6 +751,7 @@ class RTABMAP_EXP Parameters
     RTABMAP_PARAM(Grid, MaxSemanticRange,           float,   0.0,    "Maximum range for semantic to be added to laser scan. 0=inf.");
     RTABMAP_PARAM(Grid, TemporarilyOccupiedCellsColor, int,  -1,     "Color of temporarily occupied cells. (-1) - do not extract temporarily occupied cells.");
     RTABMAP_PARAM(Grid, ShowTemporarilyOccupiedCells,  bool, true,   "Show temporarily occupied cells.");
+    RTABMAP_PARAM(Grid, MaxTemporaryLocalMaps,         int,  1,      "Maximum number of temporary local maps.");
 
     RTABMAP_PARAM(GridGlobal, FootprintRadius,      float,  0.0,     "Footprint radius (m) used to clear all obstacles under the graph.");
     RTABMAP_PARAM(GridGlobal, Eroded,               bool,   false,   "Erode obstacle cells.");

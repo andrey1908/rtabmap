@@ -78,10 +78,13 @@ public:
 
 	LocalMap createLocalMap(const Signature & signature) const;
 	void addLocalMap(int nodeId, LocalMap localMap);
+	void addLocalMap(int nodeId, const Transform & pose, LocalMap localMap);
 	void addTemporaryLocalMap(const Transform & temporaryPose, LocalMap temporaryLocalMap);
-	bool update(const std::map<int, Transform> & updatedPoses);
 
 	void cacheCurrentMap();
+
+	void updatePoses(const std::map<int, Transform> & updatedPoses,
+		const std::list<Transform> & updatedTemporaryPoses = std::list<Transform>());
 
 	cv::Mat getMap(float & xMin, float & yMin) const;
 	cv::Mat getProbMap(float & xMin, float & yMin) const;
@@ -119,11 +122,9 @@ private:
 
 	bool tryToUseCachedMap(const std::map<int, Transform> & updatedPoses);
 
-	bool checkIfGraphChanged(const std::map<int, Transform> & updatedPoses);
-	void transformLocalMap(int nodeId);
-	void transformLocalMaps(const std::vector<int> & nodeIds);
-	bool isLocalMapTransformed(int nodeId);
-	void getNewMapSize(const std::vector<int> & newNodeIds, int & xMin, int & yMin, int & xMax, int & yMax);
+	void transformLocalMap(const Transform & pose, LocalMap & localMap);
+	bool isLocalMapTransformed(const LocalMap & localMap) const;
+	void getNewMapSize(const LocalMap & transformedLocalMap, int & xMin, int & yMin, int & xMax, int & yMax, bool definedSize);
 	void createOrExtendMapIfNeeded(int xMin, int yMin, int xMax, int yMax);
 	void deployLocalMap(int nodeId);
 
@@ -169,6 +170,7 @@ private:
 	float maxSemanticRangeSqr_;
 	int temporarilyOccupiedCellsColor_;
 	bool showTemporarilyOccupiedCells_;
+	int maxTemporaryLocalMaps_;
 
 	std::map<int, LocalMap> localMaps_;
 	std::map<int, Transform> poses_;
@@ -181,7 +183,9 @@ private:
 	std::unique_ptr<CachedMap> cachedMap_;
 
 	std::list<std::pair<int, int>> temporarilyOccupiedCells_;
-	std::unique_ptr<LocalMap> temporaryLocalMap_;
+
+	std::list<LocalMap> temporaryLocalMaps_;
+	std::list<Transform> temporaryPoses_;
 };
 
 }
