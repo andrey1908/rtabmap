@@ -346,59 +346,6 @@ OccupancyGrid::LocalMap OccupancyGrid::createLocalMap(const Signature & signatur
 	return cvMatsToLocalMap(groundCells, emptyCells, obstacleCells);
 }
 
-LaserScan OccupancyGrid::addSemanticToLaserScan(
-		const LaserScan& scan, const cv::Mat& rgb,
-		const std::vector<rtabmap::CameraModel>& cameraModels) const
-{
-	cv::Mat scanRGB_data = cv::Mat(1, scan.size(),
-		CV_32FC(rtabmap::LaserScan::channels(rtabmap::LaserScan::Format::kXYZRGB)));
-	UASSERT(scan.format() == rtabmap::LaserScan::Format::kXYZ || scan.format() == rtabmap::LaserScan::Format::kXYZI);
-	UASSERT(rgb.type() == CV_8UC3);
-	rtabmap::Transform camera2LaserScan = cameraModels[0].localTransform().inverse() * scan.localTransform();
-	for (int i = 0; i < scan.size(); i++)
-	{
-		float* ptr = scanRGB_data.ptr<float>(0, i);
-		ptr[0] = scan.field(i, 0);
-		ptr[1] = scan.field(i, 1);
-		ptr[2] = scan.field(i, 2);
-
-		cv::Point3f cameraPoint = rtabmap::util3d::transformPoint(*(cv::Point3f*)(scan.data().ptr<float>(0, i)), camera2LaserScan);
-		int u, v;
-		cameraModels[0].reproject(cameraPoint.x, cameraPoint.y, cameraPoint.z, u, v);
-		float cameraPointRangeSqr = cameraPoint.x * cameraPoint.x + cameraPoint.y * cameraPoint.y +
-			cameraPoint.z * cameraPoint.z;
-		if (cameraModels[0].inFrame(u, v) && cameraPoint.z > 0 &&
-			(minSemanticRangeSqr_ == 0.0f || cameraPointRangeSqr > minSemanticRangeSqr_) &&
-			(maxSemanticRangeSqr_ == 0.0f || cameraPointRangeSqr < maxSemanticRangeSqr_))
-		{
-			int* ptrInt = (int*)ptr;
-			std::uint8_t b, g, r;
-			const std::uint8_t* bgrColor = rgb.ptr<std::uint8_t>(v, u);
-			b = std::max(bgrColor[0], (std::uint8_t)1);
-			g = std::max(bgrColor[1], (std::uint8_t)1);
-			r = std::max(bgrColor[2], (std::uint8_t)1);
-			ptrInt[3] = int(b) | (int(g) << 8) | (int(r) << 16);
-
-			pcl::PointXYZRGB coloredPoint;
-			coloredPoint.x = ptr[0];
-			coloredPoint.y = ptr[1];
-			coloredPoint.z = ptr[2];
-			coloredPoint.r = r;
-			coloredPoint.g = g;
-			coloredPoint.b = b;
-		}
-		else
-		{
-			int* ptrInt = (int*)ptr;
-			ptrInt[3] = 0;
-		}
-	}
-
-	LaserScan scanRGB = LaserScan(scanRGB_data, scan.maxPoints(), scan.rangeMax(),
-		LaserScan::Format::kXYZRGB, scan.localTransform());
-	return scanRGB;
-}
-
 void OccupancyGrid::createLocalMap(
 		const LaserScan & scan,
 		const Transform & pose,
@@ -629,6 +576,59 @@ typename pcl::PointCloud<PointT>::Ptr OccupancyGrid::segmentCloud(
 		}
 	}
 	return cloud;
+}
+
+LaserScan OccupancyGrid::addSemanticToLaserScan(
+		const LaserScan& scan, const cv::Mat& rgb,
+		const std::vector<rtabmap::CameraModel>& cameraModels) const
+{
+	cv::Mat scanRGB_data = cv::Mat(1, scan.size(),
+		CV_32FC(rtabmap::LaserScan::channels(rtabmap::LaserScan::Format::kXYZRGB)));
+	UASSERT(scan.format() == rtabmap::LaserScan::Format::kXYZ || scan.format() == rtabmap::LaserScan::Format::kXYZI);
+	UASSERT(rgb.type() == CV_8UC3);
+	rtabmap::Transform camera2LaserScan = cameraModels[0].localTransform().inverse() * scan.localTransform();
+	for (int i = 0; i < scan.size(); i++)
+	{
+		float* ptr = scanRGB_data.ptr<float>(0, i);
+		ptr[0] = scan.field(i, 0);
+		ptr[1] = scan.field(i, 1);
+		ptr[2] = scan.field(i, 2);
+
+		cv::Point3f cameraPoint = rtabmap::util3d::transformPoint(*(cv::Point3f*)(scan.data().ptr<float>(0, i)), camera2LaserScan);
+		int u, v;
+		cameraModels[0].reproject(cameraPoint.x, cameraPoint.y, cameraPoint.z, u, v);
+		float cameraPointRangeSqr = cameraPoint.x * cameraPoint.x + cameraPoint.y * cameraPoint.y +
+			cameraPoint.z * cameraPoint.z;
+		if (cameraModels[0].inFrame(u, v) && cameraPoint.z > 0 &&
+			(minSemanticRangeSqr_ == 0.0f || cameraPointRangeSqr > minSemanticRangeSqr_) &&
+			(maxSemanticRangeSqr_ == 0.0f || cameraPointRangeSqr < maxSemanticRangeSqr_))
+		{
+			int* ptrInt = (int*)ptr;
+			std::uint8_t b, g, r;
+			const std::uint8_t* bgrColor = rgb.ptr<std::uint8_t>(v, u);
+			b = std::max(bgrColor[0], (std::uint8_t)1);
+			g = std::max(bgrColor[1], (std::uint8_t)1);
+			r = std::max(bgrColor[2], (std::uint8_t)1);
+			ptrInt[3] = int(b) | (int(g) << 8) | (int(r) << 16);
+
+			pcl::PointXYZRGB coloredPoint;
+			coloredPoint.x = ptr[0];
+			coloredPoint.y = ptr[1];
+			coloredPoint.z = ptr[2];
+			coloredPoint.r = r;
+			coloredPoint.g = g;
+			coloredPoint.b = b;
+		}
+		else
+		{
+			int* ptrInt = (int*)ptr;
+			ptrInt[3] = 0;
+		}
+	}
+
+	LaserScan scanRGB = LaserScan(scanRGB_data, scan.maxPoints(), scan.rangeMax(),
+		LaserScan::Format::kXYZRGB, scan.localTransform());
+	return scanRGB;
 }
 
 OccupancyGrid::LocalMap OccupancyGrid::cvMatsToLocalMap(

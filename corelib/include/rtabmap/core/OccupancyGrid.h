@@ -98,8 +98,6 @@ public:
 	void clear();
 
 private:
-	LaserScan addSemanticToLaserScan(const LaserScan& scan, const cv::Mat& rgb,
-			const std::vector<CameraModel>& cameraModels) const;
 	void createLocalMap(
 			const LaserScan & cloud,
 			const Transform & pose,
@@ -116,6 +114,9 @@ private:
 			pcl::IndicesPtr & groundIndices,
 			pcl::IndicesPtr & obstaclesIndices,
 			pcl::IndicesPtr * flatObstacles = nullptr) const;
+
+	LaserScan addSemanticToLaserScan(const LaserScan& scan, const cv::Mat& rgb,
+			const std::vector<CameraModel>& cameraModels) const;
 	LocalMap cvMatsToLocalMap(
 			const cv::Mat & groundCells,
 			const cv::Mat & emptyCells,
