@@ -115,6 +115,7 @@ private:
 			pcl::IndicesPtr & obstaclesIndices,
 			pcl::IndicesPtr * flatObstacles = nullptr) const;
 
+	cv::Mat dilate(const cv::Mat& rgb) const;
 	LaserScan addSemanticToLaserScan(const LaserScan& scan, const cv::Mat& rgb,
 			const std::vector<CameraModel>& cameraModels) const;
 	LocalMap cvMatsToLocalMap(
@@ -166,6 +167,7 @@ private:
 	float probMiss_;
 	float probClampingMin_;
 	float probClampingMax_;
+	int semanticDilation_;
 	float minSemanticRange_;
 	float maxSemanticRange_;
 	float minSemanticRangeSqr_;

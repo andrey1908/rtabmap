@@ -73,6 +73,7 @@ OccupancyGrid::OccupancyGrid(const ParametersMap & parameters) :
 	probMiss_(logodds(Parameters::defaultGridGlobalProbMiss())),
 	probClampingMin_(logodds(Parameters::defaultGridGlobalProbClampingMin())),
 	probClampingMax_(logodds(Parameters::defaultGridGlobalProbClampingMax())),
+	semanticDilation_(Parameters::defaultGridSemanticDilation()),
 	minSemanticRange_(Parameters::defaultGridMinSemanticRange()),
 	maxSemanticRange_(Parameters::defaultGridMaxSemanticRange()),
 	temporarilyOccupiedCellsColor_(Parameters::defaultGridTemporarilyOccupiedCellsColor()),
@@ -142,6 +143,9 @@ void OccupancyGrid::parseParameters(const ParametersMap & parameters)
 		probClampingMax_ = logodds(probClampingMax_);
 	}
 	UASSERT(probClampingMax_ > probClampingMin_);
+
+	Parameters::parse(parameters, Parameters::kGridSemanticDilation(), semanticDilation_);
+	UASSERT(semanticDilation_ >= 0);
 
 	Parameters::parse(parameters, Parameters::kGridMinSemanticRange(), minSemanticRange_);
 	minSemanticRangeSqr_ = 0.0f;
@@ -280,7 +284,12 @@ OccupancyGrid::LocalMap OccupancyGrid::createLocalMap(const Signature & signatur
 
 				if(!signature.sensorData().imageRaw().empty() && signature.sensorData().cameraModels().size())
 				{
-					scan = addSemanticToLaserScan(scan, signature.sensorData().imageRaw(), signature.sensorData().cameraModels());
+					cv::Mat semantic = signature.sensorData().imageRaw();
+					if (semanticDilation_ > 0)
+					{
+						semantic = dilate(semantic);
+					}
+					scan = addSemanticToLaserScan(scan, semantic, signature.sensorData().cameraModels());
 				}
 
 				// update viewpoint
@@ -578,10 +587,54 @@ typename pcl::PointCloud<PointT>::Ptr OccupancyGrid::segmentCloud(
 	return cloud;
 }
 
+cv::Mat OccupancyGrid::dilate(const cv::Mat& rgb) const
+{
+	MEASURE_BLOCK_TIME(OccupancyGrid__dilate);
+	UASSERT(semanticDilation_ > 0);
+	UASSERT(rgb.type() == CV_8UC3);
+	cv::Mat dilated = cv::Mat::zeros(rgb.rows, rgb.cols, rgb.type());
+	for (int h = 0; h < rgb.rows; h++)
+	{
+		int dWShift = 0;
+		for (int w = 0; w < rgb.cols; w++)
+		{
+			const cv::Vec3b& color = rgb.at<cv::Vec3b>(h, w);
+			if (color[0] == 0 && color[1] == 0 && color[2] == 0)
+			{
+				dWShift = std::max(dWShift - 1, 0);
+				continue;
+			}
+			std::pair<int, int> dHLimits = std::make_pair(
+				std::max(h - semanticDilation_, 0),
+				std::min(h + semanticDilation_, dilated.rows - 1));
+			std::pair<int, int> dWLimits = std::make_pair(
+				std::max(w - semanticDilation_ + dWShift, 0),
+				std::min(w + semanticDilation_, dilated.cols - 1));
+			for (int dH = dHLimits.first; dH <= dHLimits.second; dH++)
+			{
+				for (int dW = dWLimits.first; dW <= dWLimits.second; dW++)
+				{
+					cv::Vec3b& dilatedColor = dilated.at<cv::Vec3b>(dH, dW);
+					if (dilatedColor[0] != 0 || dilatedColor[1] != 0 || dilatedColor[2] != 0)
+					{
+						continue;
+					}
+					dilatedColor = color;
+				}
+			}
+			dWShift = semanticDilation_ * 2;
+		}
+	}
+	// cv::imwrite("/home/docker_rtabmap/catkin_ws/rgb.jpg", rgb);
+	// cv::imwrite("/home/docker_rtabmap/catkin_ws/dilated.jpg", dilated);
+	return dilated;
+}
+
 LaserScan OccupancyGrid::addSemanticToLaserScan(
 		const LaserScan& scan, const cv::Mat& rgb,
 		const std::vector<rtabmap::CameraModel>& cameraModels) const
 {
+	MEASURE_BLOCK_TIME(OccupancyGrid__addSemanticToLaserScan);
 	cv::Mat scanRGB_data = cv::Mat(1, scan.size(),
 		CV_32FC(rtabmap::LaserScan::channels(rtabmap::LaserScan::Format::kXYZRGB)));
 	UASSERT(scan.format() == rtabmap::LaserScan::Format::kXYZ || scan.format() == rtabmap::LaserScan::Format::kXYZI);
