@@ -164,6 +164,10 @@ void OccupancyGrid::parseParameters(const ParametersMap & parameters)
 	Parameters::parse(parameters, Parameters::kGridShowTemporarilyOccupiedCells(), showTemporarilyOccupiedCells_);
 	Parameters::parse(parameters, Parameters::kGridMaxTemporaryLocalMaps(), maxTemporaryLocalMaps_);
 	UASSERT(maxTemporaryLocalMaps_ >= 0);
+	if (maxTemporaryLocalMaps_ > 1)
+	{
+		UWARN("It is not recommended to use more than 1 temporary local map (now %d is used).", maxTemporaryLocalMaps_);
+	}
 
 	// convert ROI from string to vector
 	ParametersMap::const_iterator iter;
