@@ -93,7 +93,8 @@ public:
 	float getCellSize() const;
 	int getMaxTemporaryLocalMaps() const;
 	int localMapsNum() const;
-	const std::map<int, LocalMap> & localMaps();
+	const std::map<int, LocalMap> & localMaps() const;
+	const cv::Mat & lastDilatedSemantic() const;
 
 	void clear();
 
@@ -190,6 +191,8 @@ private:
 
 	std::list<LocalMap> temporaryLocalMaps_;
 	std::list<Transform> temporaryPoses_;
+
+	mutable cv::Mat lastDilatedSemantic_;
 };
 
 }

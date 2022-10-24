@@ -627,6 +627,7 @@ cv::Mat OccupancyGrid::dilate(const cv::Mat& rgb) const
 	}
 	// cv::imwrite("/home/docker_rtabmap/catkin_ws/rgb.jpg", rgb);
 	// cv::imwrite("/home/docker_rtabmap/catkin_ws/dilated.jpg", dilated);
+	lastDilatedSemantic_ = dilated;
 	return dilated;
 }
 
@@ -663,14 +664,6 @@ LaserScan OccupancyGrid::addSemanticToLaserScan(
 			g = std::max(bgrColor[1], (std::uint8_t)1);
 			r = std::max(bgrColor[2], (std::uint8_t)1);
 			ptrInt[3] = int(b) | (int(g) << 8) | (int(r) << 16);
-
-			pcl::PointXYZRGB coloredPoint;
-			coloredPoint.x = ptr[0];
-			coloredPoint.y = ptr[1];
-			coloredPoint.z = ptr[2];
-			coloredPoint.r = r;
-			coloredPoint.g = g;
-			coloredPoint.b = b;
 		}
 		else
 		{
@@ -1261,9 +1254,14 @@ int OccupancyGrid::localMapsNum() const
 	return localMaps_.size();
 }
 
-const std::map<int, OccupancyGrid::LocalMap> & OccupancyGrid::localMaps()
+const std::map<int, OccupancyGrid::LocalMap> & OccupancyGrid::localMaps() const
 {
 	return localMaps_;
+}
+
+const cv::Mat & OccupancyGrid::lastDilatedSemantic() const
+{
+	return lastDilatedSemantic_;
 }
 
 void OccupancyGrid::clear()
