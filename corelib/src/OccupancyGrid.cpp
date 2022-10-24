@@ -625,8 +625,6 @@ cv::Mat OccupancyGrid::dilate(const cv::Mat& rgb) const
 			dWShift = semanticDilation_ * 2;
 		}
 	}
-	// cv::imwrite("/home/docker_rtabmap/catkin_ws/rgb.jpg", rgb);
-	// cv::imwrite("/home/docker_rtabmap/catkin_ws/dilated.jpg", dilated);
 	lastDilatedSemantic_ = dilated;
 	return dilated;
 }
