@@ -80,6 +80,7 @@ public:
 	void addLocalMap(int nodeId, LocalMap localMap);
 	void addLocalMap(int nodeId, const Transform & pose, LocalMap localMap);
 	void addTemporaryLocalMap(const Transform & temporaryPose, LocalMap temporaryLocalMap);
+	void clearTemporaryLocalMaps();
 
 	void cacheCurrentMap();
 

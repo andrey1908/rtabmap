@@ -810,6 +810,12 @@ void OccupancyGrid::addTemporaryLocalMap(const Transform & temporaryPose, Occupa
 	}
 }
 
+void OccupancyGrid::clearTemporaryLocalMaps()
+{
+	temporaryLocalMaps_.clear();
+	temporaryPoses_.clear();
+}
+
 void OccupancyGrid::cacheCurrentMap()
 {
 	if(poses_.empty())
