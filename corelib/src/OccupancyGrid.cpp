@@ -684,7 +684,7 @@ OccupancyGrid::LocalMap OccupancyGrid::cvMatsToLocalMap(
 		const cv::Mat & emptyCells,
 		const cv::Mat & obstacleCells) const
 {
-	OccupancyGrid::LocalMap localMap;
+	LocalMap localMap;
 	localMap.points.resize(3, groundCells.cols + emptyCells.cols + obstacleCells.cols);
 	localMap.transformedPoints2d.resize(2, 0);
 	localMap.colors.reserve(groundCells.cols + emptyCells.cols + obstacleCells.cols);
@@ -770,7 +770,7 @@ OccupancyGrid::LocalMap OccupancyGrid::cvMatsToLocalMap(
 	return localMap;
 }
 
-void OccupancyGrid::addLocalMap(int nodeId, OccupancyGrid::LocalMap localMap)
+void OccupancyGrid::addLocalMap(int nodeId, LocalMap localMap)
 {
 	UASSERT(nodeId >= 0);
 	UASSERT(localMap.numGround + localMap.numEmpty + localMap.numObstacles == localMap.points.cols());
@@ -779,7 +779,7 @@ void OccupancyGrid::addLocalMap(int nodeId, OccupancyGrid::LocalMap localMap)
 	localMaps_[nodeId] = std::move(localMap);
 }
 
-void OccupancyGrid::addLocalMap(int nodeId, const Transform & pose, OccupancyGrid::LocalMap localMap)
+void OccupancyGrid::addLocalMap(int nodeId, const Transform & pose, LocalMap localMap)
 {
 	UASSERT(nodeId >= 0);
 	UASSERT(localMap.numGround + localMap.numEmpty + localMap.numObstacles == localMap.points.cols());
@@ -794,7 +794,7 @@ void OccupancyGrid::addLocalMap(int nodeId, const Transform & pose, OccupancyGri
 	deployLocalMap(nodeId);
 }
 
-void OccupancyGrid::addTemporaryLocalMap(const Transform & temporaryPose, OccupancyGrid::LocalMap temporaryLocalMap)
+void OccupancyGrid::addTemporaryLocalMap(const Transform & temporaryPose, LocalMap temporaryLocalMap)
 {
 	transformLocalMap(temporaryPose, temporaryLocalMap);
 	temporaryLocalMaps_.push_back(std::move(temporaryLocalMap));
@@ -822,7 +822,7 @@ void OccupancyGrid::cacheCurrentMap()
 	{
 		return;
 	}
-	cachedMap_ = std::make_unique<OccupancyGrid::CachedMap>();
+	cachedMap_ = std::make_unique<CachedMap>();
 	cachedMap_->poses = poses_;
 	cachedMap_->xMin = xMin_;
 	cachedMap_->yMin = yMin_;
@@ -927,7 +927,7 @@ void OccupancyGrid::updatePoses(const std::map<int, Transform> & updatedPoses,
 	}
 }
 
-void OccupancyGrid::transformLocalMap(const Transform & pose, OccupancyGrid::LocalMap & localMap)
+void OccupancyGrid::transformLocalMap(const Transform & pose, LocalMap & localMap)
 {
 	localMap.transformedPoints2d.resize(2, localMap.points.cols());
 	Eigen::Matrix3Xf transformedPoints = (pose.toEigen3fRotation() * localMap.points).colwise() + pose.toEigen3fTranslation();
@@ -938,12 +938,12 @@ void OccupancyGrid::transformLocalMap(const Transform & pose, OccupancyGrid::Loc
 	}
 }
 
-bool OccupancyGrid::isLocalMapTransformed(const OccupancyGrid::LocalMap & localMap) const
+bool OccupancyGrid::isLocalMapTransformed(const LocalMap & localMap) const
 {
 	return localMap.transformedPoints2d.cols() != 0;
 }
 
-void OccupancyGrid::getNewMapSize(const OccupancyGrid::LocalMap & transformedLocalMap,
+void OccupancyGrid::getNewMapSize(const LocalMap & transformedLocalMap,
 		int & xMin, int & yMin, int & xMax, int & yMax, bool definedSize)
 {
 	bool undefinedSize = true;
@@ -1031,7 +1031,7 @@ void OccupancyGrid::createOrExtendMapIfNeeded(int xMin, int yMin, int xMax, int 
 void OccupancyGrid::deployLocalMap(int nodeId)
 {
 	temporarilyOccupiedCells_.clear();
-	const OccupancyGrid::LocalMap & localMap = localMaps_.at(nodeId);
+	const LocalMap & localMap = localMaps_.at(nodeId);
 	UASSERT(isLocalMapTransformed(localMap));
 	for (int i = 0; i < localMap.points.cols(); i++)
 	{
