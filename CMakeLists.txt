@@ -3,8 +3,6 @@ cmake_minimum_required(VERSION 3.5)
 PROJECT( RTABMap )
 SET(PROJECT_PREFIX rtabmap)
 
-set(CMAKE_CXX_STANDARD 17)
-
 # Catkin doesn't support multiarch library path, 
 # fix to "lib" if not set by user.
 OPTION(MULTI_ARCH "Activate multi-arch lib directory (debian)" OFF)
@@ -684,12 +682,12 @@ IF(NOT MSVC)
 	IF(loam_velodyne_FOUND OR PCL_VERSION VERSION_GREATER "1.9.1" OR TORCH_FOUND OR G2O_FOUND OR CCCoreLib_FOUND)
 	 #LOAM, PCL>=1.10, latest g2o and CCCoreLib require c++14
 	 include(CheckCXXCompilerFlag)
-	  CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
-	  IF(COMPILER_SUPPORTS_CXX14)
-	    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-	    set(CMAKE_CXX_STANDARD 14)
+	  CHECK_CXX_COMPILER_FLAG("-std=c++17" COMPILER_SUPPORTS_CXX17)
+	  IF(COMPILER_SUPPORTS_CXX17)
+	    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+	    set(CMAKE_CXX_STANDARD 17)
 	  ELSE()
-	    message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support. Please use a different C++ compiler if you want to use LOAM, latest PCL or g2o.")
+	    message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++17 support. Please use a different C++ compiler if you want to use LOAM, latest PCL or g2o.")
 	  ENDIF()
 	ENDIF(loam_velodyne_FOUND OR PCL_VERSION VERSION_GREATER "1.9.1" OR TORCH_FOUND OR G2O_FOUND OR CCCoreLib_FOUND)
 

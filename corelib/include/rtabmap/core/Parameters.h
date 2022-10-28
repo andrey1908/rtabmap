@@ -750,19 +750,21 @@ class RTABMAP_EXP Parameters
     RTABMAP_PARAM(Grid, SemanticDilation,           int,     0,      "Dilate semantic image in pixels (0=disabled).");
     RTABMAP_PARAM(Grid, MinSemanticRange,           float,   0.0,    "Minimum range for semantic to be added to laser scan.");
     RTABMAP_PARAM(Grid, MaxSemanticRange,           float,   0.0,    "Maximum range for semantic to be added to laser scan. 0=inf.");
-    RTABMAP_PARAM(Grid, TemporarilyOccupiedCellsColor, int,  -1,     "Color of temporarily occupied cells. (-1) - do not extract temporarily occupied cells.");
+    RTABMAP_PARAM(Grid, TemporarilyOccupiedCellColor,  int,  -1,     "Color of temporarily occupied cells. (-1) - do not extract temporarily occupied cells.");
     RTABMAP_PARAM(Grid, ShowTemporarilyOccupiedCells,  bool, true,   "Show temporarily occupied cells.");
     RTABMAP_PARAM(Grid, MaxTemporaryLocalMaps,         int,  1,      "Maximum number of temporary local maps.");
 
     RTABMAP_PARAM(GridGlobal, FootprintRadius,      float,  0.0,     "Footprint radius (m) used to clear all obstacles under the graph.");
-    RTABMAP_PARAM(GridGlobal, Eroded,               bool,   false,   "Erode obstacle cells.");
     RTABMAP_PARAM(GridGlobal, MaxNodes,             int,    0,       "Maximum nodes assembled in the map starting from the last node (0=unlimited).");
     RTABMAP_PARAM(GridGlobal, AltitudeDelta,        float,  0,       "Assemble only nodes that have the same altitude of +-delta meters of the current pose (0=disabled). This is used to generate 2D occupancy grid based on the current altitude (e.g., multi-floor building).");
     RTABMAP_PARAM(GridGlobal, OccupancyThr,         float,  0.5,     "Occupancy threshold (value between 0 and 1).");
-    RTABMAP_PARAM(GridGlobal, ProbHit,              float,  0.7,     "Probability of a hit (value between 0.5 and 1).");
     RTABMAP_PARAM(GridGlobal, ProbMiss,             float,  0.4,     "Probability of a miss (value between 0 and 0.5).");
+    RTABMAP_PARAM(GridGlobal, ProbHit,              float,  0.7,     "Probability of a hit (value between 0.5 and 1).");
     RTABMAP_PARAM(GridGlobal, ProbClampingMin,      float,  0.1192,  "Probability clamping minimum (value between 0 and 1).");
     RTABMAP_PARAM(GridGlobal, ProbClampingMax,      float,  0.971,   "Probability clamping maximum (value between 0 and 1).");
+    RTABMAP_PARAM(GridGlobal, TemporaryOccupancyThr, float, 0.8,     "Occupancy threshold for temporary map (value between 0 and 1).");
+    RTABMAP_PARAM(GridGlobal, TemporaryProbMiss,    float,  0.4,     "Probability of a miss for temporary map (value between 0 and 0.5).");
+    RTABMAP_PARAM(GridGlobal, TemporaryProbHit,     float,  0.7,     "Probability of a hit for temporary map (value between 0.5 and 1).");
     RTABMAP_PARAM(GridGlobal, FloodFillDepth,       unsigned int, 0, "Flood fill filter (0=disabled), used to remove empty cells outside the map. The flood fill is done at the specified depth (between 1 and 16) of the OctoMap.");
 
     RTABMAP_PARAM(Marker, Dictionary,             int,   0,     "Dictionary to use: DICT_ARUCO_4X4_50=0, DICT_ARUCO_4X4_100=1, DICT_ARUCO_4X4_250=2, DICT_ARUCO_4X4_1000=3, DICT_ARUCO_5X5_50=4, DICT_ARUCO_5X5_100=5, DICT_ARUCO_5X5_250=6, DICT_ARUCO_5X5_1000=7, DICT_ARUCO_6X6_50=8, DICT_ARUCO_6X6_100=9, DICT_ARUCO_6X6_250=10, DICT_ARUCO_6X6_1000=11, DICT_ARUCO_7X7_50=12, DICT_ARUCO_7X7_100=13, DICT_ARUCO_7X7_250=14, DICT_ARUCO_7X7_1000=15, DICT_ARUCO_ORIGINAL = 16, DICT_APRILTAG_16h5=17, DICT_APRILTAG_25h9=18, DICT_APRILTAG_36h10=19, DICT_APRILTAG_36h11=20");

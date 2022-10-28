@@ -66,21 +66,21 @@ OccupancyGrid::OccupancyGrid(const ParametersMap & parameters) :
 	noiseFilteringMinNeighbors_(Parameters::defaultGridNoiseFilteringMinNeighbors()),
 	scan2dUnknownSpaceFilled_(Parameters::defaultGridScan2dUnknownSpaceFilled()),
 	rayTracing_(Parameters::defaultGridRayTracing()),
-	erode_(Parameters::defaultGridGlobalEroded()),
 	footprintRadius_(Parameters::defaultGridGlobalFootprintRadius()),
 	occupancyThr_(Parameters::defaultGridGlobalOccupancyThr()),
-	probHit_(logodds(Parameters::defaultGridGlobalProbHit())),
 	probMiss_(logodds(Parameters::defaultGridGlobalProbMiss())),
+	probHit_(logodds(Parameters::defaultGridGlobalProbHit())),
 	probClampingMin_(logodds(Parameters::defaultGridGlobalProbClampingMin())),
 	probClampingMax_(logodds(Parameters::defaultGridGlobalProbClampingMax())),
+	temporaryOccupancyThr_(Parameters::defaultGridGlobalTemporaryOccupancyThr()),
+	temporaryProbMiss_(logodds(Parameters::defaultGridGlobalTemporaryProbMiss())),
+	temporaryProbHit_(logodds(Parameters::defaultGridGlobalTemporaryProbHit())),
 	semanticDilation_(Parameters::defaultGridSemanticDilation()),
 	minSemanticRange_(Parameters::defaultGridMinSemanticRange()),
 	maxSemanticRange_(Parameters::defaultGridMaxSemanticRange()),
-	temporarilyOccupiedCellsColor_(Parameters::defaultGridTemporarilyOccupiedCellsColor()),
+	temporarilyOccupiedCellColor_(Parameters::defaultGridTemporarilyOccupiedCellColor()),
 	showTemporarilyOccupiedCells_(Parameters::defaultGridShowTemporarilyOccupiedCells()),
-	maxTemporaryLocalMaps_(Parameters::defaultGridMaxTemporaryLocalMaps()),
-	xMin_(0),
-	yMin_(0)
+	maxTemporaryLocalMaps_(Parameters::defaultGridMaxTemporaryLocalMaps())
 {
 	parseParameters(parameters);
 }
@@ -120,19 +120,18 @@ void OccupancyGrid::parseParameters(const ParametersMap & parameters)
 	Parameters::parse(parameters, Parameters::kGridNoiseFilteringMinNeighbors(), noiseFilteringMinNeighbors_);
 	Parameters::parse(parameters, Parameters::kGridScan2dUnknownSpaceFilled(), scan2dUnknownSpaceFilled_);
 	Parameters::parse(parameters, Parameters::kGridRayTracing(), rayTracing_);
-	Parameters::parse(parameters, Parameters::kGridGlobalEroded(), erode_);
 	Parameters::parse(parameters, Parameters::kGridGlobalFootprintRadius(), footprintRadius_);
 
 	Parameters::parse(parameters, Parameters::kGridGlobalOccupancyThr(), occupancyThr_);
-	if(Parameters::parse(parameters, Parameters::kGridGlobalProbHit(), probHit_))
-	{
-		probHit_ = logodds(probHit_);
-		UASSERT_MSG(probHit_ >= 0.0f, uFormat("probHit_=%f",probHit_).c_str());
-	}
 	if(Parameters::parse(parameters, Parameters::kGridGlobalProbMiss(), probMiss_))
 	{
+		UASSERT_MSG(probMiss_ > 0.0f && probMiss_ < 0.5f, uFormat("probMiss_=%f", probMiss_).c_str());
 		probMiss_ = logodds(probMiss_);
-		UASSERT_MSG(probMiss_ <= 0.0f, uFormat("probMiss_=%f",probMiss_).c_str());
+	}
+	if(Parameters::parse(parameters, Parameters::kGridGlobalProbHit(), probHit_))
+	{
+		UASSERT_MSG(probHit_ > 0.5f && probHit_ < 1.0f, uFormat("probHit_=%f", probHit_).c_str());
+		probHit_ = logodds(probHit_);
 	}
 	if(Parameters::parse(parameters, Parameters::kGridGlobalProbClampingMin(), probClampingMin_))
 	{
@@ -143,6 +142,18 @@ void OccupancyGrid::parseParameters(const ParametersMap & parameters)
 		probClampingMax_ = logodds(probClampingMax_);
 	}
 	UASSERT(probClampingMax_ > probClampingMin_);
+
+	Parameters::parse(parameters, Parameters::kGridGlobalTemporaryOccupancyThr(), temporaryOccupancyThr_);
+	if(Parameters::parse(parameters, Parameters::kGridGlobalTemporaryProbMiss(), temporaryProbMiss_))
+	{
+		UASSERT_MSG(temporaryProbMiss_ > 0.0f && temporaryProbMiss_ < 0.5f, uFormat("temporaryProbMiss_=%f", temporaryProbMiss_).c_str());
+		temporaryProbMiss_ = logodds(temporaryProbMiss_);
+	}
+	if(Parameters::parse(parameters, Parameters::kGridGlobalTemporaryProbHit(), temporaryProbHit_))
+	{
+		UASSERT_MSG(temporaryProbHit_ > 0.5f && temporaryProbHit_ < 1.0f, uFormat("temporaryProbHit_=%f", temporaryProbHit_).c_str());
+		temporaryProbHit_ = logodds(temporaryProbHit_);
+	}
 
 	Parameters::parse(parameters, Parameters::kGridSemanticDilation(), semanticDilation_);
 	UASSERT(semanticDilation_ >= 0);
@@ -160,14 +171,10 @@ void OccupancyGrid::parseParameters(const ParametersMap & parameters)
 		maxSemanticRangeSqr_ = maxSemanticRange_ * maxSemanticRange_;
 	}
 
-	Parameters::parse(parameters, Parameters::kGridTemporarilyOccupiedCellsColor(), temporarilyOccupiedCellsColor_);
+	Parameters::parse(parameters, Parameters::kGridTemporarilyOccupiedCellColor(), temporarilyOccupiedCellColor_);
 	Parameters::parse(parameters, Parameters::kGridShowTemporarilyOccupiedCells(), showTemporarilyOccupiedCells_);
 	Parameters::parse(parameters, Parameters::kGridMaxTemporaryLocalMaps(), maxTemporaryLocalMaps_);
 	UASSERT(maxTemporaryLocalMaps_ >= 0);
-	if (maxTemporaryLocalMaps_ > 1)
-	{
-		UWARN("It is not recommended to use more than 1 temporary local map (now %d is used).", maxTemporaryLocalMaps_);
-	}
 
 	// convert ROI from string to vector
 	ParametersMap::const_iterator iter;
@@ -233,6 +240,7 @@ void OccupancyGrid::parseParameters(const ParametersMap & parameters)
 
 OccupancyGrid::LocalMap OccupancyGrid::createLocalMap(const Signature & signature) const
 {
+	MEASURE_BLOCK_TIME(OccupancyGrid__createLocalMap);
 	cv::Mat groundCells;
 	cv::Mat emptyCells;
 	cv::Mat obstacleCells;
@@ -241,7 +249,7 @@ OccupancyGrid::LocalMap OccupancyGrid::createLocalMap(const Signature & signatur
 	if(signature.sensorData().laserScanRaw().is2d() && !occupancyFromDepth_)
 	{
 		UDEBUG("2D laser scan");
-		//2D
+		// 2D
 		viewPoint = cv::Point3f(
 				signature.sensorData().laserScanRaw().localTransform().x(),
 				signature.sensorData().laserScanRaw().localTransform().y(),
@@ -369,7 +377,7 @@ void OccupancyGrid::createLocalMap(
 {
 	if(projMapFrame_)
 	{
-		//we should rotate viewPoint in /map frame
+		// we should rotate viewPoint in /map frame
 		float roll, pitch, yaw;
 		pose.getEulerAngles(roll, pitch, yaw);
 		Transform viewpointRotated = Transform(0,0,0,roll,pitch,0) * Transform(viewPoint.x, viewPoint.y, viewPoint.z, 0,0,0);
@@ -538,9 +546,6 @@ typename pcl::PointCloud<PointT>::Ptr OccupancyGrid::segmentCloud(
 					flatObstacles,
 					Eigen::Vector4f(viewPoint.x, viewPoint.y, viewPoint.z+(projMapFrame_?pose.z():0), 1));
 			UDEBUG("viewPoint=%f,%f,%f", viewPoint.x, viewPoint.y, viewPoint.z+(projMapFrame_?pose.z():0));
-			//UWARN("Saving ground.pcd and obstacles.pcd");
-			//pcl::io::savePCDFile("ground.pcd", *cloud, *groundIndices);
-			//pcl::io::savePCDFile("obstacles.pcd", *cloud, *obstaclesIndices);
 		}
 		else
 		{
@@ -684,9 +689,9 @@ OccupancyGrid::LocalMap OccupancyGrid::cvMatsToLocalMap(
 		const cv::Mat & emptyCells,
 		const cv::Mat & obstacleCells) const
 {
+	MEASURE_BLOCK_TIME(OccupancyGrid__cvMatsToLocalMap);
 	LocalMap localMap;
 	localMap.points.resize(3, groundCells.cols + emptyCells.cols + obstacleCells.cols);
-	localMap.transformedPoints2d.resize(2, 0);
 	localMap.colors.reserve(groundCells.cols + emptyCells.cols + obstacleCells.cols);
 	int shift = 0;
 
@@ -773,276 +778,314 @@ OccupancyGrid::LocalMap OccupancyGrid::cvMatsToLocalMap(
 void OccupancyGrid::addLocalMap(int nodeId, LocalMap localMap)
 {
 	UASSERT(nodeId >= 0);
-	UASSERT(localMap.numGround + localMap.numEmpty + localMap.numObstacles == localMap.points.cols());
-	UASSERT(localMaps_.count(nodeId) == 0);
-	UASSERT(localMaps_.empty() || localMaps_.rbegin()->first < nodeId);
-	localMaps_[nodeId] = std::move(localMap);
+	UASSERT(map_.nodes.count(nodeId) == 0);
+	UASSERT(map_.nodes.empty() || map_.nodes.rbegin()->first < nodeId);
+	map_.nodes.emplace(
+		std::piecewise_construct,
+		std::forward_as_tuple(nodeId),
+		std::forward_as_tuple(std::optional<Transform>(), std::move(localMap)));
 }
 
-void OccupancyGrid::addLocalMap(int nodeId, const Transform & pose, LocalMap localMap)
+void OccupancyGrid::addLocalMap(int nodeId, const Transform & localPose, LocalMap localMap)
 {
 	UASSERT(nodeId >= 0);
-	UASSERT(localMap.numGround + localMap.numEmpty + localMap.numObstacles == localMap.points.cols());
-	UASSERT(localMaps_.count(nodeId) == 0);
-	UASSERT(localMaps_.empty() || localMaps_.rbegin()->first < nodeId);
-	transformLocalMap(pose, localMap);
-	localMaps_[nodeId] = std::move(localMap);
-	poses_[nodeId] = pose;
-	int xMin, yMin, xMax, yMax;
-	getNewMapSize(localMaps_.at(nodeId), xMin, yMin, xMax, yMax, false);
-	createOrExtendMapIfNeeded(xMin, yMin, xMax, yMax);
-	deployLocalMap(nodeId);
-}
-
-void OccupancyGrid::addTemporaryLocalMap(const Transform & temporaryPose, LocalMap temporaryLocalMap)
-{
-	transformLocalMap(temporaryPose, temporaryLocalMap);
-	temporaryLocalMaps_.push_back(std::move(temporaryLocalMap));
-	temporaryPoses_.push_back(temporaryPose);
-	int xMin, yMin, xMax, yMax;
-	getNewMapSize(*temporaryLocalMaps_.rbegin(), xMin, yMin, xMax, yMax, false);
-	createOrExtendMapIfNeeded(xMin, yMin, xMax, yMax);
-
-	if (temporaryLocalMaps_.size() > maxTemporaryLocalMaps_)
+	UASSERT(map_.nodes.count(nodeId) == 0);
+	UASSERT(map_.nodes.empty() || map_.nodes.rbegin()->first < nodeId);
+	auto newNodeIt = map_.nodes.emplace(
+		std::piecewise_construct,
+		std::forward_as_tuple(nodeId),
+		std::forward_as_tuple(localPose, std::move(localMap))).first;
+	transformLocalMap(newNodeIt->second);
+	MapLimits newMapLimits = MapLimits::unite(map_.mapLimits, *(newNodeIt->second.localMapLimits));
+	if (map_.mapLimits != newMapLimits)
 	{
-		temporaryLocalMaps_.pop_front();
-		temporaryPoses_.pop_front();
+		createOrResizeMap(map_, newMapLimits);
 	}
+	deployLocalMap(map_, nodeId);
 }
 
-void OccupancyGrid::clearTemporaryLocalMaps()
+void OccupancyGrid::addTemporaryLocalMap(const Transform & localPose, LocalMap localMap)
 {
-	temporaryLocalMaps_.clear();
-	temporaryPoses_.clear();
+	int nodeId;
+	if (temporaryMap_.nodes.empty())
+	{
+		nodeId = 0;
+	}
+	else
+	{
+		nodeId = temporaryMap_.nodes.rbegin()->first + 1;
+	}
+	auto newNodeIt = temporaryMap_.nodes.emplace(
+		std::piecewise_construct,
+		std::forward_as_tuple(nodeId),
+		std::forward_as_tuple(localPose, std::move(localMap))).first;
+	transformLocalMap(newNodeIt->second);
+	MapLimits newMapLimits = MapLimits::unite(temporaryMap_.mapLimits, *(newNodeIt->second.localMapLimits));
+	if (temporaryMap_.mapLimits != newMapLimits)
+	{
+		createOrResizeMap(temporaryMap_, newMapLimits);
+	}
+	deployLocalMap(temporaryMap_, nodeId);
+	if (temporaryMap_.nodes.size() > maxTemporaryLocalMaps_)
+	{
+		removeLocalMap(temporaryMap_, temporaryMap_.nodes.begin()->first);
+	}
 }
 
 void OccupancyGrid::cacheCurrentMap()
 {
-	if(poses_.empty())
+	if(!map_.mapLimits.valid())
 	{
 		return;
 	}
-	cachedMap_ = std::make_unique<CachedMap>();
-	cachedMap_->poses = poses_;
-	cachedMap_->xMin = xMin_;
-	cachedMap_->yMin = yMin_;
-	cachedMap_->map = map_.clone();
-	cachedMap_->colors = colors_.clone();
-	cachedMap_->temporarilyOccupiedCells = temporarilyOccupiedCells_;
+	MEASURE_BLOCK_TIME(OccupancyGrid__cacheCurrentMap);
+
+	cachedMap_ = std::make_unique<ColoredOccupancyMap>();
+	for (const auto& entry : map_.nodes)
+	{
+		if (!entry.second.localPose.has_value())
+		{
+			continue;
+		}
+		cachedMap_->nodes.emplace(
+			std::piecewise_construct,
+			std::forward_as_tuple(entry.first),
+			std::forward_as_tuple(*(entry.second.localPose), LocalMap()));
+	}
+	cachedMap_->mapLimits = map_.mapLimits;
+	cachedMap_->map = map_.map;
+	cachedMap_->colors = map_.colors;
+	cachedMap_->temporarilyOccupiedCells = map_.temporarilyOccupiedCells;
 }
 
-bool OccupancyGrid::tryToUseCachedMap(const std::map<int, Transform> & updatedPoses)
+int OccupancyGrid::tryToUseCachedMap(const std::map<int, Transform> & updatedPoses)
 {
 	if (cachedMap_ == nullptr)
 	{
-		return false;
+		return -1;
 	}
+	static time_measurer::TimeMeasurer OccupancyGrid__tryToUseCachedMap__fail("OccupancyGrid__tryToUseCachedMap__fail", true);
+	static time_measurer::TimeMeasurer OccupancyGrid__tryToUseCachedMap__success("OccupancyGrid__tryToUseCachedMap__success", true);
+	OccupancyGrid__tryToUseCachedMap__fail.StartMeasurement();
+	OccupancyGrid__tryToUseCachedMap__success.StartMeasurement();
 
-	auto updatedIt = updatedPoses.begin();
-	const auto & cachedPoses = cachedMap_->poses;
-	auto cachedIt = cachedPoses.begin();
-	while (cachedIt != cachedPoses.end())
+	auto updatedPoseIt = updatedPoses.begin();
+	for (const auto& entry : cachedMap_->nodes)
 	{
-		if (updatedIt == updatedPoses.end())
+		if (updatedPoseIt == updatedPoses.end())
 		{
-			return false;
+			OccupancyGrid__tryToUseCachedMap__fail.StopMeasurement();
+			return -1;
 		}
-		if (*updatedIt != *cachedIt)
+		if (entry.first == updatedPoseIt->first &&
+			*entry.second.localPose == updatedPoseIt->second)
 		{
-			return false;
+			++updatedPoseIt;
+			continue;
 		}
-		++updatedIt;
-		++cachedIt;
+		OccupancyGrid__tryToUseCachedMap__fail.StopMeasurement();
+		return -1;
 	}
 
-	poses_ = cachedMap_->poses;
-	xMin_ = cachedMap_->xMin;
-	yMin_ = cachedMap_->yMin;
-	map_ = cachedMap_->map.clone();
-	colors_ = cachedMap_->colors.clone();
-	temporarilyOccupiedCells_ = cachedMap_->temporarilyOccupiedCells;
-	return true;
+	auto cachedNodeIt = cachedMap_->nodes.begin();
+	for (auto& entry : map_.nodes)
+	{
+		if (cachedNodeIt == cachedMap_->nodes.end())
+		{
+			break;
+		}
+		if (entry.first == cachedNodeIt->first)
+		{
+			entry.second.localPose = cachedNodeIt->second.localPose;
+			++cachedNodeIt;
+		}
+	}
+	UASSERT(cachedNodeIt == cachedMap_->nodes.end());
+	map_.mapLimits = cachedMap_->mapLimits;
+	map_.map = cachedMap_->map;
+	map_.colors = cachedMap_->colors;
+	map_.temporarilyOccupiedCells = cachedMap_->temporarilyOccupiedCells;
+	OccupancyGrid__tryToUseCachedMap__success.StopMeasurement();
+	return cachedMap_->nodes.rbegin()->first;
 }
 
 void OccupancyGrid::updatePoses(const std::map<int, Transform> & updatedPoses,
 		const std::list<Transform> & updatedTemporaryPoses /* std::list<Transform>() */)
 {
 	MEASURE_BLOCK_TIME(OccupancyGrid__updatePoses);
-	UASSERT(temporaryPoses_.size() == updatedTemporaryPoses.size());
 
-	map_ = cv::Mat();
-	poses_.clear();
-	bool usedCachedMap = tryToUseCachedMap(updatedPoses);
-
+	clearColoredOccupancyMap(map_);
+	int lastNodeIdFromCache = tryToUseCachedMap(updatedPoses);
 	std::list<int> updatedNodeIds;
-	auto updatedPosesIt = updatedPoses.begin();
-	if(usedCachedMap)
+	std::map<int, Node>::iterator mapNodeIt;
+	std::map<int, Transform>::const_iterator updatedPoseIt;
+	if(lastNodeIdFromCache == -1)
 	{
-		updatedPosesIt = updatedPoses.lower_bound(poses_.rbegin()->first + 1);
+		mapNodeIt = map_.nodes.begin();
+		updatedPoseIt = updatedPoses.begin();
 	}
-	for(; updatedPosesIt != updatedPoses.end(); ++updatedPosesIt)
+	else
 	{
-		int nodeId = updatedPosesIt->first;
-		auto localMapsIt = localMaps_.find(nodeId);
-		UASSERT(localMapsIt != localMaps_.end());
-		transformLocalMap(updatedPosesIt->second, localMapsIt->second);
-		poses_.insert(*updatedPosesIt);
-		updatedNodeIds.push_back(nodeId);
+		mapNodeIt = map_.nodes.lower_bound(lastNodeIdFromCache + 1);
+		updatedPoseIt = updatedPoses.lower_bound(lastNodeIdFromCache + 1);
 	}
-
-	auto temporaryLocalMapsIt = temporaryLocalMaps_.begin();
-	auto updatedTemporaryPosesIt = updatedTemporaryPoses.begin();
-	for (auto temporaryPosesIt = temporaryPoses_.begin(); temporaryPosesIt != temporaryPoses_.end();
-			++temporaryPosesIt, ++updatedTemporaryPosesIt, ++temporaryLocalMapsIt)
+	MapLimits newMapLimits = map_.mapLimits;
+	for(; mapNodeIt != map_.nodes.end(); ++mapNodeIt)
 	{
-		if (*temporaryPosesIt == *updatedTemporaryPosesIt)
+		if (updatedPoseIt == updatedPoses.end())
 		{
-			continue;
+			break;
 		}
-		transformLocalMap(*updatedTemporaryPosesIt, *temporaryLocalMapsIt);
-		*temporaryPosesIt = *updatedTemporaryPosesIt;
+		if (mapNodeIt->first == updatedPoseIt->first)
+		{
+			mapNodeIt->second.localPose = updatedPoseIt->second;
+			transformLocalMap(mapNodeIt->second);
+			newMapLimits = MapLimits::unite(newMapLimits, *(mapNodeIt->second.localMapLimits));
+			updatedNodeIds.push_back(mapNodeIt->first);
+			++updatedPoseIt;
+		}
+	}
+	UASSERT(updatedPoseIt == updatedPoses.end());
+	if (newMapLimits.valid())
+	{
+		createOrResizeMap(map_, newMapLimits);
+		for(auto updatedNodeId : updatedNodeIds)
+		{
+			deployLocalMap(map_, updatedNodeId);
+		}
 	}
 
-	int xMin, yMin, xMax, yMax;
-	bool definedSize = false;
-	for(auto updatedNodeId : updatedNodeIds)
+	UASSERT(temporaryMap_.nodes.size() == updatedTemporaryPoses.size());
+	clearColoredOccupancyMap(temporaryMap_);
+	newMapLimits = MapLimits();
+	auto updatedTemporaryPoseIt = updatedTemporaryPoses.begin();
+	for (auto& entry : temporaryMap_.nodes)
 	{
-		getNewMapSize(localMaps_.at(updatedNodeId), xMin, yMin, xMax, yMax, definedSize);
-		definedSize = true;
+		entry.second.localPose = *updatedTemporaryPoseIt;
+		transformLocalMap(entry.second);
+		newMapLimits = MapLimits::unite(newMapLimits, *(entry.second.localMapLimits));
 	}
-	for(const auto& temporaryLocalMap : temporaryLocalMaps_)
+	if (newMapLimits.valid())
 	{
-		getNewMapSize(temporaryLocalMap, xMin, yMin, xMax, yMax, definedSize);
-		definedSize = true;
-	}
-
-	if(definedSize)
-	{
-		createOrExtendMapIfNeeded(xMin, yMin, xMax, yMax);
-	}
-
-	for(auto updatedNodeId : updatedNodeIds)
-	{
-		deployLocalMap(updatedNodeId);
+		createOrResizeMap(temporaryMap_, newMapLimits);
+		for (auto& entry : temporaryMap_.nodes)
+		{
+			deployLocalMap(temporaryMap_, entry.first);
+		}
 	}
 }
 
-void OccupancyGrid::transformLocalMap(const Transform & pose, LocalMap & localMap)
+void OccupancyGrid::transformLocalMap(Node & node)
 {
-	localMap.transformedPoints2d.resize(2, localMap.points.cols());
-	Eigen::Matrix3Xf transformedPoints = (pose.toEigen3fRotation() * localMap.points).colwise() + pose.toEigen3fTranslation();
+	MEASURE_BLOCK_TIME(OccupancyGrid__transformLocalMap);
+	UASSERT(node.localPose.has_value());
+	node.transformedLocalPoints2d = Eigen::Matrix2Xi();
+	node.transformedLocalPoints2d->resize(2, node.localMap.points.cols());
+	Eigen::Matrix3Xf transformedPoints = (node.localPose->toEigen3fRotation() * node.localMap.points).colwise() + node.localPose->toEigen3fTranslation();
+	node.localMapLimits = MapLimits();
 	for (int i = 0; i < transformedPoints.cols(); i++)
 	{
-		localMap.transformedPoints2d(0, i) = std::floor(transformedPoints(0, i) / cellSize_);
-		localMap.transformedPoints2d(1, i) = std::floor(transformedPoints(1, i) / cellSize_);
+		int x = std::floor(transformedPoints(0, i) / cellSize_);
+		int y = std::floor(transformedPoints(1, i) / cellSize_);
+		node.transformedLocalPoints2d->coeffRef(0, i) = x;
+		node.transformedLocalPoints2d->coeffRef(1, i) = y;
+		node.localMapLimits->update(x, y);
 	}
 }
 
-bool OccupancyGrid::isLocalMapTransformed(const LocalMap & localMap) const
+void OccupancyGrid::createOrResizeMap(ColoredOccupancyMap & map, const MapLimits & newMapLimits)
 {
-	return localMap.transformedPoints2d.cols() != 0;
-}
-
-void OccupancyGrid::getNewMapSize(const LocalMap & transformedLocalMap,
-		int & xMin, int & yMin, int & xMax, int & yMax, bool definedSize)
-{
-	bool undefinedSize = true;
-	const int border = 10;
-	if(definedSize)
+	UASSERT(newMapLimits.valid());
+	if(!map.mapLimits.valid())
 	{
-		xMin += border;
-		yMin += border;
-		xMax -= border;
-		yMax -= border;
+		MEASURE_BLOCK_TIME(OccupancyGrid__createOrResizeMap__create_map);
+		map.mapLimits = newMapLimits;
+		map.map = Eigen::MatrixXf::Constant(newMapLimits.height(), newMapLimits.width(), 0.0f);
+		map.colors = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(), -1);
 	}
-	else if(!map_.empty())
+	else if(map.mapLimits != newMapLimits)
 	{
-		xMin = xMin_ + border;
-		yMin = yMin_ + border;
-		xMax = xMin_ + map_.cols - 1 - border;
-		yMax = yMin_ + map_.rows - 1 - border;
-		definedSize = true;
-	}
+		MEASURE_BLOCK_TIME(OccupancyGrid__createOrResizeMap__resize_map);
+		int dstShiftX = std::max(map.mapLimits.minX - newMapLimits.minX, 0);
+		int dstShiftY = std::max(map.mapLimits.minY - newMapLimits.minY, 0);
+		int srcShiftX = std::max(newMapLimits.minX - map.mapLimits.minX, 0);
+		int srcShiftY = std::max(newMapLimits.minY - map.mapLimits.minY, 0);
+		MapLimits intersection = MapLimits::intersect(map.mapLimits, newMapLimits);
+		int copyWidth = intersection.width();
+		int copyHeight = intersection.height();
+		UASSERT(copyWidth > 0 && copyHeight > 0);
 
-	UASSERT(isLocalMapTransformed(transformedLocalMap));
-	for (int i = 0; i < transformedLocalMap.points.cols(); i++)
-	{
-		int x = transformedLocalMap.transformedPoints2d(0, i);
-		int y = transformedLocalMap.transformedPoints2d(1, i);
+		Eigen::MatrixXf newMap = Eigen::MatrixXf::Constant(newMapLimits.height(), newMapLimits.width(), 0.0f);
+		Eigen::MatrixXi newColors = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(), -1);
 
-		if(definedSize == false)
-		{
-			xMin = x;
-			yMin = y;
-			xMax = x;
-			yMax = y;
-			definedSize = true;
-		}
+		newMap.block(dstShiftY, dstShiftX, copyHeight, copyWidth) =
+			map.map.block(srcShiftY, srcShiftX, copyHeight, copyWidth);
+		newColors.block(dstShiftY, dstShiftX, copyHeight, copyWidth) =
+			map.colors.block(srcShiftY, srcShiftX, copyHeight, copyWidth);
 
-		if(xMin > x)
-			xMin = x;
-		else if(xMax < x)
-			xMax = x;
-
-		if(yMin > y)
-			yMin = y;
-		else if(yMax < y)
-			yMax = y;
-	}
-
-	xMin -= border;
-	yMin -= border;
-	xMax += border;
-	yMax += border;
-}
-
-void OccupancyGrid::createOrExtendMapIfNeeded(int xMin, int yMin, int xMax, int yMax)
-{
-	cv::Size newMapSize(xMax - xMin + 1, yMax - yMin + 1);
-	if(map_.empty())
-	{
-		MEASURE_BLOCK_TIME(OccupancyGrid__createOrExtendMapIfNeeded__create_map);
-		xMin_ = xMin;
-		yMin_ = yMin;
-		map_ = cv::Mat::zeros(newMapSize, CV_32FC1);
-		colors_ = cv::Mat::zeros(newMapSize, CV_8UC3);
-	}
-	else if(xMin != xMin_ || yMin != yMin_ ||
-			newMapSize.width != map_.cols ||
-			newMapSize.height != map_.rows)
-	{
-		MEASURE_BLOCK_TIME(OccupancyGrid__createOrExtendMapIfNeeded__extend_map);
-		int deltaX = xMin_ - xMin;
-		int deltaY = yMin_ - yMin;
-
-		cv::Mat newMap = cv::Mat::zeros(newMapSize, CV_32FC1);
-		cv::Mat newColors = cv::Mat::zeros(newMapSize, CV_8UC3);
-
-		map_.copyTo(newMap(cv::Rect(deltaX, deltaY, map_.cols, map_.rows)));
-		colors_.copyTo(newColors(cv::Rect(deltaX, deltaY, map_.cols, map_.rows)));
-
-		xMin_ = xMin;
-		yMin_ = yMin;
-		map_ = newMap;
-		colors_ = newColors;
+		map.mapLimits = newMapLimits;
+		map.map = std::move(newMap);
+		map.colors = std::move(newColors);
 	}
 }
 
-void OccupancyGrid::deployLocalMap(int nodeId)
+void OccupancyGrid::createOrResizeMap(TemporaryColoredOccupancyMap & map, const MapLimits & newMapLimits)
 {
-	temporarilyOccupiedCells_.clear();
-	const LocalMap & localMap = localMaps_.at(nodeId);
-	UASSERT(isLocalMapTransformed(localMap));
-	for (int i = 0; i < localMap.points.cols(); i++)
+	UASSERT(newMapLimits.valid());
+	if(!map.mapLimits.valid())
 	{
-		int x = localMap.transformedPoints2d(0, i) - xMin_;
-		int y = localMap.transformedPoints2d(1, i) - yMin_;
-		UASSERT(y >= 0 && y < map_.rows && x >= 0 && x < map_.cols);
+		MEASURE_BLOCK_TIME(OccupancyGrid__createOrResizeMap__create_temporary_map);
+		map.mapLimits = newMapLimits;
+		map.missCounter = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(), 0);
+		map.hitCounter = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(), 0);
+		map.colors = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(), -1);
+	}
+	else if(map.mapLimits != newMapLimits)
+	{
+		MEASURE_BLOCK_TIME(OccupancyGrid__createOrResizeMap__resize_temporary_map);
+		int dstShiftX = std::max(map.mapLimits.minX - newMapLimits.minX, 0);
+		int dstShiftY = std::max(map.mapLimits.minY - newMapLimits.minY, 0);
+		int srcShiftX = std::max(newMapLimits.minX - map.mapLimits.minX, 0);
+		int srcShiftY = std::max(newMapLimits.minY - map.mapLimits.minY, 0);
+		MapLimits intersection = MapLimits::intersect(map.mapLimits, newMapLimits);
+		int copyWidth = intersection.width();
+		int copyHeight = intersection.height();
+		UASSERT(copyWidth > 0 && copyHeight > 0);
 
-		bool free = (i < localMap.numGround + localMap.numEmpty);
+		Eigen::MatrixXi newMissCounter = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(), 0);
+		Eigen::MatrixXi newHitCounter = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(), 0);
+		Eigen::MatrixXi newColors = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(), -1);
+
+		newMissCounter.block(dstShiftY, dstShiftX, copyHeight, copyWidth) =
+			map.missCounter.block(srcShiftY, srcShiftX, copyHeight, copyWidth);
+		newHitCounter.block(dstShiftY, dstShiftX, copyHeight, copyWidth) =
+			map.hitCounter.block(srcShiftY, srcShiftX, copyHeight, copyWidth);
+		newColors.block(dstShiftY, dstShiftX, copyHeight, copyWidth) =
+			map.colors.block(srcShiftY, srcShiftX, copyHeight, copyWidth);
+
+		map.mapLimits = newMapLimits;
+		map.missCounter = std::move(newMissCounter);
+		map.hitCounter = std::move(newHitCounter);
+		map.colors = std::move(newColors);
+	}
+}
+
+void OccupancyGrid::deployLocalMap(ColoredOccupancyMap & map, int nodeId)
+{
+	MEASURE_BLOCK_TIME(OccupancyGrid__deployLocalMap);
+	map.temporarilyOccupiedCells.clear();
+	const Node & node = map.nodes.at(nodeId);
+	UASSERT(node.transformedLocalPoints2d.has_value());
+	for (int i = 0; i < node.transformedLocalPoints2d->cols(); i++)
+	{
+		int x = node.transformedLocalPoints2d->coeff(0, i) - map.mapLimits.minX;
+		int y = node.transformedLocalPoints2d->coeff(1, i) - map.mapLimits.minY;
+		UASSERT(x >= 0 && x < map.map.cols() && y >= 0 && y < map.map.rows());
+
+		bool free = (i < node.localMap.numGround + node.localMap.numEmpty);
 		if (free)
 		{
-			float & logodds = map_.at<float>(y, x);
+			float & logodds = map.map(y, x);
 			logodds += probMiss_;
 			if (logodds < probClampingMin_)
 			{
@@ -1051,18 +1094,18 @@ void OccupancyGrid::deployLocalMap(int nodeId)
 		}
 		else
 		{
-			if (temporarilyOccupiedCellsColor_ >= 0)
+			if (temporarilyOccupiedCellColor_ >= 0)
 			{
-				const auto & colors = localMap.colors;
+				const auto & colors = node.localMap.colors;
 				int c = colors[i];
-				if (c == temporarilyOccupiedCellsColor_)
+				if (c == temporarilyOccupiedCellColor_)
 				{
-					temporarilyOccupiedCells_.emplace_back(x, y);
+					map.temporarilyOccupiedCells.emplace_back(x, y);
 					continue;
 				}
 			}
 
-			float & logodds = map_.at<float>(y, x);
+			float & logodds = map.map(y, x);
 			logodds += probHit_;
 			if (logodds > probClampingMax_)
 			{
@@ -1070,201 +1113,295 @@ void OccupancyGrid::deployLocalMap(int nodeId)
 			}
 		}
 
-		int localMapColor = localMap.colors[i];
+		int localMapColor = node.localMap.colors[i];
 		if (localMapColor != -1)
 		{
-			cv::Vec3b & color = colors_.at<cv::Vec3b>(y, x);
-			color[0] = (unsigned char)(localMapColor & 0xFF);
-			color[1] = (unsigned char)((localMapColor >> 8) & 0xFF);
-			color[2] = (unsigned char)((localMapColor >> 16) & 0xFF);
+			int & color = map.colors(y, x);
+			color = localMapColor;
 		}
 	}
 }
 
-cv::Mat OccupancyGrid::getMap(float & xMin, float & yMin) const
+void OccupancyGrid::deployLocalMap(TemporaryColoredOccupancyMap & map, int nodeId)
 {
-	xMin = xMin_ * cellSize_;
-	yMin = yMin_ * cellSize_;
+	MEASURE_BLOCK_TIME(OccupancyGrid__deployLocalMap__temporary);
+	const Node & node = map.nodes.at(nodeId);
+	UASSERT(node.transformedLocalPoints2d.has_value());
+	for (int i = 0; i < node.transformedLocalPoints2d->cols(); i++)
+	{
+		int x = node.transformedLocalPoints2d->coeff(0, i) - map.mapLimits.minX;
+		int y = node.transformedLocalPoints2d->coeff(1, i) - map.mapLimits.minY;
+		UASSERT(x >= 0 && x < map.missCounter.cols() && y >= 0 && y < map.missCounter.rows());
 
-	cv::Mat map;
+		bool free = (i < node.localMap.numGround + node.localMap.numEmpty);
+		if (free)
+		{
+			map.missCounter(y, x) += 1;
+		}
+		else
+		{
+			map.hitCounter(y, x) += 1;
+		}
 
-	UTimer t;
-	if(occupancyThr_ != 0.0f && !map_.empty())
+		int localMapColor = node.localMap.colors[i];
+		int & color = map.colors(y, x);
+		color = localMapColor;
+	}
+}
+
+void OccupancyGrid::removeLocalMap(TemporaryColoredOccupancyMap & map, int nodeId)
+{
+	MEASURE_BLOCK_TIME(OccupancyGrid__removeLocalMap__temporary);
+	const Node & node = map.nodes.at(nodeId);
+	UASSERT(node.transformedLocalPoints2d.has_value());
+	for (int i = 0; i < node.transformedLocalPoints2d->cols(); i++)
+	{
+		int x = node.transformedLocalPoints2d->coeff(0, i) - map.mapLimits.minX;
+		int y = node.transformedLocalPoints2d->coeff(1, i) - map.mapLimits.minY;
+		UASSERT(x >= 0 && x < map.missCounter.cols() && y >= 0 && y < map.missCounter.rows());
+
+		bool free = (i < node.localMap.numGround + node.localMap.numEmpty);
+		if (free)
+		{
+			int & misses = map.missCounter(y, x);
+			misses -= 1;
+			UASSERT(misses >= 0);
+		}
+		else
+		{
+			int & hits = map.hitCounter(y, x);
+			hits -= 1;
+			UASSERT(hits >= 0);
+		}
+	}
+	map.nodes.erase(nodeId);
+
+	MapLimits newMapLimits;
+	for (const auto& entry : map.nodes)
+	{
+		newMapLimits = MapLimits::unite(newMapLimits, *(entry.second.localMapLimits));
+	}
+	createOrResizeMap(map, newMapLimits);
+}
+
+void OccupancyGrid::clearColoredOccupancyMap(ColoredOccupancyMap& map)
+{
+	for (auto& entry : map.nodes)
+	{
+		entry.second.localPose.reset();
+		entry.second.transformedLocalPoints2d.reset();
+		entry.second.localMapLimits.reset();
+	}
+	map.mapLimits = MapLimits();
+	map.map = Eigen::MatrixXf();
+	map.colors = Eigen::MatrixXi();
+	map.temporarilyOccupiedCells.clear();
+}
+
+void OccupancyGrid::clearColoredOccupancyMap(TemporaryColoredOccupancyMap& map)
+{
+	for (auto& entry : map.nodes)
+	{
+		entry.second.localPose.reset();
+		entry.second.transformedLocalPoints2d.reset();
+		entry.second.localMapLimits.reset();
+	}
+	map.mapLimits = MapLimits();
+	map.missCounter = Eigen::MatrixXi();
+	map.hitCounter = Eigen::MatrixXi();
+	map.colors = Eigen::MatrixXi();
+	map.temporarilyOccupiedCells.clear();
+}
+
+OccupancyGrid::OccupancyMap OccupancyGrid::getOccupancyMap(float & minX, float & minY) const
+{
+	MEASURE_BLOCK_TIME(OccupancyGrid__getOccupancyMap);
+	MapLimits occupancyMapLimits = MapLimits::unite(map_.mapLimits, temporaryMap_.mapLimits);
+	UASSERT(occupancyMapLimits.valid());
+	minX = occupancyMapLimits.minX * cellSize_;
+	minY = occupancyMapLimits.minY * cellSize_;
+	OccupancyMap occupancyMap = OccupancyMap::Constant(occupancyMapLimits.height(), occupancyMapLimits.width(), -1);
+
+	if (map_.mapLimits.valid())
 	{
 		float occThr = logodds(occupancyThr_);
-		map = cv::Mat(map_.size(), CV_8SC1);
-		for(int i=0; i<map.rows; ++i)
+		int shiftX = map_.mapLimits.minX - occupancyMapLimits.minX;
+		int shiftY = map_.mapLimits.minY - occupancyMapLimits.minY;
+		for(int x = 0; x < map_.map.cols(); ++x)
 		{
-			for(int j=0; j<map.cols; ++j)
+			for(int y = 0; y < map_.map.rows(); ++y)
 			{
-				float logodds = map_.at<float>(i, j);
+				float logodds = map_.map(y, x);
 				if(logodds == 0.0f)
 				{
-					map.at<char>(i, j) = -1; // unknown
+					occupancyMap(y + shiftY, x + shiftX) = -1;
 				}
 				else if(logodds >= occThr)
 				{
-					map.at<char>(i, j) = 100; // unknown
+					occupancyMap(y + shiftY, x + shiftX) = 100;
 				}
 				else
 				{
-					map.at<char>(i, j) = 0; // empty
+					occupancyMap(y + shiftY, x + shiftX) = 0;
 				}
+			}
+		}
+		if (showTemporarilyOccupiedCells_)
+		{
+			for (const auto& pair : map_.temporarilyOccupiedCells)
+			{
+				int x = pair.first;
+				int y = pair.second;
+				occupancyMap(y + shiftY, x + shiftX) = 100;
 			}
 		}
 	}
 
-	addTemporaryInfoOnMap(map);
-
-	if(erode_ && !map.empty())
+	if (temporaryMap_.mapLimits.valid())
 	{
-		map = util3d::erodeMap(map);
-	}
-	return map;
-}
-
-cv::Mat OccupancyGrid::getProbMap(float & xMin, float & yMin) const
-{
-	xMin = xMin_ * cellSize_;
-	yMin = yMin_ * cellSize_;
-
-	cv::Mat map;
-
-	UTimer t;
-	if(occupancyThr_ != 0.0f && !map.empty())
-	{
-		float occThr = logodds(occupancyThr_);
-		map = cv::Mat(map.size(), CV_8SC1);
-		for(int i=0; i<map.rows; ++i)
+		float tmpOccThr = logodds(temporaryOccupancyThr_);
+		int shiftX = temporaryMap_.mapLimits.minX - occupancyMapLimits.minX;
+		int shiftY = temporaryMap_.mapLimits.minY - occupancyMapLimits.minY;
+		for(int x = 0; x < temporaryMap_.missCounter.cols(); ++x)
 		{
-			for(int j=0; j<map.cols; ++j)
+			for(int y = 0; y < temporaryMap_.missCounter.rows(); ++y)
 			{
-				float logodds = map_.at<float>(i, j);
+				float logodds = temporaryMap_.missCounter(y, x) * temporaryProbMiss_ +
+					temporaryMap_.hitCounter(y, x) * temporaryProbHit_;
 				if(logodds == 0.0f)
 				{
-					map.at<char>(i, j) = -1; // unknown
+					continue;
 				}
-				else if(logodds >= occThr)
+				else if(logodds >= tmpOccThr)
 				{
-					map.at<char>(i, j) = probability(logodds);
+					occupancyMap(y + shiftY, x + shiftX) = 100;
+				}
+				else
+				{
+					occupancyMap(y + shiftY, x + shiftX) = 0;
 				}
 			}
 		}
 	}
 
-	addTemporaryInfoOnMap(map);
-
-	return map;
+	return occupancyMap;
 }
 
-cv::Mat OccupancyGrid::getColors(float & xMin, float & yMin) const
+OccupancyGrid::OccupancyMap OccupancyGrid::getProbOccupancyMap(float & minX, float & minY) const
 {
-	xMin = xMin_ * cellSize_;
-	yMin = yMin_ * cellSize_;
+	MEASURE_BLOCK_TIME(OccupancyGrid__getProbOccupancyMap);
+	MapLimits occupancyMapLimits = MapLimits::unite(map_.mapLimits, temporaryMap_.mapLimits);
+	UASSERT(occupancyMapLimits.valid());
+	minX = occupancyMapLimits.minX * cellSize_;
+	minY = occupancyMapLimits.minY * cellSize_;
+	OccupancyMap occupancyMap = OccupancyMap::Constant(occupancyMapLimits.height(), occupancyMapLimits.width(), -1);
 
-	cv::Mat colors;
-	if(!colors_.empty())
+	if (map_.mapLimits.valid())
 	{
-		colors = colors_.clone();
-	}
-	else
-	{
-		UWARN("Colors are empty");
-	}
-
-	addTemporaryInfoOnColors(colors);
-
-	return colors;
-}
-
-void OccupancyGrid::addTemporaryInfoOnMap(cv::Mat map) const
-{
-	if (showTemporarilyOccupiedCells_)
-	{
-		for (const auto& pair : temporarilyOccupiedCells_)
+		int shiftX = map_.mapLimits.minX - occupancyMapLimits.minX;
+		int shiftY = map_.mapLimits.minY - occupancyMapLimits.minY;
+		for(int x = 0; x < map_.map.cols(); ++x)
 		{
-			int x = pair.first;
-			int y = pair.second;
-			map.at<char>(y, x) = 100;
-		}
-	}
-
-	for (const auto& temporaryLocalMap : temporaryLocalMaps_)
-	{
-		UASSERT(isLocalMapTransformed(temporaryLocalMap));
-		for (int i = 0; i < temporaryLocalMap.points.cols(); i++)
-		{
-			int x = temporaryLocalMap.transformedPoints2d(0, i) - xMin_;
-			int y = temporaryLocalMap.transformedPoints2d(1, i) - yMin_;
-			UASSERT(y >= 0 && y < map.rows && x >= 0 && x < map.cols);
-
-			bool free = (i < temporaryLocalMap.numGround + temporaryLocalMap.numEmpty);
-			if (free)
+			for(int y = 0; y < map_.map.rows(); ++y)
 			{
-				map.at<char>(y, x) = 0;
+				float logodds = map_.map(y, x);
+				if(logodds == 0.0f)
+				{
+					occupancyMap(y + shiftY, x + shiftX) = -1;
+				}
+				else
+				{
+					occupancyMap(y + shiftY, x + shiftX) = probability(logodds) * 100;
+				}
 			}
-			else
+		}
+		if (showTemporarilyOccupiedCells_)
+		{
+			for (const auto& pair : map_.temporarilyOccupiedCells)
 			{
-				map.at<char>(y, x) = 100;
+				int x = pair.first;
+				int y = pair.second;
+				occupancyMap(y + shiftY, x + shiftX) = 100;
 			}
 		}
 	}
-}
 
-void OccupancyGrid::addTemporaryInfoOnColors(cv::Mat colors) const
-{
-	if (showTemporarilyOccupiedCells_)
+	if (temporaryMap_.mapLimits.valid())
 	{
-		for (const auto& pair : temporarilyOccupiedCells_)
+		float tmpOccThr = logodds(temporaryOccupancyThr_);
+		int shiftX = temporaryMap_.mapLimits.minX - occupancyMapLimits.minX;
+		int shiftY = temporaryMap_.mapLimits.minY - occupancyMapLimits.minY;
+		for(int x = 0; x < temporaryMap_.missCounter.cols(); ++x)
 		{
-			int x = pair.first;
-			int y = pair.second;
-			cv::Vec3b & color = colors.at<cv::Vec3b>(y, x);
-			color[0] = (unsigned char)(temporarilyOccupiedCellsColor_ & 0xFF);
-			color[1] = (unsigned char)((temporarilyOccupiedCellsColor_ >> 8) & 0xFF);
-			color[2] = (unsigned char)((temporarilyOccupiedCellsColor_ >> 16) & 0xFF);
-		}
-	}
-
-	for (const auto& temporaryLocalMap : temporaryLocalMaps_)
-	{
-		UASSERT(isLocalMapTransformed(temporaryLocalMap));
-		for (int i = 0; i < temporaryLocalMap.points.cols(); i++)
-		{
-			int x = temporaryLocalMap.transformedPoints2d(0, i) - xMin_;
-			int y = temporaryLocalMap.transformedPoints2d(1, i) - yMin_;
-			UASSERT(y >= 0 && y < colors.rows && x >= 0 && x < colors.cols);
-
-			int temporaryLocalMapColor = temporaryLocalMap.colors[i];
-			if (temporaryLocalMapColor != -1)
+			for(int y = 0; y < temporaryMap_.missCounter.rows(); ++y)
 			{
-				cv::Vec3b & color = colors.at<cv::Vec3b>(y, x);
-				color[0] = (unsigned char)(temporaryLocalMapColor & 0xFF);
-				color[1] = (unsigned char)((temporaryLocalMapColor >> 8) & 0xFF);
-				color[2] = (unsigned char)((temporaryLocalMapColor >> 16) & 0xFF);
+				float logodds = temporaryMap_.missCounter(y, x) * temporaryProbMiss_ +
+					temporaryMap_.hitCounter(y, x) * temporaryProbHit_;
+				if(logodds == 0.0f)
+				{
+					continue;
+				}
+				else
+				{
+					occupancyMap(y + shiftY, x + shiftX) = 0;
+				}
 			}
 		}
 	}
+	return occupancyMap;
 }
 
-float OccupancyGrid::getCellSize() const
+OccupancyGrid::ColorsMap OccupancyGrid::getColorsMap(float & minX, float & minY) const
+{
+	MEASURE_BLOCK_TIME(OccupancyGrid__getColorsMap);
+	MapLimits colorsMapLimits = MapLimits::unite(map_.mapLimits, temporaryMap_.mapLimits);
+	UASSERT(colorsMapLimits.valid());
+	minX = colorsMapLimits.minX * cellSize_;
+	minY = colorsMapLimits.minY * cellSize_;
+	ColorsMap colorsMap = ColorsMap::Constant(colorsMapLimits.height(), colorsMapLimits.width(), -1);
+
+	if (map_.mapLimits.valid())
+	{
+		int shiftX = std::max(map_.mapLimits.minX - colorsMapLimits.minX, 0);
+		int shiftY = std::max(map_.mapLimits.minY - colorsMapLimits.minY, 0);
+		colorsMap.block(shiftY, shiftX, map_.mapLimits.height(), map_.mapLimits.width()) =
+			map_.colors;
+
+		if (showTemporarilyOccupiedCells_)
+		{
+			for (const auto& pair : map_.temporarilyOccupiedCells)
+			{
+				int x = pair.first;
+				int y = pair.second;
+				colorsMap(y + shiftY, x + shiftX) = temporarilyOccupiedCellColor_;
+			}
+		}
+	}
+
+	if (temporaryMap_.mapLimits.valid())
+	{
+		int shiftX = std::max(temporaryMap_.mapLimits.minX - colorsMapLimits.minX, 0);
+		int shiftY = std::max(temporaryMap_.mapLimits.minY - colorsMapLimits.minY, 0);
+		colorsMap.block(shiftY, shiftX, temporaryMap_.mapLimits.height(), temporaryMap_.mapLimits.width()) =
+			temporaryMap_.colors;
+	}
+
+	return colorsMap;
+}
+
+float OccupancyGrid::cellSize() const
 {
 	return cellSize_;
 }
 
-int OccupancyGrid::getMaxTemporaryLocalMaps() const
+int OccupancyGrid::maxTemporaryLocalMaps() const
 {
 	return maxTemporaryLocalMaps_;
 }
 
-int OccupancyGrid::localMapsNum() const
+const std::map<int, OccupancyGrid::Node> & OccupancyGrid::nodes() const
 {
-	return localMaps_.size();
-}
-
-const std::map<int, OccupancyGrid::LocalMap> & OccupancyGrid::localMaps() const
-{
-	return localMaps_;
+	return map_.nodes;
 }
 
 const cv::Mat & OccupancyGrid::lastDilatedSemantic() const
@@ -1272,22 +1409,17 @@ const cv::Mat & OccupancyGrid::lastDilatedSemantic() const
 	return lastDilatedSemantic_;
 }
 
-void OccupancyGrid::clear()
+void OccupancyGrid::resetAll()
 {
-	localMaps_.clear();
-	poses_.clear();
-
-	xMin_ = 0;
-	yMin_ = 0;
-	map_ = cv::Mat();
-	colors_ = cv::Mat();
-
+	map_ = ColoredOccupancyMap();
+	temporaryMap_ = TemporaryColoredOccupancyMap();
 	cachedMap_.reset();
+	lastDilatedSemantic_ = cv::Mat();
+}
 
-	temporarilyOccupiedCells_.clear();
-
-	temporaryLocalMaps_.clear();
-	temporaryPoses_.clear();
+void OccupancyGrid::resetTemporaryMap()
+{
+	temporaryMap_ = TemporaryColoredOccupancyMap();
 }
 
 }
