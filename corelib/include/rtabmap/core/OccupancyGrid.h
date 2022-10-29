@@ -44,8 +44,8 @@ namespace rtabmap {
 class RTABMAP_EXP OccupancyGrid
 {
 public:
-	using OccupancyMap = Eigen::Matrix<char, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-	using ColorsMap = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+	using OccupancyGridMap = Eigen::Matrix<char, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+	using ColorGridMap = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 private:
 	inline static float logodds(double probability)
@@ -181,9 +181,9 @@ public:
 	void updatePoses(const std::map<int, Transform> & updatedPoses,
 		const std::list<Transform> & updatedTemporaryPoses = std::list<Transform>());
 
-	OccupancyMap getOccupancyMap(float & minX, float & minY) const;
-	OccupancyMap getProbOccupancyMap(float & minX, float & minY) const;
-	ColorsMap getColorsMap(float & minX, float & minY) const;
+	OccupancyGridMap getOccupancyGridMap(float & minX, float & minY) const;
+	OccupancyGridMap getProbOccupancyGridMap(float & minX, float & minY) const;
+	ColorGridMap getColorGridMap(float & minX, float & minY) const;
 
 	float cellSize() const;
 	int maxTemporaryLocalMaps() const;

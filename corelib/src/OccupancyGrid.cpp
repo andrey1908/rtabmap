@@ -671,6 +671,10 @@ LaserScan OccupancyGrid::addSemanticToLaserScan(
 			g = std::max(bgrColor[1], (std::uint8_t)1);
 			r = std::max(bgrColor[2], (std::uint8_t)1);
 			ptrInt[3] = int(b) | (int(g) << 8) | (int(r) << 16);
+			// if (ptrInt[3] > 0 && ptrInt[3] != 65793) {
+			// 	std::cout << (int)r << ' ' << (int)g << ' ' << (int)b << "\n";
+			// 	exit(0);
+			// }
 		}
 		else
 		{
@@ -1213,14 +1217,15 @@ void OccupancyGrid::clearColoredOccupancyMap(TemporaryColoredOccupancyMap& map)
 	map.temporarilyOccupiedCells.clear();
 }
 
-OccupancyGrid::OccupancyMap OccupancyGrid::getOccupancyMap(float & minX, float & minY) const
+OccupancyGrid::OccupancyGridMap OccupancyGrid::getOccupancyGridMap(float & minX, float & minY) const
 {
-	MEASURE_BLOCK_TIME(OccupancyGrid__getOccupancyMap);
+	MEASURE_BLOCK_TIME(OccupancyGrid__getOccupancyGridMap);
 	MapLimits occupancyMapLimits = MapLimits::unite(map_.mapLimits, temporaryMap_.mapLimits);
 	UASSERT(occupancyMapLimits.valid());
 	minX = occupancyMapLimits.minX * cellSize_;
 	minY = occupancyMapLimits.minY * cellSize_;
-	OccupancyMap occupancyMap = OccupancyMap::Constant(occupancyMapLimits.height(), occupancyMapLimits.width(), -1);
+	OccupancyGridMap occupancyGridMap =
+		OccupancyGridMap::Constant(occupancyMapLimits.height(), occupancyMapLimits.width(), -1);
 
 	if (map_.mapLimits.valid())
 	{
@@ -1234,15 +1239,15 @@ OccupancyGrid::OccupancyMap OccupancyGrid::getOccupancyMap(float & minX, float &
 				float logodds = map_.map(y, x);
 				if(logodds == 0.0f)
 				{
-					occupancyMap(y + shiftY, x + shiftX) = -1;
+					occupancyGridMap(y + shiftY, x + shiftX) = -1;
 				}
 				else if(logodds >= occThr)
 				{
-					occupancyMap(y + shiftY, x + shiftX) = 100;
+					occupancyGridMap(y + shiftY, x + shiftX) = 100;
 				}
 				else
 				{
-					occupancyMap(y + shiftY, x + shiftX) = 0;
+					occupancyGridMap(y + shiftY, x + shiftX) = 0;
 				}
 			}
 		}
@@ -1252,7 +1257,7 @@ OccupancyGrid::OccupancyMap OccupancyGrid::getOccupancyMap(float & minX, float &
 			{
 				int x = pair.first;
 				int y = pair.second;
-				occupancyMap(y + shiftY, x + shiftX) = 100;
+				occupancyGridMap(y + shiftY, x + shiftX) = 100;
 			}
 		}
 	}
@@ -1274,27 +1279,28 @@ OccupancyGrid::OccupancyMap OccupancyGrid::getOccupancyMap(float & minX, float &
 				}
 				else if(logodds >= tmpOccThr)
 				{
-					occupancyMap(y + shiftY, x + shiftX) = 100;
+					occupancyGridMap(y + shiftY, x + shiftX) = 100;
 				}
 				else
 				{
-					occupancyMap(y + shiftY, x + shiftX) = 0;
+					occupancyGridMap(y + shiftY, x + shiftX) = 0;
 				}
 			}
 		}
 	}
 
-	return occupancyMap;
+	return occupancyGridMap;
 }
 
-OccupancyGrid::OccupancyMap OccupancyGrid::getProbOccupancyMap(float & minX, float & minY) const
+OccupancyGrid::OccupancyGridMap OccupancyGrid::getProbOccupancyGridMap(float & minX, float & minY) const
 {
-	MEASURE_BLOCK_TIME(OccupancyGrid__getProbOccupancyMap);
+	MEASURE_BLOCK_TIME(OccupancyGrid__getProbOccupancyGridMap);
 	MapLimits occupancyMapLimits = MapLimits::unite(map_.mapLimits, temporaryMap_.mapLimits);
 	UASSERT(occupancyMapLimits.valid());
 	minX = occupancyMapLimits.minX * cellSize_;
 	minY = occupancyMapLimits.minY * cellSize_;
-	OccupancyMap occupancyMap = OccupancyMap::Constant(occupancyMapLimits.height(), occupancyMapLimits.width(), -1);
+	OccupancyGridMap occupancyGridMap =
+		OccupancyGridMap::Constant(occupancyMapLimits.height(), occupancyMapLimits.width(), -1);
 
 	if (map_.mapLimits.valid())
 	{
@@ -1307,11 +1313,11 @@ OccupancyGrid::OccupancyMap OccupancyGrid::getProbOccupancyMap(float & minX, flo
 				float logodds = map_.map(y, x);
 				if(logodds == 0.0f)
 				{
-					occupancyMap(y + shiftY, x + shiftX) = -1;
+					occupancyGridMap(y + shiftY, x + shiftX) = -1;
 				}
 				else
 				{
-					occupancyMap(y + shiftY, x + shiftX) = probability(logodds) * 100;
+					occupancyGridMap(y + shiftY, x + shiftX) = probability(logodds) * 100;
 				}
 			}
 		}
@@ -1321,7 +1327,7 @@ OccupancyGrid::OccupancyMap OccupancyGrid::getProbOccupancyMap(float & minX, flo
 			{
 				int x = pair.first;
 				int y = pair.second;
-				occupancyMap(y + shiftY, x + shiftX) = 100;
+				occupancyGridMap(y + shiftY, x + shiftX) = 100;
 			}
 		}
 	}
@@ -1343,28 +1349,29 @@ OccupancyGrid::OccupancyMap OccupancyGrid::getProbOccupancyMap(float & minX, flo
 				}
 				else
 				{
-					occupancyMap(y + shiftY, x + shiftX) = 0;
+					occupancyGridMap(y + shiftY, x + shiftX) = 0;
 				}
 			}
 		}
 	}
-	return occupancyMap;
+	return occupancyGridMap;
 }
 
-OccupancyGrid::ColorsMap OccupancyGrid::getColorsMap(float & minX, float & minY) const
+OccupancyGrid::ColorGridMap OccupancyGrid::getColorGridMap(float & minX, float & minY) const
 {
-	MEASURE_BLOCK_TIME(OccupancyGrid__getColorsMap);
+	MEASURE_BLOCK_TIME(OccupancyGrid__getColorGridMap);
 	MapLimits colorsMapLimits = MapLimits::unite(map_.mapLimits, temporaryMap_.mapLimits);
 	UASSERT(colorsMapLimits.valid());
 	minX = colorsMapLimits.minX * cellSize_;
 	minY = colorsMapLimits.minY * cellSize_;
-	ColorsMap colorsMap = ColorsMap::Constant(colorsMapLimits.height(), colorsMapLimits.width(), -1);
+	ColorGridMap colorGridMap =
+		ColorGridMap::Constant(colorsMapLimits.height(), colorsMapLimits.width(), -1);
 
 	if (map_.mapLimits.valid())
 	{
 		int shiftX = std::max(map_.mapLimits.minX - colorsMapLimits.minX, 0);
 		int shiftY = std::max(map_.mapLimits.minY - colorsMapLimits.minY, 0);
-		colorsMap.block(shiftY, shiftX, map_.mapLimits.height(), map_.mapLimits.width()) =
+		colorGridMap.block(shiftY, shiftX, map_.mapLimits.height(), map_.mapLimits.width()) =
 			map_.colors;
 
 		if (showTemporarilyOccupiedCells_)
@@ -1373,7 +1380,7 @@ OccupancyGrid::ColorsMap OccupancyGrid::getColorsMap(float & minX, float & minY)
 			{
 				int x = pair.first;
 				int y = pair.second;
-				colorsMap(y + shiftY, x + shiftX) = temporarilyOccupiedCellColor_;
+				colorGridMap(y + shiftY, x + shiftX) = temporarilyOccupiedCellColor_;
 			}
 		}
 	}
@@ -1382,11 +1389,11 @@ OccupancyGrid::ColorsMap OccupancyGrid::getColorsMap(float & minX, float & minY)
 	{
 		int shiftX = std::max(temporaryMap_.mapLimits.minX - colorsMapLimits.minX, 0);
 		int shiftY = std::max(temporaryMap_.mapLimits.minY - colorsMapLimits.minY, 0);
-		colorsMap.block(shiftY, shiftX, temporaryMap_.mapLimits.height(), temporaryMap_.mapLimits.width()) =
+		colorGridMap.block(shiftY, shiftX, temporaryMap_.mapLimits.height(), temporaryMap_.mapLimits.width()) =
 			temporaryMap_.colors;
 	}
 
-	return colorsMap;
+	return colorGridMap;
 }
 
 float OccupancyGrid::cellSize() const
