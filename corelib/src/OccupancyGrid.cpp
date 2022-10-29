@@ -671,10 +671,6 @@ LaserScan OccupancyGrid::addSemanticToLaserScan(
 			g = std::max(bgrColor[1], (std::uint8_t)1);
 			r = std::max(bgrColor[2], (std::uint8_t)1);
 			ptrInt[3] = int(b) | (int(g) << 8) | (int(r) << 16);
-			// if (ptrInt[3] > 0 && ptrInt[3] != 65793) {
-			// 	std::cout << (int)r << ' ' << (int)g << ' ' << (int)b << "\n";
-			// 	exit(0);
-			// }
 		}
 		else
 		{
