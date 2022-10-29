@@ -210,8 +210,8 @@ private:
 			pcl::IndicesPtr & groundIndices,
 			pcl::IndicesPtr & obstaclesIndices,
 			pcl::IndicesPtr * flatObstacles = nullptr) const;
-	cv::Mat dilate(const cv::Mat& rgb) const;
-	LaserScan addSemanticToLaserScan(const LaserScan& scan, const cv::Mat& rgb,
+	cv::Mat dilate(const cv::Mat& image) const;
+	LaserScan addSemanticToLaserScan(const LaserScan& scan, const cv::Mat& image,
 			const std::vector<CameraModel>& cameraModels) const;
 	LocalMap cvMatsToLocalMap(
 			const cv::Mat & groundCells,

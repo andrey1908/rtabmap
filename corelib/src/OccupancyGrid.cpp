@@ -596,18 +596,18 @@ typename pcl::PointCloud<PointT>::Ptr OccupancyGrid::segmentCloud(
 	return cloud;
 }
 
-cv::Mat OccupancyGrid::dilate(const cv::Mat& rgb) const
+cv::Mat OccupancyGrid::dilate(const cv::Mat& image) const
 {
 	MEASURE_BLOCK_TIME(OccupancyGrid__dilate);
 	UASSERT(semanticDilation_ > 0);
-	UASSERT(rgb.type() == CV_8UC3);
-	cv::Mat dilated = cv::Mat::zeros(rgb.rows, rgb.cols, rgb.type());
-	for (int h = 0; h < rgb.rows; h++)
+	UASSERT(image.type() == CV_8UC3);
+	cv::Mat dilated = cv::Mat::zeros(image.rows, image.cols, image.type());
+	for (int h = 0; h < image.rows; h++)
 	{
 		int dWShift = 0;
-		for (int w = 0; w < rgb.cols; w++)
+		for (int w = 0; w < image.cols; w++)
 		{
-			const cv::Vec3b& color = rgb.at<cv::Vec3b>(h, w);
+			const cv::Vec3b& color = image.at<cv::Vec3b>(h, w);
 			if (color[0] == 0 && color[1] == 0 && color[2] == 0)
 			{
 				dWShift = std::max(dWShift - 1, 0);
@@ -639,14 +639,14 @@ cv::Mat OccupancyGrid::dilate(const cv::Mat& rgb) const
 }
 
 LaserScan OccupancyGrid::addSemanticToLaserScan(
-		const LaserScan& scan, const cv::Mat& rgb,
+		const LaserScan& scan, const cv::Mat& image,
 		const std::vector<rtabmap::CameraModel>& cameraModels) const
 {
 	MEASURE_BLOCK_TIME(OccupancyGrid__addSemanticToLaserScan);
 	cv::Mat scanRGB_data = cv::Mat(1, scan.size(),
 		CV_32FC(rtabmap::LaserScan::channels(rtabmap::LaserScan::Format::kXYZRGB)));
 	UASSERT(scan.format() == rtabmap::LaserScan::Format::kXYZ || scan.format() == rtabmap::LaserScan::Format::kXYZI);
-	UASSERT(rgb.type() == CV_8UC3);
+	UASSERT(image.type() == CV_8UC3);
 	rtabmap::Transform camera2LaserScan = cameraModels[0].localTransform().inverse() * scan.localTransform();
 	for (int i = 0; i < scan.size(); i++)
 	{
@@ -666,10 +666,14 @@ LaserScan OccupancyGrid::addSemanticToLaserScan(
 		{
 			int* ptrInt = (int*)ptr;
 			std::uint8_t b, g, r;
-			const std::uint8_t* bgrColor = rgb.ptr<std::uint8_t>(v, u);
-			b = std::max(bgrColor[0], (std::uint8_t)1);
-			g = std::max(bgrColor[1], (std::uint8_t)1);
-			r = std::max(bgrColor[2], (std::uint8_t)1);
+			const std::uint8_t* bgrColor = image.ptr<std::uint8_t>(v, u);
+			b = bgrColor[0];
+			g = bgrColor[1];
+			r = bgrColor[2];
+			if (b == 0 && g == 0 && r == 0)
+			{
+				b = 1;
+			}
 			ptrInt[3] = int(b) | (int(g) << 8) | (int(r) << 16);
 		}
 		else
