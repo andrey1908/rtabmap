@@ -47,8 +47,7 @@ SensorData::SensorData() :
 SensorData::SensorData(
 		const cv::Mat & image,
 		int id,
-		double stamp,
-		const cv::Mat & userData) :
+		double stamp) :
 		_id(id),
 		_sec(0),
 		_nsec(0)
@@ -62,8 +61,7 @@ SensorData::SensorData(
 		const cv::Mat & image,
 		const CameraModel & cameraModel,
 		int id,
-		double stamp,
-		const cv::Mat & userData) :
+		double stamp) :
 		_id(id),
 		_sec(0),
 		_nsec(0)
@@ -78,8 +76,7 @@ SensorData::SensorData(
 		const cv::Mat & depth,
 		const CameraModel & cameraModel,
 		int id,
-		double stamp,
-		const cv::Mat & userData) :
+		double stamp) :
 		_id(id),
 		_sec(0),
 		_nsec(0)
@@ -95,8 +92,7 @@ SensorData::SensorData(
 		const cv::Mat & depth,
 		const CameraModel & cameraModel,
 		int id,
-		double stamp,
-		const cv::Mat & userData) :
+		double stamp) :
 		_id(id),
 		_sec(0),
 		_nsec(0)
@@ -108,35 +104,33 @@ SensorData::SensorData(
 
 // Multi-cameras RGB-D constructor
 SensorData::SensorData(
-		const cv::Mat & rgb,
-		const cv::Mat & depth,
+		const std::vector<cv::Mat> & rgbs,
+		const std::vector<cv::Mat> & depths,
 		const std::vector<CameraModel> & cameraModels,
 		int id,
-		double stamp,
-		const cv::Mat & userData) :
+		double stamp) :
 		_id(id),
 		_sec(0),
 		_nsec(0)
 {
 	std::tie(_sec, _nsec) = uDoubleStamp2SecNSec(stamp);
-	setRGBDImage(rgb, depth, cameraModels);
+	setRGBDImages(rgbs, depths, cameraModels);
 }
 
 // Multi-cameras RGB-D constructor + laser scan
 SensorData::SensorData(
 		const LaserScan & laserScan,
-		const cv::Mat & rgb,
-		const cv::Mat & depth,
+		const std::vector<cv::Mat> & rgbs,
+		const std::vector<cv::Mat> & depths,
 		const std::vector<CameraModel> & cameraModels,
 		int id,
-		double stamp,
-		const cv::Mat & userData) :
+		double stamp) :
 		_id(id),
 		_sec(0),
 		_nsec(0)
 {
 	std::tie(_sec, _nsec) = uDoubleStamp2SecNSec(stamp);
-	setRGBDImage(rgb, depth, cameraModels);
+	setRGBDImages(rgbs, depths, cameraModels);
 	setLaserScan(laserScan);
 }
 
@@ -146,8 +140,7 @@ SensorData::SensorData(
 		const cv::Mat & right,
 		const StereoCameraModel & cameraModel,
 		int id,
-		double stamp,
-		const cv::Mat & userData):
+		double stamp):
 		_id(id),
 		_sec(0),
 		_nsec(0)
@@ -163,8 +156,7 @@ SensorData::SensorData(
 		const cv::Mat & right,
 		const StereoCameraModel & cameraModel,
 		int id,
-		double stamp,
-		const cv::Mat & userData) :
+		double stamp) :
 		_id(id),
 		_sec(0),
 		_nsec(0)
@@ -195,37 +187,47 @@ void SensorData::setRGBDImage(
 		const cv::Mat & depth,
 		const CameraModel & model)
 {
-	std::vector<CameraModel> models;
-	models.push_back(model);
-	setRGBDImage(rgb, depth, models);
+	setRGBDImages({rgb}, {depth}, {model});
 }
 void SensorData::setRGBDImage(
 		const cv::Mat & rgb,
 		const cv::Mat & depth,
+		const CameraModel & model,
+		const CameraModel & depthModel)
+{
+	setRGBDImages({rgb}, {depth}, {model}, {depthModel});
+}
+void SensorData::setRGBDImages(
+		const std::vector<cv::Mat> & rgbs,
+		const std::vector<cv::Mat> & depths,
 		const std::vector<CameraModel> & models)
 {
-	_stereoCameraModel = StereoCameraModel();
+	setRGBDImages(rgbs, depths, models, models);
+}
+void SensorData::setRGBDImages(
+		const std::vector<cv::Mat> & rgbs,
+		const std::vector<cv::Mat> & depths,
+		const std::vector<CameraModel> & models,
+		const std::vector<CameraModel> & depthModels)
+{
 	_cameraModels = models;
-	if(!rgb.empty())
+	_depthCameraModels = depthModels;
+	_stereoCameraModel = StereoCameraModel();
+
+	_images.clear();
+	for (const auto& rgb : rgbs)
 	{
 		UASSERT(rgb.type() == CV_8UC1 || // Mono
 				rgb.type() == CV_8UC3);  // RGB
-		_image = rgb;
-	}
-	else
-	{
-		_image = cv::Mat();
+		_images.push_back(rgb);
 	}
 
-	if(!depth.empty())
+	_depthsOrRights.clear();
+	for (const auto& depth : depths)
 	{
 		UASSERT(depth.type() == CV_32FC1 || // Depth in meter
 				depth.type() == CV_16UC1); // Depth in millimetre
-		_depthOrRight = depth;
-	}
-	else
-	{
-		_depthOrRight = cv::Mat();
+		_depthsOrRights.push_back(depth);
 	}
 }
 void SensorData::setStereoImage(
@@ -234,28 +236,17 @@ void SensorData::setStereoImage(
 		const StereoCameraModel & stereoCameraModel)
 {
 	_cameraModels.clear();
+	_depthCameraModels.clear();
 	_stereoCameraModel = stereoCameraModel;
 
-	if(!left.empty())
-	{
-		UASSERT(left.type() == CV_8UC1 || // Mono
-				left.type() == CV_8UC3);  // RGB
-		_image = left;
-	}
-	else
-	{
-		_image = cv::Mat();
-	}
+	_images.clear();
+	UASSERT(left.type() == CV_8UC1 || // Mono
+			left.type() == CV_8UC3);  // RGB
+	_images.push_back(left);
 
-	if(!right.empty())
-	{
-		UASSERT(right.type() == CV_8UC1); // Mono
-		_depthOrRight = right;
-	}
-	else
-	{
-		_depthOrRight = cv::Mat();
-	}
+	_depthsOrRights.clear();
+	UASSERT(right.type() == CV_8UC1); // Mono
+	_depthsOrRights.push_back(right);
 }
 void SensorData::setLaserScan(const LaserScan & laserScan)
 {
@@ -264,13 +255,13 @@ void SensorData::setLaserScan(const LaserScan & laserScan)
 
 void SensorData::setImage(const cv::Mat & image)
 {
-	UASSERT(image.empty() || image.rows > 1);
-	_image = image;
+	_images.clear();
+	_images.push_back(image);
 }
 void SensorData::setDepthOrRight(const cv::Mat & image)
 {
-	UASSERT(image.empty() || image.rows > 1);
-	_depthOrRight = image;
+	_depthsOrRights.clear();
+	_depthsOrRights.push_back(image);
 }
 
 void SensorData::setFeatures(const std::vector<cv::KeyPoint> & keypoints, const std::vector<cv::Point3f> & keypoints3D, const cv::Mat & descriptors)
@@ -286,8 +277,8 @@ void SensorData::clearData(bool images, bool scan)
 {
 	if(images)
 	{
-		_image = cv::Mat();
-		_depthOrRight = cv::Mat();
+		_images.clear();
+		_depthsOrRights.clear();
 	}
 	if(scan)
 	{
