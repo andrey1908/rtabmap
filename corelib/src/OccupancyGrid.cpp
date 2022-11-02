@@ -297,6 +297,7 @@ OccupancyGrid::LocalMap OccupancyGrid::createLocalMap(const Signature & signatur
 				if (signature.sensorData().images().size())
 				{
 					std::vector<cv::Mat> semantics;
+					semantics.reserve(signature.sensorData().images().size());
 					for (int i = 0; i < signature.sensorData().images().size(); i++)
 					{
 						cv::Mat semantic = signature.sensorData().images()[i];
@@ -652,6 +653,12 @@ LaserScan OccupancyGrid::addSemanticToLaserScan(
 	UASSERT(scan.format() == rtabmap::LaserScan::Format::kXYZ || scan.format() == rtabmap::LaserScan::Format::kXYZI);
 	cv::Mat scanRGB_data = cv::Mat(1, scan.size(),
 		CV_32FC(rtabmap::LaserScan::channels(rtabmap::LaserScan::Format::kXYZRGB)));
+	std::vector<rtabmap::Transform> cameras2LaserScan;
+	cameras2LaserScan.reserve(images.size());
+	for (int camId = 0; camId < images.size(); camId++)
+	{
+		cameras2LaserScan.push_back(cameraModels[camId].localTransform().inverse() * scan.localTransform());
+	}
 	for (int i = 0; i < scan.size(); i++)
 	{
 		float* ptr = scanRGB_data.ptr<float>(0, i);
@@ -664,7 +671,7 @@ LaserScan OccupancyGrid::addSemanticToLaserScan(
 			const cv::Mat& image = images[camId];
 			const rtabmap::CameraModel& cameraModel = cameraModels[camId];
 			UASSERT(image.type() == CV_8UC3);
-			rtabmap::Transform camera2LaserScan = cameraModel.localTransform().inverse() * scan.localTransform();
+			const rtabmap::Transform& camera2LaserScan = cameras2LaserScan[camId];
 			cv::Point3f cameraPoint = rtabmap::util3d::transformPoint(*(cv::Point3f*)(scan.data().ptr<float>(0, i)), camera2LaserScan);
 			int u, v;
 			cameraModel.reproject(cameraPoint.x, cameraPoint.y, cameraPoint.z, u, v);
