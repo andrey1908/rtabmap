@@ -156,6 +156,8 @@ public:
 	/**
 	 * Set image data.
 	 */
+	void setRGBImage(const cv::Mat & rgb, const CameraModel & model);
+	void setRGBImages(const std::vector<cv::Mat> & rgbs, const std::vector<CameraModel> & models);
 	void setRGBDImage(const cv::Mat & rgb, const cv::Mat & depth, const CameraModel & model);
 	void setRGBDImage(const cv::Mat & rgb, const cv::Mat & depth, const CameraModel & model, const CameraModel & depthModel);
 	void setRGBDImages(const std::vector<cv::Mat> & rgbs, const std::vector<cv::Mat> & depths,

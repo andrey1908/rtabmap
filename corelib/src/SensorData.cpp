@@ -182,12 +182,24 @@ SensorData::~SensorData()
 {
 }
 
+void SensorData::setRGBImage(
+		const cv::Mat & rgb,
+		const CameraModel & model)
+{
+	setRGBDImages({rgb}, {}, {model}, {});
+}
+void SensorData::setRGBImages(
+		const std::vector<cv::Mat> & rgbs,
+		const std::vector<CameraModel> & models)
+{
+	setRGBDImages(rgbs, {}, models, {});
+}
 void SensorData::setRGBDImage(
 		const cv::Mat & rgb,
 		const cv::Mat & depth,
 		const CameraModel & model)
 {
-	setRGBDImages({rgb}, {depth}, {model});
+	setRGBDImages({rgb}, {depth}, {model}, {model});
 }
 void SensorData::setRGBDImage(
 		const cv::Mat & rgb,
