@@ -294,14 +294,19 @@ OccupancyGrid::LocalMap OccupancyGrid::createLocalMap(const Signature & signatur
 					scan = util3d::rangeFiltering(scan, cloudMinDepth_, 0);
 				}
 
-				if(!signature.sensorData().image().empty() && signature.sensorData().cameraModels().size())
+				if (signature.sensorData().images().size())
 				{
-					cv::Mat semantic = signature.sensorData().image();
-					if (semanticDilation_ > 0)
+					std::vector<cv::Mat> semantics;
+					for (int i = 0; i < signature.sensorData().images().size(); i++)
 					{
-						semantic = dilate(semantic);
+						cv::Mat semantic = signature.sensorData().images()[i];
+						if (semanticDilation_ > 0)
+						{
+							semantic = dilate(semantic);
+						}
+						semantics.push_back(semantic);
 					}
-					scan = addSemanticToLaserScan(scan, semantic, signature.sensorData().cameraModels());
+					scan = addSemanticToLaserScan(scan, semantics, signature.sensorData().cameraModels());
 				}
 
 				// update viewpoint
@@ -639,44 +644,52 @@ cv::Mat OccupancyGrid::dilate(const cv::Mat& image) const
 }
 
 LaserScan OccupancyGrid::addSemanticToLaserScan(
-		const LaserScan& scan, const cv::Mat& image,
+		const LaserScan& scan, const std::vector<cv::Mat>& images,
 		const std::vector<rtabmap::CameraModel>& cameraModels) const
 {
 	MEASURE_BLOCK_TIME(OccupancyGrid__addSemanticToLaserScan);
+	UASSERT(images.size() == cameraModels.size());
+	UASSERT(scan.format() == rtabmap::LaserScan::Format::kXYZ || scan.format() == rtabmap::LaserScan::Format::kXYZI);
 	cv::Mat scanRGB_data = cv::Mat(1, scan.size(),
 		CV_32FC(rtabmap::LaserScan::channels(rtabmap::LaserScan::Format::kXYZRGB)));
-	UASSERT(scan.format() == rtabmap::LaserScan::Format::kXYZ || scan.format() == rtabmap::LaserScan::Format::kXYZI);
-	UASSERT(image.type() == CV_8UC3);
-	rtabmap::Transform camera2LaserScan = cameraModels[0].localTransform().inverse() * scan.localTransform();
 	for (int i = 0; i < scan.size(); i++)
 	{
 		float* ptr = scanRGB_data.ptr<float>(0, i);
 		ptr[0] = scan.field(i, 0);
 		ptr[1] = scan.field(i, 1);
 		ptr[2] = scan.field(i, 2);
-
-		cv::Point3f cameraPoint = rtabmap::util3d::transformPoint(*(cv::Point3f*)(scan.data().ptr<float>(0, i)), camera2LaserScan);
-		int u, v;
-		cameraModels[0].reproject(cameraPoint.x, cameraPoint.y, cameraPoint.z, u, v);
-		float cameraPointRangeSqr = cameraPoint.x * cameraPoint.x + cameraPoint.y * cameraPoint.y +
-			cameraPoint.z * cameraPoint.z;
-		if (cameraModels[0].inFrame(u, v) && cameraPoint.z > 0 &&
-			(minSemanticRangeSqr_ == 0.0f || cameraPointRangeSqr > minSemanticRangeSqr_) &&
-			(maxSemanticRangeSqr_ == 0.0f || cameraPointRangeSqr < maxSemanticRangeSqr_))
+		bool foundColor = false;
+		for (int camId = 0; camId < images.size(); camId++)
 		{
-			int* ptrInt = (int*)ptr;
-			std::uint8_t b, g, r;
-			const std::uint8_t* bgrColor = image.ptr<std::uint8_t>(v, u);
-			b = bgrColor[0];
-			g = bgrColor[1];
-			r = bgrColor[2];
-			if (b == 0 && g == 0 && r == 0)
+			const cv::Mat& image = images[camId];
+			const rtabmap::CameraModel& cameraModel = cameraModels[camId];
+			UASSERT(image.type() == CV_8UC3);
+			rtabmap::Transform camera2LaserScan = cameraModel.localTransform().inverse() * scan.localTransform();
+			cv::Point3f cameraPoint = rtabmap::util3d::transformPoint(*(cv::Point3f*)(scan.data().ptr<float>(0, i)), camera2LaserScan);
+			int u, v;
+			cameraModel.reproject(cameraPoint.x, cameraPoint.y, cameraPoint.z, u, v);
+			float cameraPointRangeSqr = cameraPoint.x * cameraPoint.x + cameraPoint.y * cameraPoint.y +
+				cameraPoint.z * cameraPoint.z;
+			if (cameraModel.inFrame(u, v) && cameraPoint.z > 0 &&
+				(minSemanticRangeSqr_ == 0.0f || cameraPointRangeSqr > minSemanticRangeSqr_) &&
+				(maxSemanticRangeSqr_ == 0.0f || cameraPointRangeSqr < maxSemanticRangeSqr_))
 			{
-				b = 1;
+				int* ptrInt = (int*)ptr;
+				std::uint8_t b, g, r;
+				const std::uint8_t* bgrColor = image.ptr<std::uint8_t>(v, u);
+				b = bgrColor[0];
+				g = bgrColor[1];
+				r = bgrColor[2];
+				if (b == 0 && g == 0 && r == 0)
+				{
+					b = 1;
+				}
+				ptrInt[3] = int(b) | (int(g) << 8) | (int(r) << 16);
+				foundColor = true;
+				break;
 			}
-			ptrInt[3] = int(b) | (int(g) << 8) | (int(r) << 16);
 		}
-		else
+		if (!foundColor)
 		{
 			int* ptrInt = (int*)ptr;
 			ptrInt[3] = 0;
