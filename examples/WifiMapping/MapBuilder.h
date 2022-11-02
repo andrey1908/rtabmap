@@ -126,9 +126,9 @@ protected Q_SLOTS:
 			lastOdomPose_ = pose;
 
 			// 3d cloud
-			if(odom.data().depthOrRightRaw().cols == odom.data().imageRaw().cols &&
-			   odom.data().depthOrRightRaw().rows == odom.data().imageRaw().rows &&
-			   !odom.data().depthOrRightRaw().empty() &&
+			if(odom.data().depthOrright().cols == odom.data().image().cols &&
+			   odom.data().depthOrright().rows == odom.data().image().rows &&
+			   !odom.data().depthOrright().empty() &&
 			   (odom.data().stereoCameraModel().isValidForProjection() || odom.data().cameraModels().size()))
 			{
 				pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = util3d::cloudRGBFromSensorData(

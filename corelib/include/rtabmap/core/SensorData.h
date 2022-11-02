@@ -137,16 +137,11 @@ public:
 		return !(_id == 0 &&
 			_sec == 0 &&
 			_nsec == 0 &&
-			_imageRaw.empty() &&
-			_imageCompressed.empty() &&
-			_depthOrRightRaw.empty() &&
-			_depthOrRightCompressed.empty() &&
-			_laserScanRaw.isEmpty() &&
-			_laserScanCompressed.isEmpty() &&
+			_image.empty() &&
+			_depthOrRight.empty() &&
+			_laserScan.isEmpty() &&
 			_cameraModels.size() == 0 &&
 			!_stereoCameraModel.isValidForProjection() &&
-			_userDataRaw.empty() &&
-			_userDataCompressed.empty() &&
 			_keypoints.size() == 0 &&
 			_descriptors.empty() &&
 			imu_.empty());
@@ -160,93 +155,35 @@ public:
 	void setStamp(double stamp) {std::tie(_sec, _nsec) = uDoubleStamp2SecNSec(stamp);}
 	void setStamp(uint32_t sec, uint32_t nsec) {_sec = sec; _nsec = nsec;}
 
-	const cv::Mat & imageCompressed() const {return _imageCompressed;}
-	const cv::Mat & depthOrRightCompressed() const {return _depthOrRightCompressed;}
-	const LaserScan & laserScanCompressed() const {return _laserScanCompressed;}
-
-	const cv::Mat & imageRaw() const {return _imageRaw;}
-	const cv::Mat & depthOrRightRaw() const {return _depthOrRightRaw;}
-	const LaserScan & laserScanRaw() const {return _laserScanRaw;}
+	const cv::Mat & image() const {return _image;}
+	const cv::Mat & depthOrRight() const {return _depthOrRight;}
+	const LaserScan & laserScan() const {return _laserScan;}
 
 	/**
-	 * Set image data. Detect automatically if raw or compressed.
-	 * A matrix of type CV_8UC1 with 1 row is considered as compressed.
-	 * @param clearPreviousData, clear previous raw and compressed images before setting the new ones.
+	 * Set image data.
 	 */
-	void setRGBDImage(const cv::Mat & rgb, const cv::Mat & depth, const CameraModel & model, bool clearPreviousData = true);
-	void setRGBDImage(const cv::Mat & rgb, const cv::Mat & depth, const std::vector<CameraModel> & models, bool clearPreviousData = true);
-	void setStereoImage(const cv::Mat & left, const cv::Mat & right, const StereoCameraModel & stereoCameraModel, bool clearPreviousData = true);
+	void setRGBDImage(const cv::Mat & rgb, const cv::Mat & depth, const CameraModel & model);
+	void setRGBDImage(const cv::Mat & rgb, const cv::Mat & depth, const std::vector<CameraModel> & models);
+	void setStereoImage(const cv::Mat & left, const cv::Mat & right, const StereoCameraModel & stereoCameraModel);
 
 	/**
-	 * Set laser scan data. Detect automatically if raw or compressed.
-	 * A matrix of type CV_8UC1 with 1 row is considered as compressed.
-	 * @param clearPreviousData, clear previous raw and compressed scans before setting the new one.
+	 * Set laser scan data.
 	 */
-	void setLaserScan(const LaserScan & laserScan, bool clearPreviousData = true);
+	void setLaserScan(const LaserScan & laserScan);
 
 	void setCameraModel(const CameraModel & model) {_cameraModels.clear(); _cameraModels.push_back(model);}
 	void setCameraModels(const std::vector<CameraModel> & models) {_cameraModels = models;}
 	void setStereoCameraModel(const StereoCameraModel & stereoCameraModel) {_stereoCameraModel = stereoCameraModel;}
 
 	//for convenience
-	cv::Mat depthRaw() const {return _depthOrRightRaw.type()!=CV_8UC1?_depthOrRightRaw:cv::Mat();}
-	cv::Mat rightRaw() const {return _depthOrRightRaw.type()==CV_8UC1?_depthOrRightRaw:cv::Mat();}
+	cv::Mat depth() const {return _depthOrRight.type()!=CV_8UC1?_depthOrRight:cv::Mat();}
+	cv::Mat right() const {return _depthOrRight.type()==CV_8UC1?_depthOrRight:cv::Mat();}
 
-	RTABMAP_DEPRECATED(void setImageRaw(const cv::Mat & image), "Use setRGBDImage() or setStereoImage() with clearNotUpdated=false or removeRawData() instead. To be backward compatible, this function doesn't clear compressed data.");
-	RTABMAP_DEPRECATED(void setDepthOrRightRaw(const cv::Mat & image), "Use setRGBDImage() or setStereoImage() with clearNotUpdated=false or removeRawData() instead. To be backward compatible, this function doesn't clear compressed data.");
-	RTABMAP_DEPRECATED(void setLaserScanRaw(const LaserScan & scan), "Use setLaserScan() with clearNotUpdated=false or removeRawData() instead. To be backward compatible, this function doesn't clear compressed data.");
-	RTABMAP_DEPRECATED(void setUserDataRaw(const cv::Mat & data), "Use setUserData() or removeRawData() instead.");
-
-	void uncompressData();
-	void uncompressData(
-			cv::Mat * imageRaw,
-			cv::Mat * depthOrRightRaw,
-			LaserScan * laserScanRaw = 0,
-			cv::Mat * userDataRaw = 0,
-			cv::Mat * groundCellsRaw = 0,
-			cv::Mat * obstacleCellsRaw = 0,
-			cv::Mat * emptyCellsRaw = 0);
-	void uncompressDataConst(
-			cv::Mat * imageRaw,
-			cv::Mat * depthOrRightRaw,
-			LaserScan * laserScanRaw = 0,
-			cv::Mat * userDataRaw = 0,
-			cv::Mat * groundCellsRaw = 0,
-			cv::Mat * obstacleCellsRaw = 0,
-			cv::Mat * emptyCellsRaw = 0) const;
+	RTABMAP_DEPRECATED(void setImage(const cv::Mat & image), "Use setRGBDImage() or setStereoImage().");
+	RTABMAP_DEPRECATED(void setDepthOrRight(const cv::Mat & image), "Use setRGBDImage() or setStereoImage().");
 
 	const std::vector<CameraModel> & cameraModels() const {return _cameraModels;}
 	const StereoCameraModel & stereoCameraModel() const {return _stereoCameraModel;}
-
-	/**
-	 * Set user data. Detect automatically if raw or compressed. If raw, the data is
-	 * compressed too. A matrix of type CV_8UC1 with 1 row is considered as compressed.
-	 * If you have one dimension unsigned 8 bits raw data, make sure to transpose it
-	 * (to have multiple rows instead of multiple columns) in order to be detected as
-	 * not compressed.
-	 * @param clearPreviousData, clear previous raw and compressed user data before setting the new one.
-	 */
-	void setUserData(const cv::Mat & userData, bool clearPreviousData = true);
-	const cv::Mat & userDataRaw() const {return _userDataRaw;}
-	const cv::Mat & userDataCompressed() const {return _userDataCompressed;}
-
-	// detect automatically if raw or compressed. If raw, the data will be compressed.
-	void setOccupancyGrid(
-			const cv::Mat & ground,
-			const cv::Mat & obstacles,
-			const cv::Mat & empty,
-			float cellSize,
-			const cv::Point3f & viewPoint);
-	// remove raw occupancy grids
-	void clearOccupancyGridRaw() {_groundCellsRaw = cv::Mat(); _obstacleCellsRaw = cv::Mat();}
-	const cv::Mat & gridGroundCellsRaw() const {return _groundCellsRaw;}
-	const cv::Mat & gridGroundCellsCompressed() const {return _groundCellsCompressed;}
-	const cv::Mat & gridObstacleCellsRaw() const {return _obstacleCellsRaw;}
-	const cv::Mat & gridObstacleCellsCompressed() const {return _obstacleCellsCompressed;}
-	const cv::Mat & gridEmptyCellsRaw() const {return _emptyCellsRaw;}
-	const cv::Mat & gridEmptyCellsCompressed() const {return _emptyCellsCompressed;}
-	float gridCellSize() const {return _cellSize;}
-	const cv::Point3f & gridViewPoint() const {return _viewPoint;}
 
 	void setFeatures(const std::vector<cv::KeyPoint> & keypoints, const std::vector<cv::Point3f> & keypoints3D, const cv::Mat & descriptors);
 	const std::vector<cv::KeyPoint> & keypoints() const {return _keypoints;}
@@ -278,17 +215,7 @@ public:
 	void setLandmarks(const Landmarks & landmarks) {_landmarks = landmarks;}
 	const Landmarks & landmarks() const {return _landmarks;}
 
-	unsigned long getMemoryUsed() const; // Return memory usage in Bytes
-	/**
-	 * Clear compressed rgb/depth (left/right) images, compressed laser scan and compressed user data.
-	 * Raw data are kept is set.
-	 */
-	void clearCompressedData(bool images = true, bool scan = true, bool userData = true);
-	/**
-	 * Clear raw rgb/depth (left/right) images, raw laser scan and raw user data.
-	 * Compressed data are kept is set.
-	 */
-	void clearRawData(bool images = true, bool scan = true, bool userData = true);
+	void clearData(bool images = true, bool scan = true);
 
 	bool isPointVisibleFromCameras(const cv::Point3f & pt) const; // assuming point is in robot frame
 
@@ -297,30 +224,12 @@ private:
 	uint32_t _sec;
 	uint32_t _nsec;
 
-	cv::Mat _imageCompressed;          // compressed image
-	cv::Mat _depthOrRightCompressed;   // compressed image
-	LaserScan _laserScanCompressed;      // compressed data
-
-	cv::Mat _imageRaw;          // CV_8UC1 or CV_8UC3
-	cv::Mat _depthOrRightRaw;   // depth CV_16UC1 or CV_32FC1, right image CV_8UC1
-	LaserScan _laserScanRaw;
+	cv::Mat _image;          // CV_8UC1 or CV_8UC3
+	cv::Mat _depthOrRight;   // depth CV_16UC1 or CV_32FC1, right image CV_8UC1
+	LaserScan _laserScan;
 
 	std::vector<CameraModel> _cameraModels;
 	StereoCameraModel _stereoCameraModel;
-
-	// user data
-	cv::Mat _userDataCompressed;      // compressed data
-	cv::Mat _userDataRaw;
-
-	// occupancy grid
-	cv::Mat _groundCellsCompressed;
-	cv::Mat _obstacleCellsCompressed;
-	cv::Mat _emptyCellsCompressed;
-	cv::Mat _groundCellsRaw;
-	cv::Mat _obstacleCellsRaw;
-	cv::Mat _emptyCellsRaw;
-	float _cellSize;
-	cv::Point3f _viewPoint;
 
 	// environmental sensors
 	EnvSensors _envSensors;

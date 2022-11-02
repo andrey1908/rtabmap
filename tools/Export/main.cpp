@@ -847,7 +847,7 @@ int main(int argc, char * argv[])
 		Eigen::Vector3f viewpoint(iter->second.x(), iter->second.y(), iter->second.z());
 		if(cloudFromScan)
 		{
-			Transform lidarViewpoint = iter->second * node.sensorData().laserScanRaw().localTransform();
+			Transform lidarViewpoint = iter->second * node.sensorData().laserScan().localTransform();
 			viewpoint = Eigen::Vector3f(iter->second.x(),  iter->second.y(),  iter->second.z());
 		}
 		if(cloud.get() && !cloud->empty())

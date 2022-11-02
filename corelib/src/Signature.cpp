@@ -26,7 +26,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "rtabmap/core/Signature.h"
-#include "rtabmap/core/Compression.h"
 #include <opencv2/highgui/highgui.hpp>
 
 #include <rtabmap/utilite/UtiLite.h>
@@ -191,24 +190,6 @@ cv::Mat Signature::getPoseCovariance() const
 {
 	cv::Mat covariance = cv::Mat::eye(6,6,CV_64FC1);
 	return covariance;
-}
-
-unsigned long Signature::getMemoryUsed(bool withSensorData) const // Return memory usage in Bytes
-{
-	unsigned long total = sizeof(Signature);
-	total += _words.size() * (sizeof(int)*2+sizeof(std::multimap<int, cv::KeyPoint>::iterator)) + sizeof(std::multimap<int, cv::KeyPoint>);
-	total += _wordsKpts.size() * sizeof(cv::KeyPoint) + sizeof(std::vector<cv::KeyPoint>);
-	total += _words3.size() * sizeof(cv::Point3f) + sizeof(std::vector<cv::Point3f>);
-	total += _wordsDescriptors.total() * _wordsDescriptors.elemSize() + sizeof(cv::Mat);
-	total += _wordsChanged.size() * (sizeof(int)*2+sizeof(std::map<int, int>::iterator)) + sizeof(std::map<int, int>);
-	if(withSensorData)
-	{
-		total+=_sensorData.getMemoryUsed();
-	}
-	total += _pose.size() * (sizeof(Transform) + sizeof(float)*12);
-	total += _groundTruthPose.size() * (sizeof(Transform) + sizeof(float)*12);
-	total += _velocity.size() * sizeof(float);
-	return total;
 }
 
 } //namespace rtabmap

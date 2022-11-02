@@ -120,10 +120,10 @@ int main(int argc, char * argv[])
 	int i=0;
 	rtabmap::SensorData data = camera.takeImage();
 	int nextIndex = rtabmap.getLastLocationId()+1;
-	while(!data.imageRaw().empty())
+	while(!data.image().empty())
 	{
 		// Process image : Main loop of RTAB-Map
-		rtabmap.process(data.imageRaw(), nextIndex);
+		rtabmap.process(data.image(), nextIndex);
 
 		// Check if a loop closure is detected and print some info
 		if(rtabmap.getLoopClosureId())

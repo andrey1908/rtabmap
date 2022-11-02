@@ -246,32 +246,32 @@ OccupancyGrid::LocalMap OccupancyGrid::createLocalMap(const Signature & signatur
 	cv::Mat obstacleCells;
 	cv::Point3f viewPoint;
 
-	if(signature.sensorData().laserScanRaw().is2d() && !occupancyFromDepth_)
+	if(signature.sensorData().laserScan().is2d() && !occupancyFromDepth_)
 	{
 		UDEBUG("2D laser scan");
 		// 2D
 		viewPoint = cv::Point3f(
-				signature.sensorData().laserScanRaw().localTransform().x(),
-				signature.sensorData().laserScanRaw().localTransform().y(),
-				signature.sensorData().laserScanRaw().localTransform().z());
+				signature.sensorData().laserScan().localTransform().x(),
+				signature.sensorData().laserScan().localTransform().y(),
+				signature.sensorData().laserScan().localTransform().z());
 
-		LaserScan scan = signature.sensorData().laserScanRaw();
+		LaserScan scan = signature.sensorData().laserScan();
 		if(cloudMinDepth_ > 0.0f)
 		{
 			scan = util3d::rangeFiltering(scan, cloudMinDepth_, 0.0f);
 		}
 
 		float maxRange = cloudMaxDepth_;
-		if(cloudMaxDepth_>0.0f && signature.sensorData().laserScanRaw().rangeMax()>0.0f)
+		if(cloudMaxDepth_>0.0f && signature.sensorData().laserScan().rangeMax()>0.0f)
 		{
-			maxRange = cloudMaxDepth_ < signature.sensorData().laserScanRaw().rangeMax()?cloudMaxDepth_:signature.sensorData().laserScanRaw().rangeMax();
+			maxRange = cloudMaxDepth_ < signature.sensorData().laserScan().rangeMax()?cloudMaxDepth_:signature.sensorData().laserScan().rangeMax();
 		}
-		else if(scan2dUnknownSpaceFilled_ && signature.sensorData().laserScanRaw().rangeMax()>0.0f)
+		else if(scan2dUnknownSpaceFilled_ && signature.sensorData().laserScan().rangeMax()>0.0f)
 		{
-			maxRange = signature.sensorData().laserScanRaw().rangeMax();
+			maxRange = signature.sensorData().laserScan().rangeMax();
 		}
 		util3d::occupancy2DFromLaserScan(
-				util3d::transformLaserScan(scan, signature.sensorData().laserScanRaw().localTransform()).data(),
+				util3d::transformLaserScan(scan, signature.sensorData().laserScan().localTransform()).data(),
 				cv::Mat(),
 				viewPoint,
 				emptyCells,
@@ -284,19 +284,19 @@ OccupancyGrid::LocalMap OccupancyGrid::createLocalMap(const Signature & signatur
 	{
 		if(!occupancyFromDepth_)
 		{
-			if(!signature.sensorData().laserScanRaw().isEmpty())
+			if(!signature.sensorData().laserScan().isEmpty())
 			{
 				UDEBUG("3D laser scan");
-				const Transform & t = signature.sensorData().laserScanRaw().localTransform();
-				LaserScan scan = util3d::downsample(signature.sensorData().laserScanRaw(), scanDecimation_);
+				const Transform & t = signature.sensorData().laserScan().localTransform();
+				LaserScan scan = util3d::downsample(signature.sensorData().laserScan(), scanDecimation_);
 				if(cloudMinDepth_ > 0.0f || cloudMaxDepth_ > 0.0f)
 				{
 					scan = util3d::rangeFiltering(scan, cloudMinDepth_, 0);
 				}
 
-				if(!signature.sensorData().imageRaw().empty() && signature.sensorData().cameraModels().size())
+				if(!signature.sensorData().image().empty() && signature.sensorData().cameraModels().size())
 				{
-					cv::Mat semantic = signature.sensorData().imageRaw();
+					cv::Mat semantic = signature.sensorData().image();
 					if (semanticDilation_ > 0)
 					{
 						semantic = dilate(semantic);

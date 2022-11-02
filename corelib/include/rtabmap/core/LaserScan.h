@@ -129,7 +129,6 @@ public:
 	bool hasNormals() const {return isScanHasNormals(format_);}
 	bool hasRGB() const {return isScanHasRGB(format_);}
 	bool hasIntensity() const {return isScanHasIntensity(format_);}
-	bool isCompressed() const {return !data_.empty() && data_.type()==CV_8UC1;}
 	LaserScan clone() const;
 
 	int getIntensityOffset() const {return hasIntensity()?(is2d()?2:3):-1;}

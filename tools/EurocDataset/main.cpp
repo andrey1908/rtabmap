@@ -520,7 +520,7 @@ int main(int argc, char * argv[])
 					rmse = rtabmap.getStatistics().data().at(Statistics::kGtTranslational_rmse());
 				}
 
-				if(data.keypoints().size() == 0 && data.laserScanRaw().size())
+				if(data.keypoints().size() == 0 && data.laserScan().size())
 				{
 					if(rmse >= 0.0f)
 					{

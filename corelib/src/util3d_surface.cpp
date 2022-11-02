@@ -30,7 +30,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtabmap/core/util3d_transforms.h"
 #include "rtabmap/core/util3d.h"
 #include "rtabmap/core/util2d.h"
-#include "rtabmap/core/Compression.h"
 #include "rtabmap/utilite/ULogger.h"
 #include "rtabmap/utilite/UDirectory.h"
 #include "rtabmap/utilite/UFile.h"
@@ -1550,10 +1549,6 @@ cv::Mat mergeTextures(
 						{
 							// backward compatibility for image size not set in CameraModel
 							cv::Mat image = images.find(textureId)->second;
-							if(image.rows == 1 && image.type() == CV_8UC1)
-							{
-								image = uncompressImage(image);
-							}
 							UASSERT(!image.empty());
 							imageSize = image.size();
 							if(models.size()>1)
@@ -1627,10 +1622,6 @@ cv::Mat mergeTextures(
 									calibrations.find(textures[t].first) != calibrations.end())
 								{
 									image = images.find(textures[t].first)->second;
-									if(image.rows == 1 && image.type() == CV_8UC1)
-									{
-										image = uncompressImage(image);
-									}
 									models = calibrations.find(textures[t].first)->second;
 								}
 

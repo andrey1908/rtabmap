@@ -332,12 +332,12 @@ int main(int argc, char * argv[])
 		int i=0;
 		double maxIterationTime = 0.0;
 		int maxIterationTimeId = 0;
-		while(!data.imageRaw().empty() && g_forever)
+		while(!data.image().empty() && g_forever)
 		{
 			++imagesProcessed;
 			iterationTimer.start();
 			rtabmapTimer.start();
-			rtabmap.process(data.imageRaw());
+			rtabmap.process(data.image());
 			double rtabmapTime = rtabmapTimer.elapsed();
 			loopClosureId = rtabmap.getLoopClosureId();
 			if(rtabmap.getLoopClosureId())

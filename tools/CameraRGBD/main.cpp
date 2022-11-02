@@ -347,16 +347,16 @@ int main(int argc, char * argv[])
 	}
 
 	rtabmap::SensorData data = camera->takeImage();
-	if (data.imageRaw().empty())
+	if (data.image().empty())
 	{
 		printf("Cloud not get frame from the camera!\n");
 		delete camera;
 		exit(1);
 	}
-	if(data.imageRaw().cols % data.depthOrRightRaw().cols != 0 || data.imageRaw().rows % data.depthOrRightRaw().rows != 0)
+	if(data.image().cols % data.depthOrright().cols != 0 || data.image().rows % data.depthOrright().rows != 0)
 	{
 		UWARN("RGB (%d/%d) and depth (%d/%d) frames are not the same size! The registered cloud cannot be shown.",
-				data.imageRaw().cols, data.imageRaw().rows, data.depthOrRightRaw().cols, data.depthOrRightRaw().rows);
+				data.image().cols, data.image().rows, data.depthOrright().cols, data.depthOrright().rows);
 	}
 	pcl::visualization::CloudViewer * viewer = 0;
 	if(!data.stereoCameraModel().isValidForProjection() && (data.cameraModels().size() == 0 || !data.cameraModels()[0].isValidForProjection()))
@@ -371,19 +371,19 @@ int main(int argc, char * argv[])
 	cv::VideoWriter videoWriter;
 	UDirectory dir;
 	if(!stereoSavePath.empty() &&
-	   !data.imageRaw().empty() &&
-	   !data.rightRaw().empty())
+	   !data.image().empty() &&
+	   !data.right().empty())
 	{
 		if(UFile::getExtension(stereoSavePath).compare("avi") == 0)
 		{
-			if(data.imageRaw().size() == data.rightRaw().size())
+			if(data.image().size() == data.right().size())
 			{
 				if(rate <= 0)
 				{
 					UERROR("You should set the input rate when saving stereo images to a video file.");
 					showUsage();
 				}
-				cv::Size targetSize = data.imageRaw().size();
+				cv::Size targetSize = data.image().size();
 				targetSize.width *= 2;
 				UASSERT(fourcc.size() == 4);
 				videoWriter.open(
@@ -391,7 +391,7 @@ int main(int argc, char * argv[])
 						CV_FOURCC(fourcc.at(0), fourcc.at(1), fourcc.at(2), fourcc.at(3)),
 						rate,
 						targetSize,
-						data.imageRaw().channels() == 3);
+						data.image().channels() == 3);
 			}
 			else
 			{
@@ -416,13 +416,13 @@ int main(int argc, char * argv[])
 	signal(SIGINT, &sighandler);
 
 	int id=1;
-	while(!data.imageRaw().empty() && (viewer==0 || !viewer->wasStopped()) && running)
+	while(!data.image().empty() && (viewer==0 || !viewer->wasStopped()) && running)
 	{
-		cv::Mat rgb = data.imageRaw();
-		if(!data.depthRaw().empty() && (data.depthRaw().type() == CV_16UC1 || data.depthRaw().type() == CV_32FC1))
+		cv::Mat rgb = data.image();
+		if(!data.depth().empty() && (data.depth().type() == CV_16UC1 || data.depth().type() == CV_32FC1))
 		{
 			// depth
-			cv::Mat depth = data.depthRaw();
+			cv::Mat depth = data.depth();
 			if(depth.type() == CV_32FC1)
 			{
 				depth = rtabmap::util2d::cvtDepthFromFloat(depth);
@@ -458,10 +458,10 @@ int main(int argc, char * argv[])
 			cv::imshow("Video", rgb); // show frame
 			cv::imshow("Depth", tmp);
 		}
-		else if(!data.rightRaw().empty())
+		else if(!data.right().empty())
 		{
 			// stereo
-			cv::Mat right = data.rightRaw();
+			cv::Mat right = data.right();
 			cv::imshow("Left", rgb); // show frame
 			cv::imshow("Right", right);
 
@@ -486,8 +486,8 @@ int main(int argc, char * argv[])
 
 		if(videoWriter.isOpened())
 		{
-			cv::Mat left = data.imageRaw();
-			cv::Mat right = data.rightRaw();
+			cv::Mat left = data.image();
+			cv::Mat right = data.right();
 			if(left.size() == right.size())
 			{
 				cv::Size targetSize = left.size();
@@ -516,8 +516,8 @@ int main(int argc, char * argv[])
 		}
 		else if(!stereoSavePath.empty())
 		{
-			cv::imwrite(stereoSavePath+"/"+"left/"+uNumber2Str(id) + ".jpg", data.imageRaw());
-			cv::imwrite(stereoSavePath+"/"+"right/"+uNumber2Str(id) + ".jpg", data.rightRaw());
+			cv::imwrite(stereoSavePath+"/"+"left/"+uNumber2Str(id) + ".jpg", data.image());
+			cv::imwrite(stereoSavePath+"/"+"right/"+uNumber2Str(id) + ".jpg", data.right());
 			printf("Saved frames %d to \"%s/left\" and \"%s/right\" directories\n", id, stereoSavePath.c_str(), stereoSavePath.c_str());
 		}
 		++id;

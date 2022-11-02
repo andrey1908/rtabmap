@@ -106,9 +106,9 @@ public:
 			lastOdomPose_ = pose;
 
 			// 3d cloud
-			if(data.depthOrRightRaw().cols == data.imageRaw().cols &&
-			   data.depthOrRightRaw().rows == data.imageRaw().rows &&
-			   !data.depthOrRightRaw().empty() &&
+			if(data.depthOrright().cols == data.image().cols &&
+			   data.depthOrright().rows == data.image().rows &&
+			   !data.depthOrright().empty() &&
 			   (data.stereoCameraModel().isValidForProjection() || data.cameraModels().size()))
 			{
 				pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = util3d::cloudRGBFromSensorData(

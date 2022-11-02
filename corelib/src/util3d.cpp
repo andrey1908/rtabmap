@@ -866,16 +866,16 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr RTABMAP_EXP cloudFromSensorData(
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
 
-	if(!sensorData.depthRaw().empty() && sensorData.cameraModels().size())
+	if(!sensorData.depth().empty() && sensorData.cameraModels().size())
 	{
 		//depth
-		UASSERT(int((sensorData.depthRaw().cols/sensorData.cameraModels().size())*sensorData.cameraModels().size()) == sensorData.depthRaw().cols);
-		int subImageWidth = sensorData.depthRaw().cols/sensorData.cameraModels().size();
+		UASSERT(int((sensorData.depth().cols/sensorData.cameraModels().size())*sensorData.cameraModels().size()) == sensorData.depth().cols);
+		int subImageWidth = sensorData.depth().cols/sensorData.cameraModels().size();
 		for(unsigned int i=0; i<sensorData.cameraModels().size(); ++i)
 		{
 			if(sensorData.cameraModels()[i].isValidForProjection())
 			{
-				cv::Mat depth = cv::Mat(sensorData.depthRaw(), cv::Rect(subImageWidth*i, 0, subImageWidth, sensorData.depthRaw().rows));
+				cv::Mat depth = cv::Mat(sensorData.depth(), cv::Rect(subImageWidth*i, 0, subImageWidth, sensorData.depth().rows));
 				CameraModel model = sensorData.cameraModels()[i];
 				if( roiRatios.size() == 4 &&
 					(roiRatios[0] > 0.0f ||
@@ -964,22 +964,22 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr RTABMAP_EXP cloudFromSensorData(
 			}
 		}
 	}
-	else if(!sensorData.imageRaw().empty() && !sensorData.rightRaw().empty() && sensorData.stereoCameraModel().isValidForProjection())
+	else if(!sensorData.image().empty() && !sensorData.right().empty() && sensorData.stereoCameraModel().isValidForProjection())
 	{
 		//stereo
-		UASSERT(sensorData.rightRaw().type() == CV_8UC1);
+		UASSERT(sensorData.right().type() == CV_8UC1);
 
 		cv::Mat leftMono;
-		if(sensorData.imageRaw().channels() == 3)
+		if(sensorData.image().channels() == 3)
 		{
-			cv::cvtColor(sensorData.imageRaw(), leftMono, CV_BGR2GRAY);
+			cv::cvtColor(sensorData.image(), leftMono, CV_BGR2GRAY);
 		}
 		else
 		{
-			leftMono = sensorData.imageRaw();
+			leftMono = sensorData.image();
 		}
 
-		cv::Mat right(sensorData.rightRaw());
+		cv::Mat right(sensorData.right());
 		StereoCameraModel model = sensorData.stereoCameraModel();
 		if( roiRatios.size() == 4 &&
 			((roiRatios[0] > 0.0f && roiRatios[0] <= 1.0f) ||
@@ -1045,23 +1045,23 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr RTABMAP_EXP cloudRGBFromSensorData(
 
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 
-	if(!sensorData.imageRaw().empty() && !sensorData.depthRaw().empty() && sensorData.cameraModels().size())
+	if(!sensorData.image().empty() && !sensorData.depth().empty() && sensorData.cameraModels().size())
 	{
 		//depth
 		UDEBUG("");
-		UASSERT(int((sensorData.imageRaw().cols/sensorData.cameraModels().size())*sensorData.cameraModels().size()) == sensorData.imageRaw().cols);
-		UASSERT(int((sensorData.depthRaw().cols/sensorData.cameraModels().size())*sensorData.cameraModels().size()) == sensorData.depthRaw().cols);
-		//UASSERT_MSG(sensorData.imageRaw().cols % sensorData.depthRaw().cols == 0, uFormat("rgb=%d depth=%d", sensorData.imageRaw().cols, sensorData.depthRaw().cols).c_str());
-		//UASSERT_MSG(sensorData.imageRaw().rows % sensorData.depthRaw().rows == 0, uFormat("rgb=%d depth=%d", sensorData.imageRaw().rows, sensorData.depthRaw().rows).c_str());
-		int subRGBWidth = sensorData.imageRaw().cols/sensorData.cameraModels().size();
-		int subDepthWidth = sensorData.depthRaw().cols/sensorData.cameraModels().size();
+		UASSERT(int((sensorData.image().cols/sensorData.cameraModels().size())*sensorData.cameraModels().size()) == sensorData.image().cols);
+		UASSERT(int((sensorData.depth().cols/sensorData.cameraModels().size())*sensorData.cameraModels().size()) == sensorData.depth().cols);
+		//UASSERT_MSG(sensorData.image().cols % sensorData.depth().cols == 0, uFormat("rgb=%d depth=%d", sensorData.image().cols, sensorData.depth().cols).c_str());
+		//UASSERT_MSG(sensorData.image().rows % sensorData.depth().rows == 0, uFormat("rgb=%d depth=%d", sensorData.image().rows, sensorData.depth().rows).c_str());
+		int subRGBWidth = sensorData.image().cols/sensorData.cameraModels().size();
+		int subDepthWidth = sensorData.depth().cols/sensorData.cameraModels().size();
 
 		for(unsigned int i=0; i<sensorData.cameraModels().size(); ++i)
 		{
 			if(sensorData.cameraModels()[i].isValidForProjection())
 			{
-				cv::Mat rgb(sensorData.imageRaw(), cv::Rect(subRGBWidth*i, 0, subRGBWidth, sensorData.imageRaw().rows));
-				cv::Mat depth(sensorData.depthRaw(), cv::Rect(subDepthWidth*i, 0, subDepthWidth, sensorData.depthRaw().rows));
+				cv::Mat rgb(sensorData.image(), cv::Rect(subRGBWidth*i, 0, subRGBWidth, sensorData.image().rows));
+				cv::Mat depth(sensorData.depth(), cv::Rect(subDepthWidth*i, 0, subDepthWidth, sensorData.depth().rows));
 				CameraModel model = sensorData.cameraModels()[i];
 				if( roiRatios.size() == 4 &&
 					((roiRatios[0] > 0.0f && roiRatios[0] <= 1.0f) ||
@@ -1140,13 +1140,13 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr RTABMAP_EXP cloudRGBFromSensorData(
 			}
 		}
 	}
-	else if(!sensorData.imageRaw().empty() && !sensorData.rightRaw().empty() && sensorData.stereoCameraModel().isValidForProjection())
+	else if(!sensorData.image().empty() && !sensorData.right().empty() && sensorData.stereoCameraModel().isValidForProjection())
 	{
 		//stereo
 		UDEBUG("");
 
-		cv::Mat left(sensorData.imageRaw());
-		cv::Mat right(sensorData.rightRaw());
+		cv::Mat left(sensorData.image());
+		cv::Mat right(sensorData.right());
 		StereoCameraModel model = sensorData.stereoCameraModel();
 		if( roiRatios.size() == 4 &&
 			((roiRatios[0] > 0.0f && roiRatios[0] <= 1.0f) ||
@@ -2250,7 +2250,7 @@ pcl::PointCloud<pcl::PointXYZINormal>::Ptr laserScanToPointCloudINormal(const La
 
 pcl::PointXYZ laserScanToPoint(const LaserScan & laserScan, int index)
 {
-	UASSERT(!laserScan.isEmpty() && !laserScan.isCompressed() && index < laserScan.size());
+	UASSERT(!laserScan.isEmpty() && index < laserScan.size());
 	pcl::PointXYZ output;
 	const float * ptr = laserScan.data().ptr<float>(0, index);
 	output.x = ptr[0];
@@ -2264,7 +2264,7 @@ pcl::PointXYZ laserScanToPoint(const LaserScan & laserScan, int index)
 
 pcl::PointNormal laserScanToPointNormal(const LaserScan & laserScan, int index)
 {
-	UASSERT(!laserScan.isEmpty() && !laserScan.isCompressed() && index < laserScan.size());
+	UASSERT(!laserScan.isEmpty() && index < laserScan.size());
 	pcl::PointNormal output;
 	const float * ptr = laserScan.data().ptr<float>(0, index);
 	output.x = ptr[0];
@@ -2285,7 +2285,7 @@ pcl::PointNormal laserScanToPointNormal(const LaserScan & laserScan, int index)
 
 pcl::PointXYZRGB laserScanToPointRGB(const LaserScan & laserScan, int index, unsigned char r, unsigned char g, unsigned char b)
 {
-	UASSERT(!laserScan.isEmpty() && !laserScan.isCompressed() && index < laserScan.size());
+	UASSERT(!laserScan.isEmpty() && index < laserScan.size());
 	pcl::PointXYZRGB output;
 	const float * ptr = laserScan.data().ptr<float>(0, index);
 	output.x = ptr[0];
@@ -2324,7 +2324,7 @@ pcl::PointXYZRGB laserScanToPointRGB(const LaserScan & laserScan, int index, uns
 
 pcl::PointXYZI laserScanToPointI(const LaserScan & laserScan, int index, float intensity)
 {
-	UASSERT(!laserScan.isEmpty() && !laserScan.isCompressed() && index < laserScan.size());
+	UASSERT(!laserScan.isEmpty() && index < laserScan.size());
 	pcl::PointXYZI output;
 	const float * ptr = laserScan.data().ptr<float>(0, index);
 	output.x = ptr[0];
@@ -2349,7 +2349,7 @@ pcl::PointXYZI laserScanToPointI(const LaserScan & laserScan, int index, float i
 
 pcl::PointXYZRGBNormal laserScanToPointRGBNormal(const LaserScan & laserScan, int index, unsigned char r, unsigned char g, unsigned char b)
 {
-	UASSERT(!laserScan.isEmpty() && !laserScan.isCompressed() && index < laserScan.size());
+	UASSERT(!laserScan.isEmpty() && index < laserScan.size());
 	pcl::PointXYZRGBNormal output;
 	const float * ptr = laserScan.data().ptr<float>(0, index);
 	output.x = ptr[0];
@@ -2396,7 +2396,7 @@ pcl::PointXYZRGBNormal laserScanToPointRGBNormal(const LaserScan & laserScan, in
 
 pcl::PointXYZINormal laserScanToPointINormal(const LaserScan & laserScan, int index, float intensity)
 {
-	UASSERT(!laserScan.isEmpty() && !laserScan.isCompressed() && index < laserScan.size());
+	UASSERT(!laserScan.isEmpty() && index < laserScan.size());
 	pcl::PointXYZINormal output;
 	const float * ptr = laserScan.data().ptr<float>(0, index);
 	output.x = ptr[0];

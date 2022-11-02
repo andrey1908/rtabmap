@@ -318,7 +318,7 @@ void LaserScan::init(
 	angleIncrement_ = angleIncrement;
 	localTransform_ = localTransform;
 
-	if(!data.empty() && !isCompressed())
+	if(!data.empty())
 	{
 		if(is2D && data_.cols > maxPoints_)
 		{
