@@ -222,6 +222,10 @@ void SensorData::setRGBDImages(
 		const std::vector<CameraModel> & models,
 		const std::vector<CameraModel> & depthModels)
 {
+	UASSERT(rgbs.size() == models.size());
+	UASSERT(depths.size() == depthModels.size());
+	UASSERT(rgbs.empty() || depths.empty() || rgbs.size() == depths.size());
+
 	_cameraModels = models;
 	_depthCameraModels = depthModels;
 	_stereoCameraModel = StereoCameraModel();
