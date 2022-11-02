@@ -58,6 +58,10 @@ struct AccumulatorRGBA
   template <typename PointT> void
   add (const PointT& t)
   {
+    if (t.a == 0)
+    {
+      return;
+    }
     int brightness = (int)t.r + (int)t.g + (int)t.b;
     if (brightness > max_brightness)
     {

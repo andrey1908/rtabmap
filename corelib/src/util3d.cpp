@@ -2297,11 +2297,9 @@ pcl::PointXYZRGB laserScanToPointRGB(const LaserScan & laserScan, int index, uns
 
 	if(laserScan.hasRGB())
 	{
-		int * ptrInt = (int*)ptr;
+		std::uint32_t * ptrInt = (std::uint32_t*)ptr;
 		int indexRGB = laserScan.getRGBOffset();
-		output.b = (unsigned char)(ptrInt[indexRGB] & 0xFF);
-		output.g = (unsigned char)((ptrInt[indexRGB] >> 8) & 0xFF);
-		output.r = (unsigned char)((ptrInt[indexRGB] >> 16) & 0xFF);
+		output.rgba = ptrInt[indexRGB];
 	}
 	else if(laserScan.hasIntensity())
 	{

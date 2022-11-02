@@ -283,11 +283,15 @@ void occupancy2DFromGroundObstacles(
 			ptr[1] = groundCloudProjected->at(i).y;
 			if constexpr(hasRGB)
 			{
-				std::uint8_t r = groundCloudProjected->at(i).r;
-				std::uint8_t g = groundCloudProjected->at(i).g;
-				std::uint8_t b = groundCloudProjected->at(i).b;
 				int* ptrInt = (int*)ptr;
-				ptrInt[2] = int(b) | (int(g) << 8) | (int(r) << 16);
+				if (groundCloudProjected->at(i).a == 0)
+				{
+					ptrInt[2] = -1;
+				}
+				else
+				{
+					ptrInt[2] = groundCloudProjected->at(i).rgba & 0x00FFFFFF;
+				}
 			}
 		}
 	}
@@ -313,11 +317,15 @@ void occupancy2DFromGroundObstacles(
 			ptr[1] = obstaclesCloudProjected->at(i).y;
 			if constexpr(hasRGB)
 			{
-				std::uint8_t r = obstaclesCloudProjected->at(i).r;
-				std::uint8_t g = obstaclesCloudProjected->at(i).g;
-				std::uint8_t b = obstaclesCloudProjected->at(i).b;
 				int* ptrInt = (int*)ptr;
-				ptrInt[2] = int(b) | (int(g) << 8) | (int(r) << 16);
+				if (obstaclesCloudProjected->at(i).a == 0)
+				{
+					ptrInt[2] = -1;
+				}
+				else
+				{
+					ptrInt[2] = obstaclesCloudProjected->at(i).rgba & 0x00FFFFFF;
+				}
 			}
 		}
 	}

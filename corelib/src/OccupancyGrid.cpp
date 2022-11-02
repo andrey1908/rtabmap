@@ -681,25 +681,21 @@ LaserScan OccupancyGrid::addSemanticToLaserScan(
 				(minSemanticRangeSqr_ == 0.0f || cameraPointRangeSqr > minSemanticRangeSqr_) &&
 				(maxSemanticRangeSqr_ == 0.0f || cameraPointRangeSqr < maxSemanticRangeSqr_))
 			{
-				int* ptrInt = (int*)ptr;
+				std::uint8_t* ptrColor = (std::uint8_t*)(ptr + 3);
 				std::uint8_t b, g, r;
 				const std::uint8_t* bgrColor = image.ptr<std::uint8_t>(v, u);
-				b = bgrColor[0];
-				g = bgrColor[1];
-				r = bgrColor[2];
-				if (b == 0 && g == 0 && r == 0)
-				{
-					b = 1;
-				}
-				ptrInt[3] = int(b) | (int(g) << 8) | (int(r) << 16);
+				ptrColor[0] = bgrColor[0];
+				ptrColor[1] = bgrColor[1];
+				ptrColor[2] = bgrColor[2];
+				ptrColor[3] = (std::uint8_t)255;
 				foundColor = true;
 				break;
 			}
 		}
 		if (!foundColor)
 		{
-			int* ptrInt = (int*)ptr;
-			ptrInt[3] = 0;
+			std::uint32_t* ptrInt = (std::uint32_t*)ptr;
+			ptrInt[3] = 0u;
 		}
 	}
 
@@ -732,14 +728,7 @@ OccupancyGrid::LocalMap OccupancyGrid::cvMatsToLocalMap(
 		else
 		{
 			int color = *(int*)(point + 2);
-			if (color == 0)
-			{
-				localMap.colors.push_back(-1);
-			}
-			else
-			{
-				localMap.colors.push_back(color);
-			}
+			localMap.colors.push_back(color);
 		}
 	}
 	localMap.numGround = groundCells.cols;
@@ -758,14 +747,7 @@ OccupancyGrid::LocalMap OccupancyGrid::cvMatsToLocalMap(
 		else
 		{
 			int color = *(int*)(point + 2);
-			if (color == 0)
-			{
-				localMap.colors.push_back(-1);
-			}
-			else
-			{
-				localMap.colors.push_back(color);
-			}
+			localMap.colors.push_back(color);
 		}
 	}
 	localMap.numEmpty = emptyCells.cols;
@@ -784,14 +766,7 @@ OccupancyGrid::LocalMap OccupancyGrid::cvMatsToLocalMap(
 		else
 		{
 			int color = *(int*)(point + 2);
-			if (color == 0)
-			{
-				localMap.colors.push_back(-1);
-			}
-			else
-			{
-				localMap.colors.push_back(color);
-			}
+			localMap.colors.push_back(color);
 		}
 	}
 	localMap.numObstacles = obstacleCells.cols;
