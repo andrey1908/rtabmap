@@ -288,9 +288,12 @@ OccupancyGrid::LocalMap OccupancyGrid::createLocalMap(const Signature & signatur
 			{
 				UDEBUG("3D laser scan");
 				const Transform & t = signature.sensorData().laserScan().localTransform();
+				MEASURE_TIME_FROM_HERE(OccupancyGrid__downsample);
 				LaserScan scan = util3d::downsample(signature.sensorData().laserScan(), scanDecimation_);
+				STOP_TIME_MEASUREMENT(OccupancyGrid__downsample);
 				if(cloudMinDepth_ > 0.0f || cloudMaxDepth_ > 0.0f)
 				{
+					MEASURE_BLOCK_TIME(OccupancyGrid__rangeFiltering);
 					scan = util3d::rangeFiltering(scan, cloudMinDepth_, 0);
 				}
 
@@ -408,10 +411,14 @@ void OccupancyGrid::createLocalMap(
 		}
 		else if(scan.hasRGB())
 		{
+			MEASURE_TIME_FROM_HERE(OccupancyGrid__scan2PCL);
 			pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = util3d::laserScanToPointCloudRGB(scan, scan.localTransform());
+			STOP_TIME_MEASUREMENT(OccupancyGrid__scan2PCL);
 			pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudSegmented = segmentCloud<pcl::PointXYZRGB>(cloud, pcl::IndicesPtr(new std::vector<int>), pose, viewPoint, groundIndices, obstaclesIndices);
 			UDEBUG("groundIndices=%d, obstaclesIndices=%d", (int)groundIndices->size(), (int)obstaclesIndices->size());
+			MEASURE_TIME_FROM_HERE(OccupancyGrid__PCL2cvMats);
 			util3d::occupancy2DFromGroundObstacles<pcl::PointXYZRGB>(cloudSegmented, groundIndices, obstaclesIndices, groundCells, obstacleCells, cellSize_);
+			STOP_TIME_MEASUREMENT(OccupancyGrid__PCL2cvMats);
 		}
 		else if(scan.hasNormals())
 		{
@@ -430,6 +437,7 @@ void OccupancyGrid::createLocalMap(
 
 		if(rayTracing_ && (!obstacleCells.empty() || !groundCells.empty()))
 		{
+			MEASURE_BLOCK_TIME(OccupancyGrid__rayTracing);
 			cv::Mat laserScanNoHit = groundCells;
 			cv::Mat laserScan = obstacleCells;
 			groundCells = cv::Mat();
@@ -457,6 +465,7 @@ typename pcl::PointCloud<PointT>::Ptr OccupancyGrid::segmentCloud(
 		pcl::IndicesPtr & obstaclesIndices,
 		pcl::IndicesPtr * flatObstacles /* nullptr */) const
 {
+	MEASURE_BLOCK_TIME(OccupancyGrid__segmentCloud);
 	groundIndices.reset(new std::vector<int>);
 	obstaclesIndices.reset(new std::vector<int>);
 	if(flatObstacles)
@@ -682,7 +691,6 @@ LaserScan OccupancyGrid::addSemanticToLaserScan(
 				(maxSemanticRangeSqr_ == 0.0f || cameraPointRangeSqr < maxSemanticRangeSqr_))
 			{
 				std::uint8_t* ptrColor = (std::uint8_t*)(ptr + 3);
-				std::uint8_t b, g, r;
 				const std::uint8_t* bgrColor = image.ptr<std::uint8_t>(v, u);
 				ptrColor[0] = bgrColor[0];
 				ptrColor[1] = bgrColor[1];
