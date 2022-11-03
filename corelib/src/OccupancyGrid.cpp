@@ -429,10 +429,14 @@ void OccupancyGrid::createLocalMap(
 		}
 		else
 		{
+			MEASURE_TIME_FROM_HERE(OccupancyGrid__scan2PCL);
 			pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = util3d::laserScanToPointCloud(scan, scan.localTransform());
+			STOP_TIME_MEASUREMENT(OccupancyGrid__scan2PCL);
 			pcl::PointCloud<pcl::PointXYZ>::Ptr cloudSegmented = segmentCloud<pcl::PointXYZ>(cloud, pcl::IndicesPtr(new std::vector<int>), pose, viewPoint, groundIndices, obstaclesIndices);
 			UDEBUG("groundIndices=%d, obstaclesIndices=%d", (int)groundIndices->size(), (int)obstaclesIndices->size());
+			MEASURE_TIME_FROM_HERE(OccupancyGrid__PCL2cvMats);
 			util3d::occupancy2DFromGroundObstacles<pcl::PointXYZ>(cloudSegmented, groundIndices, obstaclesIndices, groundCells, obstacleCells, cellSize_);
+			STOP_TIME_MEASUREMENT(OccupancyGrid__PCL2cvMats);
 		}
 
 		if(rayTracing_ && (!obstacleCells.empty() || !groundCells.empty()))
