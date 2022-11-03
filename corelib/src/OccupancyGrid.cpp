@@ -1337,7 +1337,6 @@ OccupancyGrid::OccupancyGridMap OccupancyGrid::getProbOccupancyGridMap(float & m
 
 	if (temporaryMap_.mapLimits.valid())
 	{
-		float tmpOccThr = logodds(temporaryOccupancyThr_);
 		int shiftX = temporaryMap_.mapLimits.minX - occupancyMapLimits.minX;
 		int shiftY = temporaryMap_.mapLimits.minY - occupancyMapLimits.minY;
 		for(int x = 0; x < temporaryMap_.missCounter.cols(); ++x)
@@ -1352,7 +1351,7 @@ OccupancyGrid::OccupancyGridMap OccupancyGrid::getProbOccupancyGridMap(float & m
 				}
 				else
 				{
-					occupancyGridMap(y + shiftY, x + shiftX) = 0;
+					occupancyGridMap(y + shiftY, x + shiftX) = logodds;
 				}
 			}
 		}
