@@ -41,11 +41,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace rtabmap {
 
-class RTABMAP_EXP OccupancyGrid
+class RTABMAP_EXP OccupancyGridBuilder
 {
 public:
-	using OccupancyGridMap = Eigen::Matrix<char, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-	using ColorGridMap = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+	using OccupancyGrid = Eigen::Matrix<char, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+	using ColorGrid = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 private:
 	inline static float logodds(double probability)
@@ -167,7 +167,7 @@ private:
 	};
 
 public:
-	OccupancyGrid(const ParametersMap & parameters = ParametersMap());
+	OccupancyGridBuilder(const ParametersMap & parameters = ParametersMap());
 	void parseParameters(const ParametersMap & parameters);
 
 	LocalMap createLocalMap(const Signature & signature) const;
@@ -181,9 +181,9 @@ public:
 	void updatePoses(const std::map<int, Transform> & updatedPoses,
 		const std::list<Transform> & updatedTemporaryPoses = std::list<Transform>());
 
-	OccupancyGridMap getOccupancyGridMap(float & minX, float & minY) const;
-	OccupancyGridMap getProbOccupancyGridMap(float & minX, float & minY) const;
-	ColorGridMap getColorGridMap(float & minX, float & minY) const;
+	OccupancyGrid getOccupancyGrid(float & minX, float & minY) const;
+	OccupancyGrid getProbOccupancyGrid(float & minX, float & minY) const;
+	ColorGrid getColorGrid(float & minX, float & minY) const;
 
 	float cellSize() const;
 	int maxTemporaryLocalMaps() const;

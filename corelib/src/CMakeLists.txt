@@ -25,7 +25,7 @@ SET(SRC_FILES
 	stereo/StereoBM.cpp
 	stereo/StereoSGBM.cpp
 
-	OccupancyGrid.cpp
+	OccupancyGridBuilder.cpp
 )
 
 # to get includes in visual studio
