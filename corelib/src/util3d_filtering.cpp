@@ -403,7 +403,7 @@ LaserScan downsample(
 		int oi = 0;
 		for(int i=0; i<scan.size()-step+1; i+=step)
 		{
-			cv::Mat(scan.data(), cv::Range::all(), cv::Range(i,i+1)).copyTo(cv::Mat(output, cv::Range::all(), cv::Range(oi,oi+1)));
+			memcpy(output.ptr<void>(0, oi), scan.data().ptr<void>(0, i), scan.data().elemSize());
 			++oi;
 		}
 		if(scan.angleIncrement() > 0.0f)
