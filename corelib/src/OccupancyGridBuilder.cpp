@@ -1221,7 +1221,6 @@ void OccupancyGridBuilder::clearColoredOccupancyMap(TemporaryColoredOccupancyMap
 	map.missCounter = Eigen::MatrixXi();
 	map.hitCounter = Eigen::MatrixXi();
 	map.colors = Eigen::MatrixXi();
-	map.temporarilyOccupiedCells.clear();
 }
 
 OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getOccupancyGrid(float & minX, float & minY) const

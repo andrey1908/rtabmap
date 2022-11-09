@@ -163,7 +163,6 @@ private:
 		Eigen::MatrixXi missCounter;
 		Eigen::MatrixXi hitCounter;
 		Eigen::MatrixXi colors;
-		std::list<std::pair<int, int>> temporarilyOccupiedCells;
 	};
 
 public:
