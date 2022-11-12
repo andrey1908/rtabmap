@@ -849,19 +849,38 @@ void OccupancyGridBuilder::cacheCurrentMap()
 	{
 		return;
 	}
-	MEASURE_BLOCK_TIME(OccupancyGrid__cacheCurrentMap);
 
-	cachedMap_ = std::make_unique<ColoredOccupancyMap>();
+	std::vector<int> nodeIds;
+	nodeIds.reserve(map_.nodes.size());
 	for (const auto& entry : map_.nodes)
 	{
 		if (!entry.second.localPose.has_value())
 		{
 			continue;
 		}
+		nodeIds.push_back(entry.first);
+	}
+	cacheMap(nodeIds);
+}
+
+void OccupancyGridBuilder::cacheMap(const std::vector<int> nodeIds)
+{
+	if(!map_.mapLimits.valid())
+	{
+		return;
+	}
+	MEASURE_BLOCK_TIME(OccupancyGrid__cacheMap);
+
+	cachedMap_ = std::make_unique<ColoredOccupancyMap>();
+	for (int nodeId : nodeIds)
+	{
+		UASSERT(map_.nodes.count(nodeId));
+		const Node& node = map_.nodes.at(nodeId);
+		UASSERT(node.localPose.has_value());
 		cachedMap_->nodes.emplace(
 			std::piecewise_construct,
-			std::forward_as_tuple(entry.first),
-			std::forward_as_tuple(*(entry.second.localPose), LocalMap()));
+			std::forward_as_tuple(nodeId),
+			std::forward_as_tuple(*(node.localPose), LocalMap()));
 	}
 	cachedMap_->mapLimits = map_.mapLimits;
 	cachedMap_->map = map_.map;

@@ -176,6 +176,7 @@ public:
 	void addTemporaryLocalMap(const Transform & temporaryPose, LocalMap temporaryLocalMap);
 
 	void cacheCurrentMap();
+	void cacheMap(const std::vector<int> nodeIds);
 
 	void updatePoses(const std::map<int, Transform> & updatedPoses,
 		const std::list<Transform> & updatedTemporaryPoses = std::list<Transform>());
