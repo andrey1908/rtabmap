@@ -845,38 +845,23 @@ void OccupancyGridBuilder::addTemporaryLocalMap(const Transform & localPose, Loc
 
 void OccupancyGridBuilder::cacheCurrentMap()
 {
+	cachedMap_.reset();
 	if(!map_.mapLimits.valid())
 	{
 		return;
 	}
 
+	cachedMap_ = std::make_unique<ColoredOccupancyMap>();
 	std::vector<int> nodeIds;
 	nodeIds.reserve(map_.nodes.size());
 	for (const auto& entry : map_.nodes)
 	{
-		if (!entry.second.localPose.has_value())
+		int nodeId = entry.first;
+		const Node& node = entry.second;
+		if (!node.localPose.has_value())
 		{
 			continue;
 		}
-		nodeIds.push_back(entry.first);
-	}
-	cacheMap(nodeIds);
-}
-
-void OccupancyGridBuilder::cacheMap(const std::vector<int> nodeIds)
-{
-	if(!map_.mapLimits.valid())
-	{
-		return;
-	}
-	MEASURE_BLOCK_TIME(OccupancyGrid__cacheMap);
-
-	cachedMap_ = std::make_unique<ColoredOccupancyMap>();
-	for (int nodeId : nodeIds)
-	{
-		UASSERT(map_.nodes.count(nodeId));
-		const Node& node = map_.nodes.at(nodeId);
-		UASSERT(node.localPose.has_value());
 		cachedMap_->nodes.emplace(
 			std::piecewise_construct,
 			std::forward_as_tuple(nodeId),
@@ -888,106 +873,131 @@ void OccupancyGridBuilder::cacheMap(const std::vector<int> nodeIds)
 	cachedMap_->temporarilyOccupiedCells = map_.temporarilyOccupiedCells;
 }
 
-int OccupancyGridBuilder::tryToUseCachedMap(const std::map<int, Transform> & updatedPoses)
+bool OccupancyGridBuilder::checkIfCachedMapCanBeUsed(const std::map<int, Transform> & updatedPoses)
 {
 	if (cachedMap_ == nullptr)
 	{
-		return -1;
+		return false;
 	}
+	auto updatedPoseIt = updatedPoses.begin();
+	for (const auto& cachedMapIdNode : cachedMap_->nodes)
+	{
+		if (updatedPoseIt == updatedPoses.end())
+		{
+			return false;
+		}
+		if (cachedMapIdNode.first != updatedPoseIt->first ||
+			*cachedMapIdNode.second.localPose != updatedPoseIt->second)
+		{
+			return false;
+		}
+		++updatedPoseIt;
+	}
+	return true;
+}
+
+void OccupancyGridBuilder::useCachedMap()
+{
+	clearColoredOccupancyMap(map_);
+	auto mapNodeIt = map_.nodes.begin();
+	for (const auto& cachedMapIdNode : cachedMap_->nodes)
+	{
+		UASSERT(mapNodeIt != map_.nodes.end());
+		while (mapNodeIt->first != cachedMapIdNode.first)
+		{
+			++mapNodeIt;
+			UASSERT(mapNodeIt != map_.nodes.end());
+		}
+		mapNodeIt->second.localPose = cachedMapIdNode.second.localPose;
+		++mapNodeIt;
+	}
+	map_.mapLimits = cachedMap_->mapLimits;
+	map_.map = cachedMap_->map;
+	map_.colors = cachedMap_->colors;
+	map_.temporarilyOccupiedCells = cachedMap_->temporarilyOccupiedCells;
+}
+
+int OccupancyGridBuilder::tryToUseCachedMap(const std::map<int, Transform> & updatedPoses)
+{
 	static time_measurer::TimeMeasurer OccupancyGrid__tryToUseCachedMap__fail("OccupancyGrid__tryToUseCachedMap__fail", true);
 	static time_measurer::TimeMeasurer OccupancyGrid__tryToUseCachedMap__success("OccupancyGrid__tryToUseCachedMap__success", true);
 	OccupancyGrid__tryToUseCachedMap__fail.StartMeasurement();
 	OccupancyGrid__tryToUseCachedMap__success.StartMeasurement();
 
-	auto updatedPoseIt = updatedPoses.begin();
-	for (const auto& entry : cachedMap_->nodes)
+	if (!checkIfCachedMapCanBeUsed(updatedPoses))
 	{
-		if (updatedPoseIt == updatedPoses.end())
-		{
-			OccupancyGrid__tryToUseCachedMap__fail.StopMeasurement();
-			return -1;
-		}
-		if (entry.first == updatedPoseIt->first &&
-			*entry.second.localPose == updatedPoseIt->second)
-		{
-			++updatedPoseIt;
-			continue;
-		}
 		OccupancyGrid__tryToUseCachedMap__fail.StopMeasurement();
 		return -1;
 	}
 
-	auto cachedNodeIt = cachedMap_->nodes.begin();
-	for (auto& entry : map_.nodes)
-	{
-		if (cachedNodeIt == cachedMap_->nodes.end())
-		{
-			break;
-		}
-		if (entry.first == cachedNodeIt->first)
-		{
-			entry.second.localPose = cachedNodeIt->second.localPose;
-			++cachedNodeIt;
-		}
-	}
-	UASSERT(cachedNodeIt == cachedMap_->nodes.end());
-	map_.mapLimits = cachedMap_->mapLimits;
-	map_.map = cachedMap_->map;
-	map_.colors = cachedMap_->colors;
-	map_.temporarilyOccupiedCells = cachedMap_->temporarilyOccupiedCells;
+	useCachedMap();
 	OccupancyGrid__tryToUseCachedMap__success.StopMeasurement();
 	return cachedMap_->nodes.rbegin()->first;
 }
 
 void OccupancyGridBuilder::updatePoses(const std::map<int, Transform> & updatedPoses,
-		const std::list<Transform> & updatedTemporaryPoses /* std::list<Transform>() */)
+		const std::list<Transform> & updatedTemporaryPoses,
+		int lastNodeIdForCachedMap /* -1 */)
 {
-	MEASURE_BLOCK_TIME(OccupancyGrid__updatePoses);
+	updatePosesForMap(updatedPoses, lastNodeIdForCachedMap);
+	updatePosesForTemporaryMap(updatedTemporaryPoses);
+}
 
+void OccupancyGridBuilder::updatePosesForMap(const std::map<int, Transform> & updatedPoses,
+		int lastNodeIdForCachedMap /* -1 */)
+{
+	MEASURE_BLOCK_TIME(OccupancyGrid__updatePosesForMap);
 	clearColoredOccupancyMap(map_);
 	int lastNodeIdFromCache = tryToUseCachedMap(updatedPoses);
-	std::list<int> updatedNodeIds;
-	std::map<int, Node>::iterator mapNodeIt;
-	std::map<int, Transform>::const_iterator updatedPoseIt;
-	if(lastNodeIdFromCache == -1)
-	{
-		mapNodeIt = map_.nodes.begin();
-		updatedPoseIt = updatedPoses.begin();
-	}
-	else
-	{
-		mapNodeIt = map_.nodes.lower_bound(lastNodeIdFromCache + 1);
-		updatedPoseIt = updatedPoses.lower_bound(lastNodeIdFromCache + 1);
-	}
+
 	MapLimits newMapLimits = map_.mapLimits;
-	for(; mapNodeIt != map_.nodes.end(); ++mapNodeIt)
+	std::list<int> nodeIdsToDeploy;
+	auto mapNodeIt = map_.nodes.lower_bound(lastNodeIdFromCache + 1);
+	for(auto updatedPoseIt = updatedPoses.lower_bound(lastNodeIdFromCache + 1);
+		updatedPoseIt != updatedPoses.end(); ++updatedPoseIt)
 	{
-		if (updatedPoseIt == updatedPoses.end())
+		UASSERT(mapNodeIt != map_.nodes.end());
+		while (mapNodeIt->first != updatedPoseIt->first)
 		{
-			break;
+			++mapNodeIt;
+			UASSERT(mapNodeIt != map_.nodes.end());
 		}
-		if (mapNodeIt->first == updatedPoseIt->first)
+		int nodeId = mapNodeIt->first;
+		Node& mapNode = mapNodeIt->second;
+		mapNode.localPose = updatedPoseIt->second;
+		transformLocalMap(mapNode);
+		newMapLimits = MapLimits::unite(newMapLimits, *(mapNode.localMapLimits));
+		nodeIdsToDeploy.push_back(nodeId);
+
+		if (nodeId == lastNodeIdForCachedMap)
 		{
-			mapNodeIt->second.localPose = updatedPoseIt->second;
-			transformLocalMap(mapNodeIt->second);
-			newMapLimits = MapLimits::unite(newMapLimits, *(mapNodeIt->second.localMapLimits));
-			updatedNodeIds.push_back(mapNodeIt->first);
-			++updatedPoseIt;
+			createOrResizeMap(map_, newMapLimits);
+			for(auto nodeIdToDeploy : nodeIdsToDeploy)
+			{
+				deployLocalMap(map_, nodeIdToDeploy);
+			}
+			cacheCurrentMap();
+			nodeIdsToDeploy.clear();
 		}
+
+		++mapNodeIt;
 	}
-	UASSERT(updatedPoseIt == updatedPoses.end());
-	if (newMapLimits.valid())
+	if (newMapLimits.valid() && nodeIdsToDeploy.size())
 	{
 		createOrResizeMap(map_, newMapLimits);
-		for(auto updatedNodeId : updatedNodeIds)
+		for(auto nodeIdToDeploy : nodeIdsToDeploy)
 		{
-			deployLocalMap(map_, updatedNodeId);
+			deployLocalMap(map_, nodeIdToDeploy);
 		}
 	}
+}
 
+void OccupancyGridBuilder::updatePosesForTemporaryMap(const std::list<Transform> & updatedTemporaryPoses)
+{
+	MEASURE_BLOCK_TIME(OccupancyGrid__updatePosesForTemporaryMap);
 	UASSERT(temporaryMap_.nodes.size() == updatedTemporaryPoses.size());
 	clearColoredOccupancyMap(temporaryMap_);
-	newMapLimits = MapLimits();
+	MapLimits newMapLimits = MapLimits();
 	auto updatedTemporaryPoseIt = updatedTemporaryPoses.begin();
 	for (auto& entry : temporaryMap_.nodes)
 	{

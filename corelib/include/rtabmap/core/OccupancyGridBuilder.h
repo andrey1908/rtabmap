@@ -176,10 +176,10 @@ public:
 	void addTemporaryLocalMap(const Transform & temporaryPose, LocalMap temporaryLocalMap);
 
 	void cacheCurrentMap();
-	void cacheMap(const std::vector<int> nodeIds);
 
 	void updatePoses(const std::map<int, Transform> & updatedPoses,
-		const std::list<Transform> & updatedTemporaryPoses = std::list<Transform>());
+			const std::list<Transform> & updatedTemporaryPoses,
+			int lastNodeIdForCachedMap = -1);
 
 	OccupancyGrid getOccupancyGrid(float & minX, float & minY) const;
 	OccupancyGrid getProbOccupancyGrid(float & minX, float & minY) const;
@@ -218,7 +218,13 @@ private:
 			const cv::Mat & emptyCells,
 			const cv::Mat & obstacleCells) const;
 
+	bool checkIfCachedMapCanBeUsed(const std::map<int, Transform> & updatedPoses);
+	void useCachedMap();
 	int tryToUseCachedMap(const std::map<int, Transform> & updatedPoses);
+
+	void updatePosesForMap(const std::map<int, Transform> & updatedPoses,
+			int lastNodeIdForCachedMap = -1);
+	void updatePosesForTemporaryMap(const std::list<Transform> & updatedTemporaryPoses);
 
 	void transformLocalMap(Node & node);
 	void createOrResizeMap(ColoredOccupancyMap & map, const MapLimits & newMapLimits);
