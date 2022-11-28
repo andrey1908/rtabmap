@@ -852,8 +852,6 @@ void OccupancyGridBuilder::cacheCurrentMap()
 	}
 
 	cachedMap_ = std::make_unique<ColoredOccupancyMap>();
-	std::vector<int> nodeIds;
-	nodeIds.reserve(map_.nodes.size());
 	for (const auto& entry : map_.nodes)
 	{
 		int nodeId = entry.first;
@@ -1004,11 +1002,12 @@ void OccupancyGridBuilder::updatePosesForTemporaryMap(const std::list<Transform>
 		entry.second.localPose = *updatedTemporaryPoseIt;
 		transformLocalMap(entry.second);
 		newMapLimits = MapLimits::unite(newMapLimits, *(entry.second.localMapLimits));
+		++updatedTemporaryPoseIt;
 	}
 	if (newMapLimits.valid())
 	{
 		createOrResizeMap(temporaryMap_, newMapLimits);
-		for (auto& entry : temporaryMap_.nodes)
+		for (const auto& entry : temporaryMap_.nodes)
 		{
 			deployLocalMap(temporaryMap_, entry.first);
 		}
