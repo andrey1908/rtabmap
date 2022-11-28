@@ -130,6 +130,7 @@ public:
 		int numGround, numEmpty, numObstacles;
 		Eigen::Matrix3Xf points;
 		std::vector<int> colors;
+		Transform localTransform;
 	};
 
 	struct Node

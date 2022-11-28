@@ -4,14 +4,14 @@ All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of the Universite de Sherbrooke nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
+	* Redistributions of source code must retain the above copyright
+	  notice, this list of conditions and the following disclaimer.
+	* Redistributions in binary form must reproduce the above copyright
+	  notice, this list of conditions and the following disclaimer in the
+	  documentation and/or other materials provided with the distribution.
+	* Neither the name of the Universite de Sherbrooke nor the
+	  names of its contributors may be used to endorse or promote products
+	  derived from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -373,7 +373,9 @@ OccupancyGridBuilder::LocalMap OccupancyGridBuilder::createLocalMap(const Signat
 		}
 	}
 
-	return cvMatsToLocalMap(groundCells, emptyCells, obstacleCells);
+	LocalMap localMap = cvMatsToLocalMap(groundCells, emptyCells, obstacleCells);
+	localMap.localTransform = signature.sensorData().laserScan().localTransform();
+	return localMap;
 }
 
 void OccupancyGridBuilder::createLocalMap(
@@ -1125,6 +1127,18 @@ void OccupancyGridBuilder::deployLocalMap(ColoredOccupancyMap & map, int nodeId)
 		bool free = (i < node.localMap.numGround + node.localMap.numEmpty);
 		if (free)
 		{
+			if (map.map(y, x) >= logodds(occupancyThr_ + 0.05))
+			{
+				float localX = node.localMap.points(0, i);
+				float localY = node.localMap.points(1, i);
+				float lidarX = localX - node.localMap.localTransform.x();
+				float lidarY = localY - node.localMap.localTransform.y();
+				float minRange = 0.65;
+				if (lidarX * lidarX + lidarY * lidarY < minRange * minRange)
+				{
+					continue;
+				}
+			}
 			float & logodds = map.map(y, x);
 			logodds += probMiss_;
 			if (logodds < probClampingMin_)
