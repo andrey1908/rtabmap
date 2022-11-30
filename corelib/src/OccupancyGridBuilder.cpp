@@ -83,6 +83,7 @@ OccupancyGridBuilder::OccupancyGridBuilder(const ParametersMap & parameters) :
 	maxTemporaryLocalMaps_(Parameters::defaultGridMaxTemporaryLocalMaps())
 {
 	parseParameters(parameters);
+	unknownLogodds_ = probClampingMax_ + 1.0f;
 }
 
 void OccupancyGridBuilder::parseParameters(const ParametersMap & parameters)
@@ -1039,7 +1040,7 @@ void OccupancyGridBuilder::createOrResizeMap(ColoredOccupancyMap & map, const Ma
 	{
 		MEASURE_BLOCK_TIME(OccupancyGrid__createOrResizeMap__create_map);
 		map.mapLimits = newMapLimits;
-		map.map = Eigen::MatrixXf::Constant(newMapLimits.height(), newMapLimits.width(), 0.0f);
+		map.map = Eigen::MatrixXf::Constant(newMapLimits.height(), newMapLimits.width(), unknownLogodds_);
 		map.colors = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(), -1);
 	}
 	else if(map.mapLimits != newMapLimits)
@@ -1054,7 +1055,7 @@ void OccupancyGridBuilder::createOrResizeMap(ColoredOccupancyMap & map, const Ma
 		int copyHeight = intersection.height();
 		UASSERT(copyWidth > 0 && copyHeight > 0);
 
-		Eigen::MatrixXf newMap = Eigen::MatrixXf::Constant(newMapLimits.height(), newMapLimits.width(), 0.0f);
+		Eigen::MatrixXf newMap = Eigen::MatrixXf::Constant(newMapLimits.height(), newMapLimits.width(), unknownLogodds_);
 		Eigen::MatrixXi newColors = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(), -1);
 
 		newMap.block(dstShiftY, dstShiftX, copyHeight, copyWidth) =
@@ -1125,6 +1126,10 @@ void OccupancyGridBuilder::deployLocalMap(ColoredOccupancyMap & map, int nodeId)
 		if (free)
 		{
 			float & logodds = map.map(y, x);
+			if (logodds == unknownLogodds_)
+			{
+				logodds = 0.0f;
+			}
 			logodds += probMiss_;
 			if (logodds < probClampingMin_)
 			{
@@ -1145,6 +1150,10 @@ void OccupancyGridBuilder::deployLocalMap(ColoredOccupancyMap & map, int nodeId)
 			}
 
 			float & logodds = map.map(y, x);
+			if (logodds == unknownLogodds_)
+			{
+				logodds = 0.0f;
+			}
 			logodds += probHit_;
 			if (logodds > probClampingMax_)
 			{
@@ -1271,7 +1280,7 @@ OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getOccupancyGrid(float
 			for(int y = 0; y < map_.map.rows(); ++y)
 			{
 				float logodds = map_.map(y, x);
-				if(logodds == 0.0f)
+				if(logodds == unknownLogodds_)
 				{
 					occupancyGrid(y + shiftY, x + shiftX) = -1;
 				}
@@ -1305,9 +1314,10 @@ OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getOccupancyGrid(float
 		{
 			for(int y = 0; y < temporaryMap_.missCounter.rows(); ++y)
 			{
-				float logodds = temporaryMap_.missCounter(y, x) * temporaryProbMiss_ +
-					temporaryMap_.hitCounter(y, x) * temporaryProbHit_;
-				if(logodds == 0.0f)
+				int misses = temporaryMap_.missCounter(y, x);
+				int hits = temporaryMap_.hitCounter(y, x);
+				float logodds = misses * temporaryProbMiss_ + hits * temporaryProbHit_;
+				if(misses == 0 && hits == 0)
 				{
 					continue;
 				}
@@ -1345,7 +1355,7 @@ OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getProbOccupancyGrid(f
 			for(int y = 0; y < map_.map.rows(); ++y)
 			{
 				float logodds = map_.map(y, x);
-				if(logodds == 0.0f)
+				if(logodds == unknownLogodds_)
 				{
 					occupancyGrid(y + shiftY, x + shiftX) = -1;
 				}
@@ -1374,9 +1384,10 @@ OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getProbOccupancyGrid(f
 		{
 			for(int y = 0; y < temporaryMap_.missCounter.rows(); ++y)
 			{
-				float logodds = temporaryMap_.missCounter(y, x) * temporaryProbMiss_ +
-					temporaryMap_.hitCounter(y, x) * temporaryProbHit_;
-				if(logodds == 0.0f)
+				int misses = temporaryMap_.missCounter(y, x);
+				int hits = temporaryMap_.hitCounter(y, x);
+				float logodds = misses * temporaryProbMiss_ + hits * temporaryProbHit_;
+				if(misses == 0 && hits == 0)
 				{
 					continue;
 				}

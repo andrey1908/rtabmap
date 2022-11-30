@@ -279,6 +279,8 @@ private:
 	bool showTemporarilyOccupiedCells_;
 	int maxTemporaryLocalMaps_;
 
+	float unknownLogodds_;
+
 	ColoredOccupancyMap map_;
 	TemporaryColoredOccupancyMap temporaryMap_;
 	std::unique_ptr<ColoredOccupancyMap> cachedMap_;
