@@ -67,12 +67,12 @@ OccupancyGridBuilder::OccupancyGridBuilder(const ParametersMap & parameters) :
 	scan2dUnknownSpaceFilled_(Parameters::defaultGridScan2dUnknownSpaceFilled()),
 	rayTracing_(Parameters::defaultGridRayTracing()),
 	footprintRadius_(Parameters::defaultGridGlobalFootprintRadius()),
-	occupancyThr_(Parameters::defaultGridGlobalOccupancyThr()),
+	occupancyThr_(logodds(Parameters::defaultGridGlobalOccupancyThr())),
 	probMiss_(logodds(Parameters::defaultGridGlobalProbMiss())),
 	probHit_(logodds(Parameters::defaultGridGlobalProbHit())),
 	probClampingMin_(logodds(Parameters::defaultGridGlobalProbClampingMin())),
 	probClampingMax_(logodds(Parameters::defaultGridGlobalProbClampingMax())),
-	temporaryOccupancyThr_(Parameters::defaultGridGlobalTemporaryOccupancyThr()),
+	temporaryOccupancyThr_(logodds(Parameters::defaultGridGlobalTemporaryOccupancyThr())),
 	temporaryProbMiss_(logodds(Parameters::defaultGridGlobalTemporaryProbMiss())),
 	temporaryProbHit_(logodds(Parameters::defaultGridGlobalTemporaryProbHit())),
 	semanticDilation_(Parameters::defaultGridSemanticDilation()),
@@ -123,7 +123,10 @@ void OccupancyGridBuilder::parseParameters(const ParametersMap & parameters)
 	Parameters::parse(parameters, Parameters::kGridRayTracing(), rayTracing_);
 	Parameters::parse(parameters, Parameters::kGridGlobalFootprintRadius(), footprintRadius_);
 
-	Parameters::parse(parameters, Parameters::kGridGlobalOccupancyThr(), occupancyThr_);
+	if(Parameters::parse(parameters, Parameters::kGridGlobalOccupancyThr(), occupancyThr_))
+	{
+		occupancyThr_ = logodds(occupancyThr_);
+	}
 	if(Parameters::parse(parameters, Parameters::kGridGlobalProbMiss(), probMiss_))
 	{
 		UASSERT_MSG(probMiss_ > 0.0f && probMiss_ < 0.5f, uFormat("probMiss_=%f", probMiss_).c_str());
@@ -144,7 +147,10 @@ void OccupancyGridBuilder::parseParameters(const ParametersMap & parameters)
 	}
 	UASSERT(probClampingMax_ > probClampingMin_);
 
-	Parameters::parse(parameters, Parameters::kGridGlobalTemporaryOccupancyThr(), temporaryOccupancyThr_);
+	if(Parameters::parse(parameters, Parameters::kGridGlobalTemporaryOccupancyThr(), temporaryOccupancyThr_))
+	{
+		temporaryOccupancyThr_ = logodds(temporaryOccupancyThr_);
+	}
 	if(Parameters::parse(parameters, Parameters::kGridGlobalTemporaryProbMiss(), temporaryProbMiss_))
 	{
 		UASSERT_MSG(temporaryProbMiss_ > 0.0f && temporaryProbMiss_ < 0.5f, uFormat("temporaryProbMiss_=%f", temporaryProbMiss_).c_str());
@@ -1272,7 +1278,6 @@ OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getOccupancyGrid(float
 
 	if (map_.mapLimits.valid())
 	{
-		float occThr = logodds(occupancyThr_);
 		int shiftX = map_.mapLimits.minX - occupancyMapLimits.minX;
 		int shiftY = map_.mapLimits.minY - occupancyMapLimits.minY;
 		for(int x = 0; x < map_.map.cols(); ++x)
@@ -1284,7 +1289,7 @@ OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getOccupancyGrid(float
 				{
 					occupancyGrid(y + shiftY, x + shiftX) = -1;
 				}
-				else if(logodds >= occThr)
+				else if(logodds >= occupancyThr_)
 				{
 					occupancyGrid(y + shiftY, x + shiftX) = 100;
 				}
@@ -1307,7 +1312,6 @@ OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getOccupancyGrid(float
 
 	if (temporaryMap_.mapLimits.valid())
 	{
-		float tmpOccThr = logodds(temporaryOccupancyThr_);
 		int shiftX = temporaryMap_.mapLimits.minX - occupancyMapLimits.minX;
 		int shiftY = temporaryMap_.mapLimits.minY - occupancyMapLimits.minY;
 		for(int x = 0; x < temporaryMap_.missCounter.cols(); ++x)
@@ -1321,7 +1325,7 @@ OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getOccupancyGrid(float
 				{
 					continue;
 				}
-				else if(logodds >= tmpOccThr)
+				else if(logodds >= temporaryOccupancyThr_)
 				{
 					occupancyGrid(y + shiftY, x + shiftX) = 100;
 				}
