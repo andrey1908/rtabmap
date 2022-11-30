@@ -130,6 +130,9 @@ public:
 		int numGround, numEmpty, numObstacles;
 		Eigen::Matrix3Xf points;
 		std::vector<int> colors;
+
+		float sensorBlindRange2dSqr;
+		Transform toSensor;
 	};
 
 	struct Node
@@ -278,6 +281,8 @@ private:
 	int temporarilyOccupiedCellColor_;
 	bool showTemporarilyOccupiedCells_;
 	int maxTemporaryLocalMaps_;
+	float sensorBlindRange2d_;
+	float sensorBlindRange2dSqr_;
 
 	float unknownLogodds_;
 

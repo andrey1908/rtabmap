@@ -80,7 +80,8 @@ OccupancyGridBuilder::OccupancyGridBuilder(const ParametersMap & parameters) :
 	maxSemanticRange_(Parameters::defaultGridMaxSemanticRange()),
 	temporarilyOccupiedCellColor_(Parameters::defaultGridTemporarilyOccupiedCellColor()),
 	showTemporarilyOccupiedCells_(Parameters::defaultGridShowTemporarilyOccupiedCells()),
-	maxTemporaryLocalMaps_(Parameters::defaultGridMaxTemporaryLocalMaps())
+	maxTemporaryLocalMaps_(Parameters::defaultGridMaxTemporaryLocalMaps()),
+	sensorBlindRange2d_(Parameters::defaultGridSensorBlindRange2d())
 {
 	parseParameters(parameters);
 	unknownLogodds_ = probClampingMax_ + 1.0f;
@@ -183,6 +184,13 @@ void OccupancyGridBuilder::parseParameters(const ParametersMap & parameters)
 	Parameters::parse(parameters, Parameters::kGridMaxTemporaryLocalMaps(), maxTemporaryLocalMaps_);
 	UASSERT(maxTemporaryLocalMaps_ >= 0);
 
+	Parameters::parse(parameters, Parameters::kGridSensorBlindRange2d(), sensorBlindRange2d_);
+	sensorBlindRange2dSqr_ = 0.0f;
+	if (sensorBlindRange2d_ > 0.0f)
+	{
+		sensorBlindRange2dSqr_ = sensorBlindRange2d_ * sensorBlindRange2d_;
+	}
+
 	// convert ROI from string to vector
 	ParametersMap::const_iterator iter;
 	if((iter=parameters.find(Parameters::kGridDepthRoiRatios())) != parameters.end())
@@ -251,16 +259,15 @@ OccupancyGridBuilder::LocalMap OccupancyGridBuilder::createLocalMap(const Signat
 	cv::Mat groundCells;
 	cv::Mat emptyCells;
 	cv::Mat obstacleCells;
+	Transform localTransform;
 	cv::Point3f viewPoint;
 
 	if(signature.sensorData().laserScan().is2d() && !occupancyFromDepth_)
 	{
 		UDEBUG("2D laser scan");
 		// 2D
-		viewPoint = cv::Point3f(
-				signature.sensorData().laserScan().localTransform().x(),
-				signature.sensorData().laserScan().localTransform().y(),
-				signature.sensorData().laserScan().localTransform().z());
+		localTransform = signature.sensorData().laserScan().localTransform();
+		viewPoint = cv::Point3f(localTransform.x(), localTransform.y(), localTransform.z());
 
 		LaserScan scan = signature.sensorData().laserScan();
 		if(cloudMinDepth_ > 0.0f)
@@ -294,7 +301,8 @@ OccupancyGridBuilder::LocalMap OccupancyGridBuilder::createLocalMap(const Signat
 			if(!signature.sensorData().laserScan().isEmpty())
 			{
 				UDEBUG("3D laser scan");
-				const Transform & t = signature.sensorData().laserScan().localTransform();
+				localTransform = signature.sensorData().laserScan().localTransform();
+				viewPoint = cv::Point3f(localTransform.x(), localTransform.y(), localTransform.z());
 				MEASURE_TIME_FROM_HERE(OccupancyGrid__downsample);
 				LaserScan scan = util3d::downsample(signature.sensorData().laserScan(), scanDecimation_);
 				STOP_TIME_MEASUREMENT(OccupancyGrid__downsample);
@@ -320,9 +328,6 @@ OccupancyGridBuilder::LocalMap OccupancyGridBuilder::createLocalMap(const Signat
 					scan = addSemanticToLaserScan(scan, semantics, signature.sensorData().cameraModels());
 				}
 
-				// update viewpoint
-				viewPoint = cv::Point3f(t.x(), t.y(), t.z());
-
 				UDEBUG("scan format=%d", scan.format());
 				createLocalMap(scan, signature.getPose(), groundCells, emptyCells, obstacleCells, viewPoint);
 			}
@@ -333,6 +338,10 @@ OccupancyGridBuilder::LocalMap OccupancyGridBuilder::createLocalMap(const Signat
 		}
 		else
 		{
+			UASSERT(signature.sensorData().cameraModels().size() == 1);
+			localTransform = signature.sensorData().cameraModels()[0].localTransform();
+			viewPoint = cv::Point3f(localTransform.x(), localTransform.y(), localTransform.z());
+
 			pcl::IndicesPtr indices(new std::vector<int>);
 			pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud;
 			UDEBUG("Depth image : decimation=%d max=%f min=%f",
@@ -349,38 +358,41 @@ OccupancyGridBuilder::LocalMap OccupancyGridBuilder::createLocalMap(const Signat
 					roiRatios_);
 
 			// update viewpoint
-			if(signature.sensorData().cameraModels().size())
-			{
-				// average of all local transforms
-				float sum = 0;
-				for(unsigned int i=0; i<signature.sensorData().cameraModels().size(); ++i)
-				{
-					const Transform & t = signature.sensorData().cameraModels()[i].localTransform();
-					if(!t.isNull())
-					{
-						viewPoint.x += t.x();
-						viewPoint.y += t.y();
-						viewPoint.z += t.z();
-						sum += 1.0f;
-					}
-				}
-				if(sum > 0.0f)
-				{
-					viewPoint.x /= sum;
-					viewPoint.y /= sum;
-					viewPoint.z /= sum;
-				}
-			}
-			else
-			{
-				const Transform & t = signature.sensorData().stereoCameraModel().localTransform();
-				viewPoint = cv::Point3f(t.x(), t.y(), t.z());
-			}
+			// if(signature.sensorData().cameraModels().size() /* == 1 */)
+			// {
+			// 	// average of all local transforms
+			// 	float sum = 0;
+			// 	for(unsigned int i=0; i<signature.sensorData().cameraModels().size(); ++i)
+			// 	{
+			// 		const Transform & t = signature.sensorData().cameraModels()[i].localTransform();
+			// 		if(!t.isNull())
+			// 		{
+			// 			viewPoint.x += t.x();
+			// 			viewPoint.y += t.y();
+			// 			viewPoint.z += t.z();
+			// 			sum += 1.0f;
+			// 		}
+			// 	}
+			// 	if(sum > 0.0f)
+			// 	{
+			// 		viewPoint.x /= sum;
+			// 		viewPoint.y /= sum;
+			// 		viewPoint.z /= sum;
+			// 	}
+			// }
+			// else  // false
+			// {
+			// 	const Transform & t = signature.sensorData().stereoCameraModel().localTransform();
+			// 	viewPoint = cv::Point3f(t.x(), t.y(), t.z());
+			// }
 			createLocalMap(LaserScan(util3d::laserScanFromPointCloud(*cloud, indices), 0, 0.0f), signature.getPose(), groundCells, emptyCells, obstacleCells, viewPoint);
 		}
 	}
 
-	return cvMatsToLocalMap(groundCells, emptyCells, obstacleCells);
+	LocalMap localMap = cvMatsToLocalMap(groundCells, emptyCells, obstacleCells);
+	localMap.sensorBlindRange2dSqr = sensorBlindRange2dSqr_;
+	localMap.toSensor = localTransform;
+	return localMap;
 }
 
 void OccupancyGridBuilder::createLocalMap(
@@ -1132,6 +1144,18 @@ void OccupancyGridBuilder::deployLocalMap(ColoredOccupancyMap & map, int nodeId)
 		if (free)
 		{
 			float & logodds = map.map(y, x);
+			if (node.localMap.sensorBlindRange2dSqr != 0.0f &&
+				logodds != unknownLogodds_ && logodds >= occupancyThr_)
+			{
+				float localX = node.localMap.points.coeff(0, i);
+				float localY = node.localMap.points.coeff(1, i);
+				float sensorX = localX - node.localMap.toSensor.translation().x();
+				float sensorY = localY - node.localMap.toSensor.translation().y();
+				if (sensorX * sensorX + sensorY * sensorY <= node.localMap.sensorBlindRange2dSqr)
+				{
+					continue;
+				}
+			}
 			if (logodds == unknownLogodds_)
 			{
 				logodds = 0.0f;

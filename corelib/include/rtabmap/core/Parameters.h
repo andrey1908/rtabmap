@@ -753,6 +753,7 @@ class RTABMAP_EXP Parameters
     RTABMAP_PARAM(Grid, TemporarilyOccupiedCellColor,  int,  -1,     "Color of temporarily occupied cells. (-1) - do not extract temporarily occupied cells.");
     RTABMAP_PARAM(Grid, ShowTemporarilyOccupiedCells,  bool, true,   "Show temporarily occupied cells.");
     RTABMAP_PARAM(Grid, MaxTemporaryLocalMaps,         int,  1,      "Maximum number of temporary local maps.");
+    RTABMAP_PARAM(Grid, SensorBlindRange2d,         float,   0.0,    "Minimum range on surface at which sensor can see obstacles (0=disabled).");
 
     RTABMAP_PARAM(GridGlobal, FootprintRadius,      float,  0.0,     "Footprint radius (m) used to clear all obstacles under the graph.");
     RTABMAP_PARAM(GridGlobal, MaxNodes,             int,    0,       "Maximum nodes assembled in the map starting from the last node (0=unlimited).");
