@@ -4,37 +4,38 @@
 #include <vector>
 #include <utility>
 
-class DoorTracking {
+class DoorTracking
+{
 private:
-    static constexpr std::uint8_t occupiedCellValue = 100;
+	static constexpr std::uint8_t occupiedCellValue = 100;
 
 public:
-    using Cell = std::pair<int, int>;  // (y, x)
-    using Segment = std::vector<Cell>;
+	using Cell = std::pair<int, int>;  // (y, x)
+	using Segment = std::vector<Cell>;
 
-    DoorTracking(int smallRadius, int largeRadius);
-    ~DoorTracking() {};
+	DoorTracking(int smallRadius, int largeRadius);
+	~DoorTracking() {};
 
-    std::pair<Cell, Cell> trackDoor(const cv::Mat& image, const Cell& doorCenterEstimation);
-
-private:
-    inline int cellsDistanceSqr(const Cell& a, const Cell& b);
-
-    void precomputeCellToCheckForOccupation();
-
-    std::vector<Cell> getOccupiedCells(const cv::Mat& image, const Cell& doorCenterEstimation);
-    std::vector<Segment> segmentation(const std::vector<Cell>& cells);
-    std::pair<Cell, Cell> findClosestCellsInSegments(const Segment& segment1, const Segment& segment2);
+	std::pair<Cell, Cell> trackDoor(const cv::Mat& image, const Cell& doorCenterEstimation);
 
 private:
-    int smallRadius_;
-    int smallRadiusSqr_;
-    int doubleSmallRadius_;
-    int doubleSmallRadiusSqr_;
-    int largeRadius_;
-    int largeRadiusSqr_;
-    int doubleLargeRadius_;
-    int doubleLargeRadiusSqr_;
+	inline int cellsDistanceSqr(const Cell& a, const Cell& b);
 
-    std::vector<Cell> cellToCheckForOccupation_;
+	void precomputeCellToCheckForOccupation();
+
+	std::vector<Cell> getOccupiedCells(const cv::Mat& image, const Cell& doorCenterEstimation);
+	std::vector<Segment> segmentation(const std::vector<Cell>& cells);
+	std::pair<Cell, Cell> findClosestCellsInSegments(const Segment& segment1, const Segment& segment2);
+
+private:
+	int smallRadius_;
+	int smallRadiusSqr_;
+	int doubleSmallRadius_;
+	int doubleSmallRadiusSqr_;
+	int largeRadius_;
+	int largeRadiusSqr_;
+	int doubleLargeRadius_;
+	int doubleLargeRadiusSqr_;
+
+	std::vector<Cell> cellToCheckForOccupation_;
 };
