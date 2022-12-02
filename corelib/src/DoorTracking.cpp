@@ -31,11 +31,11 @@ void DoorTracking::precomputeCellToCheckForOccupation() {
 }
 
 std::vector<DoorTracking::Cell>
-DoorTracking::getOccupiedCells(const cv::Mat& image, const Cell& estimation) {
+DoorTracking::getOccupiedCells(const cv::Mat& image, const Cell& doorCenterEstimation) {
     MEASURE_BLOCK_TIME(getOccupiedCells);
     std::vector<Cell> occupiedCells;
-    int ey = estimation.first;
-    int ex = estimation.second;
+    int ey = doorCenterEstimation.first;
+    int ex = doorCenterEstimation.second;
     for (const auto& cell : cellToCheckForOccupation_) {
         int cy = cell.first + ey;
         int cx = cell.second + ex;
@@ -111,16 +111,25 @@ DoorTracking::findClosestCellsInSegments(const Segment& segment1, const Segment&
 }
 
 std::pair<DoorTracking::Cell, DoorTracking::Cell>
-DoorTracking::trackDoor(const cv::Mat& image, const Cell& estimation) {
+DoorTracking::trackDoor(const cv::Mat& image, const Cell& doorCenterEstimation) {
     MEASURE_BLOCK_TIME(trackDoor);
-    const std::vector<Cell>& occupiedCells = getOccupiedCells(image, estimation);
+    const std::vector<Cell>& occupiedCells = getOccupiedCells(image, doorCenterEstimation);
     const std::vector<Segment>& segments = segmentation(occupiedCells);
-    if (segments.size() != 2) {
-        UWARN("Found %d segments", segments.size());
-        return std::make_pair(DoorTracking::Cell(-1, -1), DoorTracking::Cell(-1, -1));
-    } else {
-        UINFO("Detected!");
+    int minEstimationErrorSqr = std::numeric_limits<int>::max();
+    std::pair<Cell, Cell> doorCorners(Cell(-1, -1), Cell(-1, -1));
+    for (int i = 0; i < segments.size() - 1; i++) {
+        for (int j = i + 1; j < segments.size(); j++) {
+            Cell doorCorner1, doorCorner2;
+            std::tie(doorCorner1, doorCorner2) = findClosestCellsInSegments(segments[i], segments[j]);
+            Cell doorCenter;
+            doorCenter.first = (doorCorner1.first + doorCorner2.first) / 2;
+            doorCenter.second = (doorCorner1.second + doorCorner2.second) / 2;
+            int estimationErrorSqr = cellsDistanceSqr(doorCenter, doorCenterEstimation);
+            if (estimationErrorSqr < minEstimationErrorSqr) {
+                doorCorners = std::make_pair(doorCorner1, doorCorner2);
+                minEstimationErrorSqr = estimationErrorSqr;
+            }
+        }
     }
-    const std::pair<Cell, Cell>& doorCorners = findClosestCellsInSegments(segments[0], segments[1]);
     return doorCorners;
 }

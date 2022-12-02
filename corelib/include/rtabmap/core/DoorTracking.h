@@ -15,14 +15,14 @@ public:
     DoorTracking(int smallRadius, int largeRadius);
     ~DoorTracking() {};
 
-    std::pair<Cell, Cell> trackDoor(const cv::Mat& image, const Cell& estimation);
+    std::pair<Cell, Cell> trackDoor(const cv::Mat& image, const Cell& doorCenterEstimation);
 
 private:
     inline int cellsDistanceSqr(const Cell& a, const Cell& b);
 
     void precomputeCellToCheckForOccupation();
 
-    std::vector<Cell> getOccupiedCells(const cv::Mat& image, const Cell& estimation);
+    std::vector<Cell> getOccupiedCells(const cv::Mat& image, const Cell& doorCenterEstimation);
     std::vector<Segment> segmentation(const std::vector<Cell>& cells);
     std::pair<Cell, Cell> findClosestCellsInSegments(const Segment& segment1, const Segment& segment2);
 
