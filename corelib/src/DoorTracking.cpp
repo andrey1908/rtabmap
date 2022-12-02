@@ -117,8 +117,8 @@ DoorTracking::trackDoor(const cv::Mat& image, const Cell& doorCenterEstimation) 
     const std::vector<Segment>& segments = segmentation(occupiedCells);
     int minEstimationErrorSqr = std::numeric_limits<int>::max();
     std::pair<Cell, Cell> doorCorners(Cell(-1, -1), Cell(-1, -1));
-    for (int i = 0; i < segments.size() - 1; i++) {
-        for (int j = i + 1; j < segments.size(); j++) {
+    for (int i = 0; i < (int)segments.size() - 1; i++) {
+        for (int j = i + 1; j < (int)segments.size(); j++) {
             Cell doorCorner1, doorCorner2;
             std::tie(doorCorner1, doorCorner2) = findClosestCellsInSegments(segments[i], segments[j]);
             Cell doorCenter;
