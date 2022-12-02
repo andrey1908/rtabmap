@@ -130,12 +130,12 @@ void OccupancyGridBuilder::parseParameters(const ParametersMap & parameters)
 	}
 	if(Parameters::parse(parameters, Parameters::kGridGlobalProbMiss(), probMiss_))
 	{
-		UASSERT_MSG(probMiss_ > 0.0f && probMiss_ < 0.5f, uFormat("probMiss_=%f", probMiss_).c_str());
+		UASSERT_MSG(probMiss_ > 0.0f && probMiss_ <= 0.5f, uFormat("probMiss_=%f", probMiss_).c_str());
 		probMiss_ = logodds(probMiss_);
 	}
 	if(Parameters::parse(parameters, Parameters::kGridGlobalProbHit(), probHit_))
 	{
-		UASSERT_MSG(probHit_ > 0.5f && probHit_ < 1.0f, uFormat("probHit_=%f", probHit_).c_str());
+		UASSERT_MSG(probHit_ >= 0.5f && probHit_ < 1.0f, uFormat("probHit_=%f", probHit_).c_str());
 		probHit_ = logodds(probHit_);
 	}
 	if(Parameters::parse(parameters, Parameters::kGridGlobalProbClampingMin(), probClampingMin_))
@@ -154,12 +154,12 @@ void OccupancyGridBuilder::parseParameters(const ParametersMap & parameters)
 	}
 	if(Parameters::parse(parameters, Parameters::kGridGlobalTemporaryProbMiss(), temporaryProbMiss_))
 	{
-		UASSERT_MSG(temporaryProbMiss_ > 0.0f && temporaryProbMiss_ < 0.5f, uFormat("temporaryProbMiss_=%f", temporaryProbMiss_).c_str());
+		UASSERT_MSG(temporaryProbMiss_ > 0.0f && temporaryProbMiss_ <= 0.5f, uFormat("temporaryProbMiss_=%f", temporaryProbMiss_).c_str());
 		temporaryProbMiss_ = logodds(temporaryProbMiss_);
 	}
 	if(Parameters::parse(parameters, Parameters::kGridGlobalTemporaryProbHit(), temporaryProbHit_))
 	{
-		UASSERT_MSG(temporaryProbHit_ > 0.5f && temporaryProbHit_ < 1.0f, uFormat("temporaryProbHit_=%f", temporaryProbHit_).c_str());
+		UASSERT_MSG(temporaryProbHit_ >= 0.5f && temporaryProbHit_ < 1.0f, uFormat("temporaryProbHit_=%f", temporaryProbHit_).c_str());
 		temporaryProbHit_ = logodds(temporaryProbHit_);
 	}
 
