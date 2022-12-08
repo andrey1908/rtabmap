@@ -138,12 +138,26 @@ void occupancy2DFromLaserScan(
 	cv::Mat map8S = create2DMap(poses, scans, viewpoints, cellSize, unknownSpaceFilled, xMin, yMin, 0.0f, scanMaxRange);
 
 	// find empty cells
-	std::list<int> emptyIndices;
-	for(unsigned int i=0; i< map8S.total(); ++i)
+	std::vector<std::pair<float, float>> emptyIndices;
+	bool last_is_empty = false;
+	for (int y = 0; y < map8S.rows; y++)
 	{
-		if(map8S.data[i] == 0)
+		for (int x = 0; x < map8S.cols; x++)
 		{
-			emptyIndices.push_back(i);
+			if (map8S.at<char>(y, x) == 0)
+			{
+				emptyIndices.emplace_back(x * cellSize + xMin, y * cellSize + yMin);
+				if (last_is_empty)
+				{
+					emptyIndices.emplace_back(x * cellSize + xMin - cellSize / 2,
+						y * cellSize + yMin + cellSize / 2);
+				}
+				last_is_empty = true;
+			}
+			else
+			{
+				last_is_empty = false;
+			}
 		}
 	}
 
@@ -153,13 +167,11 @@ void occupancy2DFromLaserScan(
 	{
 		empty = cv::Mat(1, (int)emptyIndices.size(), CV_32FC2);
 		int i=0;
-		for(std::list<int>::iterator iter=emptyIndices.begin();iter!=emptyIndices.end(); ++iter)
+		for(auto iter=emptyIndices.begin();iter!=emptyIndices.end(); ++iter)
 		{
-			int y = *iter / map8S.cols;
-			int x = *iter - y*map8S.cols;
 			cv::Vec2f * ptr = empty.ptr<cv::Vec2f>();
-			ptr[i][0] = (float(x))*cellSize + xMin;
-			ptr[i][1] = (float(y))*cellSize + yMin;
+			ptr[i][0] = iter->first;
+			ptr[i][1] = iter->second;
 			++i;
 		}
 	}

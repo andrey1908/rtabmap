@@ -1205,25 +1205,47 @@ void OccupancyGridBuilder::deployLocalMap(TemporaryColoredOccupancyMap & map, in
 	MEASURE_BLOCK_TIME(OccupancyGrid__deployLocalMap__temporary);
 	const Node & node = map.nodes.at(nodeId);
 	UASSERT(node.transformedLocalPoints2d.has_value());
+	int width = map.missCounter.cols();
+	int height = map.missCounter.rows();
+	Eigen::MatrixXi missCounter = Eigen::MatrixXi::Constant(height, width, 0);
+	Eigen::MatrixXi hitCounter = Eigen::MatrixXi::Constant(height, width, 0);
+	Eigen::MatrixXi colors = Eigen::MatrixXi::Constant(height, width, -1);
 	for (int i = 0; i < node.transformedLocalPoints2d->cols(); i++)
 	{
 		int x = node.transformedLocalPoints2d->coeff(0, i) - map.mapLimits.minX;
 		int y = node.transformedLocalPoints2d->coeff(1, i) - map.mapLimits.minY;
-		UASSERT(x >= 0 && x < map.missCounter.cols() && y >= 0 && y < map.missCounter.rows());
+		UASSERT(x >= 0 && x < width && y >= 0 && y < height);
 
 		bool free = (i < node.localMap.numGround + node.localMap.numEmpty);
 		if (free)
 		{
-			map.missCounter(y, x) += 1;
+			missCounter(y, x) += 1;
 		}
 		else
 		{
-			map.hitCounter(y, x) += 1;
+			hitCounter(y, x) += 1;
 		}
-
 		int localMapColor = node.localMap.colors[i];
-		int & color = map.colors(y, x);
+		int & color = colors(y, x);
 		color = localMapColor;
+	}
+	for (int x = 0; x < width; x++)
+	{
+		for (int y = 0; y < height; y++)
+		{
+			if (hitCounter(y, x) > 0)
+			{
+				map.hitCounter(y, x) += 1;
+			}
+			else if (missCounter(y, x) > 0)
+			{
+				map.missCounter(y, x) += 1;
+			}
+			if (colors(y, x) != -1)
+			{
+				map.colors(y, x) = colors(y, x);
+			}
+		}
 	}
 }
 
@@ -1232,24 +1254,40 @@ void OccupancyGridBuilder::removeLocalMap(TemporaryColoredOccupancyMap & map, in
 	MEASURE_BLOCK_TIME(OccupancyGrid__removeLocalMap__temporary);
 	const Node & node = map.nodes.at(nodeId);
 	UASSERT(node.transformedLocalPoints2d.has_value());
+	int width = map.missCounter.cols();
+	int height = map.missCounter.rows();
+	Eigen::MatrixXi missCounter = Eigen::MatrixXi::Constant(height, width, 0);
+	Eigen::MatrixXi hitCounter = Eigen::MatrixXi::Constant(height, width, 0);
 	for (int i = 0; i < node.transformedLocalPoints2d->cols(); i++)
 	{
 		int x = node.transformedLocalPoints2d->coeff(0, i) - map.mapLimits.minX;
 		int y = node.transformedLocalPoints2d->coeff(1, i) - map.mapLimits.minY;
-		UASSERT(x >= 0 && x < map.missCounter.cols() && y >= 0 && y < map.missCounter.rows());
+		UASSERT(x >= 0 && x < width && y >= 0 && y < height);
 
 		bool free = (i < node.localMap.numGround + node.localMap.numEmpty);
 		if (free)
 		{
-			int & misses = map.missCounter(y, x);
-			misses -= 1;
-			UASSERT(misses >= 0);
+			missCounter(y, x) += 1;
 		}
 		else
 		{
-			int & hits = map.hitCounter(y, x);
-			hits -= 1;
-			UASSERT(hits >= 0);
+			hitCounter(y, x) += 1;
+		}
+	}
+	for (int x = 0; x < width; x++)
+	{
+		for (int y = 0; y < height; y++)
+		{
+			if (hitCounter(y, x) > 0)
+			{
+				map.hitCounter(y, x) -= 1;
+				UASSERT(map.hitCounter(y, x) >= 0);
+			}
+			else if (missCounter(y, x) > 0)
+			{
+				map.missCounter(y, x) -= 1;
+				UASSERT(map.missCounter(y, x) >= 0);
+			}
 		}
 	}
 	map.nodes.erase(nodeId);
