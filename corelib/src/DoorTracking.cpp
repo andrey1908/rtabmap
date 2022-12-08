@@ -37,10 +37,9 @@ void DoorTracking::precomputeCellToCheckForOccupation()
 }
 
 std::vector<DoorTracking::Cell>
-DoorTracking::getOccupiedCells(const cv::Mat& image, const Cell& doorCenterEstimation)
+DoorTracking::getOccupiedCells(const cv::Mat& occupancyGrid, const Cell& doorCenterEstimation)
 {
 	MEASURE_BLOCK_TIME(getOccupiedCells);
-	UASSERT(image.type() == CV_8U);
 	std::vector<Cell> occupiedCells;
 	int ey = doorCenterEstimation.first;
 	int ex = doorCenterEstimation.second;
@@ -48,11 +47,11 @@ DoorTracking::getOccupiedCells(const cv::Mat& image, const Cell& doorCenterEstim
 	{
 		int cy = cell.first + ey;
 		int cx = cell.second + ex;
-		if (cy < 0 || cx < 0 || cy >= image.rows || cx >= image.cols)
+		if (cy < 0 || cx < 0 || cy >= occupancyGrid.rows || cx >= occupancyGrid.cols)
 		{
 			continue;
 		}
-		if (image.at<std::uint8_t>(cy, cx) == occupiedCellValue)
+		if (occupancyGrid.at<std::uint8_t>(cy, cx) == occupiedCellValue)
 		{
 			occupiedCells.emplace_back(cy, cx);
 		}
@@ -134,10 +133,11 @@ DoorTracking::findClosestCellsInSegments(const Segment& segment1, const Segment&
 }
 
 std::pair<DoorTracking::Cell, DoorTracking::Cell>
-DoorTracking::trackDoor(const cv::Mat& image, const Cell& doorCenterEstimation)
+DoorTracking::trackDoor(const cv::Mat& occupancyGrid, const Cell& doorCenterEstimation)
 {
 	MEASURE_BLOCK_TIME(trackDoor);
-	const std::vector<Cell>& occupiedCells = getOccupiedCells(image, doorCenterEstimation);
+	UASSERT(occupancyGrid.type() == CV_8U);
+	const std::vector<Cell>& occupiedCells = getOccupiedCells(occupancyGrid, doorCenterEstimation);
 	const std::vector<Segment>& segments = segmentation(occupiedCells);
 	int minEstimationErrorSqr = std::numeric_limits<int>::max();
 	std::pair<Cell, Cell> doorCorners(Cell(-1, -1), Cell(-1, -1));
