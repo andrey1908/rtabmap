@@ -2,16 +2,26 @@
 #include <rtabmap/utilite/ULogger.h>
 #include "time_measurer/time_measurer.h"
 
-DoorTracking::DoorTracking(int smallRadius, int largeRadius) :
-		smallRadius_(smallRadius), largeRadius_(largeRadius)
+namespace rtabmap {
+
+DoorTracking::DoorTracking(int smallRadius, int largeRadius)
 {
-	smallRadiusSqr_ = smallRadius * smallRadius;
-	doubleSmallRadius_ = smallRadius * 2;
+	initialize(smallRadius, largeRadius);
+}
+
+void DoorTracking::initialize(int smallRadius, int largeRadius)
+{
+	UASSERT(initialized_ == false);
+	smallRadius_ = smallRadius;
+	largeRadius_ = largeRadius;
+	smallRadiusSqr_ = smallRadius_ * smallRadius_;
+	doubleSmallRadius_ = smallRadius_ * 2;
 	doubleSmallRadiusSqr_ = doubleSmallRadius_ * doubleSmallRadius_;
-	largeRadiusSqr_ = largeRadius * largeRadius;
-	doubleLargeRadius_ = largeRadius * 2;
+	largeRadiusSqr_ = largeRadius_ * largeRadius_;
+	doubleLargeRadius_ = largeRadius_ * 2;
 	doubleLargeRadiusSqr_ = doubleLargeRadius_ * doubleLargeRadius_;
 	precomputeCellToCheckForOccupation();
+	initialized_ = true;
 }
 
 inline int DoorTracking::cellsDistanceSqr(const Cell& a, const Cell& b)
@@ -136,6 +146,7 @@ std::pair<DoorTracking::Cell, DoorTracking::Cell>
 DoorTracking::trackDoor(const cv::Mat& occupancyGrid, const Cell& doorCenterEstimation)
 {
 	MEASURE_BLOCK_TIME(trackDoor);
+	UASSERT(initialized_ == true);
 	UASSERT(occupancyGrid.type() == CV_8U);
 	const std::vector<Cell>& occupiedCells = getOccupiedCells(occupancyGrid, doorCenterEstimation);
 	const std::vector<Segment>& segments = segmentation(occupiedCells);
@@ -159,4 +170,6 @@ DoorTracking::trackDoor(const cv::Mat& occupancyGrid, const Cell& doorCenterEsti
 		}
 	}
 	return doorCorners;
+}
+
 }

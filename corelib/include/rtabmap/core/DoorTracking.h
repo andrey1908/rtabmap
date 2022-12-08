@@ -4,6 +4,8 @@
 #include <vector>
 #include <utility>
 
+namespace rtabmap {
+
 class DoorTracking
 {
 private:
@@ -13,9 +15,11 @@ public:
 	using Cell = std::pair<int, int>;  // (y, x)
 	using Segment = std::vector<Cell>;
 
+	DoorTracking() {};
 	DoorTracking(int smallRadius, int largeRadius);
 	~DoorTracking() {};
 
+	void initialize(int smallRadius, int largeRadius);
 	std::pair<Cell, Cell> trackDoor(const cv::Mat& occupancyGrid, const Cell& doorCenterEstimation);
 
 private:
@@ -28,6 +32,8 @@ private:
 	std::pair<Cell, Cell> findClosestCellsInSegments(const Segment& segment1, const Segment& segment2);
 
 private:
+	bool initialized_;
+
 	int smallRadius_;
 	int smallRadiusSqr_;
 	int doubleSmallRadius_;
@@ -39,3 +45,5 @@ private:
 
 	std::vector<Cell> cellToCheckForOccupation_;
 };
+
+}
