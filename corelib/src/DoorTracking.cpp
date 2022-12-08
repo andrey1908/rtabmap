@@ -40,6 +40,7 @@ std::vector<DoorTracking::Cell>
 DoorTracking::getOccupiedCells(const cv::Mat& image, const Cell& doorCenterEstimation)
 {
 	MEASURE_BLOCK_TIME(getOccupiedCells);
+	UASSERT(image.type() == CV_8U);
 	std::vector<Cell> occupiedCells;
 	int ey = doorCenterEstimation.first;
 	int ex = doorCenterEstimation.second;
