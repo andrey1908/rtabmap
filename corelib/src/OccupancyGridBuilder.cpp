@@ -1473,6 +1473,15 @@ float OccupancyGridBuilder::cellSize() const
 	return cellSize_;
 }
 
+std::pair<float, float> OccupancyGridBuilder::getGridOrigin() const
+{
+	MapLimits mapLimits = MapLimits::unite(map_.mapLimits, temporaryMap_.mapLimits);
+	UASSERT(mapLimits.valid());
+	float originX = mapLimits.minX * cellSize_;
+	float originY = mapLimits.minY * cellSize_;
+	return std::make_pair(originX, originY);
+}
+
 int OccupancyGridBuilder::maxTemporaryLocalMaps() const
 {
 	return maxTemporaryLocalMaps_;
