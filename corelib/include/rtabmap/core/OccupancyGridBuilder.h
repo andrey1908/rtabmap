@@ -189,6 +189,7 @@ public:
 	ColorGrid getColorGrid(float & minX, float & minY) const;
 
 	float cellSize() const;
+	std::pair<float, float> getGridOrigin() const;
 	int maxTemporaryLocalMaps() const;
 	const std::map<int, Node> & nodes() const;
 	const cv::Mat & lastDilatedSemantic() const;
