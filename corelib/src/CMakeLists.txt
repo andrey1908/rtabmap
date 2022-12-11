@@ -27,7 +27,9 @@ SET(SRC_FILES
 
 	OccupancyGridBuilder.cpp
 	
+	LocalMapBuilder.cpp
 	DoorTracking.cpp
+	RayTracing.cpp
 )
 
 # to get includes in visual studio

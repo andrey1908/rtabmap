@@ -35,11 +35,11 @@ inline int DoorTracking::cellsDistanceSqr(const Cell& a, const Cell& b)
 void DoorTracking::precomputeCellToCheckForOccupation()
 {
 	for (int y = -doubleLargeRadius_; y <= doubleLargeRadius_; y++)
-    {
+	{
 		for (int x = -doubleLargeRadius_; x <= doubleLargeRadius_; x++)
-        {
+		{
 			if (y * y + x * x <= doubleLargeRadiusSqr_)
-            {
+			{
 				cellToCheckForOccupation_.emplace_back(y, x);
 			}
 		}

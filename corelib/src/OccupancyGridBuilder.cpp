@@ -81,7 +81,8 @@ OccupancyGridBuilder::OccupancyGridBuilder(const ParametersMap & parameters) :
 	temporarilyOccupiedCellColor_(Parameters::defaultGridTemporarilyOccupiedCellColor()),
 	showTemporarilyOccupiedCells_(Parameters::defaultGridShowTemporarilyOccupiedCells()),
 	maxTemporaryLocalMaps_(Parameters::defaultGridMaxTemporaryLocalMaps()),
-	sensorBlindRange2d_(Parameters::defaultGridSensorBlindRange2d())
+	sensorBlindRange2d_(Parameters::defaultGridSensorBlindRange2d()),
+	localMapBuilder_(parameters)
 {
 	parseParameters(parameters);
 	unknownLogodds_ = probClampingMax_ + 1.0f;
@@ -255,6 +256,10 @@ void OccupancyGridBuilder::parseParameters(const ParametersMap & parameters)
 
 OccupancyGridBuilder::LocalMap OccupancyGridBuilder::createLocalMap(const Signature & signature) const
 {
+	const LocalMapBuilder::LocalMap localMap =
+		localMapBuilder_.createLocalMap(signature);
+	return LocalMap();
+
 	MEASURE_BLOCK_TIME(OccupancyGrid__createLocalMap);
 	cv::Mat groundCells;
 	cv::Mat emptyCells;
@@ -389,10 +394,10 @@ OccupancyGridBuilder::LocalMap OccupancyGridBuilder::createLocalMap(const Signat
 		}
 	}
 
-	LocalMap localMap = cvMatsToLocalMap(groundCells, emptyCells, obstacleCells);
-	localMap.sensorBlindRange2dSqr = sensorBlindRange2dSqr_;
-	localMap.toSensor = localTransform;
-	return localMap;
+	// LocalMap localMap = cvMatsToLocalMap(groundCells, emptyCells, obstacleCells);
+	// localMap.sensorBlindRange2dSqr = sensorBlindRange2dSqr_;
+	// localMap.toSensor = localTransform;
+	// return localMap;
 }
 
 void OccupancyGridBuilder::createLocalMap(

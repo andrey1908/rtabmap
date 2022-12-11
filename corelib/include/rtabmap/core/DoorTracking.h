@@ -2,7 +2,6 @@
 
 #include <opencv2/opencv.hpp>
 #include <vector>
-#include <utility>
 
 namespace rtabmap {
 
@@ -32,7 +31,7 @@ private:
 	std::pair<Cell, Cell> findClosestCellsInSegments(const Segment& segment1, const Segment& segment2);
 
 private:
-	bool initialized_;
+	bool initialized_ = false;
 
 	int smallRadius_;
 	int smallRadiusSqr_;

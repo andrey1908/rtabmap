@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pcl/pcl_base.h>
 #include <rtabmap/core/Parameters.h>
 #include <rtabmap/core/Signature.h>
+#include <rtabmap/core/LocalMapBuilder.h>
 
 #include <memory>
 #include <optional>
@@ -128,7 +129,7 @@ public:
 	struct LocalMap
 	{
 		int numGround, numEmpty, numObstacles;
-		Eigen::Matrix3Xf points;
+		Eigen::Matrix3Xf points;  // z = 0
 		std::vector<int> colors;
 
 		float sensorBlindRange2dSqr;
@@ -292,6 +293,8 @@ private:
 	std::unique_ptr<ColoredOccupancyMap> cachedMap_;
 
 	mutable cv::Mat lastDilatedSemantic_;
+
+	LocalMapBuilder localMapBuilder_;
 };
 
 }
