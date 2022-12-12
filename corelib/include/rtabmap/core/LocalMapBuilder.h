@@ -6,8 +6,6 @@
 #include <rtabmap/core/Transform.h>
 #include <rtabmap/core/RayTracing.h>
 
-#include <pcl/point_cloud.h>
-
 #include <vector>
 #include <utility>
 #include <Eigen/Core>
