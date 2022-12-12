@@ -83,6 +83,7 @@ LocalMapBuilder::LocalMap LocalMapBuilder::createLocalMap(const Signature& signa
 
 Eigen::Matrix3Xf LocalMapBuilder::convertLaserScan(const LaserScan& laserScan) const
 {
+	MEASURE_BLOCK_TIME(____convertLaserScan);
 	Eigen::Matrix3Xf points(3, laserScan.size());
 	for (int i = 0; i < laserScan.size(); i++)
 	{
@@ -98,6 +99,7 @@ Eigen::Matrix3Xf LocalMapBuilder::convertLaserScan(const LaserScan& laserScan) c
 
 Eigen::Matrix3Xf LocalMapBuilder::filterMaxRange(const Eigen::Matrix3Xf& points) const
 {
+	MEASURE_BLOCK_TIME(____filterMaxRange);
 	std::vector<int> indices;
 	indices.reserve(points.cols());
 	for (int i = 0; i < points.cols(); i++)
@@ -126,6 +128,7 @@ Eigen::Matrix3Xf LocalMapBuilder::filterMaxRange(const Eigen::Matrix3Xf& points)
 Eigen::Matrix3Xf LocalMapBuilder::transformPoints(const Eigen::Matrix3Xf& points,
 	const Transform& transform) const
 {
+	MEASURE_BLOCK_TIME(____transformPoints);
 	Eigen::Matrix3Xf transformed =
 		(transform.toEigen3fRotation() * points).colwise() +
 		transform.toEigen3fTranslation();
@@ -134,6 +137,7 @@ Eigen::Matrix3Xf LocalMapBuilder::transformPoints(const Eigen::Matrix3Xf& points
 
 Eigen::Matrix2Xf LocalMapBuilder::getObstaclePoints(const Eigen::Matrix3Xf& points) const
 {
+	MEASURE_BLOCK_TIME(____getObstaclePoints);
 	std::vector<int> obstaclePointsIndices;
 	obstaclePointsIndices.reserve(points.cols());
 	for (int i = 0; i < points.cols(); i++)
@@ -159,6 +163,7 @@ Eigen::Matrix2Xf LocalMapBuilder::getObstaclePoints(const Eigen::Matrix3Xf& poin
 cv::Mat LocalMapBuilder::gridFromObstacles(const Eigen::Matrix2Xf& points,
 	const Eigen::Vector2f& sensor, int& minY, int& minX) const
 {
+	MEASURE_BLOCK_TIME(____gridFromObstacles);
 	float minXf = sensor(0);
 	float minYf = sensor(1);
 	float maxXf = sensor(0);
@@ -194,6 +199,7 @@ cv::Mat LocalMapBuilder::gridFromObstacles(const Eigen::Matrix2Xf& points,
 void LocalMapBuilder::traceRays(cv::Mat& grid,
 	const Eigen::Vector2f& sensor, int minY, int minX) const
 {
+	MEASURE_BLOCK_TIME(____traceRays);
 	RayTracing::Cell origin;
 	origin.y = std::floor(sensor(1) / cellSize_) - minY;
 	origin.x = std::floor(sensor(0) / cellSize_) - minX;
@@ -203,6 +209,7 @@ void LocalMapBuilder::traceRays(cv::Mat& grid,
 LocalMapBuilder::LocalMap LocalMapBuilder::localMapFromGrid(const cv::Mat& grid,
 	int minY, int minX) const
 {
+	MEASURE_BLOCK_TIME(____localMapFromGrid);
 	LocalMap localMap;
 	std::vector<std::pair<int, int>> emptyCells;
 	std::vector<std::pair<int, int>> occupiedCells;
