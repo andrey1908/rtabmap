@@ -767,14 +767,14 @@ class RTABMAP_EXP Parameters
 	RTABMAP_PARAM(GridGlobal, TemporaryProbHit,     float,  0.7,     "Probability of a hit for temporary map (value between 0.5 and 1).");
 	RTABMAP_PARAM(GridGlobal, FloodFillDepth,       unsigned int, 0, "Flood fill filter (0=disabled), used to remove empty cells outside the map. The flood fill is done at the specified depth (between 1 and 16) of the OctoMap.");
 
-	RTABMAP_PARAM(Grid, CellSize,                float,  0.05,    "Resolution of the occupancy grid.");
+	RTABMAP_PARAM(Grid, CellSize,                float,  0.10,    "Resolution of the occupancy grid.");
 	RTABMAP_PARAM(LocalMap, MaxRange,                float,  10.0,    "Maximum range from sensor (0=disabled).");
 	RTABMAP_PARAM(LocalMap, MinObstacleHeight,       float,  0.0,     "Minimum obstacles height.");
-	RTABMAP_PARAM(LocalMap, MaxObstacleHeight,       float,  2.0,     "Maximum obstacles height.");
+	RTABMAP_PARAM(LocalMap, MaxObstacleHeight,       float,  1.5,     "Maximum obstacles height.");
 	RTABMAP_PARAM(LocalMap, UseRayTracing,           bool,   false,   "Use ray tracing algorithm.");
 	RTABMAP_PARAM(RayTracing, MaxVisibleRange,            float,  10.0,    "Maximum visible range for ray tracing.");
 	RTABMAP_PARAM(RayTracing, MaxRayTracingRange,         float,  10.0,    "Maximum ray tracing range.");
-	RTABMAP_PARAM(RayTracing, TraceRaysIntoUnknownSpace,  bool,   false,   "Trace rays even towards directions where there are no obstacles.");
+	RTABMAP_PARAM(RayTracing, TraceRaysIntoUnknownSpace,  bool,   true,    "Trace rays even towards directions where there are no obstacles.");
 
 	RTABMAP_PARAM(Marker, Dictionary,             int,   0,     "Dictionary to use: DICT_ARUCO_4X4_50=0, DICT_ARUCO_4X4_100=1, DICT_ARUCO_4X4_250=2, DICT_ARUCO_4X4_1000=3, DICT_ARUCO_5X5_50=4, DICT_ARUCO_5X5_100=5, DICT_ARUCO_5X5_250=6, DICT_ARUCO_5X5_1000=7, DICT_ARUCO_6X6_50=8, DICT_ARUCO_6X6_100=9, DICT_ARUCO_6X6_250=10, DICT_ARUCO_6X6_1000=11, DICT_ARUCO_7X7_50=12, DICT_ARUCO_7X7_100=13, DICT_ARUCO_7X7_250=14, DICT_ARUCO_7X7_1000=15, DICT_ARUCO_ORIGINAL = 16, DICT_APRILTAG_16h5=17, DICT_APRILTAG_25h9=18, DICT_APRILTAG_36h10=19, DICT_APRILTAG_36h11=20");
 	RTABMAP_PARAM(Marker, Length,                 float, 0,     "The length (m) of the markers' side. 0 means automatic marker length estimation using the depth image (the camera should look at the marker perpendicularly for initialization).");
