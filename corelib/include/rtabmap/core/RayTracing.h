@@ -65,6 +65,15 @@ public:
 
 	void traceRays(cv::Mat& grid, const Cell& origin) const;
 
+	inline bool traceRaysIntoUnknownSpace() const
+	{
+		return traceRaysIntoUnknownSpace_;
+	}
+	inline float maxRayTracingRange() const
+	{
+		return maxRayTracingRangeF_;
+	}
+
 private:
 	void initializeDefaultParameters();
 	void precompute();

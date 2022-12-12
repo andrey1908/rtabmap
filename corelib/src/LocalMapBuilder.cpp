@@ -69,8 +69,8 @@ LocalMapBuilder::LocalMap LocalMapBuilder::createLocalMap(const Signature& signa
 	int minY, minX;
 	cv::Mat grid;
 	Eigen::Vector2f sensor;
-	sensor(0) = transform.translation().x();
-	sensor(1) = transform.translation().y();
+	sensor.x() = transform.translation().x();
+	sensor.y() = transform.translation().y();
 	grid = gridFromObstacles(points2d, sensor, minY, minX);
 	if (useRayTracing_)
 	{
@@ -164,10 +164,10 @@ cv::Mat LocalMapBuilder::gridFromObstacles(const Eigen::Matrix2Xf& points,
 	const Eigen::Vector2f& sensor, int& minY, int& minX) const
 {
 	MEASURE_BLOCK_TIME(____gridFromObstacles);
-	float minXf = sensor(0);
-	float minYf = sensor(1);
-	float maxXf = sensor(0);
-	float maxYf = sensor(1);
+	float minXf = sensor.x();
+	float minYf = sensor.y();
+	float maxXf = sensor.x();
+	float maxYf = sensor.y();
 	for (int i = 0; i < points.cols(); i++)
 	{
 		float x = points(0, i);
@@ -176,6 +176,14 @@ cv::Mat LocalMapBuilder::gridFromObstacles(const Eigen::Matrix2Xf& points,
 		minYf = std::min(minYf, y);
 		maxXf = std::max(maxXf, x);
 		maxYf = std::max(maxYf, y);
+	}
+	if (useRayTracing_ && rayTracing_.traceRaysIntoUnknownSpace())
+	{
+		float range = rayTracing_.maxRayTracingRange();
+		minXf = std::min(minXf, -range + sensor.x());
+		minYf = std::min(minYf, -range + sensor.y());
+		maxXf = std::max(maxXf,  range + sensor.x());
+		maxYf = std::max(maxYf,  range + sensor.y());
 	}
 
 	minX = std::floor(minXf / cellSize_);
@@ -201,8 +209,8 @@ void LocalMapBuilder::traceRays(cv::Mat& grid,
 {
 	MEASURE_BLOCK_TIME(____traceRays);
 	RayTracing::Cell origin;
-	origin.y = std::floor(sensor(1) / cellSize_) - minY;
-	origin.x = std::floor(sensor(0) / cellSize_) - minX;
+	origin.y = std::floor(sensor.y() / cellSize_) - minY;
+	origin.x = std::floor(sensor.x() / cellSize_) - minX;
 	rayTracing_.traceRays(grid, origin);
 }
 
