@@ -731,11 +731,9 @@ class RTABMAP_EXP Parameters
 	RTABMAP_PARAM(Grid, FootprintWidth,          float,  0.0,     "Footprint width used to filter points over the footprint of the robot. Footprint length should be set.");
 	RTABMAP_PARAM(Grid, FootprintHeight,         float,  0.0,     "Footprint height used to filter points over the footprint of the robot. Footprint length and width should be set.");
 	RTABMAP_PARAM(Grid, ScanDecimation,          int,    1,       uFormat("[%s=false] Decimation of the laser scan before creating cloud.", kGridFromDepth().c_str()));
-	RTABMAP_PARAM(Grid, CellSize,                float,  0.05,    "Resolution of the occupancy grid.");
 	RTABMAP_PARAM(Grid, PreVoxelFiltering,       bool,   true,    uFormat("Input cloud is downsampled by voxel filter (voxel size is \"%s\") before doing segmentation of obstacles and ground.", kGridCellSize().c_str()));
 	RTABMAP_PARAM(Grid, MapFrameProjection,      bool,   false,   "Projection in map frame. On a 3D terrain and a fixed local camera transform (the cloud is created relative to ground), you may want to disable this to do the projection in robot frame instead.");
 	RTABMAP_PARAM(Grid, NormalsSegmentation,     bool,   true,    "Segment ground from obstacles using point normals, otherwise a fast passthrough is used.");
-	RTABMAP_PARAM(Grid, MinObstacleHeight,       float,  0.0,     "Minimum obstacles height.");
 	RTABMAP_PARAM(Grid, MaxObstacleHeight,       float,  2.0,     "Maximum obstacles height.");
 	RTABMAP_PARAM(Grid, MinGroundHeight,         float,  0.0,     "Minimum ground height (0=disabled).");
 	RTABMAP_PARAM(Grid, MaxGroundHeight,         float,  0.0,     uFormat("Maximum ground height (0=disabled). Should be set if \"%s\" is false.", kGridNormalsSegmentation().c_str()));
@@ -748,7 +746,6 @@ class RTABMAP_EXP Parameters
 	RTABMAP_PARAM(Grid, NoiseFilteringMinNeighbors, int,     5,      "Noise filtering minimum neighbors.");
 	RTABMAP_PARAM(Grid, Scan2dUnknownSpaceFilled,   bool,    false,  uFormat("Unknown space filled. Only used with 2D laser scans. Use %s to set maximum range if laser scan max range is to set.", kGridRangeMax().c_str()));
 	RTABMAP_PARAM(Grid, RayTracing,                 bool,   true,    "Ray tracing is done for each occupied cell, filling unknown space between the sensor and occupied cells.");
-	RTABMAP_PARAM(Grid, MaxRange,                   float,  50.0,    "Maximum range from sensor (0=disabled).");
 	RTABMAP_PARAM(Grid, SemanticDilation,           int,     0,      "Dilate semantic image in pixels (0=disabled).");
 	RTABMAP_PARAM(Grid, MinSemanticRange,           float,   0.0,    "Minimum range for semantic to be added to laser scan.");
 	RTABMAP_PARAM(Grid, MaxSemanticRange,           float,   0.0,    "Maximum range for semantic to be added to laser scan. 0=inf.");
@@ -770,6 +767,11 @@ class RTABMAP_EXP Parameters
 	RTABMAP_PARAM(GridGlobal, TemporaryProbHit,     float,  0.7,     "Probability of a hit for temporary map (value between 0.5 and 1).");
 	RTABMAP_PARAM(GridGlobal, FloodFillDepth,       unsigned int, 0, "Flood fill filter (0=disabled), used to remove empty cells outside the map. The flood fill is done at the specified depth (between 1 and 16) of the OctoMap.");
 
+	RTABMAP_PARAM(Grid, CellSize,                float,  0.05,    "Resolution of the occupancy grid.");
+	RTABMAP_PARAM(LocalMap, MaxRange,                float,  10.0,    "Maximum range from sensor (0=disabled).");
+	RTABMAP_PARAM(LocalMap, MinObstacleHeight,       float,  0.0,     "Minimum obstacles height.");
+	RTABMAP_PARAM(LocalMap, MaxObstacleHeight,       float,  2.0,     "Maximum obstacles height.");
+	RTABMAP_PARAM(LocalMap, UseRayTracing,           bool,   false,   "Use ray tracing algorithm.");
 	RTABMAP_PARAM(RayTracing, MaxVisibleRange,            float,  10.0,    "Maximum visible range for ray tracing.");
 	RTABMAP_PARAM(RayTracing, MaxRayTracingRange,         float,  10.0,    "Maximum ray tracing range.");
 	RTABMAP_PARAM(RayTracing, TraceRaysIntoUnknownSpace,  bool,   false,   "Trace rays even towards directions where there are no obstacles.");

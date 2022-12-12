@@ -25,12 +25,17 @@ public:
 	};
 
 public:
-	LocalMapBuilder(const ParametersMap& parameters = ParametersMap());
-	void parseParameters(const ParametersMap& parameters);
+	LocalMapBuilder();
+	LocalMapBuilder(const ParametersMap& parameters);
+	void setDefaultParameters();
+	void updateParameters(const ParametersMap& parameters);
 
     LocalMap createLocalMap(const Signature& signature) const;
 
 private:
+	void initializeDefaultParameters();
+	void precompute();
+
 	Eigen::Matrix3Xf convertLaserScan(const LaserScan& laserScan) const;
 	Eigen::Matrix3Xf filterMaxRange(const Eigen::Matrix3Xf& points) const;
 	Eigen::Matrix3Xf transformPoints(const Eigen::Matrix3Xf& points,

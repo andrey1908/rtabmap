@@ -82,7 +82,7 @@ OccupancyGridBuilder::OccupancyGridBuilder(const ParametersMap & parameters) :
 	showTemporarilyOccupiedCells_(Parameters::defaultGridShowTemporarilyOccupiedCells()),
 	maxTemporaryLocalMaps_(Parameters::defaultGridMaxTemporaryLocalMaps()),
 	sensorBlindRange2d_(Parameters::defaultGridSensorBlindRange2d()),
-	localMapBuilder_(parameters)
+	localMapBuilder_()
 {
 	parseParameters(parameters);
 	unknownLogodds_ = probClampingMax_ + 1.0f;
@@ -252,13 +252,22 @@ void OccupancyGridBuilder::parseParameters(const ParametersMap & parameters)
 				Parameters::kGridMinGroundHeight().c_str());
 		minGroundHeight_ = 0;
 	}
+
+	localMapBuilder_.updateParameters(parameters);
 }
 
 OccupancyGridBuilder::LocalMap OccupancyGridBuilder::createLocalMap(const Signature & signature) const
 {
-	const LocalMapBuilder::LocalMap localMap =
+	LocalMapBuilder::LocalMap localMap =
 		localMapBuilder_.createLocalMap(signature);
-	return LocalMap();
+	LocalMap lm;
+	lm.numGround = 0;
+	lm.numEmpty = localMap.numEmpty;
+	lm.numObstacles = localMap.numObstacles;
+	lm.points = std::move(localMap.points);
+	lm.colors = std::move(localMap.colors);
+	lm.sensorBlindRange2dSqr = 0.0f;
+	return lm;
 
 	MEASURE_BLOCK_TIME(OccupancyGrid__createLocalMap);
 	cv::Mat groundCells;

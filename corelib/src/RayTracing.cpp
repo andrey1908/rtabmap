@@ -4,32 +4,97 @@
 
 namespace rtabmap {
 
-RayTracing::RayTracing(const ParametersMap& parameters) :
-	initializeRayTracing_(Parameters::defaultGridRayTracing()),
-	cellSize_(Parameters::defaultGridCellSize()),
-	maxVisibleRangeF_(Parameters::defaultRayTracingMaxVisibleRange()),
-	maxRayTracingRangeF_(Parameters::defaultRayTracingMaxRayTracingRange()),
-	traceRaysIntoUnknownSpace_(Parameters::defaultRayTracingTraceRaysIntoUnknownSpace())
+RayTracing::RayTracing()
 {
-	parseParameters(parameters);
-	if (initializeRayTracing_ == false)
+	initializeDefaultParameters();
+}
+
+RayTracing::RayTracing(const ParametersMap& parameters)
+{
+	initializeDefaultParameters();
+	updateParameters(parameters);
+}
+
+void RayTracing::initializeDefaultParameters()
+{
+	useRayTracing_ = Parameters::defaultLocalMapUseRayTracing();
+	if (useRayTracing_ == false)
 	{
 		return;
 	}
+	cellSize_ = Parameters::defaultGridCellSize();
+	maxVisibleRangeF_ = Parameters::defaultRayTracingMaxVisibleRange();
+	maxRayTracingRangeF_ = Parameters::defaultRayTracingMaxRayTracingRange();
+	traceRaysIntoUnknownSpace_ = Parameters::defaultRayTracingTraceRaysIntoUnknownSpace();
+	UASSERT(maxVisibleRangeF_ >= maxRayTracingRangeF_);
+	precompute();
+}
+
+void RayTracing::setDefaultParameters()
+{
+	initializeDefaultParameters();
+}
+
+void RayTracing::updateParameters(const ParametersMap& parameters)
+{
+	Parameters::parse(parameters, Parameters::kLocalMapUseRayTracing(), useRayTracing_);
+	if (useRayTracing_ == false)
+	{
+		return;
+	}
+	Parameters::parse(parameters, Parameters::kGridCellSize(), cellSize_);
+	Parameters::parse(parameters, Parameters::kRayTracingMaxVisibleRange(), maxVisibleRangeF_);
+	Parameters::parse(parameters, Parameters::kRayTracingMaxRayTracingRange(), maxRayTracingRangeF_);
+	Parameters::parse(parameters, Parameters::kRayTracingTraceRaysIntoUnknownSpace(), traceRaysIntoUnknownSpace_);
+	UASSERT(maxVisibleRangeF_ >= maxRayTracingRangeF_);
+	precompute();
+}
+
+void RayTracing::precompute()
+{
 	maxVisibleRange_ = std::lround(maxVisibleRangeF_ / cellSize_);
 	maxRayTracingRange_ = std::lround(maxRayTracingRangeF_ / cellSize_);
 	maxRayTracingRangeSqr_ = maxRayTracingRange_ * maxRayTracingRange_;
 	computeRays();
 }
 
-void RayTracing::parseParameters(const ParametersMap& parameters)
+void RayTracing::traceRays(cv::Mat& grid, const Cell& origin) const
 {
-	Parameters::parse(parameters, Parameters::kGridRayTracing(), initializeRayTracing_);
-	Parameters::parse(parameters, Parameters::kGridCellSize(), cellSize_);
-	Parameters::parse(parameters, Parameters::kRayTracingMaxVisibleRange(), maxVisibleRangeF_);
-	Parameters::parse(parameters, Parameters::kRayTracingMaxRayTracingRange(), maxRayTracingRangeF_);
-	Parameters::parse(parameters, Parameters::kRayTracingTraceRaysIntoUnknownSpace(), traceRaysIntoUnknownSpace_);
-	UASSERT(maxVisibleRangeF_ >= maxRayTracingRangeF_);
+	MEASURE_BLOCK_TIME(traceRays);
+	UASSERT(useRayTracing_ == true);
+	UASSERT(grid.type() == CV_8SC1);
+	UASSERT(origin.inFrame(grid.rows, grid.cols));
+	for (const Ray& ray : rays_)
+	{
+		litCells_.clear();
+		bool encounteredObstacle = false;
+		int i = 0;
+		for (Cell cell : ray.cells)
+		{
+			cell += origin;
+			if (!cell.inFrame(grid.rows, grid.cols))
+			{
+				break;
+			}
+			if (grid.at<std::int8_t>(cell.y, cell.x) == occupiedCellValue)
+			{
+				encounteredObstacle = true;
+				break;
+			}
+			if (i < ray.lightRayLength)
+			{
+				litCells_.emplace_back(cell);
+			}
+			i++;
+		}
+		if (encounteredObstacle || traceRaysIntoUnknownSpace_)
+		{
+			for (const Cell& litCell : litCells_)
+			{
+				grid.at<std::int8_t>(litCell.y, litCell.x) = emptyCellValue;
+			}
+		}
+	}
 }
 
 void RayTracing::addCirclePoints(std::list<Cell>& circle, int cy, int cx, int y, int x)
@@ -158,45 +223,6 @@ void RayTracing::computeRays()
 		longestLightRay = std::max(longestLightRay, ray.lightRayLength);
 	}
 	litCells_.reserve(longestLightRay);
-}
-
-void RayTracing::traceRays(cv::Mat& grid, const Cell& origin) const
-{
-	MEASURE_BLOCK_TIME(traceRays);
-	UASSERT(initializeRayTracing_ == true);
-	UASSERT(grid.type() == CV_8SC1);
-	UASSERT(origin.inFrame(grid.rows, grid.cols));
-	for (const Ray& ray : rays_)
-	{
-		litCells_.clear();
-		bool encounteredObstacle = false;
-		int i = 0;
-		for (Cell cell : ray.cells)
-		{
-			cell += origin;
-			if (!cell.inFrame(grid.rows, grid.cols))
-			{
-				break;
-			}
-			if (grid.at<std::int8_t>(cell.y, cell.x) == occupiedCellValue)
-			{
-				encounteredObstacle = true;
-				break;
-			}
-			if (i < ray.lightRayLength)
-			{
-				litCells_.emplace_back(cell);
-			}
-			i++;
-		}
-		if (encounteredObstacle || traceRaysIntoUnknownSpace_)
-		{
-			for (const Cell& litCell : litCells_)
-			{
-				grid.at<std::int8_t>(litCell.y, litCell.x) = emptyCellValue;
-			}
-		}
-	}
 }
 
 }
