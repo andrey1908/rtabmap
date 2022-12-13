@@ -52,18 +52,17 @@ LocalMapBuilder::LocalMap LocalMapBuilder::createLocalMap(const Signature& signa
 	const LaserScan& laserScan = signature.sensorData().laserScan();
 	const Transform& transform = laserScan.localTransform();
 	Eigen::Matrix3Xf points;
-	Eigen::Matrix2Xf points2d;
 	points = convertLaserScan(laserScan);
 	points = filterMaxRange(points);
 	points = transformPoints(points, transform);
-	points2d = getObstaclePoints(points);
+	points = getObstaclePoints(points);
 
 	int minY, minX;
 	cv::Mat grid;
 	Eigen::Vector2f sensor;
 	sensor.x() = transform.translation().x();
 	sensor.y() = transform.translation().y();
-	grid = gridFromObstacles(points2d, sensor, minY, minX);
+	grid = gridFromObstacles(points, sensor, minY, minX);
 	if (useRayTracing_)
 	{
 		traceRays(grid, sensor, minY, minX);
@@ -127,7 +126,7 @@ Eigen::Matrix3Xf LocalMapBuilder::transformPoints(const Eigen::Matrix3Xf& points
 	return transformed;
 }
 
-Eigen::Matrix2Xf LocalMapBuilder::getObstaclePoints(const Eigen::Matrix3Xf& points) const
+Eigen::Matrix3Xf LocalMapBuilder::getObstaclePoints(const Eigen::Matrix3Xf& points) const
 {
 	MEASURE_BLOCK_TIME(____getObstaclePoints);
 	std::vector<int> obstaclePointsIndices;
@@ -141,18 +140,19 @@ Eigen::Matrix2Xf LocalMapBuilder::getObstaclePoints(const Eigen::Matrix3Xf& poin
 		}
 	}
 
-	Eigen::Matrix2Xf obstaclePoints(2, obstaclePointsIndices.size());
+	Eigen::Matrix3Xf obstaclePoints(3, obstaclePointsIndices.size());
 	int i = 0;
 	for (int index : obstaclePointsIndices)
 	{
 		obstaclePoints(0, i) = points(0, index);
 		obstaclePoints(1, i) = points(1, index);
+		obstaclePoints(2, i) = points(2, index);
 		i++;
 	}
 	return obstaclePoints;
 }
 
-cv::Mat LocalMapBuilder::gridFromObstacles(const Eigen::Matrix2Xf& points,
+cv::Mat LocalMapBuilder::gridFromObstacles(const Eigen::Matrix3Xf& points,
 	const Eigen::Vector2f& sensor, int& minY, int& minX) const
 {
 	MEASURE_BLOCK_TIME(____gridFromObstacles);

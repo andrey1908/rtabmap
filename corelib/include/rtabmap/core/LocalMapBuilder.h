@@ -33,8 +33,8 @@ private:
 	Eigen::Matrix3Xf filterMaxRange(const Eigen::Matrix3Xf& points) const;
 	Eigen::Matrix3Xf transformPoints(const Eigen::Matrix3Xf& points,
 		const Transform& transform) const;
-	Eigen::Matrix2Xf getObstaclePoints(const Eigen::Matrix3Xf& points) const;
-	cv::Mat gridFromObstacles(const Eigen::Matrix2Xf& points,
+	Eigen::Matrix3Xf getObstaclePoints(const Eigen::Matrix3Xf& points) const;
+	cv::Mat gridFromObstacles(const Eigen::Matrix3Xf& points,
 		const Eigen::Vector2f& sensor, int& minY, int& minX) const;
 	void traceRays(cv::Mat& grid,
 		const Eigen::Vector2f& sensor, int minY, int minX) const;
