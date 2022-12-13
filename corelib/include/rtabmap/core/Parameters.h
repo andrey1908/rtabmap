@@ -768,9 +768,11 @@ class RTABMAP_EXP Parameters
 	RTABMAP_PARAM(GridGlobal, FloodFillDepth,       unsigned int, 0, "Flood fill filter (0=disabled), used to remove empty cells outside the map. The flood fill is done at the specified depth (between 1 and 16) of the OctoMap.");
 
 	RTABMAP_PARAM(Grid, CellSize,                float,  0.10,    "Resolution of the occupancy grid.");
-	RTABMAP_PARAM(LocalMap, MaxRange,                float,  10.0,    "Maximum range from sensor (0=disabled).");
+	RTABMAP_PARAM(LocalMap, MaxRange,                float,  10.0,    "Maximum range from sensor (0=inf).");
 	RTABMAP_PARAM(LocalMap, MinObstacleHeight,       float,  0.0,     "Minimum obstacles height.");
 	RTABMAP_PARAM(LocalMap, MaxObstacleHeight,       float,  1.5,     "Maximum obstacles height.");
+	RTABMAP_PARAM(LocalMap, MinSemanticRange,        float,  0.0,     "Minimum semantic range from camera.");
+	RTABMAP_PARAM(LocalMap, MaxSemanticRange,        float,  0.0,     "Maximum semantic range from camera (0=inf).");
 	RTABMAP_PARAM(LocalMap, UseRayTracing,           bool,   false,   "Use ray tracing algorithm.");
 	RTABMAP_PARAM(RayTracing, MaxVisibleRange,            float,  10.0,    "Maximum visible range for ray tracing.");
 	RTABMAP_PARAM(RayTracing, MaxRayTracingRange,         float,  10.0,    "Maximum ray tracing range.");
