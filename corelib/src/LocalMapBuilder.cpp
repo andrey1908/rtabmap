@@ -223,10 +223,10 @@ std::vector<LocalMapBuilder::Color> LocalMapBuilder::getPointsColors(
 				(maxSemanticRangeSqr_ == 0.0f || rangeSqr <= maxSemanticRangeSqr_))
 			{
 				const std::uint8_t* pixelColor = image.ptr<std::uint8_t>(v, u);
-				colors[i].b = pixelColor[0];
-				colors[i].g = pixelColor[1];
-				colors[i].r = pixelColor[2];
-				colors[i].missing = false;
+				colors[i].b() = pixelColor[0];
+				colors[i].g() = pixelColor[1];
+				colors[i].r() = pixelColor[2];
+				colors[i].missing() = false;
 			}
 		}
 	}
@@ -269,7 +269,7 @@ LocalMapBuilder::ColoredGrid LocalMapBuilder::coloredGridFromObstacles(
 	int width = maxX - coloredGrid.minX + 1;
 	int height = maxY - coloredGrid.minY + 1;
 	coloredGrid.grid = cv::Mat(height, width, CV_8SC1, RayTracing::unknownCellValue);
-	coloredGrid.colors = cv::Mat(height, width, CV_32SC1, Color::missingColor.data);
+	coloredGrid.colors = cv::Mat(height, width, CV_32SC1, Color::missingColor.data());
 	for (int i = 0; i < points.cols(); i++)
 	{
 		float xf = points(0, i);

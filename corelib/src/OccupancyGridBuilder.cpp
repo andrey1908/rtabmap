@@ -268,13 +268,13 @@ OccupancyGridBuilder::LocalMap OccupancyGridBuilder::createLocalMap(const Signat
 	lm.colors.reserve(lm.colors.size());
 	for (const LocalMapBuilder::Color& color : localMap.colors)
 	{
-		if (color.missing)
+		if (color.missing())
 		{
 			lm.colors.push_back(-1);
 		}
 		else
 		{
-			lm.colors.push_back(color.rgb);
+			lm.colors.push_back(color.rgb());
 		}
 	}
 	lm.sensorBlindRange2dSqr = 0.0f;

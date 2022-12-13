@@ -17,52 +17,54 @@ class LocalMapBuilder
 {
 public:
 
-	struct Color
+	class Color
 	{
-		Color()
+	public:
+		static const Color missingColor;
+
+		Color() { missing_ = true; }
+		Color(int rgb) { setRgb(rgb); };
+		inline bool operator==(const Color& other) const
 		{
-			missing = true;
+			return (missing_ && other.missing_) || data_ == other.data_;
 		}
-		Color(int otherRgb)
-		{
-			rgb = otherRgb;
-			missing = false;
-		}
-		bool operator==(const Color& other) const
-		{
-			return (missing == true && other.missing == true) ||
-				data == other.data;
-		}
-		bool operator!=(const Color& other) const
+		inline bool operator!=(const Color& other) const
 		{
 			return !operator==(other);
 		}
-		int brightness() const
+		inline int brightness() const
 		{
-			if (missing)
-			{
-				return -1;
-			}
-			return (int)r + (int)g + (int)b;
+			if (missing_) return -1;
+			return (int)r_ + (int)g_ + (int)b_;
 		}
+		inline std::uint8_t& b() { return b_; }
+		inline std::uint8_t b() const { return b_; }
+		inline std::uint8_t& g() { return g_; }
+		inline std::uint8_t g() const { return g_; }
+		inline std::uint8_t& r() { return r_; }
+		inline std::uint8_t r() const { return r_; }
+		inline bool& missing() { return missing_; }
+		inline bool missing() const { return missing_; }
+		inline int rgb() const { return rgb_; }
+		inline void setRgb(int rgb) { rgb_ = rgb; missing_ = false; };
+		inline int data() const { return data_; }
 
+	private:
 		union
 		{
 			union
 			{
 				struct
 				{
-					std::uint8_t b;
-					std::uint8_t g;
-					std::uint8_t r;
-					bool missing;
+					std::uint8_t b_;
+					std::uint8_t g_;
+					std::uint8_t r_;
+					bool missing_;
 				};
-				int rgb;
+				int rgb_;
 			};
-			int data;
+			int data_;
 		};
-
-		static const Color missingColor;
 	};
 
 	struct ColoredGrid
