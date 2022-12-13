@@ -36,15 +36,23 @@ void LocalMapBuilder::parseParameters(const ParametersMap& parameters)
 	maxRangeSqr_ = maxRange_ * maxRange_;
 	minSemanticRangeSqr_ = minSemanticRange_ * minSemanticRange_;
 	maxSemanticRangeSqr_ = maxSemanticRange_ * maxSemanticRange_;
+	if (semanticDilation_ == nullptr)
+	{
+		semanticDilation_ = std::make_unique<SemanticDilation>(parameters);
+	}
+	else
+	{
+		semanticDilation_->parseParameters(parameters);
+	}
 	if (useRayTracing_)
 	{
-		if (rayTracing_)
+		if (rayTracing_ == nullptr)
 		{
-			rayTracing_->parseParameters(parameters);
+			rayTracing_ = std::make_unique<RayTracing>(parameters);
 		}
 		else
 		{
-			rayTracing_ = std::make_unique<RayTracing>(parameters);
+			rayTracing_->parseParameters(parameters);
 		}
 	}
 	else
@@ -69,8 +77,22 @@ LocalMapBuilder::LocalMap LocalMapBuilder::createLocalMap(const Signature& signa
 	std::vector<Color> colors;
 	if (signature.sensorData().images().size())
 	{
-		colors = getPointsColors(obstacles, signature.sensorData().images(),
-			signature.sensorData().cameraModels());
+		if (semanticDilation_->dilationSize() > 0)
+		{
+			std::vector<cv::Mat> dilatedImages;
+			for (const cv::Mat& image : signature.sensorData().images())
+			{
+				cv::Mat dilatedImage = semanticDilation_->dilate(image);
+				dilatedImages.push_back(dilatedImage);
+			}
+			colors = getPointsColors(obstacles, dilatedImages,
+				signature.sensorData().cameraModels());
+		}
+		else
+		{
+			colors = getPointsColors(obstacles, signature.sensorData().images(),
+				signature.sensorData().cameraModels());
+		}
 	}
 	else
 	{

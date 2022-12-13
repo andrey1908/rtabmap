@@ -29,6 +29,7 @@ SET(SRC_FILES
 	
 	LocalMapBuilder.cpp
 	DoorTracking.cpp
+	SemanticDilation.cpp
 	RayTracing.cpp
 )
 

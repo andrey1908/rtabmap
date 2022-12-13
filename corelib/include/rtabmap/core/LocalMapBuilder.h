@@ -4,6 +4,7 @@
 #include <rtabmap/core/Signature.h>
 #include <rtabmap/core/LaserScan.h>
 #include <rtabmap/core/Transform.h>
+#include <rtabmap/core/SemanticDilation.h>
 #include <rtabmap/core/RayTracing.h>
 
 #include <vector>
@@ -115,6 +116,7 @@ private:
 	float maxSemanticRangeSqr_;
 	bool useRayTracing_;
 
+	std::unique_ptr<SemanticDilation> semanticDilation_;
 	std::unique_ptr<RayTracing> rayTracing_;
 };
 

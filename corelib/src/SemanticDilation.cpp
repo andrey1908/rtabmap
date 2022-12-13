@@ -1,0 +1,105 @@
+#include <rtabmap/core/SemanticDilation.h>
+#include <rtabmap/utilite/ULogger.h>
+
+#include <limits>
+
+#include "time_measurer/time_measurer.h"
+
+namespace rtabmap {
+
+const cv::Vec3b SemanticDilation::backgroundColor(0, 0, 0);
+
+SemanticDilation::SemanticDilation(const ParametersMap& parameters) :
+	dilationSize_(Parameters::defaultSemanticDilationDilationSize())
+{
+	parseParameters(parameters);
+}
+
+void SemanticDilation::parseParameters(const ParametersMap& parameters)
+{
+	Parameters::parse(parameters, Parameters::kSemanticDilationDilationSize(), dilationSize_);
+	UASSERT(dilationSize_ >= 0);
+
+	if (dilationSize_ > 0)
+	{
+		dilationSizeSqr_ = dilationSize_ * dilationSize_;
+		dilationWidth_ = 2 * dilationSize_ + 1;
+		computeDilationPixels();
+	}
+}
+
+cv::Mat SemanticDilation::dilate(const cv::Mat& image) const
+{
+	MEASURE_BLOCK_TIME(dilate);
+	UASSERT(image.type() == CV_8UC3);
+	UASSERT(dilationSize_ > 0);  // we need to do a copy of image
+		// even if no dilation is applied, but it consumes time
+		// (not much but it does)
+	cv::Mat dilated = cv::Mat::zeros(image.size(), image.type());
+	for (int y = 0; y < image.rows; y++)
+	{
+		int currentDilationWidth = dilationWidth_;
+		for (int x = 0; x < image.cols; x++)
+		{
+			currentDilationWidth =
+				std::min(currentDilationWidth + 1, dilationWidth_);
+			const cv::Vec3b& color = image.at<cv::Vec3b>(y, x);
+			if (color == backgroundColor)
+			{
+				continue;
+			}
+			for (int i = 0; i < dilationWidthToPixelsNum_[currentDilationWidth]; i++)
+			{
+				PixelCoords pixelCoords = dilationPixels_[i];
+				pixelCoords.y += y;
+				pixelCoords.x += x;
+				if (!pixelCoords.inFrame(dilated.rows, dilated.cols))
+				{
+					continue;
+				}
+				dilated.at<cv::Vec3b>(pixelCoords.y, pixelCoords.x) = color;
+			}
+			currentDilationWidth = 0;
+		}
+	}
+	return dilated;
+}
+
+void SemanticDilation::computeDilationPixels()
+{
+	dilationPixels_.clear();
+	dilationWidthToPixelsNum_.clear();
+	std::map<int, std::set<int>> rowToCols;
+	int numPixels = 0;
+	for (int y = -dilationSize_; y <= dilationSize_; y++)
+	{
+		for (int x = -dilationSize_; x <= dilationSize_; x++)
+		{
+			if (y * y + x * x <= dilationSizeSqr_)
+			{
+				rowToCols[y].insert(x);
+				numPixels++;
+			}
+		}
+	}
+	dilationWidthToPixelsNum_.push_back(0);
+	while (numPixels > 0)
+	{
+		for (auto& rowCols : rowToCols)
+		{
+			int row = rowCols.first;
+			std::set<int>& cols = rowCols.second;
+			if (cols.empty())
+			{
+				continue;
+			}
+			auto lastColIt = std::prev(cols.end());
+			dilationPixels_.push_back(PixelCoords{row, *lastColIt});
+			cols.erase(lastColIt);
+			numPixels--;
+		}
+		dilationWidthToPixelsNum_.push_back(dilationPixels_.size());
+	}
+}
+
+}
