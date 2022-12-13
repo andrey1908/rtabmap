@@ -57,11 +57,8 @@ private:
 	};
 
 public:
-	RayTracing();
-	RayTracing(const ParametersMap& parameters);
-	void setDefaultParameters();
-	void updateParameters(const ParametersMap& parameters);
-	~RayTracing() {};
+	RayTracing(const ParametersMap& parameters = ParametersMap());
+	void parseParameters(const ParametersMap& parameters);
 
 	void traceRays(cv::Mat& grid, const Cell& origin) const;
 
@@ -75,16 +72,12 @@ public:
 	}
 
 private:
-	void initializeDefaultParameters();
-	void precompute();
-
 	void addCirclePoints(std::list<Cell>& circle, int cy, int cx, int y, int x);
 	std::list<Cell> bresenhamCircle(int cy, int cx, int r);
 	std::list<Cell> bresenhamLine(const Cell& start, const Cell& end);
 	void computeRays();
 
 private:
-	bool useRayTracing_;
 	float cellSize_;
 	float maxVisibleRangeF_;
 	float maxRayTracingRangeF_;

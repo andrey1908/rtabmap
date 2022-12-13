@@ -4,54 +4,23 @@
 
 namespace rtabmap {
 
-RayTracing::RayTracing()
+RayTracing::RayTracing(const ParametersMap& parameters) :
+	cellSize_(Parameters::defaultGridCellSize()),
+	maxVisibleRangeF_(Parameters::defaultRayTracingMaxVisibleRange()),
+	maxRayTracingRangeF_(Parameters::defaultRayTracingMaxRayTracingRange()),
+	traceRaysIntoUnknownSpace_(Parameters::defaultRayTracingTraceRaysIntoUnknownSpace())
 {
-	initializeDefaultParameters();
+	parseParameters(parameters);
 }
 
-RayTracing::RayTracing(const ParametersMap& parameters)
+void RayTracing::parseParameters(const ParametersMap& parameters)
 {
-	initializeDefaultParameters();
-	updateParameters(parameters);
-}
-
-void RayTracing::initializeDefaultParameters()
-{
-	useRayTracing_ = Parameters::defaultLocalMapUseRayTracing();
-	if (useRayTracing_ == false)
-	{
-		return;
-	}
-	cellSize_ = Parameters::defaultGridCellSize();
-	maxVisibleRangeF_ = Parameters::defaultRayTracingMaxVisibleRange();
-	maxRayTracingRangeF_ = Parameters::defaultRayTracingMaxRayTracingRange();
-	traceRaysIntoUnknownSpace_ = Parameters::defaultRayTracingTraceRaysIntoUnknownSpace();
-	UASSERT(maxVisibleRangeF_ >= maxRayTracingRangeF_);
-	precompute();
-}
-
-void RayTracing::setDefaultParameters()
-{
-	initializeDefaultParameters();
-}
-
-void RayTracing::updateParameters(const ParametersMap& parameters)
-{
-	Parameters::parse(parameters, Parameters::kLocalMapUseRayTracing(), useRayTracing_);
-	if (useRayTracing_ == false)
-	{
-		return;
-	}
 	Parameters::parse(parameters, Parameters::kGridCellSize(), cellSize_);
 	Parameters::parse(parameters, Parameters::kRayTracingMaxVisibleRange(), maxVisibleRangeF_);
 	Parameters::parse(parameters, Parameters::kRayTracingMaxRayTracingRange(), maxRayTracingRangeF_);
 	Parameters::parse(parameters, Parameters::kRayTracingTraceRaysIntoUnknownSpace(), traceRaysIntoUnknownSpace_);
 	UASSERT(maxVisibleRangeF_ >= maxRayTracingRangeF_);
-	precompute();
-}
 
-void RayTracing::precompute()
-{
 	maxVisibleRange_ = std::lround(maxVisibleRangeF_ / cellSize_);
 	maxRayTracingRange_ = std::lround(maxRayTracingRangeF_ / cellSize_);
 	maxRayTracingRangeSqr_ = maxRayTracingRange_ * maxRayTracingRange_;
@@ -61,7 +30,6 @@ void RayTracing::precompute()
 void RayTracing::traceRays(cv::Mat& grid, const Cell& origin) const
 {
 	MEASURE_BLOCK_TIME(traceRays);
-	UASSERT(useRayTracing_ == true);
 	UASSERT(grid.type() == CV_8SC1);
 	UASSERT(origin.inFrame(grid.rows, grid.cols));
 	for (const Ray& ray : rays_)

@@ -253,7 +253,7 @@ void OccupancyGridBuilder::parseParameters(const ParametersMap & parameters)
 		minGroundHeight_ = 0;
 	}
 
-	localMapBuilder_.updateParameters(parameters);
+	localMapBuilder_.parseParameters(parameters);
 }
 
 OccupancyGridBuilder::LocalMap OccupancyGridBuilder::createLocalMap(const Signature & signature) const

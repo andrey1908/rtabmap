@@ -7,49 +7,41 @@
 
 namespace rtabmap {
 
-LocalMapBuilder::LocalMapBuilder()
+LocalMapBuilder::LocalMapBuilder(const ParametersMap& parameters) :
+	cellSize_(Parameters::defaultGridCellSize()),
+	maxRange_(Parameters::defaultLocalMapMaxRange()),
+	minObstacleHeight_(Parameters::defaultLocalMapMinObstacleHeight()),
+	maxObstacleHeight_(Parameters::defaultLocalMapMaxObstacleHeight()),
+	useRayTracing_(Parameters::defaultLocalMapUseRayTracing())
 {
-	initializeDefaultParameters();
+	parseParameters(parameters);
 }
 
-LocalMapBuilder::LocalMapBuilder(const ParametersMap& parameters)
+void LocalMapBuilder::parseParameters(const ParametersMap& parameters)
 {
-	initializeDefaultParameters();
-	updateParameters(parameters);
-}
-
-void LocalMapBuilder::initializeDefaultParameters()
-{
-	cellSize_ = Parameters::defaultGridCellSize();
-	maxRange_ = Parameters::defaultLocalMapMaxRange();
-	minObstacleHeight_ = Parameters::defaultLocalMapMinObstacleHeight();
-	maxObstacleHeight_ = Parameters::defaultLocalMapMaxObstacleHeight();
-	useRayTracing_ = Parameters::defaultLocalMapUseRayTracing();
-	UASSERT(minObstacleHeight_ < maxObstacleHeight_);
-	precompute();
-}
-
-void LocalMapBuilder::setDefaultParameters()
-{
-	rayTracing_.setDefaultParameters();
-	initializeDefaultParameters();
-}
-
-void LocalMapBuilder::updateParameters(const ParametersMap& parameters)
-{
-	rayTracing_.updateParameters(parameters);
 	Parameters::parse(parameters, Parameters::kGridCellSize(), cellSize_);
 	Parameters::parse(parameters, Parameters::kLocalMapMaxRange(), maxRange_);
 	Parameters::parse(parameters, Parameters::kLocalMapMinObstacleHeight(), minObstacleHeight_);
 	Parameters::parse(parameters, Parameters::kLocalMapMaxObstacleHeight(), maxObstacleHeight_);
 	Parameters::parse(parameters, Parameters::kLocalMapUseRayTracing(), useRayTracing_);
 	UASSERT(minObstacleHeight_ < maxObstacleHeight_);
-	precompute();
-}
 
-void LocalMapBuilder::precompute()
-{
 	maxRangeSqr_ = maxRange_ * maxRange_;
+	if (useRayTracing_)
+	{
+		if (rayTracing_)
+		{
+			rayTracing_->parseParameters(parameters);
+		}
+		else
+		{
+			rayTracing_ = std::make_unique<RayTracing>(parameters);
+		}
+	}
+	else
+	{
+		rayTracing_.reset();
+	}
 }
 
 LocalMapBuilder::LocalMap LocalMapBuilder::createLocalMap(const Signature& signature) const
@@ -177,9 +169,9 @@ cv::Mat LocalMapBuilder::gridFromObstacles(const Eigen::Matrix2Xf& points,
 		maxXf = std::max(maxXf, x);
 		maxYf = std::max(maxYf, y);
 	}
-	if (useRayTracing_ && rayTracing_.traceRaysIntoUnknownSpace())
+	if (useRayTracing_ && rayTracing_->traceRaysIntoUnknownSpace())
 	{
-		float range = rayTracing_.maxRayTracingRange();
+		float range = rayTracing_->maxRayTracingRange();
 		minXf = std::min(minXf, -range + sensor.x());
 		minYf = std::min(minYf, -range + sensor.y());
 		maxXf = std::max(maxXf,  range + sensor.x());
@@ -211,7 +203,7 @@ void LocalMapBuilder::traceRays(cv::Mat& grid,
 	RayTracing::Cell origin;
 	origin.y = std::floor(sensor.y() / cellSize_) - minY;
 	origin.x = std::floor(sensor.x() / cellSize_) - minX;
-	rayTracing_.traceRays(grid, origin);
+	rayTracing_->traceRays(grid, origin);
 }
 
 LocalMapBuilder::LocalMap LocalMapBuilder::localMapFromGrid(const cv::Mat& grid,
