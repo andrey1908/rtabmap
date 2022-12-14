@@ -10,9 +10,10 @@ namespace rtabmap {
 
 class SemanticDilation
 {
-private:
+public:
 	static const cv::Vec3b backgroundColor;  // (0, 0, 0)
 
+private:
 	struct PixelCoords {
 		bool inFrame(int h, int w) const {
 			return y >= 0 && x >= 0 && y < h && x < w;

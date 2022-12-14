@@ -15,8 +15,16 @@ namespace rtabmap {
 
 class LocalMapBuilder
 {
-public:
+private:
+	struct ColoredGrid
+	{
+		int minY;
+		int minX;
+		cv::Mat grid;
+		cv::Mat colors;
+	};
 
+public:
 	class Color
 	{
 	public:
@@ -65,14 +73,6 @@ public:
 			};
 			int data_;
 		};
-	};
-
-	struct ColoredGrid
-	{
-		int minY;
-		int minX;
-		cv::Mat grid;
-		cv::Mat colors;
 	};
 
 	struct LocalMap

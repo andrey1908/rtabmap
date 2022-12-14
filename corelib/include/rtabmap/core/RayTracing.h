@@ -11,9 +11,9 @@ namespace rtabmap {
 class RayTracing
 {
 public:
+	static constexpr std::int8_t unknownCellValue = -1;
 	static constexpr std::int8_t emptyCellValue = 0;
 	static constexpr std::int8_t occupiedCellValue = 100;
-	static constexpr std::int8_t unknownCellValue = -1;
 
 public:
 	struct Cell
