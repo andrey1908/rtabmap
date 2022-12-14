@@ -751,8 +751,6 @@ class RTABMAP_EXP Parameters
 	RTABMAP_PARAM(Grid, MaxSemanticRange,           float,   0.0,    "Maximum range for semantic to be added to laser scan. 0=inf.");
 	RTABMAP_PARAM(Grid, TemporarilyOccupiedCellColor,  int,  -1,     "Color of temporarily occupied cells. (-1) - do not extract temporarily occupied cells.");
 	RTABMAP_PARAM(Grid, ShowTemporarilyOccupiedCells,  bool, true,   "Show temporarily occupied cells.");
-	RTABMAP_PARAM(Grid, MaxTemporaryLocalMaps,         int,  1,      "Maximum number of temporary local maps.");
-	RTABMAP_PARAM(Grid, SensorBlindRange2d,         float,   0.0,    "Minimum range on surface at which sensor can see obstacles (0=disabled).");
 
 	RTABMAP_PARAM(GridGlobal, FootprintRadius,      float,  0.0,     "Footprint radius (m) used to clear all obstacles under the graph.");
 	RTABMAP_PARAM(GridGlobal, MaxNodes,             int,    0,       "Maximum nodes assembled in the map starting from the last node (0=unlimited).");
@@ -767,7 +765,21 @@ class RTABMAP_EXP Parameters
 	RTABMAP_PARAM(GridGlobal, TemporaryProbHit,     float,  0.7,     "Probability of a hit for temporary map (value between 0.5 and 1).");
 	RTABMAP_PARAM(GridGlobal, FloodFillDepth,       unsigned int, 0, "Flood fill filter (0=disabled), used to remove empty cells outside the map. The flood fill is done at the specified depth (between 1 and 16) of the OctoMap.");
 
+
+
 	RTABMAP_PARAM(Grid, CellSize,                float,  0.10,    "Resolution of the occupancy grid.");
+	RTABMAP_PARAM(GridGlobal, MissProb,          float,  0.4,     "Probability of a miss (value between 0 and 0.5).");
+	RTABMAP_PARAM(GridGlobal, HitProb,           float,  0.7,     "Probability of a hit (value between 0.5 and 1).");
+	RTABMAP_PARAM(GridGlobal, MinClampingProb,   float,  0.1192,  "Probability clamping minimum (value between 0 and 1).");
+	RTABMAP_PARAM(GridGlobal, MaxClampingProb,   float,  0.971,   "Probability clamping maximum (value between 0 and 1).");
+	RTABMAP_PARAM(GridGlobal, OccupancyProbThr,  float,  0.5,     "Occupancy threshold (value between 0 and 1).");
+	RTABMAP_PARAM(GridGlobal, TemporarilyOccupiedCellColor,  int,  -1,     "Color of temporarily occupied cells. They are not used to update the map.");
+	RTABMAP_PARAM(GridGlobal, ShowTemporarilyOccupiedCells,  bool, true,   "Show temporarily occupied cells.");
+	RTABMAP_PARAM(Grid, TemporaryMissProb,          float,  0.4,     "Probability of a miss (value between 0 and 0.5).");
+	RTABMAP_PARAM(Grid, TemporaryHitProb,           float,  0.7,     "Probability of a hit (value between 0.5 and 1).");
+	RTABMAP_PARAM(Grid, TemporaryOccupancyProbThr,  float,  0.5,     "Occupancy threshold (value between 0 and 1).");
+	RTABMAP_PARAM(Grid, MaxTemporaryLocalMaps,      int,    1,       "Maximum number of temporary local maps.");
+	RTABMAP_PARAM(Grid, SensorBlindRange2d,      float,   0.0,    "Minimum range on surface at which sensor can see obstacles (0=disabled).");
 	RTABMAP_PARAM(LocalMap, MaxRange,                float,  10.0,    "Maximum range from sensor (0=inf).");
 	RTABMAP_PARAM(LocalMap, MinObstacleHeight,       float,  0.0,     "Minimum obstacles height.");
 	RTABMAP_PARAM(LocalMap, MaxObstacleHeight,       float,  1.5,     "Maximum obstacles height.");
@@ -778,6 +790,8 @@ class RTABMAP_EXP Parameters
 	RTABMAP_PARAM(RayTracing, MaxVisibleRange,            float,  10.0,    "Maximum visible range for ray tracing.");
 	RTABMAP_PARAM(RayTracing, MaxRayTracingRange,         float,  10.0,    "Maximum ray tracing range.");
 	RTABMAP_PARAM(RayTracing, TraceRaysIntoUnknownSpace,  bool,   true,    "Trace rays even towards directions where there are no obstacles.");
+
+
 
 	RTABMAP_PARAM(Marker, Dictionary,             int,   0,     "Dictionary to use: DICT_ARUCO_4X4_50=0, DICT_ARUCO_4X4_100=1, DICT_ARUCO_4X4_250=2, DICT_ARUCO_4X4_1000=3, DICT_ARUCO_5X5_50=4, DICT_ARUCO_5X5_100=5, DICT_ARUCO_5X5_250=6, DICT_ARUCO_5X5_1000=7, DICT_ARUCO_6X6_50=8, DICT_ARUCO_6X6_100=9, DICT_ARUCO_6X6_250=10, DICT_ARUCO_6X6_1000=11, DICT_ARUCO_7X7_50=12, DICT_ARUCO_7X7_100=13, DICT_ARUCO_7X7_250=14, DICT_ARUCO_7X7_1000=15, DICT_ARUCO_ORIGINAL = 16, DICT_APRILTAG_16h5=17, DICT_APRILTAG_25h9=18, DICT_APRILTAG_36h10=19, DICT_APRILTAG_36h11=20");
 	RTABMAP_PARAM(Marker, Length,                 float, 0,     "The length (m) of the markers' side. 0 means automatic marker length estimation using the depth image (the camera should look at the marker perpendicularly for initialization).");

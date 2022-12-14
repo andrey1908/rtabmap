@@ -26,7 +26,9 @@ SET(SRC_FILES
 	stereo/StereoSGBM.cpp
 
 	OccupancyGridBuilder.cpp
-	
+
+	ColoredOccupancyGrid.cpp
+	TemporaryColoredOccupancyGrid.cpp
 	LocalMapBuilder.cpp
 	DoorTracking.cpp
 	SemanticDilation.cpp

@@ -88,6 +88,8 @@ public:
 
     LocalMap createLocalMap(const Signature& signature) const;
 
+	const cv::Mat& lastDilatedSemantic() const { return lastDilatedSemantic_; }
+
 private:
 	Eigen::Matrix3Xf convertLaserScan(const LaserScan& laserScan) const;
 	Eigen::Matrix3Xf filterMaxRange(const Eigen::Matrix3Xf& points) const;
@@ -120,6 +122,8 @@ private:
 
 	std::unique_ptr<SemanticDilation> semanticDilation_;
 	std::unique_ptr<RayTracing> rayTracing_;
+
+	mutable cv::Mat lastDilatedSemantic_;
 };
 
 }

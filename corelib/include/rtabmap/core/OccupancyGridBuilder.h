@@ -35,6 +35,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <rtabmap/core/Parameters.h>
 #include <rtabmap/core/Signature.h>
 #include <rtabmap/core/LocalMapBuilder.h>
+#include <rtabmap/core/ColoredOccupancyGrid.h>
+#include <rtabmap/core/TemporaryColoredOccupancyGrid.h>
+#include <rtabmap/core/ColoredOccupancyGridInterface.h>
 
 #include <memory>
 #include <optional>
@@ -42,201 +45,45 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace rtabmap {
 
-class RTABMAP_EXP OccupancyGridBuilder
+class OccupancyGridBuilder : public ColoredOccupancyGridInterface
 {
 public:
-	using OccupancyGrid = Eigen::Matrix<char, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-	using ColorGrid = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+	OccupancyGridBuilder(const ParametersMap& parameters = ParametersMap());
+	void parseParameters(const ParametersMap& parameters);
 
-private:
-	inline static float logodds(double probability)
-	{
-		return (float) log(probability/(1-probability));
-	}
-
-	inline static double probability(double logodds)
-	{
-		return 1. - ( 1. / (1. + exp(logodds)));
-	}
-
-	struct MapLimits
-	{
-		MapLimits() :
-			minX(std::numeric_limits<int>::max()),
-			minY(std::numeric_limits<int>::max()),
-			maxX(std::numeric_limits<int>::min() + 1),
-			maxY(std::numeric_limits<int>::min() + 1) {}
-		bool operator==(const MapLimits& other) const
-		{
-			return minX == other.minX && minY == other.minY && maxX == other.maxX && maxY == other.maxY;
-		}
-		bool operator!=(const MapLimits& other) const
-		{
-			return !(*this == other);
-		}
-		bool valid() const
-		{
-			return minX != std::numeric_limits<int>::max();
-		}
-		void update(int x, int y)
-		{
-			if (x < minX)
-				minX = x;
-			if (x > maxX - 1)
-				maxX = x + 1;
-			if (y < minY)
-				minY = y;
-			if (y > maxY - 1)
-				maxY = y + 1;
-		}
-		int width() const
-		{
-			return maxX - minX;
-		}
-		int height() const
-		{
-			return maxY - minY;
-		}
-		static MapLimits unite(const MapLimits& a, const MapLimits& b)
-		{
-			MapLimits res;
-			res.minX = std::min(a.minX, b.minX);
-			res.minY = std::min(a.minY, b.minY);
-			res.maxX = std::max(a.maxX, b.maxX);
-			res.maxY = std::max(a.maxY, b.maxY);
-			return res;
-		}
-		static MapLimits intersect(const MapLimits& a, const MapLimits& b)
-		{
-			MapLimits res;
-			res.minX = std::max(a.minX, b.minX);
-			res.minY = std::max(a.minY, b.minY);
-			res.maxX = std::min(a.maxX, b.maxX);
-			res.maxY = std::min(a.maxY, b.maxY);
-			if (res.minX > res.maxX)
-				res.minX = res.maxX;
-			if (res.minY > res.maxY)
-				res.minY = res.maxY;
-			return res;
-		}
-		int minX;
-		int minY;
-		int maxX;
-		int maxY;
-	};
-
-public:
-	struct LocalMap : LocalMapBuilder::LocalMap
-	{
-		float sensorBlindRange2dSqr;
-		Transform toSensor;
-	};
-
-	struct Node
-	{
-		template <typename LocalPoseType, typename LocalMapType>
-		Node(LocalPoseType&& otherLocalPose, LocalMapType&& otherLocalMap) :
-			localPose(std::forward<LocalPoseType>(otherLocalPose)),
-			localMap(std::forward<LocalMapType>(otherLocalMap)),
-			transformedLocalPoints2d(),
-			localMapLimits() {}
-		std::optional<Transform> localPose;
-		const LocalMap localMap;
-		std::optional<Eigen::Matrix2Xi> transformedLocalPoints2d;
-		std::optional<MapLimits> localMapLimits;
-	};
-
-private:
-	struct ColoredOccupancyMap
-	{
-		std::map<int, Node> nodes;
-		MapLimits mapLimits;
-		Eigen::MatrixXf map;
-		Eigen::MatrixXi colors;
-		std::list<std::pair<int, int>> temporarilyOccupiedCells;
-	};
-
-	struct TemporaryColoredOccupancyMap
-	{
-		std::map<int, Node> nodes;
-		MapLimits mapLimits;
-		Eigen::MatrixXi missCounter;
-		Eigen::MatrixXi hitCounter;
-		Eigen::MatrixXi colors;
-	};
-
-public:
-	OccupancyGridBuilder(const ParametersMap & parameters = ParametersMap());
-	void parseParameters(const ParametersMap & parameters);
-
-	LocalMap createLocalMap(const Signature & signature) const;
+	LocalMap createLocalMap(const Signature& signature) const;
 
 	void addLocalMap(int nodeId, LocalMap localMap);
-	void addLocalMap(int nodeId, const Transform & pose, LocalMap localMap);
-	void addTemporaryLocalMap(const Transform & temporaryPose, LocalMap temporaryLocalMap);
+	void addLocalMap(int nodeId, const Transform& pose, LocalMap localMap);
+	void addTemporaryLocalMap(const Transform &pose, LocalMap localMap);
 
 	void cacheCurrentMap();
 
-	void updatePoses(const std::map<int, Transform> & updatedPoses,
-			const std::list<Transform> & updatedTemporaryPoses,
+	void updatePoses(const std::map<int, Transform>& updatedPoses,
+			const std::list<Transform>& updatedTemporaryPoses,
 			int lastNodeIdForCachedMap = -1);
 
-	OccupancyGrid getOccupancyGrid(float & minX, float & minY) const;
-	OccupancyGrid getProbOccupancyGrid(float & minX, float & minY) const;
-	ColorGrid getColorGrid(float & minX, float & minY) const;
+	OccupancyGrid getOccupancyGrid() const;
+	OccupancyGrid getProbOccupancyGrid() const;
+	ColorGrid getColorGrid() const;
 
-	float cellSize() const;
+	float cellSize() const { return cellSize_; }
 	std::pair<float, float> getGridOrigin() const;
-	int maxTemporaryLocalMaps() const;
-	const std::map<int, Node> & nodes() const;
-	const cv::Mat & lastDilatedSemantic() const;
+	int maxTemporaryLocalMaps() const { return temporaryColoredOccupancyGrid_.maxTemporaryLocalMaps(); }
+	const std::map<int, Node>& nodes() const { return coloredOccupancyGrid_.nodes(); }
+	const cv::Mat& lastDilatedSemantic() const { return localMapBuilder_.lastDilatedSemantic(); }
 
 	void resetAll();
 	void resetTemporaryMap();
 
 private:
-	bool checkIfCachedMapCanBeUsed(const std::map<int, Transform> & updatedPoses);
-	void useCachedMap();
-	int tryToUseCachedMap(const std::map<int, Transform> & updatedPoses);
-
-	void updatePosesForMap(const std::map<int, Transform> & updatedPoses,
-			int lastNodeIdForCachedMap = -1);
-	void updatePosesForTemporaryMap(const std::list<Transform> & updatedTemporaryPoses);
-
-	void transformLocalMap(Node & node);
-	void createOrResizeMap(ColoredOccupancyMap & map, const MapLimits & newMapLimits);
-	void createOrResizeMap(TemporaryColoredOccupancyMap & map, const MapLimits & newMapLimits);
-	void deployLocalMap(ColoredOccupancyMap & map, int nodeId);
-	void deployLocalMap(TemporaryColoredOccupancyMap & map, int nodeId);
-	void removeLocalMap(TemporaryColoredOccupancyMap & map, int nodeId);
-	void clearColoredOccupancyMap(ColoredOccupancyMap& map);
-	void clearColoredOccupancyMap(TemporaryColoredOccupancyMap& map);
-
-private:
 	float cellSize_;
-	float occupancyThr_;
-	float probMiss_;
-	float probHit_;
-	float probClampingMin_;
-	float probClampingMax_;
-	float temporaryOccupancyThr_;
-	float temporaryProbMiss_;
-	float temporaryProbHit_;
-	int temporarilyOccupiedCellColor_;
-	bool showTemporarilyOccupiedCells_;
-	int maxTemporaryLocalMaps_;
 	float sensorBlindRange2d_;
 	float sensorBlindRange2dSqr_;
 
-	float unknownLogodds_;
-
-	ColoredOccupancyMap map_;
-	TemporaryColoredOccupancyMap temporaryMap_;
-	std::unique_ptr<ColoredOccupancyMap> cachedMap_;
-
-	mutable cv::Mat lastDilatedSemantic_;
-
 	LocalMapBuilder localMapBuilder_;
+	ColoredOccupancyGrid coloredOccupancyGrid_;
+	TemporaryColoredOccupancyGrid temporaryColoredOccupancyGrid_;
 };
 
 }

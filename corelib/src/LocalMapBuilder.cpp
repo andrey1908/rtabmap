@@ -84,6 +84,7 @@ LocalMapBuilder::LocalMap LocalMapBuilder::createLocalMap(const Signature& signa
 			{
 				cv::Mat dilatedImage = semanticDilation_->dilate(image);
 				dilatedImages.push_back(dilatedImage);
+				lastDilatedSemantic_ = dilatedImage;
 			}
 			colors = getPointsColors(obstacles, dilatedImages,
 				signature.sensorData().cameraModels());
