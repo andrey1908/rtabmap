@@ -32,30 +32,30 @@ public:
 
 		Color() { missing_ = true; }
 		Color(int rgb) { setRgb(rgb); };
-		inline bool operator==(const Color& other) const
+		bool operator==(const Color& other) const
 		{
 			return (missing_ && other.missing_) || data_ == other.data_;
 		}
-		inline bool operator!=(const Color& other) const
+		bool operator!=(const Color& other) const
 		{
 			return !operator==(other);
 		}
-		inline int brightness() const
+		int brightness() const
 		{
 			if (missing_) return -1;
 			return (int)r_ + (int)g_ + (int)b_;
 		}
-		inline std::uint8_t& b() { return b_; }
-		inline std::uint8_t b() const { return b_; }
-		inline std::uint8_t& g() { return g_; }
-		inline std::uint8_t g() const { return g_; }
-		inline std::uint8_t& r() { return r_; }
-		inline std::uint8_t r() const { return r_; }
-		inline bool& missing() { return missing_; }
-		inline bool missing() const { return missing_; }
-		inline int rgb() const { return rgb_; }
-		inline void setRgb(int rgb) { rgb_ = rgb; missing_ = false; };
-		inline int data() const { return data_; }
+		std::uint8_t& b() { return b_; }
+		std::uint8_t b() const { return b_; }
+		std::uint8_t& g() { return g_; }
+		std::uint8_t g() const { return g_; }
+		std::uint8_t& r() { return r_; }
+		std::uint8_t r() const { return r_; }
+		bool& missing() { return missing_; }
+		bool missing() const { return missing_; }
+		int rgb() const { return rgb_; }
+		void setRgb(int rgb) { rgb_ = rgb; missing_ = false; };
+		int data() const { return data_; }
 
 	private:
 		union

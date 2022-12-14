@@ -30,7 +30,7 @@ void RayTracing::parseParameters(const ParametersMap& parameters)
 void RayTracing::traceRays(cv::Mat& grid, const Cell& origin) const
 {
 	MEASURE_BLOCK_TIME(traceRays);
-	UASSERT(grid.type() == CV_8SC1);
+	UASSERT(grid.type() == CV_8S);
 	UASSERT(origin.inFrame(grid.rows, grid.cols));
 	for (const Ray& ray : rays_)
 	{

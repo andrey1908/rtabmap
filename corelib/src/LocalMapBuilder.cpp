@@ -268,8 +268,8 @@ LocalMapBuilder::ColoredGrid LocalMapBuilder::coloredGridFromObstacles(
 	int maxY = std::floor(maxYf / cellSize_);
 	int width = maxX - coloredGrid.minX + 1;
 	int height = maxY - coloredGrid.minY + 1;
-	coloredGrid.grid = cv::Mat(height, width, CV_8SC1, RayTracing::unknownCellValue);
-	coloredGrid.colors = cv::Mat(height, width, CV_32SC1, Color::missingColor.data());
+	coloredGrid.grid = cv::Mat(height, width, CV_8S, RayTracing::unknownCellValue);
+	coloredGrid.colors = cv::Mat(height, width, CV_32S, Color::missingColor.data());
 	for (int i = 0; i < points.cols(); i++)
 	{
 		float xf = points(0, i);
