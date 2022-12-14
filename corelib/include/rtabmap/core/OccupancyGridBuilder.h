@@ -199,30 +199,6 @@ public:
 	void resetTemporaryMap();
 
 private:
-	void createLocalMap(
-			const LaserScan & cloud,
-			const Transform & pose,
-			cv::Mat & groundCells,
-			cv::Mat & emptyCells,
-			cv::Mat & obstacleCells,
-			cv::Point3f & viewPoint) const;
-	template<typename PointT>
-	typename pcl::PointCloud<PointT>::Ptr segmentCloud(
-			const typename pcl::PointCloud<PointT>::Ptr & cloud,
-			const pcl::IndicesPtr & indices,
-			const Transform & pose,
-			const cv::Point3f & viewPoint,
-			pcl::IndicesPtr & groundIndices,
-			pcl::IndicesPtr & obstaclesIndices,
-			pcl::IndicesPtr * flatObstacles = nullptr) const;
-	cv::Mat dilate(const cv::Mat& image) const;
-	LaserScan addSemanticToLaserScan(const LaserScan& scan, const std::vector<cv::Mat>& images,
-			const std::vector<CameraModel>& cameraModels) const;
-	LocalMap cvMatsToLocalMap(
-			const cv::Mat & groundCells,
-			const cv::Mat & emptyCells,
-			const cv::Mat & obstacleCells) const;
-
 	bool checkIfCachedMapCanBeUsed(const std::map<int, Transform> & updatedPoses);
 	void useCachedMap();
 	int tryToUseCachedMap(const std::map<int, Transform> & updatedPoses);
@@ -240,33 +216,8 @@ private:
 	void clearColoredOccupancyMap(ColoredOccupancyMap& map);
 	void clearColoredOccupancyMap(TemporaryColoredOccupancyMap& map);
 
-	ParametersMap parameters_;
-	unsigned int cloudDecimation_;
-	float cloudMaxDepth_;
-	float cloudMinDepth_;
-	std::vector<float> roiRatios_;
-	float footprintLength_;
-	float footprintWidth_;
-	float footprintHeight_;
-	int scanDecimation_;
+private:
 	float cellSize_;
-	bool preVoxelFiltering_;
-	bool occupancyFromDepth_;
-	bool projMapFrame_; // false по умолчанию
-	float maxObstacleHeight_;
-	int normalKSearch_;
-	float maxGroundAngle_;
-	float clusterRadius_;
-	int minClusterSize_;
-	bool flatObstaclesDetected_;
-	float minGroundHeight_;
-	float maxGroundHeight_;
-	bool normalsSegmentation_;
-	float noiseFilteringRadius_;
-	int noiseFilteringMinNeighbors_;
-	bool scan2dUnknownSpaceFilled_;
-	bool rayTracing_;
-	float footprintRadius_;
 	float occupancyThr_;
 	float probMiss_;
 	float probHit_;
@@ -275,11 +226,6 @@ private:
 	float temporaryOccupancyThr_;
 	float temporaryProbMiss_;
 	float temporaryProbHit_;
-	int semanticDilation_;
-	float minSemanticRange_;
-	float maxSemanticRange_;
-	float minSemanticRangeSqr_;
-	float maxSemanticRangeSqr_;
 	int temporarilyOccupiedCellColor_;
 	bool showTemporarilyOccupiedCells_;
 	int maxTemporaryLocalMaps_;
