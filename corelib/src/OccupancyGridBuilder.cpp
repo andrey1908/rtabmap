@@ -120,28 +120,11 @@ void OccupancyGridBuilder::parseParameters(const ParametersMap & parameters)
 
 OccupancyGridBuilder::LocalMap OccupancyGridBuilder::createLocalMap(const Signature & signature) const
 {
-	LocalMapBuilder::LocalMap localMap =
-		localMapBuilder_.createLocalMap(signature);
-	LocalMap lm;
-	lm.numGround = 0;
-	lm.numEmpty = localMap.numEmpty;
-	lm.numObstacles = localMap.numObstacles;
-	lm.points = std::move(localMap.points);
-	lm.colors.reserve(lm.colors.size());
-	for (const LocalMapBuilder::Color& color : localMap.colors)
-	{
-		if (color.missing())
-		{
-			lm.colors.push_back(-1);
-		}
-		else
-		{
-			lm.colors.push_back(color.rgb());
-		}
-	}
-	lm.sensorBlindRange2dSqr = sensorBlindRange2dSqr_;
-	lm.toSensor = signature.sensorData().laserScan().localTransform();
-	return lm;
+	LocalMap localMap;
+	localMap.LocalMapBuilder::LocalMap::operator=(localMapBuilder_.createLocalMap(signature));
+	localMap.sensorBlindRange2dSqr = sensorBlindRange2dSqr_;
+	localMap.toSensor = signature.sensorData().laserScan().localTransform();
+	return localMap;
 }
 
 void OccupancyGridBuilder::addLocalMap(int nodeId, LocalMap localMap)
@@ -398,7 +381,8 @@ void OccupancyGridBuilder::createOrResizeMap(ColoredOccupancyMap & map, const Ma
 		MEASURE_BLOCK_TIME(OccupancyGrid__createOrResizeMap__create_map);
 		map.mapLimits = newMapLimits;
 		map.map = Eigen::MatrixXf::Constant(newMapLimits.height(), newMapLimits.width(), unknownLogodds_);
-		map.colors = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(), -1);
+		map.colors = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(),
+			LocalMapBuilder::Color::missingColor.data());
 	}
 	else if(map.mapLimits != newMapLimits)
 	{
@@ -413,7 +397,8 @@ void OccupancyGridBuilder::createOrResizeMap(ColoredOccupancyMap & map, const Ma
 		UASSERT(copyWidth > 0 && copyHeight > 0);
 
 		Eigen::MatrixXf newMap = Eigen::MatrixXf::Constant(newMapLimits.height(), newMapLimits.width(), unknownLogodds_);
-		Eigen::MatrixXi newColors = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(), -1);
+		Eigen::MatrixXi newColors = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(),
+			LocalMapBuilder::Color::missingColor.data());
 
 		newMap.block(dstShiftY, dstShiftX, copyHeight, copyWidth) =
 			map.map.block(srcShiftY, srcShiftX, copyHeight, copyWidth);
@@ -435,7 +420,8 @@ void OccupancyGridBuilder::createOrResizeMap(TemporaryColoredOccupancyMap & map,
 		map.mapLimits = newMapLimits;
 		map.missCounter = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(), 0);
 		map.hitCounter = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(), 0);
-		map.colors = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(), -1);
+		map.colors = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(),
+			LocalMapBuilder::Color::missingColor.data());
 	}
 	else if(map.mapLimits != newMapLimits)
 	{
@@ -451,7 +437,8 @@ void OccupancyGridBuilder::createOrResizeMap(TemporaryColoredOccupancyMap & map,
 
 		Eigen::MatrixXi newMissCounter = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(), 0);
 		Eigen::MatrixXi newHitCounter = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(), 0);
-		Eigen::MatrixXi newColors = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(), -1);
+		Eigen::MatrixXi newColors = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(),
+			LocalMapBuilder::Color::missingColor.data());
 
 		newMissCounter.block(dstShiftY, dstShiftX, copyHeight, copyWidth) =
 			map.missCounter.block(srcShiftY, srcShiftX, copyHeight, copyWidth);
@@ -479,7 +466,7 @@ void OccupancyGridBuilder::deployLocalMap(ColoredOccupancyMap & map, int nodeId)
 		int y = node.transformedLocalPoints2d->coeff(1, i) - map.mapLimits.minY;
 		UASSERT(x >= 0 && x < map.map.cols() && y >= 0 && y < map.map.rows());
 
-		bool free = (i < node.localMap.numGround + node.localMap.numEmpty);
+		bool free = (i < node.localMap.numEmpty);
 		if (free)
 		{
 			float & logodds = map.map(y, x);
@@ -509,8 +496,8 @@ void OccupancyGridBuilder::deployLocalMap(ColoredOccupancyMap & map, int nodeId)
 		{
 			if (temporarilyOccupiedCellColor_ >= 0)
 			{
-				const auto & colors = node.localMap.colors;
-				int c = colors[i];
+				const std::vector<LocalMapBuilder::Color>& colors = node.localMap.colors;
+				int c = colors[i].rgb();
 				if (c == temporarilyOccupiedCellColor_)
 				{
 					map.temporarilyOccupiedCells.emplace_back(x, y);
@@ -530,11 +517,11 @@ void OccupancyGridBuilder::deployLocalMap(ColoredOccupancyMap & map, int nodeId)
 			}
 		}
 
-		int localMapColor = node.localMap.colors[i];
-		if (localMapColor != -1)
+		LocalMapBuilder::Color localMapColor = node.localMap.colors[i];
+		if (!localMapColor.missing())
 		{
-			int & color = map.colors(y, x);
-			color = localMapColor;
+			int& color = map.colors(y, x);
+			color = localMapColor.rgb();
 		}
 	}
 }
@@ -550,7 +537,7 @@ void OccupancyGridBuilder::deployLocalMap(TemporaryColoredOccupancyMap & map, in
 		int y = node.transformedLocalPoints2d->coeff(1, i) - map.mapLimits.minY;
 		UASSERT(x >= 0 && x < map.missCounter.cols() && y >= 0 && y < map.missCounter.rows());
 
-		bool free = (i < node.localMap.numGround + node.localMap.numEmpty);
+		bool free = (i < node.localMap.numEmpty);
 		if (free)
 		{
 			map.missCounter(y, x) += 1;
@@ -560,9 +547,9 @@ void OccupancyGridBuilder::deployLocalMap(TemporaryColoredOccupancyMap & map, in
 			map.hitCounter(y, x) += 1;
 		}
 
-		int localMapColor = node.localMap.colors[i];
-		int & color = map.colors(y, x);
-		color = localMapColor;
+		LocalMapBuilder::Color localMapColor = node.localMap.colors[i];
+		int& color = map.colors(y, x);
+		color = localMapColor.data();
 	}
 }
 
@@ -577,7 +564,7 @@ void OccupancyGridBuilder::removeLocalMap(TemporaryColoredOccupancyMap & map, in
 		int y = node.transformedLocalPoints2d->coeff(1, i) - map.mapLimits.minY;
 		UASSERT(x >= 0 && x < map.missCounter.cols() && y >= 0 && y < map.missCounter.rows());
 
-		bool free = (i < node.localMap.numGround + node.localMap.numEmpty);
+		bool free = (i < node.localMap.numEmpty);
 		if (free)
 		{
 			int & misses = map.missCounter(y, x);

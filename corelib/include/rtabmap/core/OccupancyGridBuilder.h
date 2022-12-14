@@ -126,12 +126,8 @@ private:
 	};
 
 public:
-	struct LocalMap
+	struct LocalMap : LocalMapBuilder::LocalMap
 	{
-		int numGround, numEmpty, numObstacles;
-		Eigen::Matrix3Xf points;  // z = 0
-		std::vector<int> colors;
-
 		float sensorBlindRange2dSqr;
 		Transform toSensor;
 	};
