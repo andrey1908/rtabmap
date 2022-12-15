@@ -7,8 +7,6 @@
 
 namespace rtabmap {
 
-const LocalMapBuilder::Color LocalMapBuilder::Color::missingColor;
-
 LocalMapBuilder::LocalMapBuilder(const ParametersMap& parameters) :
 	cellSize_(Parameters::defaultGridCellSize()),
 	maxRange_(Parameters::defaultLocalMapMaxRange()),

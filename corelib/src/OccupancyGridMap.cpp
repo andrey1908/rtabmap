@@ -28,8 +28,7 @@ void OccupancyGridMap::parseParameters(const ParametersMap& parameters)
 
 OccupancyGridMap::LocalMap OccupancyGridMap::createLocalMap(const Signature & signature) const
 {
-	LocalMap localMap;
-	localMap.LocalMapBuilder::LocalMap::operator=(localMapBuilder_.createLocalMap(signature));
+	LocalMap localMap = localMapBuilder_.createLocalMap(signature);
 	localMap.sensorBlindRange2dSqr = sensorBlindRange2dSqr_;
 	localMap.toSensor = signature.sensorData().laserScan().localTransform();
 	return localMap;

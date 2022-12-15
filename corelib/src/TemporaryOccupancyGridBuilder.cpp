@@ -108,7 +108,7 @@ void TemporaryOccupancyGridBuilder::createOrResizeMap(const MapLimits& newMapLim
 		hitCounter_ = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(),
 			0);
 		colors_ = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(),
-			LocalMapBuilder::Color::missingColor.data());
+			Color::missingColor.data());
 	}
 	else if(mapLimits_ != newMapLimits)
 	{
@@ -127,7 +127,7 @@ void TemporaryOccupancyGridBuilder::createOrResizeMap(const MapLimits& newMapLim
 		Eigen::MatrixXi newHitCounter = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(),
 			0);
 		Eigen::MatrixXi newColors = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(),
-			LocalMapBuilder::Color::missingColor.data());
+			Color::missingColor.data());
 
 		newMissCounter.block(dstShiftY, dstShiftX, copyHeight, copyWidth) =
 			missCounter_.block(srcShiftY, srcShiftX, copyHeight, copyWidth);
@@ -170,7 +170,7 @@ void TemporaryOccupancyGridBuilder::deployLocalMap(const Node& node)
 			hitCounter_.coeffRef(y, x) += 1;
 		}
 
-		LocalMapBuilder::Color localMapColor = node.localMap.colors[i];
+		Color localMapColor = node.localMap.colors[i];
 		colors_.coeffRef(y, x) = localMapColor.data();
 	}
 }

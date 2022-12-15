@@ -2,7 +2,7 @@
 
 #include <rtabmap/core/Parameters.h>
 #include <rtabmap/core/LocalMapBuilder.h>
-#include <rtabmap/core/OccupancyGridClasses.h>
+#include <rtabmap/core/BaseClasses.h>
 
 #include <list>
 #include <map>
@@ -12,7 +12,7 @@
 
 namespace rtabmap {
 
-class OccupancyGridBuilder : OccupancyGridClasses
+class OccupancyGridBuilder : BaseClasses
 {
 public:
 	OccupancyGridBuilder(const ParametersMap& parameters = ParametersMap());
@@ -58,7 +58,7 @@ private:
 	float occupancyThr_;
 	float unknown_;
 	int temporarilyOccupiedCellColorRgb_;
-	LocalMapBuilder::Color temporarilyOccupiedCellColor_;
+	Color temporarilyOccupiedCellColor_;
 	bool showTemporarilyOccupiedCells_;
 
 	std::map<int, Node> nodes_;

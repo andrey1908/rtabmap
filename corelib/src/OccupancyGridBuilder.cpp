@@ -242,7 +242,7 @@ void OccupancyGridBuilder::createOrResizeMap(const MapLimits& newMapLimits)
 		map_ = Eigen::MatrixXf::Constant(newMapLimits.height(), newMapLimits.width(),
 			unknown_);
 		colors_ = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(),
-			LocalMapBuilder::Color::missingColor.data());
+			Color::missingColor.data());
 	}
 	else if(mapLimits_ != newMapLimits)
 	{
@@ -260,7 +260,7 @@ void OccupancyGridBuilder::createOrResizeMap(const MapLimits& newMapLimits)
 			newMapLimits.height(), newMapLimits.width(), unknown_);
 		Eigen::MatrixXi newColors = Eigen::MatrixXi::Constant(
 			newMapLimits.height(), newMapLimits.width(),
-			LocalMapBuilder::Color::missingColor.data());
+			Color::missingColor.data());
 
 		newMap.block(dstShiftY, dstShiftX, copyHeight, copyWidth) =
 			map_.block(srcShiftY, srcShiftX, copyHeight, copyWidth);
@@ -318,9 +318,9 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
 		}
 		else
 		{
-			if (temporarilyOccupiedCellColor_ != LocalMapBuilder::Color::missingColor)
+			if (temporarilyOccupiedCellColor_ != Color::missingColor)
 			{
-				const LocalMapBuilder::Color& color = node.localMap.colors[i];
+				const Color& color = node.localMap.colors[i];
 				if (color == temporarilyOccupiedCellColor_)
 				{
 					temporarilyOccupiedCells_.emplace_back(x, y);
@@ -340,7 +340,7 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
 			}
 		}
 
-		LocalMapBuilder::Color localMapColor = node.localMap.colors[i];
+		Color localMapColor = node.localMap.colors[i];
 		if (!localMapColor.missing())
 		{
 			colors_.coeffRef(y, x) = localMapColor.rgb();

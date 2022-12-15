@@ -27,6 +27,7 @@ SET(SRC_FILES
 
 	OccupancyGridMap.cpp
 
+	BaseClasses.cpp
 	LocalMapBuilder.cpp
 	OccupancyGridBuilder.cpp
 	TemporaryOccupancyGridBuilder.cpp

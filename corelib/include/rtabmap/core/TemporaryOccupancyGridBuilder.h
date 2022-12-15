@@ -2,7 +2,7 @@
 
 #include <rtabmap/core/Parameters.h>
 #include <rtabmap/core/LocalMapBuilder.h>
-#include <rtabmap/core/OccupancyGridClasses.h>
+#include <rtabmap/core/BaseClasses.h>
 
 #include <list>
 #include <map>
@@ -12,7 +12,7 @@
 
 namespace rtabmap {
 
-class TemporaryOccupancyGridBuilder : OccupancyGridClasses
+class TemporaryOccupancyGridBuilder : BaseClasses
 {
 public:
 	TemporaryOccupancyGridBuilder(const ParametersMap& parameters = ParametersMap());
