@@ -14,7 +14,8 @@ LocalMapBuilder::LocalMapBuilder(const ParametersMap& parameters) :
 	maxObstacleHeight_(Parameters::defaultLocalMapMaxObstacleHeight()),
 	minSemanticRange_(Parameters::defaultLocalMapMinSemanticRange()),
 	maxSemanticRange_(Parameters::defaultLocalMapMaxSemanticRange()),
-	useRayTracing_(Parameters::defaultLocalMapUseRayTracing())
+	useRayTracing_(Parameters::defaultLocalMapUseRayTracing()),
+	sensorBlindRange2d_(Parameters::defaultLocalMapSensorBlindRange2d())
 {
 	parseParameters(parameters);
 }
@@ -28,6 +29,7 @@ void LocalMapBuilder::parseParameters(const ParametersMap& parameters)
 	Parameters::parse(parameters, Parameters::kLocalMapMinSemanticRange(), minSemanticRange_);
 	Parameters::parse(parameters, Parameters::kLocalMapMaxSemanticRange(), maxSemanticRange_);
 	Parameters::parse(parameters, Parameters::kLocalMapUseRayTracing(), useRayTracing_);
+	Parameters::parse(parameters, Parameters::kLocalMapSensorBlindRange2d(), sensorBlindRange2d_);
 	UASSERT(minObstacleHeight_ < maxObstacleHeight_);
 	UASSERT(maxSemanticRange_ == 0.0f || minSemanticRange_ < maxSemanticRange_);
 
@@ -57,11 +59,12 @@ void LocalMapBuilder::parseParameters(const ParametersMap& parameters)
 	{
 		rayTracing_.reset();
 	}
+	sensorBlindRange2dSqr_ = sensorBlindRange2d_ * sensorBlindRange2d_;
 }
 
 LocalMapBuilder::LocalMap LocalMapBuilder::createLocalMap(const Signature& signature) const
 {
-	MEASURE_BLOCK_TIME(createLocalMap);
+	MEASURE_BLOCK_TIME(LocalMapBuilder__createLocalMap);
 	UASSERT(!signature.sensorData().laserScan().isEmpty() &&
 			!signature.sensorData().laserScan().is2d());
 	const LaserScan& laserScan = signature.sensorData().laserScan();
@@ -109,12 +112,15 @@ LocalMapBuilder::LocalMap LocalMapBuilder::createLocalMap(const Signature& signa
 	}
 	
 	LocalMap localMap = localMapFromColoredGrid(coloredGrid);
+
+	localMap.sensorBlindRange2dSqr = sensorBlindRange2dSqr_;
+	localMap.toSensor = signature.sensorData().laserScan().localTransform();
 	return localMap;
 }
 
 Eigen::Matrix3Xf LocalMapBuilder::convertLaserScan(const LaserScan& laserScan) const
 {
-	MEASURE_BLOCK_TIME(____convertLaserScan);
+	MEASURE_BLOCK_TIME(LocalMapBuilder__convertLaserScan);
 	Eigen::Matrix3Xf points(3, laserScan.size());
 	for (int i = 0; i < laserScan.size(); i++)
 	{
@@ -130,7 +136,7 @@ Eigen::Matrix3Xf LocalMapBuilder::convertLaserScan(const LaserScan& laserScan) c
 
 Eigen::Matrix3Xf LocalMapBuilder::filterMaxRange(const Eigen::Matrix3Xf& points) const
 {
-	MEASURE_BLOCK_TIME(____filterMaxRange);
+	MEASURE_BLOCK_TIME(LocalMapBuilder__filterMaxRange);
 	std::vector<int> indices;
 	indices.reserve(points.cols());
 	for (int i = 0; i < points.cols(); i++)
@@ -159,7 +165,7 @@ Eigen::Matrix3Xf LocalMapBuilder::filterMaxRange(const Eigen::Matrix3Xf& points)
 Eigen::Matrix3Xf LocalMapBuilder::transformPoints(const Eigen::Matrix3Xf& points,
 	const Transform& transform) const
 {
-	MEASURE_BLOCK_TIME(____transformPoints);
+	MEASURE_BLOCK_TIME(LocalMapBuilder__transformPoints);
 	Eigen::Matrix3Xf transformed =
 		(transform.toEigen3fRotation() * points).colwise() +
 		transform.toEigen3fTranslation();
@@ -168,7 +174,7 @@ Eigen::Matrix3Xf LocalMapBuilder::transformPoints(const Eigen::Matrix3Xf& points
 
 Eigen::Matrix3Xf LocalMapBuilder::getObstaclePoints(const Eigen::Matrix3Xf& points) const
 {
-	MEASURE_BLOCK_TIME(____getObstaclePoints);
+	MEASURE_BLOCK_TIME(LocalMapBuilder__getObstaclePoints);
 	std::vector<int> obstaclePointsIndices;
 	obstaclePointsIndices.reserve(points.cols());
 	for (int i = 0; i < points.cols(); i++)
@@ -197,7 +203,7 @@ std::vector<LocalMapBuilder::Color> LocalMapBuilder::getPointsColors(
 	const std::vector<cv::Mat>& images,
 	const std::vector<CameraModel>& cameraModels) const
 {
-	MEASURE_BLOCK_TIME(____getPointsColors);
+	MEASURE_BLOCK_TIME(LocalMapBuilder__getPointsColors);
 	UASSERT(images.size() == cameraModels.size());
 	std::vector<Color> colors;
 	colors.resize(points.cols(), Color::missingColor);
@@ -237,7 +243,7 @@ LocalMapBuilder::ColoredGrid LocalMapBuilder::coloredGridFromObstacles(
 	const std::vector<Color>& colors,
 	const Eigen::Vector2f& sensor) const
 {
-	MEASURE_BLOCK_TIME(____coloredGridFromObstacles);
+	MEASURE_BLOCK_TIME(LocalMapBuilder__coloredGridFromObstacles);
 	float minXf = sensor.x();
 	float minYf = sensor.y();
 	float maxXf = sensor.x();
@@ -293,7 +299,7 @@ LocalMapBuilder::ColoredGrid LocalMapBuilder::coloredGridFromObstacles(
 void LocalMapBuilder::traceRays(ColoredGrid& coloredGrid,
 	const Eigen::Vector2f& sensor) const
 {
-	MEASURE_BLOCK_TIME(____traceRays);
+	MEASURE_BLOCK_TIME(LocalMapBuilder__traceRays);
 	RayTracing::Cell origin;
 	origin.y = std::floor(sensor.y() / cellSize_) - coloredGrid.minY;
 	origin.x = std::floor(sensor.x() / cellSize_) - coloredGrid.minX;
@@ -303,7 +309,7 @@ void LocalMapBuilder::traceRays(ColoredGrid& coloredGrid,
 LocalMapBuilder::LocalMap LocalMapBuilder::localMapFromColoredGrid(
 	const ColoredGrid& coloredGrid) const
 {
-	MEASURE_BLOCK_TIME(____localMapFromColoredGrid);
+	MEASURE_BLOCK_TIME(LocalMapBuilder__localMapFromColoredGrid);
 	std::vector<std::pair<int, int>> emptyCells;
 	std::vector<std::pair<int, int>> occupiedCells;
 	for (int y = 0; y < coloredGrid.grid.rows; y++)

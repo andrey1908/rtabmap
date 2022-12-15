@@ -62,6 +62,8 @@ private:
 	float maxSemanticRange_;
 	float maxSemanticRangeSqr_;
 	bool useRayTracing_;
+	float sensorBlindRange2d_;
+	float sensorBlindRange2dSqr_;
 
 	std::unique_ptr<SemanticDilation> semanticDilation_;
 	std::unique_ptr<RayTracing> rayTracing_;

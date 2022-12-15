@@ -22,19 +22,21 @@ public:
 	void addLocalMap(int nodeId, LocalMap localMap, const Transform& pose);
 
 	void cacheCurrentMap();
+
 	void updatePoses(const std::map<int, Transform>& updatedPoses,
 		int lastNodeIdForCachedMap = -1);
 
 	OccupancyGrid getOccupancyGrid() const;
-	OccupancyGrid getProbOccupancyGrid() const;
-	ColorGrid getColorGrid() const;
-
 	OccupancyGrid getOccupancyGrid(const MapLimits& roi) const;
+	OccupancyGrid getProbOccupancyGrid() const;
 	OccupancyGrid getProbOccupancyGrid(const MapLimits& roi) const;
+	ColorGrid getColorGrid() const;
 	ColorGrid getColorGrid(const MapLimits& roi) const;
 
 	const std::map<int, Node>& nodes() const { return nodes_; }
 	const MapLimits& mapLimits() const { return mapLimits_; }
+
+	void reset();
 
 private:
 	bool checkIfCachedMapCanBeUsed(const std::map<int, Transform>& updatedPoses);

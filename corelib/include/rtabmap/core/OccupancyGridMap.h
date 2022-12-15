@@ -46,8 +46,6 @@ public:
 
 private:
 	float cellSize_;
-	float sensorBlindRange2d_;
-	float sensorBlindRange2dSqr_;
 
 	LocalMapBuilder localMapBuilder_;
 	OccupancyGridBuilder occupancyGridBuilder_;

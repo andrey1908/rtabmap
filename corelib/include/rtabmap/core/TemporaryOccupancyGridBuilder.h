@@ -23,15 +23,16 @@ public:
 	void updatePoses(const std::list<Transform>& updatedPoses);
 
 	OccupancyGrid getOccupancyGrid() const;
-	OccupancyGrid getProbOccupancyGrid() const;
-	ColorGrid getColorGrid() const;
-
 	OccupancyGrid getOccupancyGrid(const MapLimits& roi) const;
+	OccupancyGrid getProbOccupancyGrid() const;
 	OccupancyGrid getProbOccupancyGrid(const MapLimits& roi) const;
+	ColorGrid getColorGrid() const;
 	ColorGrid getColorGrid(const MapLimits& roi) const;
 
 	int maxTemporaryLocalMaps() const { return maxTemporaryLocalMaps_; }
 	const MapLimits& mapLimits() const { return mapLimits_; }
+
+	void reset();
 
 private:
 	bool checkIfCachedMapCanBeUsed(const std::map<int, Transform>& updatedPoses);

@@ -779,13 +779,13 @@ class RTABMAP_EXP Parameters
 	RTABMAP_PARAM(Grid, TemporaryHitProb,           float,  0.7,     "Probability of a hit (value between 0.5 and 1).");
 	RTABMAP_PARAM(Grid, TemporaryOccupancyProbThr,  float,  0.5,     "Occupancy threshold (value between 0 and 1).");
 	RTABMAP_PARAM(Grid, MaxTemporaryLocalMaps,      int,    1,       "Maximum number of temporary local maps.");
-	RTABMAP_PARAM(Grid, SensorBlindRange2d,      float,   0.0,    "Minimum range on surface at which sensor can see obstacles (0=disabled).");
 	RTABMAP_PARAM(LocalMap, MaxRange,                float,  10.0,    "Maximum range from sensor (0=inf).");
 	RTABMAP_PARAM(LocalMap, MinObstacleHeight,       float,  0.0,     "Minimum obstacles height.");
 	RTABMAP_PARAM(LocalMap, MaxObstacleHeight,       float,  1.5,     "Maximum obstacles height.");
 	RTABMAP_PARAM(LocalMap, MinSemanticRange,        float,  0.0,     "Minimum semantic range from camera.");
 	RTABMAP_PARAM(LocalMap, MaxSemanticRange,        float,  0.0,     "Maximum semantic range from camera (0=inf).");
 	RTABMAP_PARAM(LocalMap, UseRayTracing,           bool,   false,   "Use ray tracing algorithm.");
+	RTABMAP_PARAM(LocalMap, SensorBlindRange2d,      float,  0.0,     "Minimum range on surface at which sensor can see obstacles (0=disabled).");
 	RTABMAP_PARAM(SemanticDilation, DilationSize,    int,    0,         "Image dilation in pixels (0=disabled).");
 	RTABMAP_PARAM(RayTracing, MaxVisibleRange,            float,  10.0,    "Maximum visible range for ray tracing.");
 	RTABMAP_PARAM(RayTracing, MaxRayTracingRange,         float,  10.0,    "Maximum ray tracing range.");
