@@ -11,22 +11,22 @@
 
 namespace rtabmap {
 
-class ColoredOccupancyGridInterface
+class OccupancyGridClasses
 {
 public:
 	struct OccupancyGrid
 	{
 		using GridType = Eigen::Matrix<char, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-		float minY;
-		float minX;
+		int minY;
+		int minX;
 		GridType grid;
 	};
 
 	struct ColorGrid
 	{
 		using GridType = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-		float minY;
-		float minX;
+		int minY;
+		int minX;
 		GridType grid;
 	};
 

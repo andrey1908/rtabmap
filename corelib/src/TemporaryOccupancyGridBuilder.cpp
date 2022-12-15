@@ -1,11 +1,11 @@
-#include <rtabmap/core/TemporaryColoredOccupancyGrid.h>
+#include <rtabmap/core/TemporaryOccupancyGridBuilder.h>
 #include <rtabmap/utilite/ULogger.h>
 
 #include "time_measurer/time_measurer.h"
 
 namespace rtabmap {
 
-TemporaryColoredOccupancyGrid::TemporaryColoredOccupancyGrid(const ParametersMap& parameters) :
+TemporaryOccupancyGridBuilder::TemporaryOccupancyGridBuilder(const ParametersMap& parameters) :
 	cellSize_(Parameters::defaultGridCellSize()),
 	temporaryMissProb_(Parameters::defaultGridTemporaryMissProb()),
 	temporaryHitProb_(Parameters::defaultGridTemporaryHitProb()),
@@ -15,7 +15,7 @@ TemporaryColoredOccupancyGrid::TemporaryColoredOccupancyGrid(const ParametersMap
 	parseParameters(parameters);
 }
 
-void TemporaryColoredOccupancyGrid::parseParameters(const ParametersMap & parameters)
+void TemporaryOccupancyGridBuilder::parseParameters(const ParametersMap & parameters)
 {
 	Parameters::parse(parameters, Parameters::kGridCellSize(), cellSize_);
 	Parameters::parse(parameters, Parameters::kGridTemporaryMissProb(), temporaryMissProb_);
@@ -32,7 +32,7 @@ void TemporaryColoredOccupancyGrid::parseParameters(const ParametersMap & parame
 	occupancyThr_ = logodds(temporaryOccupancyProbThr_);
 }
 
-void TemporaryColoredOccupancyGrid::addLocalMap(const Transform& pose, LocalMap localMap)
+void TemporaryOccupancyGridBuilder::addLocalMap(LocalMap localMap, const Transform& pose)
 {
 	TransformedLocalMap transformedLocalMap = transformLocalMap(localMap, pose);
 	Node node(std::move(localMap), std::move(transformedLocalMap));
@@ -51,7 +51,7 @@ void TemporaryColoredOccupancyGrid::addLocalMap(const Transform& pose, LocalMap 
 	}
 }
 
-void TemporaryColoredOccupancyGrid::updatePoses(const std::list<Transform>& updatedPoses)
+void TemporaryOccupancyGridBuilder::updatePoses(const std::list<Transform>& updatedPoses)
 {
 	MEASURE_BLOCK_TIME(TemporaryColoredOccupancyGrid__updatePoses);
 	UASSERT(nodes_.size() == updatedPoses.size());
@@ -74,7 +74,7 @@ void TemporaryColoredOccupancyGrid::updatePoses(const std::list<Transform>& upda
 	}
 }
 
-TemporaryColoredOccupancyGrid::TransformedLocalMap TemporaryColoredOccupancyGrid::transformLocalMap(
+TemporaryOccupancyGridBuilder::TransformedLocalMap TemporaryOccupancyGridBuilder::transformLocalMap(
 	const LocalMap& localMap, const Transform& transform)
 {
 	MEASURE_BLOCK_TIME(OccupancyGrid__transformLocalMap);
@@ -96,7 +96,7 @@ TemporaryColoredOccupancyGrid::TransformedLocalMap TemporaryColoredOccupancyGrid
 	return transformedLocalMap;
 }
 
-void TemporaryColoredOccupancyGrid::createOrResizeMap(const MapLimits& newMapLimits)
+void TemporaryOccupancyGridBuilder::createOrResizeMap(const MapLimits& newMapLimits)
 {
 	UASSERT(newMapLimits.valid());
 	if(!mapLimits_.valid())
@@ -143,13 +143,13 @@ void TemporaryColoredOccupancyGrid::createOrResizeMap(const MapLimits& newMapLim
 	}
 }
 
-void TemporaryColoredOccupancyGrid::deployLastLocalMap()
+void TemporaryOccupancyGridBuilder::deployLastLocalMap()
 {
 	UASSERT(nodes_.size());
 	deployLocalMap(nodes_.back());
 }
 
-void TemporaryColoredOccupancyGrid::deployLocalMap(const Node& node)
+void TemporaryOccupancyGridBuilder::deployLocalMap(const Node& node)
 {
 	MEASURE_BLOCK_TIME(TemporaryColoredOccupancyGrid__deployLocalMap);
 	UASSERT(node.transformedLocalMap.has_value());
@@ -175,12 +175,12 @@ void TemporaryColoredOccupancyGrid::deployLocalMap(const Node& node)
 	}
 }
 
-void TemporaryColoredOccupancyGrid::removeFirstLocalMap()
+void TemporaryOccupancyGridBuilder::removeFirstLocalMap()
 {
 	removeLocalMap(nodes_.begin());
 }
 
-void TemporaryColoredOccupancyGrid::removeLocalMap(std::list<Node>::iterator nodeIt)
+void TemporaryOccupancyGridBuilder::removeLocalMap(std::list<Node>::iterator nodeIt)
 {
 	MEASURE_BLOCK_TIME(TemporaryColoredOccupancyGrid__removeLocalMap);
 	UASSERT(nodeIt->transformedLocalMap.has_value());
@@ -215,13 +215,18 @@ void TemporaryColoredOccupancyGrid::removeLocalMap(std::list<Node>::iterator nod
 	createOrResizeMap(newMapLimits);
 }
 
-TemporaryColoredOccupancyGrid::OccupancyGrid TemporaryColoredOccupancyGrid::getOccupancyGrid() const
+TemporaryOccupancyGridBuilder::OccupancyGrid TemporaryOccupancyGridBuilder::getOccupancyGrid() const
 {
 	MEASURE_BLOCK_TIME(TemporaryColoredOccupancyGrid__getOccupancyGrid);
-	UASSERT(mapLimits_.valid());
 	OccupancyGrid occupancyGrid;
-	occupancyGrid.minY = mapLimits_.minY * cellSize_;
-	occupancyGrid.minX = mapLimits_.minX * cellSize_;
+	if (!mapLimits_.valid())
+	{
+		occupancyGrid.minX = std::numeric_limits<int>::max();
+		occupancyGrid.minY = std::numeric_limits<int>::max();
+		return occupancyGrid;
+	}
+	occupancyGrid.minY = mapLimits_.minY;
+	occupancyGrid.minX = mapLimits_.minX;
 	occupancyGrid.grid =
 		OccupancyGrid::GridType::Constant(mapLimits_.height(), mapLimits_.width(), -1);
 	for(int x = 0; x < missCounter_.cols(); ++x)
@@ -248,13 +253,18 @@ TemporaryColoredOccupancyGrid::OccupancyGrid TemporaryColoredOccupancyGrid::getO
 	return occupancyGrid;
 }
 
-TemporaryColoredOccupancyGrid::OccupancyGrid TemporaryColoredOccupancyGrid::getProbOccupancyGrid() const
+TemporaryOccupancyGridBuilder::OccupancyGrid TemporaryOccupancyGridBuilder::getProbOccupancyGrid() const
 {
 	MEASURE_BLOCK_TIME(TemporaryColoredOccupancyGrid__getProbOccupancyGrid);
-	UASSERT(mapLimits_.valid());
 	OccupancyGrid occupancyGrid;
-	occupancyGrid.minY = mapLimits_.minY * cellSize_;
-	occupancyGrid.minX = mapLimits_.minX * cellSize_;
+	if (!mapLimits_.valid())
+	{
+		occupancyGrid.minX = std::numeric_limits<int>::max();
+		occupancyGrid.minY = std::numeric_limits<int>::max();
+		return occupancyGrid;
+	}
+	occupancyGrid.minY = mapLimits_.minY;
+	occupancyGrid.minX = mapLimits_.minX;
 	occupancyGrid.grid =
 		OccupancyGrid::GridType::Constant(mapLimits_.height(), mapLimits_.width(), -1);
 	for(int x = 0; x < missCounter_.cols(); ++x)
@@ -277,18 +287,23 @@ TemporaryColoredOccupancyGrid::OccupancyGrid TemporaryColoredOccupancyGrid::getP
 	return occupancyGrid;
 }
 
-TemporaryColoredOccupancyGrid::ColorGrid TemporaryColoredOccupancyGrid::getColorGrid() const
+TemporaryOccupancyGridBuilder::ColorGrid TemporaryOccupancyGridBuilder::getColorGrid() const
 {
 	MEASURE_BLOCK_TIME(ColoredOccupancyGrid__getColorGrid);
-	UASSERT(mapLimits_.valid());
 	ColorGrid colorGrid;
-	colorGrid.minY = mapLimits_.minY * cellSize_;
-	colorGrid.minX = mapLimits_.minX * cellSize_;
+	if (!mapLimits_.valid())
+	{
+		colorGrid.minX = std::numeric_limits<int>::max();
+		colorGrid.minY = std::numeric_limits<int>::max();
+		return colorGrid;
+	}
+	colorGrid.minY = mapLimits_.minY;
+	colorGrid.minX = mapLimits_.minX;
 	colorGrid.grid = colors_;
 	return colorGrid;
 }
 
-void TemporaryColoredOccupancyGrid::clear()
+void TemporaryOccupancyGridBuilder::clear()
 {
 	for (Node& node : nodes_)
 	{

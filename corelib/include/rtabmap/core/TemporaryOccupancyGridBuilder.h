@@ -2,7 +2,7 @@
 
 #include <rtabmap/core/Parameters.h>
 #include <rtabmap/core/LocalMapBuilder.h>
-#include <rtabmap/core/ColoredOccupancyGridInterface.h>
+#include <rtabmap/core/OccupancyGridClasses.h>
 
 #include <list>
 #include <map>
@@ -12,13 +12,13 @@
 
 namespace rtabmap {
 
-class TemporaryColoredOccupancyGrid : public ColoredOccupancyGridInterface
+class TemporaryOccupancyGridBuilder : OccupancyGridClasses
 {
 public:
-	TemporaryColoredOccupancyGrid(const ParametersMap& parameters = ParametersMap());
+	TemporaryOccupancyGridBuilder(const ParametersMap& parameters = ParametersMap());
 	void parseParameters(const ParametersMap& parameters);
 
-	void addLocalMap(const Transform& pose, LocalMap localMap);
+	void addLocalMap(LocalMap localMap, const Transform& pose);
 
 	void updatePoses(const std::list<Transform>& updatedPoses);
 
