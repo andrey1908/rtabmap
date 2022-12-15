@@ -267,20 +267,20 @@ LocalMapBuilder::ColoredGrid LocalMapBuilder::coloredGridFromObstacles(
 	}
 
 	ColoredGrid coloredGrid;
-	coloredGrid.minX = std::floor(minXf / cellSize_);
 	coloredGrid.minY = std::floor(minYf / cellSize_);
-	int maxX = std::floor(maxXf / cellSize_);
+	coloredGrid.minX = std::floor(minXf / cellSize_);
 	int maxY = std::floor(maxYf / cellSize_);
-	int width = maxX - coloredGrid.minX + 1;
+	int maxX = std::floor(maxXf / cellSize_);
 	int height = maxY - coloredGrid.minY + 1;
+	int width = maxX - coloredGrid.minX + 1;
 	coloredGrid.grid = cv::Mat(height, width, CV_8S, RayTracing::unknownCellValue);
 	coloredGrid.colors = cv::Mat(height, width, CV_32S, Color::missingColor.data());
 	for (int i = 0; i < points.cols(); i++)
 	{
-		float xf = points(0, i);
 		float yf = points(1, i);
-		int x = std::floor(xf / cellSize_) - coloredGrid.minX;
+		float xf = points(0, i);
 		int y = std::floor(yf / cellSize_) - coloredGrid.minY;
+		int x = std::floor(xf / cellSize_) - coloredGrid.minX;
 		coloredGrid.grid.at<std::int8_t>(y, x) = RayTracing::occupiedCellValue;
 		const Color& pointColor = colors[i];
 		if (pointColor != Color::missingColor)
