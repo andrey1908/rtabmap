@@ -26,6 +26,10 @@ public:
 	OccupancyGrid getProbOccupancyGrid() const;
 	ColorGrid getColorGrid() const;
 
+	OccupancyGrid getOccupancyGrid(const MapLimits& roi) const;
+	OccupancyGrid getProbOccupancyGrid(const MapLimits& roi) const;
+	ColorGrid getColorGrid(const MapLimits& roi) const;
+
 	int maxTemporaryLocalMaps() const { return maxTemporaryLocalMaps_; }
 	const MapLimits& mapLimits() const { return mapLimits_; }
 

@@ -239,10 +239,10 @@ void OccupancyGridBuilder::createOrResizeMap(const MapLimits& newMapLimits)
 	{
 		MEASURE_BLOCK_TIME(ColoredOccupancyGrid__createOrResizeMap__createMap);
 		mapLimits_ = newMapLimits;
-		map_ = Eigen::MatrixXf::Constant(newMapLimits.height(), newMapLimits.width(),
-			unknown_);
-		colors_ = Eigen::MatrixXi::Constant(newMapLimits.height(), newMapLimits.width(),
-			Color::missingColor.data());
+		int height = newMapLimits.height();
+		int width = newMapLimits.width();
+		map_ = Eigen::MatrixXf::Constant(height, width, unknown_);
+		colors_ = Eigen::MatrixXi::Constant(height, width, Color::missingColor.data());
 	}
 	else if(mapLimits_ != newMapLimits)
 	{
@@ -256,11 +256,12 @@ void OccupancyGridBuilder::createOrResizeMap(const MapLimits& newMapLimits)
 		int copyHeight = intersection.height();
 		UASSERT(copyWidth > 0 && copyHeight > 0);
 
-		Eigen::MatrixXf newMap = Eigen::MatrixXf::Constant(
-			newMapLimits.height(), newMapLimits.width(), unknown_);
-		Eigen::MatrixXi newColors = Eigen::MatrixXi::Constant(
-			newMapLimits.height(), newMapLimits.width(),
-			Color::missingColor.data());
+		int height = newMapLimits.height();
+		int width = newMapLimits.width();
+		Eigen::MatrixXf newMap =
+			Eigen::MatrixXf::Constant(height, width, unknown_);
+		Eigen::MatrixXi newColors =
+			Eigen::MatrixXi::Constant(height, width, Color::missingColor.data());
 
 		newMap.block(dstShiftY, dstShiftX, copyHeight, copyWidth) =
 			map_.block(srcShiftY, srcShiftX, copyHeight, copyWidth);
@@ -350,34 +351,47 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
 
 OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getOccupancyGrid() const
 {
+	return getOccupancyGrid(mapLimits_);
+}
+
+OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getOccupancyGrid(
+	const MapLimits& roi) const
+{
 	MEASURE_BLOCK_TIME(ColoredOccupancyGrid__getOccupancyGrid);
 	OccupancyGrid occupancyGrid;
 	if (!mapLimits_.valid())
 	{
-		occupancyGrid.minX = std::numeric_limits<int>::max();
-		occupancyGrid.minY = std::numeric_limits<int>::max();
 		return occupancyGrid;
 	}
-	occupancyGrid.minY = mapLimits_.minY;
-	occupancyGrid.minX = mapLimits_.minX;
-	occupancyGrid.grid =
-		OccupancyGrid::GridType::Constant(mapLimits_.height(), mapLimits_.width(), -1);
-	for(int x = 0; x < map_.cols(); ++x)
+	occupancyGrid.limits = roi;
+	occupancyGrid.grid = OccupancyGrid::GridType::Constant(roi.height(), roi.width(), -1);
+	MapLimits intersection = MapLimits::intersect(mapLimits_, roi);
+	int height = intersection.height();
+	int width = intersection.width();
+	if (height == 0 || width == 0)
 	{
-		for(int y = 0; y < map_.rows(); ++y)
+		return occupancyGrid;
+	}
+	int dstStartX = std::max(mapLimits_.minX - roi.minX, 0);
+	int dstStartY = std::max(mapLimits_.minY - roi.minY, 0);
+	int srcStartX = std::max(roi.minX - mapLimits_.minX, 0);
+	int srcStartY = std::max(roi.minY - mapLimits_.minY, 0);
+	for(int x = 0; x < width; ++x)
+	{
+		for(int y = 0; y < height; ++y)
 		{
-			float value = map_.coeff(y, x);
+			float value = map_.coeff(y + srcStartY, x + srcStartX);
 			if(value == unknown_)
 			{
-				occupancyGrid.grid.coeffRef(y, x) = -1;
+				occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) = -1;
 			}
 			else if(value >= occupancyThr_)
 			{
-				occupancyGrid.grid.coeffRef(y, x) = 100;
+				occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) = 100;
 			}
 			else
 			{
-				occupancyGrid.grid.coeffRef(y, x) = 0;
+				occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) = 0;
 			}
 		}
 	}
@@ -387,7 +401,12 @@ OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getOccupancyGrid() con
 		{
 			int x = pair.first;
 			int y = pair.second;
-			occupancyGrid.grid.coeffRef(y, x) = 100;
+			x -= srcStartX;
+			y -= srcStartY;
+			if (x >= 0 && y >= 0 && x < width && y < height)
+			{
+				occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) = 100;
+			}
 		}
 	}
 	return occupancyGrid;
@@ -395,30 +414,44 @@ OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getOccupancyGrid() con
 
 OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getProbOccupancyGrid() const
 {
+	return getProbOccupancyGrid(mapLimits_);
+}
+
+OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getProbOccupancyGrid(
+	const MapLimits& roi) const
+{
 	MEASURE_BLOCK_TIME(ColoredOccupancyGrid__getProbOccupancyGrid);
 	OccupancyGrid occupancyGrid;
 	if (!mapLimits_.valid())
 	{
-		occupancyGrid.minX = std::numeric_limits<int>::max();
-		occupancyGrid.minY = std::numeric_limits<int>::max();
 		return occupancyGrid;
 	}
-	occupancyGrid.minY = mapLimits_.minY;
-	occupancyGrid.minX = mapLimits_.minX;
-	occupancyGrid.grid =
-		OccupancyGrid::GridType::Constant(mapLimits_.height(), mapLimits_.width(), -1);
-	for(int x = 0; x < map_.cols(); ++x)
+	occupancyGrid.limits = roi;
+	occupancyGrid.grid = OccupancyGrid::GridType::Constant(roi.height(), roi.width(), -1);
+	MapLimits intersection = MapLimits::intersect(mapLimits_, roi);
+	int height = intersection.height();
+	int width = intersection.width();
+	if (height == 0 || width == 0)
 	{
-		for(int y = 0; y < map_.rows(); ++y)
+		return occupancyGrid;
+	}
+	int dstStartX = std::max(mapLimits_.minX - roi.minX, 0);
+	int dstStartY = std::max(mapLimits_.minY - roi.minY, 0);
+	int srcStartX = std::max(roi.minX - mapLimits_.minX, 0);
+	int srcStartY = std::max(roi.minY - mapLimits_.minY, 0);
+	for(int x = 0; x < width; ++x)
+	{
+		for(int y = 0; y < height; ++y)
 		{
-			float value = map_.coeff(y, x);
+			float value = map_.coeff(y + srcStartY, x + srcStartX);
 			if(value == unknown_)
 			{
-				occupancyGrid.grid.coeffRef(y, x) = -1;
+				occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) = -1;
 			}
 			else
 			{
-				occupancyGrid.grid.coeffRef(y, x) = probability(value) * 100;
+				occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) =
+					probability(value) * 100;
 			}
 		}
 	}
@@ -428,7 +461,12 @@ OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getProbOccupancyGrid()
 		{
 			int x = pair.first;
 			int y = pair.second;
-			occupancyGrid.grid.coeffRef(y, x) = 100;
+			x -= srcStartX;
+			y -= srcStartY;
+			if (x >= 0 && y >= 0 && x < width && y < height)
+			{
+				occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) = 100;
+			}
 		}
 	}
 	return occupancyGrid;
@@ -436,24 +474,47 @@ OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getProbOccupancyGrid()
 
 OccupancyGridBuilder::ColorGrid OccupancyGridBuilder::getColorGrid() const
 {
+	return getColorGrid(mapLimits_);
+}
+
+OccupancyGridBuilder::ColorGrid OccupancyGridBuilder::getColorGrid(
+	const MapLimits& roi) const
+{
 	MEASURE_BLOCK_TIME(ColoredOccupancyGrid__getColorGrid);
 	ColorGrid colorGrid;
 	if (!mapLimits_.valid())
 	{
-		colorGrid.minX = std::numeric_limits<int>::max();
-		colorGrid.minY = std::numeric_limits<int>::max();
 		return colorGrid;
 	}
-	colorGrid.minY = mapLimits_.minY;
-	colorGrid.minX = mapLimits_.minX;
-	colorGrid.grid = colors_;
+	colorGrid.limits = roi;
+	colorGrid.grid = Eigen::MatrixXi::Constant(roi.height(), roi.width(),
+		Color::missingColor.data());
+	MapLimits intersection = MapLimits::intersect(mapLimits_, roi);
+	int height = intersection.height();
+	int width = intersection.width();
+	if (height == 0 || width == 0)
+	{
+		return colorGrid;
+	}
+	int dstStartX = std::max(mapLimits_.minX - roi.minX, 0);
+	int dstStartY = std::max(mapLimits_.minY - roi.minY, 0);
+	int srcStartX = std::max(roi.minX - mapLimits_.minX, 0);
+	int srcStartY = std::max(roi.minY - mapLimits_.minY, 0);
+	colorGrid.grid.block(dstStartY, dstStartX, height, width) =
+		colors_.block(srcStartY, srcStartX, height, width);
 	if (showTemporarilyOccupiedCells_)
 	{
 		for (const auto& pair : temporarilyOccupiedCells_)
 		{
 			int x = pair.first;
 			int y = pair.second;
-			colorGrid.grid.coeffRef(y, x) = temporarilyOccupiedCellColor_.rgb();
+			x -= srcStartX;
+			y -= srcStartY;
+			if (x >= 0 && y >= 0 && x < width && y < height)
+			{
+				colorGrid.grid.coeffRef(y + dstStartY, x + dstStartX) =
+					temporarilyOccupiedCellColor_.rgb();
+			}
 		}
 	}
 	return colorGrid;

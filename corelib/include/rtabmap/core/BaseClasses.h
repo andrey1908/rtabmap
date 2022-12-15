@@ -64,47 +64,24 @@ public:
 		};
 	};
 
-	struct OccupancyGrid
-	{
-		using GridType = Eigen::Matrix<char, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-		int minY;
-		int minX;
-		GridType grid;
-	};
-
-	struct ColorGrid
-	{
-		using GridType = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-		int minY;
-		int minX;
-		GridType grid;
-	};
-
-protected:
-	inline static float logodds(float probability)
-	{
-		return log(probability / (1.0f - probability));
-	}
-
-	inline static float probability(float logodds)
-	{
-		return 1.0f - (1.0f / (1.0f + exp(logodds)));
-	}
-
 	struct MapLimits
 	{
 		MapLimits() :
 			minX(std::numeric_limits<int>::max()),
 			minY(std::numeric_limits<int>::max()),
-			maxX(std::numeric_limits<int>::min() + 1),
-			maxY(std::numeric_limits<int>::min() + 1) {}
+			maxX(std::numeric_limits<int>::min()),
+			maxY(std::numeric_limits<int>::min()) {}
 		bool operator==(const MapLimits& other) const
 		{
-			return minX == other.minX && minY == other.minY && maxX == other.maxX && maxY == other.maxY;
+			return
+				minX == other.minX &&
+				minY == other.minY &&
+				maxX == other.maxX &&
+				maxY == other.maxY;
 		}
 		bool operator!=(const MapLimits& other) const
 		{
-			return !(*this == other);
+			return !operator==(other);
 		}
 		bool valid() const
 		{
@@ -114,20 +91,20 @@ protected:
 		{
 			if (x < minX)
 				minX = x;
-			if (x > maxX - 1)
-				maxX = x + 1;
+			if (x > maxX)
+				maxX = x;
 			if (y < minY)
 				minY = y;
-			if (y > maxY - 1)
-				maxY = y + 1;
+			if (y > maxY)
+				maxY = y;
 		}
 		int width() const
 		{
-			return maxX - minX;
+			return maxX - minX + 1;
 		}
 		int height() const
 		{
-			return maxY - minY;
+			return maxY - minY + 1;
 		}
 		static MapLimits unite(const MapLimits& a, const MapLimits& b)
 		{
@@ -146,9 +123,9 @@ protected:
 			res.maxX = std::min(a.maxX, b.maxX);
 			res.maxY = std::min(a.maxY, b.maxY);
 			if (res.minX > res.maxX)
-				res.minX = res.maxX;
+				res.minX = res.maxX + 1;
 			if (res.minY > res.maxY)
-				res.minY = res.maxY;
+				res.minY = res.maxY + 1;
 			return res;
 		}
 		int minX;
@@ -157,7 +134,30 @@ protected:
 		int maxY;
 	};
 
-public:
+	struct OccupancyGrid
+	{
+		using GridType = Eigen::Matrix<char, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+		MapLimits limits;
+		GridType grid;
+	};
+
+	struct ColorGrid
+	{
+		using GridType = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+		MapLimits limits;
+		GridType grid;
+	};
+
+	inline static float logodds(float probability)
+	{
+		return log(probability / (1.0f - probability));
+	}
+
+	inline static float probability(float logodds)
+	{
+		return 1.0f - (1.0f / (1.0f + exp(logodds)));
+	}
+
 	struct LocalMap
 	{
 		int numEmpty, numObstacles;

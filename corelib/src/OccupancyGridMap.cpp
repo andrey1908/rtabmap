@@ -60,148 +60,118 @@ void OccupancyGridMap::updatePoses(const std::map<int, Transform>& updatedPoses,
 OccupancyGridMap::OccupancyGrid OccupancyGridMap::getOccupancyGrid() const
 {
 	MEASURE_BLOCK_TIME(OccupancyGrid__getOccupancyGrid);
-	OccupancyGrid occupancyGrid = occupancyGridBuilder_.getOccupancyGrid();
-	OccupancyGrid temporaryOccupancyGrid = temporaryOccupancyGridBuilder_.getOccupancyGrid();
+	MapLimits occupancyGridMapLimits = occupancyGridBuilder_.mapLimits();
+	MapLimits temporaryOccupancyGridMapLimits = temporaryOccupancyGridBuilder_.mapLimits();
+	UASSERT(occupancyGridMapLimits.valid() || temporaryOccupancyGridMapLimits.valid());
+	if (!occupancyGridMapLimits.valid())
+	{
+		return temporaryOccupancyGridBuilder_.getOccupancyGrid();
+	}
+	if (!temporaryOccupancyGridMapLimits.valid())
+	{
+		return occupancyGridBuilder_.getOccupancyGrid();
+	}
+
+	MapLimits combinedMapLimits =
+		MapLimits::unite(occupancyGridMapLimits, temporaryOccupancyGridMapLimits);
+	OccupancyGrid occupancyGrid = occupancyGridBuilder_.getOccupancyGrid(combinedMapLimits);
+	OccupancyGrid temporaryOccupancyGrid =
+		temporaryOccupancyGridBuilder_.getOccupancyGrid();
 	
-	MapLimits occupancyGridML;
-	if (occupancyGrid.minX != std::numeric_limits<int>::max())
+	int dstStartX = temporaryOccupancyGrid.limits.minX - occupancyGrid.limits.minX;
+	int dstStartY = temporaryOccupancyGrid.limits.minY - occupancyGrid.limits.minY;
+	int width = temporaryOccupancyGrid.limits.width();
+	int height = temporaryOccupancyGrid.limits.height();
+	for (int y = 0; y < height; y++)
 	{
-		occupancyGridML.minX = occupancyGrid.minX;
-		occupancyGridML.minY = occupancyGrid.minY;
-		occupancyGridML.maxX = occupancyGrid.minX + occupancyGrid.grid.cols();
-		occupancyGridML.maxY = occupancyGrid.minY + occupancyGrid.grid.rows();
+		for (int x = 0; x < width; x++)
+		{
+			char value = temporaryOccupancyGrid.grid.coeff(y, x);
+			if (value != (char)(-1))
+			{
+				occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) = value;
+			}
+		}
 	}
-
-	MapLimits temporaryOccupancyGridML;
-	if (temporaryOccupancyGrid.minX != std::numeric_limits<int>::max())
-	{
-		temporaryOccupancyGridML.minX = temporaryOccupancyGrid.minX;
-		temporaryOccupancyGridML.minY = temporaryOccupancyGrid.minY;
-		temporaryOccupancyGridML.maxX = temporaryOccupancyGrid.minX + temporaryOccupancyGrid.grid.cols();
-		temporaryOccupancyGridML.maxY = temporaryOccupancyGrid.minY + temporaryOccupancyGrid.grid.rows();
-	}
-
-	MapLimits combinedML = MapLimits::unite(occupancyGridML, temporaryOccupancyGridML);
-	OccupancyGrid combined;
-	combined.minX = combinedML.minX;
-	combined.minY = combinedML.minY;
-	combined.grid = OccupancyGrid::GridType::Constant(combinedML.height(), combinedML.width(),
-		-1);
-	if (occupancyGrid.minX != std::numeric_limits<int>::max())
-	{
-		int occupancyGridShiftX = occupancyGridML.minX - combinedML.minX;
-		int occupancyGridShiftY = occupancyGridML.minY - combinedML.minY;
-		combined.grid.block(occupancyGridShiftY, occupancyGridShiftX,
-			occupancyGridML.height(), occupancyGridML.width()) = occupancyGrid.grid;
-	}
-	if (temporaryOccupancyGrid.minX != std::numeric_limits<int>::max())
-	{
-	int temporaryOccupancyGridShiftX = temporaryOccupancyGridML.minX - combinedML.minX;
-	int temporaryOccupancyGridShiftY = temporaryOccupancyGridML.minY - combinedML.minY;
-	combined.grid.block(temporaryOccupancyGridShiftY, temporaryOccupancyGridShiftX,
-		temporaryOccupancyGridML.height(), temporaryOccupancyGridML.width()) =
-		temporaryOccupancyGrid.grid;
-	}
-
-	return combined;
+	return occupancyGrid;
 }
 
 OccupancyGridMap::OccupancyGrid OccupancyGridMap::getProbOccupancyGrid() const
 {
-	MEASURE_BLOCK_TIME(OccupancyGrid__getOccupancyGrid);
-	OccupancyGrid occupancyGrid = occupancyGridBuilder_.getProbOccupancyGrid();
-	OccupancyGrid temporaryOccupancyGrid = temporaryOccupancyGridBuilder_.getProbOccupancyGrid();
+	MEASURE_BLOCK_TIME(OccupancyGrid__getProbOccupancyGrid);
+	MapLimits occupancyGridMapLimits = occupancyGridBuilder_.mapLimits();
+	MapLimits temporaryOccupancyGridMapLimits = temporaryOccupancyGridBuilder_.mapLimits();
+	UASSERT(occupancyGridMapLimits.valid() || temporaryOccupancyGridMapLimits.valid());
+	if (!occupancyGridMapLimits.valid())
+	{
+		return temporaryOccupancyGridBuilder_.getProbOccupancyGrid();
+	}
+	if (!temporaryOccupancyGridMapLimits.valid())
+	{
+		return occupancyGridBuilder_.getProbOccupancyGrid();
+	}
+
+	MapLimits combinedMapLimits =
+		MapLimits::unite(occupancyGridMapLimits, temporaryOccupancyGridMapLimits);
+	OccupancyGrid occupancyGrid = occupancyGridBuilder_.getProbOccupancyGrid(combinedMapLimits);
+	OccupancyGrid temporaryOccupancyGrid =
+		temporaryOccupancyGridBuilder_.getProbOccupancyGrid();
 	
-	MapLimits occupancyGridML;
-	if (occupancyGrid.minX != std::numeric_limits<int>::max())
+	int dstStartX = temporaryOccupancyGrid.limits.minX - occupancyGrid.limits.minX;
+	int dstStartY = temporaryOccupancyGrid.limits.minY - occupancyGrid.limits.minY;
+	int width = temporaryOccupancyGrid.limits.width();
+	int height = temporaryOccupancyGrid.limits.height();
+	for (int y = 0; y < height; y++)
 	{
-		occupancyGridML.minX = occupancyGrid.minX;
-		occupancyGridML.minY = occupancyGrid.minY;
-		occupancyGridML.maxX = occupancyGrid.minX + occupancyGrid.grid.cols();
-		occupancyGridML.maxY = occupancyGrid.minY + occupancyGrid.grid.rows();
+		for (int x = 0; x < width; x++)
+		{
+			char value = temporaryOccupancyGrid.grid.coeff(y, x);
+			if (value != (char)(-1))
+			{
+				occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) = value;
+			}
+		}
 	}
-
-	MapLimits temporaryOccupancyGridML;
-	if (temporaryOccupancyGrid.minX != std::numeric_limits<int>::max())
-	{
-		temporaryOccupancyGridML.minX = temporaryOccupancyGrid.minX;
-		temporaryOccupancyGridML.minY = temporaryOccupancyGrid.minY;
-		temporaryOccupancyGridML.maxX = temporaryOccupancyGrid.minX + temporaryOccupancyGrid.grid.cols();
-		temporaryOccupancyGridML.maxY = temporaryOccupancyGrid.minY + temporaryOccupancyGrid.grid.rows();
-	}
-
-	MapLimits combinedML = MapLimits::unite(occupancyGridML, temporaryOccupancyGridML);
-	OccupancyGrid combined;
-	combined.minX = combinedML.minX;
-	combined.minY = combinedML.minY;
-	combined.grid = OccupancyGrid::GridType::Constant(combinedML.height(), combinedML.width(),
-		-1);
-	if (occupancyGrid.minX != std::numeric_limits<int>::max())
-	{
-		int occupancyGridShiftX = occupancyGridML.minX - combinedML.minX;
-		int occupancyGridShiftY = occupancyGridML.minY - combinedML.minY;
-		combined.grid.block(occupancyGridShiftY, occupancyGridShiftX,
-			occupancyGridML.height(), occupancyGridML.width()) = occupancyGrid.grid;
-	}
-	if (temporaryOccupancyGrid.minX != std::numeric_limits<int>::max())
-	{
-		int temporaryOccupancyGridShiftX = temporaryOccupancyGridML.minX - combinedML.minX;
-		int temporaryOccupancyGridShiftY = temporaryOccupancyGridML.minY - combinedML.minY;
-		combined.grid.block(temporaryOccupancyGridShiftY, temporaryOccupancyGridShiftX,
-			temporaryOccupancyGridML.height(), temporaryOccupancyGridML.width()) =
-			temporaryOccupancyGrid.grid;
-	}
-
-	return combined;
+	return occupancyGrid;
 }
 
 OccupancyGridMap::ColorGrid OccupancyGridMap::getColorGrid() const
 {
 	MEASURE_BLOCK_TIME(OccupancyGrid__getOccupancyGrid);
-	ColorGrid colorGrid = occupancyGridBuilder_.getColorGrid();
-	ColorGrid temporaryColorGrid = temporaryOccupancyGridBuilder_.getColorGrid();
+	MapLimits occupancyGridMapLimits = occupancyGridBuilder_.mapLimits();
+	MapLimits temporaryOccupancyGridMapLimits = temporaryOccupancyGridBuilder_.mapLimits();
+	UASSERT(occupancyGridMapLimits.valid() || temporaryOccupancyGridMapLimits.valid());
+	if (!occupancyGridMapLimits.valid())
+	{
+		return temporaryOccupancyGridBuilder_.getColorGrid();
+	}
+	if (!temporaryOccupancyGridMapLimits.valid())
+	{
+		return occupancyGridBuilder_.getColorGrid();
+	}
+
+	MapLimits combinedMapLimits =
+		MapLimits::unite(occupancyGridMapLimits, temporaryOccupancyGridMapLimits);
+	ColorGrid colorGrid = occupancyGridBuilder_.getColorGrid(combinedMapLimits);
+	ColorGrid temporaryColorGrid =
+		temporaryOccupancyGridBuilder_.getColorGrid();
 	
-	MapLimits colorGridML;
-	if (colorGrid.minX != std::numeric_limits<int>::max())
+	int dstStartX = temporaryColorGrid.limits.minX - colorGrid.limits.minX;
+	int dstStartY = temporaryColorGrid.limits.minY - colorGrid.limits.minY;
+	int width = temporaryColorGrid.limits.width();
+	int height = temporaryColorGrid.limits.height();
+	for (int y = 0; y < height; y++)
 	{
-		colorGridML.minX = colorGrid.minX;
-		colorGridML.minY = colorGrid.minY;
-		colorGridML.maxX = colorGrid.minX + colorGrid.grid.cols();
-		colorGridML.maxY = colorGrid.minY + colorGrid.grid.rows();
+		for (int x = 0; x < width; x++)
+		{
+			int value = temporaryColorGrid.grid.coeff(y, x);
+			if (value != Color::missingColor.data())
+			{
+				colorGrid.grid.coeffRef(y + dstStartY, x + dstStartX) = value;
+			}
+		}
 	}
-
-	MapLimits temporaryColorGridML;
-	if (temporaryColorGrid.minX != std::numeric_limits<int>::max())
-	{
-		temporaryColorGridML.minX = temporaryColorGrid.minX;
-		temporaryColorGridML.minY = temporaryColorGrid.minY;
-		temporaryColorGridML.maxX = temporaryColorGrid.minX + temporaryColorGrid.grid.cols();
-		temporaryColorGridML.maxY = temporaryColorGrid.minY + temporaryColorGrid.grid.rows();
-	}
-
-	MapLimits combinedML = MapLimits::unite(colorGridML, temporaryColorGridML);
-	ColorGrid combined;
-	combined.minX = combinedML.minX;
-	combined.minY = combinedML.minY;
-	combined.grid = ColorGrid::GridType::Constant(combinedML.height(), combinedML.width(),
-		-1);
-	if (colorGrid.minX != std::numeric_limits<int>::max())
-	{
-		int colorGridShiftX = colorGridML.minX - combinedML.minX;
-		int colorGridShiftY = colorGridML.minY - combinedML.minY;
-		combined.grid.block(colorGridShiftY, colorGridShiftX,
-			colorGridML.height(), colorGridML.width()) = colorGrid.grid;
-	}
-	if (temporaryColorGrid.minX != std::numeric_limits<int>::max())
-	{
-		int temporaryColorGridShiftX = temporaryColorGridML.minX - combinedML.minX;
-		int temporaryColorGridShiftY = temporaryColorGridML.minY - combinedML.minY;
-		combined.grid.block(temporaryColorGridShiftY, temporaryColorGridShiftX,
-			temporaryColorGridML.height(), temporaryColorGridML.width()) =
-			temporaryColorGrid.grid;
-	}
-
-	return combined;
+	return colorGrid;
 }
 
 std::pair<float, float> OccupancyGridMap::getGridOrigin() const
