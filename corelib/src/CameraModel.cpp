@@ -758,7 +758,12 @@ void CameraModel::reproject(float x, float y, float z, float & u, float & v) con
 }
 void CameraModel::reproject(float x, float y, float z, int & u, int & v) const
 {
-	UASSERT(z!=0.0f);
+	if (z == 0.0f)
+	{
+		u = -1;
+		v = -1;
+		return;
+	}
 	float invZ = 1.0f/z;
 	u = (fx()*x)*invZ + cx();
 	v = (fy()*y)*invZ + cy();
