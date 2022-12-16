@@ -216,6 +216,7 @@ std::vector<LocalMapBuilder::Color> LocalMapBuilder::getPointsColors(
 	for (int camI = 0; camI < images.size(); camI++)
 	{
 		const cv::Mat& image = images[camI];
+		UASSERT(image.type() == CV_8UC3);
 		const CameraModel& cameraModel = cameraModels[camI];
 		const Transform& transform = cameraModel.localTransform().inverse();
 		const Eigen::Matrix3Xf& transformedPoints =
