@@ -9,7 +9,8 @@ namespace rtabmap {
 
 LocalMapBuilder::LocalMapBuilder(const ParametersMap& parameters) :
 	cellSize_(Parameters::defaultGridCellSize()),
-	maxRange_(Parameters::defaultLocalMapMaxRange()),
+	maxVisibleRange_(Parameters::defaultLocalMapMaxVisibleRange()),
+	maxRange2d_(Parameters::defaultLocalMapMaxRange2d()),
 	minObstacleHeight_(Parameters::defaultLocalMapMinObstacleHeight()),
 	maxObstacleHeight_(Parameters::defaultLocalMapMaxObstacleHeight()),
 	minSemanticRange_(Parameters::defaultLocalMapMinSemanticRange()),
@@ -23,7 +24,8 @@ LocalMapBuilder::LocalMapBuilder(const ParametersMap& parameters) :
 void LocalMapBuilder::parseParameters(const ParametersMap& parameters)
 {
 	Parameters::parse(parameters, Parameters::kGridCellSize(), cellSize_);
-	Parameters::parse(parameters, Parameters::kLocalMapMaxRange(), maxRange_);
+	Parameters::parse(parameters, Parameters::kLocalMapMaxVisibleRange(), maxVisibleRange_);
+	Parameters::parse(parameters, Parameters::kLocalMapMaxRange2d(), maxRange2d_);
 	Parameters::parse(parameters, Parameters::kLocalMapMinObstacleHeight(), minObstacleHeight_);
 	Parameters::parse(parameters, Parameters::kLocalMapMaxObstacleHeight(), maxObstacleHeight_);
 	Parameters::parse(parameters, Parameters::kLocalMapMinSemanticRange(), minSemanticRange_);
@@ -33,7 +35,8 @@ void LocalMapBuilder::parseParameters(const ParametersMap& parameters)
 	UASSERT(minObstacleHeight_ < maxObstacleHeight_);
 	UASSERT(maxSemanticRange_ == 0.0f || minSemanticRange_ < maxSemanticRange_);
 
-	maxRangeSqr_ = maxRange_ * maxRange_;
+	maxVisibleRangeSqr_ = maxVisibleRange_ * maxVisibleRange_;
+	maxRange2dSqr_ = maxRange2d_ * maxRange2d_;
 	minSemanticRangeSqr_ = minSemanticRange_ * minSemanticRange_;
 	maxSemanticRangeSqr_ = maxSemanticRange_ * maxSemanticRange_;
 	if (semanticDilation_ == nullptr)
@@ -71,7 +74,10 @@ LocalMapBuilder::LocalMap LocalMapBuilder::createLocalMap(const Signature& signa
 	const Transform& transform = laserScan.localTransform();
 	Eigen::Matrix3Xf points, obstacles;
 	points = convertLaserScan(laserScan);
-	points = filterMaxRange(points);
+	if (maxVisibleRangeSqr_ != 0.0f)
+	{
+		points = filterMaxVisibleRange(points);
+	}
 	points = transformPoints(points, transform);
 	obstacles = getObstaclePoints(points);
 
@@ -134,9 +140,9 @@ Eigen::Matrix3Xf LocalMapBuilder::convertLaserScan(const LaserScan& laserScan) c
 	return points;
 }
 
-Eigen::Matrix3Xf LocalMapBuilder::filterMaxRange(const Eigen::Matrix3Xf& points) const
+Eigen::Matrix3Xf LocalMapBuilder::filterMaxVisibleRange(const Eigen::Matrix3Xf& points) const
 {
-	MEASURE_BLOCK_TIME(LocalMapBuilder__filterMaxRange);
+	MEASURE_BLOCK_TIME(LocalMapBuilder__filterMaxVisibleRange);
 	std::vector<int> indices;
 	indices.reserve(points.cols());
 	for (int i = 0; i < points.cols(); i++)
@@ -144,7 +150,7 @@ Eigen::Matrix3Xf LocalMapBuilder::filterMaxRange(const Eigen::Matrix3Xf& points)
 		float x = points(0, i);
 		float y = points(1, i);
 		float z = points(2, i);
-		if (x * x + y * y + z * z <= maxRangeSqr_)
+		if (x * x + y * y + z * z <= maxVisibleRangeSqr_)
 		{
 			indices.push_back(i);
 		}
@@ -316,6 +322,15 @@ LocalMapBuilder::LocalMap LocalMapBuilder::localMapFromColoredGrid(
 	{
 		for (int x = 0; x < coloredGrid.grid.cols; x++)
 		{
+			if (maxRange2dSqr_ != 0.0f)
+			{
+				float xf = (x + coloredGrid.minX + 0.5f) * cellSize_;
+				float yf = (y + coloredGrid.minY + 0.5f) * cellSize_;
+				if (xf * xf + yf * yf > maxRange2dSqr_)
+				{
+					continue;
+				}
+			}
 			std::int8_t value = coloredGrid.grid.at<std::int8_t>(y, x);
 			if (value == RayTracing::occupiedCellValue)
 			{

@@ -35,7 +35,7 @@ public:
 
 private:
 	Eigen::Matrix3Xf convertLaserScan(const LaserScan& laserScan) const;
-	Eigen::Matrix3Xf filterMaxRange(const Eigen::Matrix3Xf& points) const;
+	Eigen::Matrix3Xf filterMaxVisibleRange(const Eigen::Matrix3Xf& points) const;
 	Eigen::Matrix3Xf transformPoints(const Eigen::Matrix3Xf& points,
 		const Transform& transform) const;
 	Eigen::Matrix3Xf getObstaclePoints(const Eigen::Matrix3Xf& points) const;
@@ -53,8 +53,10 @@ private:
 
 private:
 	float cellSize_;
-	float maxRange_;
-	float maxRangeSqr_;
+	float maxVisibleRange_;
+	float maxVisibleRangeSqr_;
+	float maxRange2d_;
+	float maxRange2dSqr_;
 	float minObstacleHeight_;
 	float maxObstacleHeight_;
 	float minSemanticRange_;
