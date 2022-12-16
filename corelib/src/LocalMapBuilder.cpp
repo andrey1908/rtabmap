@@ -234,7 +234,11 @@ std::vector<LocalMapBuilder::Color> LocalMapBuilder::getPointsColors(
 				rangeSqr >= minSemanticRangeSqr_ &&
 				(maxSemanticRangeSqr_ == 0.0f || rangeSqr <= maxSemanticRangeSqr_))
 			{
-				const std::uint8_t* pixelColor = image.ptr<std::uint8_t>(v, u);
+				const cv::Vec3b& pixelColor = image.at<cv::Vec3b>(v, u);
+				if (pixelColor == SemanticDilation::backgroundColor)
+				{
+					continue;
+				}
 				colors[i].b() = pixelColor[0];
 				colors[i].g() = pixelColor[1];
 				colors[i].r() = pixelColor[2];
