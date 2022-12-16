@@ -781,7 +781,7 @@ class RTABMAP_EXP Parameters
 	RTABMAP_PARAM(Grid, MaxTemporaryLocalMaps,      int,    1,       "Maximum number of temporary local maps.");
 	RTABMAP_PARAM(LocalMap, MaxVisibleRange,         float,  0.0,     "Maximum range from sensor (0=inf).");
 	RTABMAP_PARAM(LocalMap, MaxRange2d,              float,  10.0,    "Maximum range shown on the grid (0=inf).");
-	RTABMAP_PARAM(LocalMap, MinObstacleHeight,       float,  0.0,     "Minimum obstacles height.");
+	RTABMAP_PARAM(LocalMap, MinObstacleHeight,       float,  0.2,     "Minimum obstacles height.");
 	RTABMAP_PARAM(LocalMap, MaxObstacleHeight,       float,  1.5,     "Maximum obstacles height.");
 	RTABMAP_PARAM(LocalMap, MinSemanticRange,        float,  0.0,     "Minimum semantic range from camera.");
 	RTABMAP_PARAM(LocalMap, MaxSemanticRange,        float,  0.0,     "Maximum semantic range from camera (0=inf).");
