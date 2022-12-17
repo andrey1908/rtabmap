@@ -321,8 +321,8 @@ LocalMapBuilder::LocalMap LocalMapBuilder::localMapFromColoredGrid(
 	const ColoredGrid& coloredGrid) const
 {
 	MEASURE_BLOCK_TIME(LocalMapBuilder__localMapFromColoredGrid);
-	std::vector<std::pair<int, int>> emptyCells;
 	std::vector<std::pair<int, int>> occupiedCells;
+	std::vector<std::pair<int, int>> emptyCells;
 	for (int y = 0; y < coloredGrid.grid.rows; y++)
 	{
 		for (int x = 0; x < coloredGrid.grid.cols; x++)
@@ -349,15 +349,15 @@ LocalMapBuilder::LocalMap LocalMapBuilder::localMapFromColoredGrid(
 	}
 
 	LocalMap localMap;
-	localMap.numEmpty = emptyCells.size();
 	localMap.numObstacles = occupiedCells.size();
-	localMap.points.resize(3, localMap.numEmpty + localMap.numObstacles);
-	localMap.colors.reserve(localMap.numEmpty + localMap.numObstacles);
+	localMap.numEmpty = emptyCells.size();
+	localMap.points.resize(3, localMap.numObstacles + localMap.numEmpty);
+	localMap.colors.reserve(localMap.numObstacles + localMap.numEmpty);
 	int i = 0;
-	for (const std::pair<int, int> emptyCell : emptyCells)
+	for (const std::pair<int, int> occupiedCell : occupiedCells)
 	{
-		int y = emptyCell.first;
-		int x = emptyCell.second;
+		int y = occupiedCell.first;
+		int x = occupiedCell.second;
 		localMap.points(0, i) = (x + coloredGrid.minX + 0.5f) * cellSize_;
 		localMap.points(1, i) = (y + coloredGrid.minY + 0.5f) * cellSize_;
 		localMap.points(2, i) = 0.0f;
@@ -365,10 +365,10 @@ LocalMapBuilder::LocalMap LocalMapBuilder::localMapFromColoredGrid(
 			reinterpret_cast<const Color&>(coloredGrid.colors.at<int>(y, x)));
 		i++;
 	}
-	for (const std::pair<int, int> occupiedCell : occupiedCells)
+	for (const std::pair<int, int> emptyCell : emptyCells)
 	{
-		int y = occupiedCell.first;
-		int x = occupiedCell.second;
+		int y = emptyCell.first;
+		int x = emptyCell.second;
 		localMap.points(0, i) = (x + coloredGrid.minX + 0.5f) * cellSize_;
 		localMap.points(1, i) = (y + coloredGrid.minY + 0.5f) * cellSize_;
 		localMap.points(2, i) = 0.0f;

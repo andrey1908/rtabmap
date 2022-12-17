@@ -60,8 +60,8 @@ private:
 
 	std::list<Node> nodes_;
 	MapLimits mapLimits_;
-	Eigen::MatrixXi missCounter_;
 	Eigen::MatrixXi hitCounter_;
+	Eigen::MatrixXi missCounter_;
 	Eigen::MatrixXi colors_;
 };
 

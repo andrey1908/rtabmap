@@ -105,8 +105,8 @@ void TemporaryOccupancyGridBuilder::createOrResizeMap(const MapLimits& newMapLim
 		mapLimits_ = newMapLimits;
 		int height = newMapLimits.height();
 		int width = newMapLimits.width();
-		missCounter_ = Eigen::MatrixXi::Constant(height, width, 0);
 		hitCounter_ = Eigen::MatrixXi::Constant(height, width, 0);
+		missCounter_ = Eigen::MatrixXi::Constant(height, width, 0);
 		colors_ = Eigen::MatrixXi::Constant(height, width, Color::missingColor.data());
 	}
 	else if(mapLimits_ != newMapLimits)
@@ -123,23 +123,23 @@ void TemporaryOccupancyGridBuilder::createOrResizeMap(const MapLimits& newMapLim
 
 		int height = newMapLimits.height();
 		int width = newMapLimits.width();
-		Eigen::MatrixXi newMissCounter =
-			Eigen::MatrixXi::Constant(height, width, 0);
 		Eigen::MatrixXi newHitCounter =
+			Eigen::MatrixXi::Constant(height, width, 0);
+		Eigen::MatrixXi newMissCounter =
 			Eigen::MatrixXi::Constant(height, width, 0);
 		Eigen::MatrixXi newColors =
 			Eigen::MatrixXi::Constant(height, width, Color::missingColor.data());
 
-		newMissCounter.block(dstStartY, dstStartX, copyHeight, copyWidth) =
-			missCounter_.block(srcStartY, srcStartX, copyHeight, copyWidth);
 		newHitCounter.block(dstStartY, dstStartX, copyHeight, copyWidth) =
 			hitCounter_.block(srcStartY, srcStartX, copyHeight, copyWidth);
+		newMissCounter.block(dstStartY, dstStartX, copyHeight, copyWidth) =
+			missCounter_.block(srcStartY, srcStartX, copyHeight, copyWidth);
 		newColors.block(dstStartY, dstStartX, copyHeight, copyWidth) =
 			colors_.block(srcStartY, srcStartX, copyHeight, copyWidth);
 
 		mapLimits_ = newMapLimits;
-		missCounter_ = std::move(newMissCounter);
 		hitCounter_ = std::move(newHitCounter);
+		missCounter_ = std::move(newMissCounter);
 		colors_ = std::move(newColors);
 	}
 }
@@ -161,14 +161,14 @@ void TemporaryOccupancyGridBuilder::deployLocalMap(const Node& node)
 		int x = transformedPoints.coeff(0, i) - mapLimits_.minX;
 		UASSERT(y >= 0 && x >= 0 && y < missCounter_.rows() && x < missCounter_.cols());
 
-		bool free = (i < node.localMap.numEmpty);
-		if (free)
+		bool occupied = (i < node.localMap.numObstacles);
+		if (occupied)
 		{
-			missCounter_.coeffRef(y, x) += 1;
+			hitCounter_.coeffRef(y, x) += 1;
 		}
 		else
 		{
-			hitCounter_.coeffRef(y, x) += 1;
+			missCounter_.coeffRef(y, x) += 1;
 		}
 
 		const Color& color = node.localMap.colors[i];
@@ -192,18 +192,18 @@ void TemporaryOccupancyGridBuilder::removeLocalMap(std::list<Node>::iterator nod
 		int x = transformedPoints.coeff(0, i) - mapLimits_.minX;
 		UASSERT(y >= 0 && x >= 0 && y < missCounter_.rows() && x < missCounter_.cols());
 
-		bool free = (i < nodeIt->localMap.numEmpty);
-		if (free)
-		{
-			int& misses = missCounter_.coeffRef(y, x);
-			misses -= 1;
-			UASSERT(misses >= 0);
-		}
-		else
+		bool occupied = (i < nodeIt->localMap.numObstacles);
+		if (occupied)
 		{
 			int& hits = hitCounter_.coeffRef(y, x);
 			hits -= 1;
 			UASSERT(hits >= 0);
+		}
+		else
+		{
+			int& misses = missCounter_.coeffRef(y, x);
+			misses -= 1;
+			UASSERT(misses >= 0);
 		}
 	}
 	nodes_.erase(nodeIt);
@@ -247,10 +247,10 @@ TemporaryOccupancyGridBuilder::OccupancyGrid TemporaryOccupancyGridBuilder::getO
 	{
 		for(int x = 0; x < width; ++x)
 		{
-			int misses = missCounter_.coeff(y + srcStartY, x + srcStartX);
 			int hits = hitCounter_.coeff(y + srcStartY, x + srcStartX);
-			float value = misses * miss_ + hits * hit_;
-			if(misses == 0 && hits == 0)
+			int misses = missCounter_.coeff(y + srcStartY, x + srcStartX);
+			float value = hits * hit_ + misses * miss_;
+			if(hits == 0 && misses == 0)
 			{
 				occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) = -1;
 			}
@@ -298,10 +298,10 @@ TemporaryOccupancyGridBuilder::OccupancyGrid TemporaryOccupancyGridBuilder::getP
 	{
 		for(int x = 0; x < width; ++x)
 		{
-			int misses = missCounter_.coeff(y + srcStartY, x + srcStartX);
 			int hits = hitCounter_.coeff(y + srcStartY, x + srcStartX);
-			float value = misses * miss_ + hits * hit_;
-			if(misses == 0 && hits == 0)
+			int misses = missCounter_.coeff(y + srcStartY, x + srcStartX);
+			float value = hits * hit_ + misses * miss_;
+			if(hits == 0 && misses == 0)
 			{
 				occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) = -1;
 			}
@@ -355,8 +355,8 @@ void TemporaryOccupancyGridBuilder::clear()
 		node.transformedLocalMap.reset();
 	}
 	mapLimits_ = MapLimits();
-	missCounter_ = Eigen::MatrixXi();
 	hitCounter_ = Eigen::MatrixXi();
+	missCounter_ = Eigen::MatrixXi();
 	colors_ = Eigen::MatrixXi();
 }
 
@@ -364,8 +364,8 @@ void TemporaryOccupancyGridBuilder::reset()
 {
 	nodes_.clear();
 	mapLimits_ = MapLimits();
-	missCounter_ = Eigen::MatrixXi();
 	hitCounter_ = Eigen::MatrixXi();
+	missCounter_ = Eigen::MatrixXi();
 	colors_ = Eigen::MatrixXi();
 }
 

@@ -160,7 +160,8 @@ public:
 
 	struct LocalMap
 	{
-		int numEmpty, numObstacles;
+		int numObstacles;
+		int numEmpty;
 		Eigen::Matrix3Xf points;  // z = 0
 		std::vector<Color> colors;
 

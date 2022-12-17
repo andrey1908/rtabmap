@@ -293,8 +293,31 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
 		int x = transformedPoints.coeff(0, i) - mapLimits_.minX;
 		UASSERT(y >= 0 && x >= 0 && y < map_.rows() && x < map_.cols());
 
-		bool free = (i < node.localMap.numEmpty);
-		if (free)
+		bool occupied = (i < node.localMap.numObstacles);
+		if (occupied)
+		{
+			if (temporarilyOccupiedCellColor_ != Color::missingColor)
+			{
+				const Color& color = node.localMap.colors[i];
+				if (color == temporarilyOccupiedCellColor_)
+				{
+					temporarilyOccupiedCells_.emplace_back(y, x);
+					continue;
+				}
+			}
+
+			float& value = map_.coeffRef(y, x);
+			if (value == unknown_)
+			{
+				value = 0.0f;
+			}
+			value += hit_;
+			if (value > maxClamping_)
+			{
+				value = maxClamping_;
+			}
+		}
+		else
 		{
 			float& value = map_.coeffRef(y, x);
 			if (node.localMap.sensorBlindRange2dSqr != 0.0f &&
@@ -317,29 +340,6 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
 			if (value < minClamping_)
 			{
 				value = minClamping_;
-			}
-		}
-		else
-		{
-			if (temporarilyOccupiedCellColor_ != Color::missingColor)
-			{
-				const Color& color = node.localMap.colors[i];
-				if (color == temporarilyOccupiedCellColor_)
-				{
-					temporarilyOccupiedCells_.emplace_back(y, x);
-					continue;
-				}
-			}
-
-			float& value = map_.coeffRef(y, x);
-			if (value == unknown_)
-			{
-				value = 0.0f;
-			}
-			value += hit_;
-			if (value > maxClamping_)
-			{
-				value = maxClamping_;
 			}
 		}
 
