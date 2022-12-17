@@ -57,6 +57,7 @@ private:
 	float temporaryOccupancyProbThr_;
 	float occupancyThr_;
 	int maxTemporaryLocalMaps_;
+	int updated_ = 999999;  // just some large number
 
 	std::list<Node> nodes_;
 	MapLimits mapLimits_;

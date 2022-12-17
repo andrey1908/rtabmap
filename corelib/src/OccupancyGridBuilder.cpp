@@ -41,6 +41,8 @@ void OccupancyGridBuilder::parseParameters(const ParametersMap & parameters)
 	maxClamping_ = logodds(maxClampingProb_);
 	occupancyThr_ = logodds(occupancyProbThr_);
 	unknown_ = maxClamping_ + 1.0f;
+	markUpdated_ = maxClamping_ - minClamping_ + 3.0f;
+	updated_ = maxClamping_ + 2.0f;
 	if (temporarilyOccupiedCellColorRgb_ >= 0)
 	{
 		temporarilyOccupiedCellColor_.setRgb(temporarilyOccupiedCellColorRgb_);
@@ -293,6 +295,11 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
 		int x = transformedPoints.coeff(0, i) - mapLimits_.minX;
 		UASSERT(y >= 0 && x >= 0 && y < map_.rows() && x < map_.cols());
 
+		float& value = map_.coeffRef(y, x);
+		if (value > updated_)
+		{
+			continue;
+		}
 		bool occupied = (i < node.localMap.numObstacles);
 		if (occupied)
 		{
@@ -306,7 +313,6 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
 				}
 			}
 
-			float& value = map_.coeffRef(y, x);
 			if (value == unknown_)
 			{
 				value = 0.0f;
@@ -319,7 +325,6 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
 		}
 		else
 		{
-			float& value = map_.coeffRef(y, x);
 			if (node.localMap.sensorBlindRange2dSqr != 0.0f &&
 				value != unknown_ && value >= occupancyThr_)
 			{
@@ -342,11 +347,22 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
 				value = minClamping_;
 			}
 		}
+		value += markUpdated_;
 
 		const Color& color = node.localMap.colors[i];
 		if (!color.missing())
 		{
 			colors_.coeffRef(y, x) = color.rgb();
+		}
+	}
+	for (int y = 0; y < map_.rows(); y++)
+	{
+		for (int x = 0; x < map_.cols(); x++)
+		{
+			if (map_.coeffRef(y, x) > updated_)
+			{
+				map_.coeffRef(y, x) -= markUpdated_;
+			}
 		}
 	}
 }

@@ -349,32 +349,39 @@ LocalMapBuilder::LocalMap LocalMapBuilder::localMapFromColoredGrid(
 	}
 
 	LocalMap localMap;
-	localMap.numObstacles = occupiedCells.size();
-	localMap.numEmpty = emptyCells.size();
+	localMap.numObstacles = occupiedCells.size() * 2;
+	localMap.numEmpty = emptyCells.size() * 2;
 	localMap.points.resize(3, localMap.numObstacles + localMap.numEmpty);
 	localMap.colors.reserve(localMap.numObstacles + localMap.numEmpty);
-	int i = 0;
-	for (const std::pair<int, int> occupiedCell : occupiedCells)
+	for (int i = 0, cellI = 0; i < localMap.numObstacles + localMap.numEmpty;
+		i += 2, cellI++)
 	{
-		int y = occupiedCell.first;
-		int x = occupiedCell.second;
-		localMap.points(0, i) = (x + coloredGrid.minX + 0.5f) * cellSize_;
-		localMap.points(1, i) = (y + coloredGrid.minY + 0.5f) * cellSize_;
+		int x;
+		int y;
+		if (cellI < occupiedCells.size())
+		{
+			const std::pair<int, int>& occupiedCell = occupiedCells[cellI];
+			x = occupiedCell.second;
+			y = occupiedCell.first;
+		}
+		else
+		{
+			const std::pair<int, int>& emptyCell = emptyCells[cellI - occupiedCells.size()];
+			x = emptyCell.second;
+			y = emptyCell.first;
+		}
+		float xf = (x + coloredGrid.minX + 0.5f) * cellSize_;
+		float yf = (y + coloredGrid.minY + 0.5f) * cellSize_;
+		const Color& color =
+			reinterpret_cast<const Color&>(coloredGrid.colors.at<int>(y, x));
+		localMap.points(0, i) = xf;
+		localMap.points(1, i) = yf;
 		localMap.points(2, i) = 0.0f;
-		localMap.colors.push_back(
-			reinterpret_cast<const Color&>(coloredGrid.colors.at<int>(y, x)));
-		i++;
-	}
-	for (const std::pair<int, int> emptyCell : emptyCells)
-	{
-		int y = emptyCell.first;
-		int x = emptyCell.second;
-		localMap.points(0, i) = (x + coloredGrid.minX + 0.5f) * cellSize_;
-		localMap.points(1, i) = (y + coloredGrid.minY + 0.5f) * cellSize_;
-		localMap.points(2, i) = 0.0f;
-		localMap.colors.push_back(
-			reinterpret_cast<const Color&>(coloredGrid.colors.at<int>(y, x)));
-		i++;
+		localMap.colors.push_back(color);
+		localMap.points(0, i + 1) = xf + cellSize_ * 0.5f;
+		localMap.points(1, i + 1) = yf + cellSize_ * 0.5f;
+		localMap.points(2, i + 1) = 0.0f;
+		localMap.colors.push_back(color);
 	}
 	return localMap;
 }

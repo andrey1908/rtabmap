@@ -63,6 +63,8 @@ private:
 	float occupancyProbThr_;
 	float occupancyThr_;
 	float unknown_;
+	float markUpdated_;
+	float updated_;
 	int temporarilyOccupiedCellColorRgb_;
 	Color temporarilyOccupiedCellColor_;
 	bool showTemporarilyOccupiedCells_;

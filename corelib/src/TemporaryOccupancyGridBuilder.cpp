@@ -161,6 +161,10 @@ void TemporaryOccupancyGridBuilder::deployLocalMap(const Node& node)
 		int x = transformedPoints.coeff(0, i) - mapLimits_.minX;
 		UASSERT(y >= 0 && x >= 0 && y < missCounter_.rows() && x < missCounter_.cols());
 
+		if (hitCounter_.coeffRef(y, x) >= updated_)
+		{
+			continue;
+		}
 		bool occupied = (i < node.localMap.numObstacles);
 		if (occupied)
 		{
@@ -170,9 +174,20 @@ void TemporaryOccupancyGridBuilder::deployLocalMap(const Node& node)
 		{
 			missCounter_.coeffRef(y, x) += 1;
 		}
+		hitCounter_.coeffRef(y, x) += updated_;
 
 		const Color& color = node.localMap.colors[i];
 		colors_.coeffRef(y, x) = color.data();
+	}
+	for (int y = 0; y < hitCounter_.rows(); y++)
+	{
+		for (int x = 0; x < hitCounter_.cols(); x++)
+		{
+			if (hitCounter_.coeffRef(y, x) >= updated_)
+			{
+				hitCounter_.coeffRef(y, x) -= updated_;
+			}
+		}
 	}
 }
 
@@ -192,18 +207,31 @@ void TemporaryOccupancyGridBuilder::removeLocalMap(std::list<Node>::iterator nod
 		int x = transformedPoints.coeff(0, i) - mapLimits_.minX;
 		UASSERT(y >= 0 && x >= 0 && y < missCounter_.rows() && x < missCounter_.cols());
 
+		if (hitCounter_.coeffRef(y, x) >= updated_)
+		{
+			continue;
+		}
 		bool occupied = (i < nodeIt->localMap.numObstacles);
 		if (occupied)
 		{
-			int& hits = hitCounter_.coeffRef(y, x);
-			hits -= 1;
-			UASSERT(hits >= 0);
+			hitCounter_.coeffRef(y, x) -= 1;
 		}
 		else
 		{
-			int& misses = missCounter_.coeffRef(y, x);
-			misses -= 1;
-			UASSERT(misses >= 0);
+			missCounter_.coeffRef(y, x) -= 1;
+		}
+		hitCounter_.coeffRef(y, x) += updated_;
+	}
+	for (int y = 0; y < hitCounter_.rows(); y++)
+	{
+		for (int x = 0; x < hitCounter_.cols(); x++)
+		{
+			if (hitCounter_.coeffRef(y, x) >= updated_)
+			{
+				hitCounter_.coeffRef(y, x) -= updated_;
+			}
+			UASSERT(hitCounter_.coeffRef(y, x) >= 0);
+			UASSERT(missCounter_.coeffRef(y, x) >= 0);
 		}
 	}
 	nodes_.erase(nodeIt);
