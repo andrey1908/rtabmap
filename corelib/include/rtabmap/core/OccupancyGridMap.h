@@ -37,9 +37,11 @@ public:
 
 	float cellSize() const { return cellSize_; }
 	std::pair<float, float> getGridOrigin() const;
-	int maxTemporaryLocalMaps() const { return temporaryOccupancyGridBuilder_.maxTemporaryLocalMaps(); }
-	const std::map<int, Node>& nodes() const { return occupancyGridBuilder_.nodes(); }
-	const cv::Mat& lastDilatedSemantic() const { return localMapBuilder_.lastDilatedSemantic(); }
+	int maxTemporaryLocalMaps() const
+		{ return temporaryOccupancyGridBuilder_->maxTemporaryLocalMaps(); }
+	const std::map<int, Node>& nodes() const { return occupancyGridBuilder_->nodes(); }
+	const cv::Mat& lastDilatedSemantic() const
+		{ return localMapBuilder_->lastDilatedSemantic(); }
 
 	void resetAll();
 	void resetTemporaryMap();
@@ -47,9 +49,9 @@ public:
 private:
 	float cellSize_;
 
-	LocalMapBuilder localMapBuilder_;
-	OccupancyGridBuilder occupancyGridBuilder_;
-	TemporaryOccupancyGridBuilder temporaryOccupancyGridBuilder_;
+	std::unique_ptr<LocalMapBuilder> localMapBuilder_;
+	std::unique_ptr<OccupancyGridBuilder> occupancyGridBuilder_;
+	std::unique_ptr<TemporaryOccupancyGridBuilder> temporaryOccupancyGridBuilder_;
 };
 
 }
