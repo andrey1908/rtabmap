@@ -41,10 +41,21 @@ void SemanticDilation::initialize()
 	}
 }
 
-cv::Mat SemanticDilation::dilate(const cv::Mat& image,
-	const cv::Vec3b& backgroundColor /* (0, 0, 0) */) const
+// Instantiated below
+template <typename T>
+cv::Mat SemanticDilation::dilate(const cv::Mat& image, const T& backgroundColor) const
 {
-	UASSERT(image.type() == CV_8UC3);
+	constexpr bool isColor = std::is_same<T, typename cv::Vec3b>::value;
+	constexpr bool isGray = std::is_same<T, std::uint8_t>::value;
+	static_assert(isColor || isGray, "Unknown image type for dilation");
+	if constexpr(isColor)
+	{
+		UASSERT(image.type() == CV_8UC3);
+	}
+	if constexpr(isGray)
+	{
+		UASSERT(image.type() == CV_8U);
+	}
 	UASSERT(dilationSize_ > 0);  // we need to do a copy of image
 		// even if no dilation is applied, but it consumes time
 		// (not much but it does)
@@ -56,7 +67,7 @@ cv::Mat SemanticDilation::dilate(const cv::Mat& image,
 		{
 			currentDilationWidth =
 				std::min(currentDilationWidth + 1, dilationWidth_);
-			const cv::Vec3b& color = image.at<cv::Vec3b>(y, x);
+			const T& color = image.at<T>(y, x);
 			if (color == backgroundColor)
 			{
 				continue;
@@ -70,7 +81,7 @@ cv::Mat SemanticDilation::dilate(const cv::Mat& image,
 				{
 					continue;
 				}
-				dilated.at<cv::Vec3b>(pixelCoords.y, pixelCoords.x) = color;
+				dilated.at<T>(pixelCoords.y, pixelCoords.x) = color;
 			}
 			currentDilationWidth = 0;
 		}
@@ -114,5 +125,8 @@ void SemanticDilation::computeDilationPixels()
 		dilationWidthToPixelsNum_.push_back(dilationPixels_.size());
 	}
 }
+
+template cv::Mat SemanticDilation::dilate(const cv::Mat&, const cv::Vec3b&) const;
+template cv::Mat SemanticDilation::dilate(const cv::Mat&, const std::uint8_t&) const;
 
 }

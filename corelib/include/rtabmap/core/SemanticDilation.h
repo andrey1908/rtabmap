@@ -26,8 +26,8 @@ public:
 	void parseParameters(const ParametersMap& parameters);
 	void parseParameters(int dilationSize);
 
-	cv::Mat dilate(const cv::Mat& image,
-		const cv::Vec3b& backgroundColor = cv::Vec3b(0, 0, 0)) const;
+	template <typename T>
+	cv::Mat dilate(const cv::Mat& image, const T& backgroundColor) const;
 
 	inline int dilationSize() const
 	{
