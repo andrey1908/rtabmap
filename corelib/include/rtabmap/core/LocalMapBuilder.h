@@ -16,6 +16,9 @@ namespace rtabmap {
 
 class LocalMapBuilder : BaseClasses
 {
+public:
+	static const cv::Vec3b semanticBackgroundColor;  // (0, 0, 0)
+
 private:
 	struct ColoredGrid
 	{

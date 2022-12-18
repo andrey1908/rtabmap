@@ -10,9 +10,6 @@ namespace rtabmap {
 
 class SemanticDilation
 {
-public:
-	static const cv::Vec3b backgroundColor;  // (0, 0, 0)
-
 private:
 	struct PixelCoords {
 		bool inFrame(int h, int w) const {
@@ -27,7 +24,8 @@ public:
 	SemanticDilation(const ParametersMap& parameters = ParametersMap());
 	void parseParameters(const ParametersMap& parameters);
 
-	cv::Mat dilate(const cv::Mat& image) const;
+	cv::Mat dilate(const cv::Mat& image,
+		const cv::Vec3b& backgroundColor = cv::Vec3b(0, 0, 0)) const;
 
 	inline int dilationSize() const
 	{

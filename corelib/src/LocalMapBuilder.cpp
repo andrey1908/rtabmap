@@ -7,6 +7,8 @@
 
 namespace rtabmap {
 
+const cv::Vec3b LocalMapBuilder::semanticBackgroundColor(0, 0, 0);
+
 LocalMapBuilder::LocalMapBuilder(const ParametersMap& parameters) :
 	cellSize_(Parameters::defaultGridCellSize()),
 	maxVisibleRange_(Parameters::defaultLocalMapMaxVisibleRange()),
@@ -89,7 +91,9 @@ LocalMapBuilder::LocalMap LocalMapBuilder::createLocalMap(const Signature& signa
 			std::vector<cv::Mat> dilatedImages;
 			for (const cv::Mat& image : signature.sensorData().images())
 			{
-				cv::Mat dilatedImage = semanticDilation_->dilate(image);
+				MEASURE_BLOCK_TIME(LocalMapBuilder__dilate);
+				cv::Mat dilatedImage =
+					semanticDilation_->dilate(image, semanticBackgroundColor);
 				dilatedImages.push_back(dilatedImage);
 				lastDilatedSemantic_ = dilatedImage;
 			}
@@ -235,7 +239,7 @@ std::vector<LocalMapBuilder::Color> LocalMapBuilder::getPointsColors(
 				(maxSemanticRangeSqr_ == 0.0f || rangeSqr <= maxSemanticRangeSqr_))
 			{
 				const cv::Vec3b& pixelColor = image.at<cv::Vec3b>(v, u);
-				if (pixelColor == SemanticDilation::backgroundColor)
+				if (pixelColor == semanticBackgroundColor)
 				{
 					continue;
 				}

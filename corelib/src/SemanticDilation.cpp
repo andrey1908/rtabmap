@@ -7,8 +7,6 @@
 
 namespace rtabmap {
 
-const cv::Vec3b SemanticDilation::backgroundColor(0, 0, 0);
-
 SemanticDilation::SemanticDilation(const ParametersMap& parameters) :
 	dilationSize_(Parameters::defaultSemanticDilationDilationSize())
 {
@@ -28,9 +26,9 @@ void SemanticDilation::parseParameters(const ParametersMap& parameters)
 	}
 }
 
-cv::Mat SemanticDilation::dilate(const cv::Mat& image) const
+cv::Mat SemanticDilation::dilate(const cv::Mat& image,
+	const cv::Vec3b& backgroundColor /* (0, 0, 0) */) const
 {
-	MEASURE_BLOCK_TIME(dilate);
 	UASSERT(image.type() == CV_8UC3);
 	UASSERT(dilationSize_ > 0);  // we need to do a copy of image
 		// even if no dilation is applied, but it consumes time
