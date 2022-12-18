@@ -13,11 +13,26 @@ SemanticDilation::SemanticDilation(const ParametersMap& parameters) :
 	parseParameters(parameters);
 }
 
+SemanticDilation::SemanticDilation(int dilationSize)
+{
+	parseParameters(dilationSize);
+}
+
 void SemanticDilation::parseParameters(const ParametersMap& parameters)
 {
 	Parameters::parse(parameters, Parameters::kSemanticDilationDilationSize(), dilationSize_);
-	UASSERT(dilationSize_ >= 0);
+	initialize();
+}
 
+void SemanticDilation::parseParameters(int dilationSize)
+{
+	dilationSize_ = dilationSize;
+	initialize();
+}
+
+void SemanticDilation::initialize()
+{
+	UASSERT(dilationSize_ >= 0);
 	if (dilationSize_ > 0)
 	{
 		dilationSizeSqr_ = dilationSize_ * dilationSize_;

@@ -22,7 +22,9 @@ private:
 
 public:
 	SemanticDilation(const ParametersMap& parameters = ParametersMap());
+	SemanticDilation(int dilationSize);
 	void parseParameters(const ParametersMap& parameters);
+	void parseParameters(int dilationSize);
 
 	cv::Mat dilate(const cv::Mat& image,
 		const cv::Vec3b& backgroundColor = cv::Vec3b(0, 0, 0)) const;
@@ -33,6 +35,7 @@ public:
 	}
 
 private:
+	void initialize();
 	void computeDilationPixels();
 
 private:
