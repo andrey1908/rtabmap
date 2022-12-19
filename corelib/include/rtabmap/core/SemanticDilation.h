@@ -27,7 +27,8 @@ public:
 	void parseParameters(int dilationSize);
 
 	template <typename T, size_t size>
-	cv::Mat dilate(const cv::Mat& image, const T (&backgroundColors)[size]) const;
+	cv::Mat dilate(const cv::Mat& image, const T (&backgroundColors)[size],
+		bool inverseBackground = false) const;
 
 	inline int dilationSize() const
 	{

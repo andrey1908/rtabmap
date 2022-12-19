@@ -44,7 +44,7 @@ void SemanticDilation::initialize()
 // Instantiated below
 template <typename T, size_t size>
 cv::Mat SemanticDilation::dilate(const cv::Mat& image,
-	const T (&backgroundColors)[size]) const
+	const T (&backgroundColors)[size], bool inverseBackground /* false */) const
 {
 	constexpr bool isColor = std::is_same<T, typename cv::Vec3b>::value;
 	constexpr bool isGray = std::is_same<T, std::uint8_t>::value;
@@ -69,9 +69,11 @@ cv::Mat SemanticDilation::dilate(const cv::Mat& image,
 			currentDilationWidth =
 				std::min(currentDilationWidth + 1, dilationWidth_);
 			const T& color = image.at<T>(y, x);
-			if (std::find(
-				std::begin(backgroundColors), std::end(backgroundColors), color) !=
-				std::end(backgroundColors))
+			bool colorIsBackground =
+				std::find(std::begin(backgroundColors),
+					std::end(backgroundColors), color) !=
+				std::end(backgroundColors);
+			if (colorIsBackground != inverseBackground)
 			{
 				continue;
 			}
@@ -129,7 +131,9 @@ void SemanticDilation::computeDilationPixels()
 	}
 }
 
-template cv::Mat SemanticDilation::dilate(const cv::Mat&, const cv::Vec3b (&)[1]) const;
-template cv::Mat SemanticDilation::dilate(const cv::Mat&, const std::uint8_t (&)[2]) const;
+template cv::Mat SemanticDilation::dilate(const cv::Mat&,
+	const cv::Vec3b (&)[1], bool) const;
+template cv::Mat SemanticDilation::dilate(const cv::Mat&,
+	const std::uint8_t (&)[1], bool) const;
 
 }
