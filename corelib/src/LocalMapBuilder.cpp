@@ -93,7 +93,7 @@ LocalMapBuilder::LocalMap LocalMapBuilder::createLocalMap(const Signature& signa
 			{
 				MEASURE_BLOCK_TIME(LocalMapBuilder__dilate);
 				cv::Mat dilatedImage =
-					semanticDilation_->dilate(image, semanticBackgroundColor);
+					semanticDilation_->dilate(image, {semanticBackgroundColor});
 				dilatedImages.push_back(dilatedImage);
 				lastDilatedSemantic_ = dilatedImage;
 			}
