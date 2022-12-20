@@ -7,6 +7,7 @@
 #include <map>
 #include <utility>
 #include <optional>
+#include <memory>
 #include <Eigen/Core>
 
 namespace rtabmap {
@@ -179,12 +180,13 @@ public:
 	struct Node
 	{
 		template <typename LocalMapType, typename TransformedLocalMapType>
-		Node(LocalMapType&& otherLocalMap,
+		Node(
+			const std::shared_ptr<LocalMapType>& otherLocalMap,
 			TransformedLocalMapType&& otherTransformedLocalMap) :
-				localMap(std::forward<LocalMapType>(otherLocalMap)),
+				localMap(otherLocalMap),
 				transformedLocalMap(
 					std::forward<TransformedLocalMapType>(otherTransformedLocalMap)) {}
-		const LocalMap localMap;
+		const std::shared_ptr<const LocalMap> localMap;
 		std::optional<TransformedLocalMap> transformedLocalMap;
 	};
 };

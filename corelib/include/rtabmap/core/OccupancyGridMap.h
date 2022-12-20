@@ -5,6 +5,7 @@
 #include <rtabmap/core/LocalMapBuilder.h>
 #include <rtabmap/core/OccupancyGridBuilder.h>
 #include <rtabmap/core/TemporaryOccupancyGridBuilder.h>
+#include <rtabmap/core/ObstacleDilation.h>
 #include <rtabmap/core/BaseClasses.h>
 
 #include <memory>
@@ -19,11 +20,13 @@ public:
 	OccupancyGridMap(const ParametersMap& parameters = ParametersMap());
 	void parseParameters(const ParametersMap& parameters);
 
-	LocalMap createLocalMap(const Signature& signature) const;
+	std::shared_ptr<const LocalMap> createLocalMap(const Signature& signature) const;
 
-	void addLocalMap(int nodeId, LocalMap localMap);
-	void addLocalMap(int nodeId, LocalMap localMap, const Transform& pose);
-	void addTemporaryLocalMap(LocalMap localMap, const Transform &pose);
+	void addLocalMap(int nodeId, std::shared_ptr<const LocalMap> localMap);
+	void addLocalMap(int nodeId, std::shared_ptr<const LocalMap> localMap,
+		const Transform& pose);
+	void addTemporaryLocalMap(std::shared_ptr<const LocalMap> localMap,
+		const Transform &pose);
 
 	void cacheCurrentMap();
 
@@ -40,6 +43,8 @@ public:
 	int maxTemporaryLocalMaps() const
 		{ return temporaryOccupancyGridBuilder_->maxTemporaryLocalMaps(); }
 	const std::map<int, Node>& nodes() const { return occupancyGridBuilder_->nodes(); }
+	const std::map<int, const std::shared_ptr<const LocalMap>>&
+		localMapsWithoutObstacleDilation() const { return localMapsWithoutObstacleDilation_; }
 	const cv::Mat& lastDilatedSemantic() const
 		{ return localMapBuilder_->lastDilatedSemantic(); }
 
@@ -50,8 +55,11 @@ private:
 	float cellSize_;
 
 	std::unique_ptr<LocalMapBuilder> localMapBuilder_;
+	std::unique_ptr<ObstacleDilation> obstacleDilation_;
 	std::unique_ptr<OccupancyGridBuilder> occupancyGridBuilder_;
 	std::unique_ptr<TemporaryOccupancyGridBuilder> temporaryOccupancyGridBuilder_;
+
+	std::map<int, const std::shared_ptr<const LocalMap>> localMapsWithoutObstacleDilation_;
 };
 
 }

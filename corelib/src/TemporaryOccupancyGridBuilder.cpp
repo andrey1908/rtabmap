@@ -32,10 +32,12 @@ void TemporaryOccupancyGridBuilder::parseParameters(const ParametersMap & parame
 	occupancyThr_ = logodds(temporaryOccupancyProbThr_);
 }
 
-void TemporaryOccupancyGridBuilder::addLocalMap(LocalMap localMap, const Transform& pose)
+void TemporaryOccupancyGridBuilder::addLocalMap(
+	std::shared_ptr<const LocalMap> localMap, const Transform& pose)
 {
-	TransformedLocalMap transformedLocalMap = transformLocalMap(localMap, pose);
-	Node node(std::move(localMap), std::move(transformedLocalMap));
+	UASSERT(localMap);
+	TransformedLocalMap transformedLocalMap = transformLocalMap(*localMap, pose);
+	Node node(localMap, std::move(transformedLocalMap));
 	nodes_.emplace_back(std::move(node));
 	const Node& newNode = nodes_.back();
 	MapLimits newMapLimits = MapLimits::unite(mapLimits_,
@@ -60,7 +62,7 @@ void TemporaryOccupancyGridBuilder::updatePoses(const std::list<Transform>& upda
 	auto updatedPoseIt = updatedPoses.begin();
 	for (Node& node : nodes_)
 	{
-		node.transformedLocalMap = transformLocalMap(node.localMap, *updatedPoseIt);
+		node.transformedLocalMap = transformLocalMap(*node.localMap, *updatedPoseIt);
 		newMapLimits = MapLimits::unite(newMapLimits, node.transformedLocalMap->mapLimits);
 		++updatedPoseIt;
 	}
@@ -165,7 +167,7 @@ void TemporaryOccupancyGridBuilder::deployLocalMap(const Node& node)
 		{
 			continue;
 		}
-		bool occupied = (i < node.localMap.numObstacles);
+		bool occupied = (i < node.localMap->numObstacles);
 		if (occupied)
 		{
 			hitCounter_.coeffRef(y, x) += 1;
@@ -176,7 +178,7 @@ void TemporaryOccupancyGridBuilder::deployLocalMap(const Node& node)
 		}
 		hitCounter_.coeffRef(y, x) += updated_;
 
-		const Color& color = node.localMap.colors[i];
+		const Color& color = node.localMap->colors[i];
 		colors_.coeffRef(y, x) = color.data();
 	}
 	for (int y = 0; y < hitCounter_.rows(); y++)
@@ -211,7 +213,7 @@ void TemporaryOccupancyGridBuilder::removeLocalMap(std::list<Node>::iterator nod
 		{
 			continue;
 		}
-		bool occupied = (i < nodeIt->localMap.numObstacles);
+		bool occupied = (i < nodeIt->localMap->numObstacles);
 		if (occupied)
 		{
 			hitCounter_.coeffRef(y, x) -= 1;

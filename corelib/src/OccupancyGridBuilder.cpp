@@ -49,20 +49,23 @@ void OccupancyGridBuilder::parseParameters(const ParametersMap & parameters)
 	}
 }
 
-void OccupancyGridBuilder::addLocalMap(int nodeId, LocalMap localMap)
+void OccupancyGridBuilder::addLocalMap(int nodeId, std::shared_ptr<const LocalMap> localMap)
 {
+	UASSERT(localMap);
 	UASSERT(nodeId >= 0);
 	UASSERT(nodes_.empty() || nodes_.rbegin()->first < nodeId);
-	Node node(std::move(localMap), std::nullopt);
+	Node node(localMap, std::nullopt);
 	nodes_.emplace(nodeId, std::move(node));
 }
 
-void OccupancyGridBuilder::addLocalMap(int nodeId, LocalMap localMap, const Transform& pose)
+void OccupancyGridBuilder::addLocalMap(int nodeId, std::shared_ptr<const LocalMap> localMap,
+	const Transform& pose)
 {
+	UASSERT(localMap);
 	UASSERT(nodeId >= 0);
 	UASSERT(nodes_.empty() || nodes_.rbegin()->first < nodeId);
-	TransformedLocalMap transformedLocalMap = transformLocalMap(localMap, pose);
-	Node node(std::move(localMap), std::move(transformedLocalMap));
+	TransformedLocalMap transformedLocalMap = transformLocalMap(*localMap, pose);
+	Node node(localMap, std::move(transformedLocalMap));
 	auto newNodeIt = nodes_.emplace(nodeId, std::move(node)).first;
 	MapLimits newMapLimits = MapLimits::unite(mapLimits_,
 		newNodeIt->second.transformedLocalMap->mapLimits);
@@ -187,7 +190,7 @@ void OccupancyGridBuilder::updatePoses(const std::map<int, Transform>& updatedPo
 		}
 		int nodeId = nodeIt->first;
 		Node& node = nodeIt->second;
-		node.transformedLocalMap = transformLocalMap(node.localMap, updatedPoseIt->second);
+		node.transformedLocalMap = transformLocalMap(*node.localMap, updatedPoseIt->second);
 		newMapLimits = MapLimits::unite(newMapLimits, node.transformedLocalMap->mapLimits);
 		nodeIdsToDeploy.push_back(nodeId);
 
@@ -300,12 +303,12 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
 		{
 			continue;
 		}
-		bool occupied = (i < node.localMap.numObstacles);
+		bool occupied = (i < node.localMap->numObstacles);
 		if (occupied)
 		{
 			if (temporarilyOccupiedCellColor_ != Color::missingColor)
 			{
-				const Color& color = node.localMap.colors[i];
+				const Color& color = node.localMap->colors[i];
 				if (color == temporarilyOccupiedCellColor_)
 				{
 					temporarilyOccupiedCells_.emplace_back(y, x);
@@ -325,14 +328,14 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
 		}
 		else
 		{
-			if (node.localMap.sensorBlindRange2dSqr != 0.0f &&
+			if (node.localMap->sensorBlindRange2dSqr != 0.0f &&
 				value != unknown_ && value >= occupancyThr_)
 			{
-				float localX = node.localMap.points.coeff(0, i);
-				float localY = node.localMap.points.coeff(1, i);
-				float sensorX = localX - node.localMap.toSensor.translation().x();
-				float sensorY = localY - node.localMap.toSensor.translation().y();
-				if (sensorX * sensorX + sensorY * sensorY <= node.localMap.sensorBlindRange2dSqr)
+				float localX = node.localMap->points.coeff(0, i);
+				float localY = node.localMap->points.coeff(1, i);
+				float sensorX = localX - node.localMap->toSensor.translation().x();
+				float sensorY = localY - node.localMap->toSensor.translation().y();
+				if (sensorX * sensorX + sensorY * sensorY <= node.localMap->sensorBlindRange2dSqr)
 				{
 					continue;
 				}
@@ -349,7 +352,7 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
 		}
 		value += markUpdated_;
 
-		const Color& color = node.localMap.colors[i];
+		const Color& color = node.localMap->colors[i];
 		if (!color.missing())
 		{
 			colors_.coeffRef(y, x) = color.rgb();

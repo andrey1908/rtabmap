@@ -18,7 +18,7 @@ public:
 	TemporaryOccupancyGridBuilder(const ParametersMap& parameters = ParametersMap());
 	void parseParameters(const ParametersMap& parameters);
 
-	void addLocalMap(LocalMap localMap, const Transform& pose);
+	void addLocalMap(std::shared_ptr<const LocalMap> localMap, const Transform& pose);
 
 	void updatePoses(const std::list<Transform>& updatedPoses);
 

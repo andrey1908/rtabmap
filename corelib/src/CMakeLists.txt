@@ -34,6 +34,7 @@ SET(SRC_FILES
 	DoorTracking.cpp
 	SemanticDilation.cpp
 	RayTracing.cpp
+	ObstacleDilation.cpp
 )
 
 # to get includes in visual studio

@@ -32,7 +32,7 @@ public:
 	LocalMapBuilder(const ParametersMap& parameters = ParametersMap());
 	void parseParameters(const ParametersMap& parameters);
 
-    LocalMap createLocalMap(const Signature& signature) const;
+    std::shared_ptr<LocalMap> createLocalMap(const Signature& signature) const;
 
 	const cv::Mat& lastDilatedSemantic() const { return lastDilatedSemantic_; }
 
@@ -52,7 +52,7 @@ private:
 		const Eigen::Vector2f& sensor) const;
 	void traceRays(ColoredGrid& coloredGrid,
 		const Eigen::Vector2f& sensor) const;
-	LocalMap localMapFromColoredGrid(const ColoredGrid& coloredGrid) const;
+	std::shared_ptr<LocalMap> localMapFromColoredGrid(const ColoredGrid& coloredGrid) const;
 
 private:
 	float cellSize_;

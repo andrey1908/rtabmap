@@ -15,51 +15,66 @@ void OccupancyGridMap::parseParameters(const ParametersMap& parameters)
 {
 	Parameters::parse(parameters, Parameters::kGridCellSize(), cellSize_);
 
-	if (localMapBuilder_ == nullptr)
-	{
-		localMapBuilder_ = std::make_unique<LocalMapBuilder>(parameters);
-	}
-	else
-	{
-		localMapBuilder_->parseParameters(parameters);
-	}
-	if (occupancyGridBuilder_ == nullptr)
-	{
-		occupancyGridBuilder_ = std::make_unique<OccupancyGridBuilder>(parameters);
-	}
-	else
-	{
-		occupancyGridBuilder_->parseParameters(parameters);
-	}
-	if (temporaryOccupancyGridBuilder_ == nullptr)
-	{
-		temporaryOccupancyGridBuilder_ =
-			std::make_unique<TemporaryOccupancyGridBuilder>(parameters);
-	}
-	else
-	{
-		temporaryOccupancyGridBuilder_->parseParameters(parameters);
-	}
+	localMapBuilder_ = std::make_unique<LocalMapBuilder>(parameters);
+	obstacleDilation_ = std::make_unique<ObstacleDilation>(parameters);
+	occupancyGridBuilder_ = std::make_unique<OccupancyGridBuilder>(parameters);
+	temporaryOccupancyGridBuilder_ =
+		std::make_unique<TemporaryOccupancyGridBuilder>(parameters);
 }
 
-OccupancyGridMap::LocalMap OccupancyGridMap::createLocalMap(const Signature & signature) const
+std::shared_ptr<const OccupancyGridMap::LocalMap> OccupancyGridMap::createLocalMap(
+	const Signature & signature) const
 {
 	return localMapBuilder_->createLocalMap(signature);
 }
 
-void OccupancyGridMap::addLocalMap(int nodeId, LocalMap localMap)
+void OccupancyGridMap::addLocalMap(int nodeId, std::shared_ptr<const LocalMap> localMap)
 {
-	occupancyGridBuilder_->addLocalMap(nodeId, std::move(localMap));
+	localMapsWithoutObstacleDilation_.emplace(nodeId, localMap);
+	std::shared_ptr<const LocalMap> dilatedLocalMap;
+	if (obstacleDilation_->dilationSize() != 0.0f)
+	{
+		MEASURE_BLOCK_TIME(OccupancyGridMap__obstacleDilation);
+		dilatedLocalMap = obstacleDilation_->dilate(*localMap);
+	}
+	else
+	{
+		dilatedLocalMap = localMap;
+	}
+	occupancyGridBuilder_->addLocalMap(nodeId, dilatedLocalMap);
 }
 
-void OccupancyGridMap::addLocalMap(int nodeId, LocalMap localMap, const Transform& pose)
+void OccupancyGridMap::addLocalMap(int nodeId, std::shared_ptr<const LocalMap> localMap,
+	const Transform& pose)
 {
-	occupancyGridBuilder_->addLocalMap(nodeId, std::move(localMap), pose);
+	localMapsWithoutObstacleDilation_.emplace(nodeId, localMap);
+	std::shared_ptr<const LocalMap> dilatedLocalMap;
+	if (obstacleDilation_->dilationSize() != 0.0f)
+	{
+		MEASURE_BLOCK_TIME(OccupancyGridMap__obstacleDilation);
+		dilatedLocalMap = obstacleDilation_->dilate(*localMap);
+	}
+	else
+	{
+		dilatedLocalMap = localMap;
+	}
+	occupancyGridBuilder_->addLocalMap(nodeId, dilatedLocalMap, pose);
 }
 
-void OccupancyGridMap::addTemporaryLocalMap(LocalMap localMap, const Transform& pose)
+void OccupancyGridMap::addTemporaryLocalMap(std::shared_ptr<const LocalMap> localMap,
+	const Transform& pose)
 {
-	temporaryOccupancyGridBuilder_->addLocalMap(std::move(localMap), pose);
+	std::shared_ptr<const LocalMap> dilatedLocalMap;
+	if (obstacleDilation_->dilationSize() != 0.0f)
+	{
+		MEASURE_BLOCK_TIME(OccupancyGridMap__obstacleDilation);
+		dilatedLocalMap = obstacleDilation_->dilate(*localMap);
+	}
+	else
+	{
+		dilatedLocalMap = localMap;
+	}
+	temporaryOccupancyGridBuilder_->addLocalMap(dilatedLocalMap, pose);
 }
 
 void OccupancyGridMap::cacheCurrentMap()

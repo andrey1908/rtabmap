@@ -18,8 +18,9 @@ public:
 	OccupancyGridBuilder(const ParametersMap& parameters = ParametersMap());
 	void parseParameters(const ParametersMap& parameters);
 
-	void addLocalMap(int nodeId, LocalMap localMap);
-	void addLocalMap(int nodeId, LocalMap localMap, const Transform& pose);
+	void addLocalMap(int nodeId, std::shared_ptr<const LocalMap> localMap);
+	void addLocalMap(int nodeId, std::shared_ptr<const LocalMap> localMap,
+		const Transform& pose);
 
 	void cacheCurrentMap();
 

@@ -41,33 +41,21 @@ void LocalMapBuilder::parseParameters(const ParametersMap& parameters)
 	maxRange2dSqr_ = maxRange2d_ * maxRange2d_;
 	minSemanticRangeSqr_ = minSemanticRange_ * minSemanticRange_;
 	maxSemanticRangeSqr_ = maxSemanticRange_ * maxSemanticRange_;
-	if (semanticDilation_ == nullptr)
-	{
-		semanticDilation_ = std::make_unique<SemanticDilation>(parameters);
-	}
-	else
-	{
-		semanticDilation_->parseParameters(parameters);
-	}
+	sensorBlindRange2dSqr_ = sensorBlindRange2d_ * sensorBlindRange2d_;
+
+	semanticDilation_ = std::make_unique<SemanticDilation>(parameters);
 	if (useRayTracing_)
 	{
-		if (rayTracing_ == nullptr)
-		{
-			rayTracing_ = std::make_unique<RayTracing>(parameters);
-		}
-		else
-		{
-			rayTracing_->parseParameters(parameters);
-		}
+		rayTracing_ = std::make_unique<RayTracing>(parameters);
 	}
 	else
 	{
 		rayTracing_.reset();
 	}
-	sensorBlindRange2dSqr_ = sensorBlindRange2d_ * sensorBlindRange2d_;
 }
 
-LocalMapBuilder::LocalMap LocalMapBuilder::createLocalMap(const Signature& signature) const
+std::shared_ptr<LocalMapBuilder::LocalMap> LocalMapBuilder::createLocalMap(
+	const Signature& signature) const
 {
 	MEASURE_BLOCK_TIME(LocalMapBuilder__createLocalMap);
 	UASSERT(!signature.sensorData().laserScan().isEmpty() &&
@@ -121,10 +109,10 @@ LocalMapBuilder::LocalMap LocalMapBuilder::createLocalMap(const Signature& signa
 		traceRays(coloredGrid, sensor);
 	}
 	
-	LocalMap localMap = localMapFromColoredGrid(coloredGrid);
+	std::shared_ptr<LocalMap> localMap = localMapFromColoredGrid(coloredGrid);
 
-	localMap.sensorBlindRange2dSqr = sensorBlindRange2dSqr_;
-	localMap.toSensor = signature.sensorData().laserScan().localTransform();
+	localMap->sensorBlindRange2dSqr = sensorBlindRange2dSqr_;
+	localMap->toSensor = signature.sensorData().laserScan().localTransform();
 	return localMap;
 }
 
@@ -321,7 +309,7 @@ void LocalMapBuilder::traceRays(ColoredGrid& coloredGrid,
 	rayTracing_->traceRays(coloredGrid.grid, origin);
 }
 
-LocalMapBuilder::LocalMap LocalMapBuilder::localMapFromColoredGrid(
+std::shared_ptr<LocalMapBuilder::LocalMap> LocalMapBuilder::localMapFromColoredGrid(
 	const ColoredGrid& coloredGrid) const
 {
 	MEASURE_BLOCK_TIME(LocalMapBuilder__localMapFromColoredGrid);
@@ -352,12 +340,12 @@ LocalMapBuilder::LocalMap LocalMapBuilder::localMapFromColoredGrid(
 		}
 	}
 
-	LocalMap localMap;
-	localMap.numObstacles = occupiedCells.size() * 2;
-	localMap.numEmpty = emptyCells.size() * 2;
-	localMap.points.resize(3, localMap.numObstacles + localMap.numEmpty);
-	localMap.colors.reserve(localMap.numObstacles + localMap.numEmpty);
-	for (int i = 0, cellI = 0; i < localMap.numObstacles + localMap.numEmpty;
+	std::shared_ptr<LocalMap> localMap = std::make_shared<LocalMap>();
+	localMap->numObstacles = occupiedCells.size() * 2;
+	localMap->numEmpty = emptyCells.size() * 2;
+	localMap->points.resize(3, localMap->numObstacles + localMap->numEmpty);
+	localMap->colors.reserve(localMap->numObstacles + localMap->numEmpty);
+	for (int i = 0, cellI = 0; i < localMap->numObstacles + localMap->numEmpty;
 		i += 2, cellI++)
 	{
 		int x;
@@ -378,14 +366,14 @@ LocalMapBuilder::LocalMap LocalMapBuilder::localMapFromColoredGrid(
 		float yf = (y + coloredGrid.minY + 0.5f) * cellSize_;
 		const Color& color =
 			reinterpret_cast<const Color&>(coloredGrid.colors.at<int>(y, x));
-		localMap.points(0, i) = xf;
-		localMap.points(1, i) = yf;
-		localMap.points(2, i) = 0.0f;
-		localMap.colors.push_back(color);
-		localMap.points(0, i + 1) = xf + cellSize_ * 0.5f;
-		localMap.points(1, i + 1) = yf + cellSize_ * 0.5f;
-		localMap.points(2, i + 1) = 0.0f;
-		localMap.colors.push_back(color);
+		localMap->points(0, i) = xf;
+		localMap->points(1, i) = yf;
+		localMap->points(2, i) = 0.0f;
+		localMap->colors.push_back(color);
+		localMap->points(0, i + 1) = xf + cellSize_ * 0.5f;
+		localMap->points(1, i + 1) = yf + cellSize_ * 0.5f;
+		localMap->points(2, i + 1) = 0.0f;
+		localMap->colors.push_back(color);
 	}
 	return localMap;
 }
