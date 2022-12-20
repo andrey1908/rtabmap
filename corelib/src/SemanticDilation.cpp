@@ -57,10 +57,10 @@ cv::Mat SemanticDilation::dilate(const cv::Mat& image,
 	{
 		UASSERT(image.type() == CV_8U);
 	}
-	UASSERT(dilationSize_ > 0);  // we need to do a copy of image
+	UASSERT(dilationSize_ > 0);  // we need to make a copy of image
 		// even if no dilation is applied, but it consumes time
 		// (not much but it does)
-	cv::Mat dilated = cv::Mat::zeros(image.size(), image.type());
+	cv::Mat dilated = image.clone();
 	for (int y = 0; y < image.rows; y++)
 	{
 		int currentDilationWidth = dilationWidth_;
