@@ -770,9 +770,9 @@ class RTABMAP_EXP Parameters
 	RTABMAP_PARAM(Grid, CellSize,                float,  0.10,    "Resolution of the occupancy grid.");
 	RTABMAP_PARAM(GridGlobal, MissProb,          float,  0.4,     "Probability of a miss (value between 0 and 0.5).");
 	RTABMAP_PARAM(GridGlobal, HitProb,           float,  0.7,     "Probability of a hit (value between 0.5 and 1).");
-	RTABMAP_PARAM(GridGlobal, OccupancyProbThr,  float,  0.5,     "Occupancy threshold (value between 0 and 1).");
 	RTABMAP_PARAM(GridGlobal, MinClampingProb,   float,  0.1192,  "Probability clamping minimum (value between 0 and 1).");
 	RTABMAP_PARAM(GridGlobal, MaxClampingProb,   float,  0.971,   "Probability clamping maximum (value between 0 and 1).");
+	RTABMAP_PARAM(GridGlobal, OccupancyProbThr,  float,  0.5,     "Occupancy threshold (value between 0 and 1).");
 	RTABMAP_PARAM(GridGlobal, TemporarilyOccupiedCellColor,  int,  -1,     "Color of temporarily occupied cells. They are not used to update the map.");
 	RTABMAP_PARAM(GridGlobal, ShowTemporarilyOccupiedCells,  bool, true,   "Show temporarily occupied cells.");
 	RTABMAP_PARAM(Grid, TemporaryMissProb,          float,  0.4,     "Probability of a miss (value between 0 and 0.5).");
