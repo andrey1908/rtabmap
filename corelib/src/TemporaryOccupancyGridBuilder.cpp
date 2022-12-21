@@ -9,7 +9,7 @@ TemporaryOccupancyGridBuilder::TemporaryOccupancyGridBuilder(const ParametersMap
 	cellSize_(Parameters::defaultGridCellSize()),
 	temporaryMissProb_(Parameters::defaultGridTemporaryMissProb()),
 	temporaryHitProb_(Parameters::defaultGridTemporaryHitProb()),
-	temporaryOccupancyProbThr_(Parameters::defaultGridTemporaryOccupancyProbThr()),
+	temporaryOccupancyProbThr_(Parameters::defaultGridTemporaryOccupancyThr()),
 	maxTemporaryLocalMaps_(Parameters::defaultGridMaxTemporaryLocalMaps())
 {
 	parseParameters(parameters);
@@ -20,16 +20,37 @@ void TemporaryOccupancyGridBuilder::parseParameters(const ParametersMap & parame
 	Parameters::parse(parameters, Parameters::kGridCellSize(), cellSize_);
 	Parameters::parse(parameters, Parameters::kGridTemporaryMissProb(), temporaryMissProb_);
 	Parameters::parse(parameters, Parameters::kGridTemporaryHitProb(), temporaryHitProb_);
-	Parameters::parse(parameters, Parameters::kGridTemporaryOccupancyProbThr(), temporaryOccupancyProbThr_);
+	Parameters::parse(parameters, Parameters::kGridTemporaryOccupancyThr(), temporaryOccupancyProbThr_);
 	Parameters::parse(parameters, Parameters::kGridMaxTemporaryLocalMaps(), maxTemporaryLocalMaps_);
 	UASSERT(temporaryMissProb_ > 0.0f && temporaryMissProb_ <= 0.5f);
 	UASSERT(temporaryHitProb_ >= 0.5f && temporaryHitProb_ < 1.0f);
 	UASSERT(temporaryOccupancyProbThr_ > 0.0f && temporaryOccupancyProbThr_ < 1.0f);
 	UASSERT(maxTemporaryLocalMaps_ >= 1);
 
-	miss_ = logodds(temporaryMissProb_);
-	hit_ = logodds(temporaryHitProb_);
-	occupancyThr_ = logodds(temporaryOccupancyProbThr_);
+	float missLogit = logodds(temporaryMissProb_);
+	float hitLogit = logodds(temporaryHitProb_);
+	updated_ = maxTemporaryLocalMaps_ * 2 + 1;
+
+	probabilities_.resize(maxTemporaryLocalMaps_ + 1, maxTemporaryLocalMaps_ + 1);
+	probabilitiesThr_.resize(maxTemporaryLocalMaps_ + 1, maxTemporaryLocalMaps_ + 1);
+	for (int hits = 0; hits <= maxTemporaryLocalMaps_; hits++)
+	{
+		for (int misses = 0; misses <= maxTemporaryLocalMaps_; misses++)
+		{
+			float prob = probability(hits * hitLogit + misses * missLogit);
+			probabilities_.coeffRef(hits, misses) = std::lround(prob * 100.0f);
+			if (prob >= temporaryOccupancyProbThr_)
+			{
+				probabilitiesThr_.coeffRef(hits, misses) = 100;
+			}
+			else
+			{
+				probabilitiesThr_.coeffRef(hits, misses) = 0;
+			}
+		}
+	}
+	probabilities_.coeffRef(0, 0) = -1;
+	probabilitiesThr_.coeffRef(0, 0) = -1;
 }
 
 void TemporaryOccupancyGridBuilder::addLocalMap(
@@ -107,9 +128,9 @@ void TemporaryOccupancyGridBuilder::createOrResizeMap(const MapLimits& newMapLim
 		mapLimits_ = newMapLimits;
 		int height = newMapLimits.height();
 		int width = newMapLimits.width();
-		hitCounter_ = Eigen::MatrixXi::Constant(height, width, 0);
-		missCounter_ = Eigen::MatrixXi::Constant(height, width, 0);
-		colors_ = Eigen::MatrixXi::Constant(height, width, Color::missingColor.data());
+		hitCounter_ = CounterType::Constant(height, width, 0);
+		missCounter_ = CounterType::Constant(height, width, 0);
+		colors_ = ColorsType::Constant(height, width, Color::missingColor.data());
 	}
 	else if(mapLimits_ != newMapLimits)
 	{
@@ -125,12 +146,10 @@ void TemporaryOccupancyGridBuilder::createOrResizeMap(const MapLimits& newMapLim
 
 		int height = newMapLimits.height();
 		int width = newMapLimits.width();
-		Eigen::MatrixXi newHitCounter =
-			Eigen::MatrixXi::Constant(height, width, 0);
-		Eigen::MatrixXi newMissCounter =
-			Eigen::MatrixXi::Constant(height, width, 0);
-		Eigen::MatrixXi newColors =
-			Eigen::MatrixXi::Constant(height, width, Color::missingColor.data());
+		CounterType newHitCounter = CounterType::Constant(height, width, 0);
+		CounterType newMissCounter = CounterType::Constant(height, width, 0);
+		ColorsType newColors =
+			ColorsType::Constant(height, width, Color::missingColor.data());
 
 		newHitCounter.block(dstStartY, dstStartX, copyHeight, copyWidth) =
 			hitCounter_.block(srcStartY, srcStartX, copyHeight, copyWidth);
@@ -279,19 +298,8 @@ TemporaryOccupancyGridBuilder::OccupancyGrid TemporaryOccupancyGridBuilder::getO
 		{
 			int hits = hitCounter_.coeff(y + srcStartY, x + srcStartX);
 			int misses = missCounter_.coeff(y + srcStartY, x + srcStartX);
-			float value = hits * hit_ + misses * miss_;
-			if(hits == 0 && misses == 0)
-			{
-				occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) = -1;
-			}
-			else if(value >= occupancyThr_)
-			{
-				occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) = 100;
-			}
-			else
-			{
-				occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) = 0;
-			}
+			occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) =
+				probabilitiesThr_.coeff(hits, misses);
 		}
 	}
 	return occupancyGrid;
@@ -330,16 +338,8 @@ TemporaryOccupancyGridBuilder::OccupancyGrid TemporaryOccupancyGridBuilder::getP
 		{
 			int hits = hitCounter_.coeff(y + srcStartY, x + srcStartX);
 			int misses = missCounter_.coeff(y + srcStartY, x + srcStartX);
-			float value = hits * hit_ + misses * miss_;
-			if(hits == 0 && misses == 0)
-			{
-				occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) = -1;
-			}
-			else
-			{
-				occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) =
-					probability(value) * 100;
-			}
+			occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) =
+				probabilities_.coeff(hits, misses);
 		}
 	}
 	return occupancyGrid;
@@ -360,7 +360,7 @@ TemporaryOccupancyGridBuilder::ColorGrid TemporaryOccupancyGridBuilder::getColor
 	MEASURE_BLOCK_TIME(TemporaryOccupancyGridBuilder__getColorGrid);
 	ColorGrid colorGrid;
 	colorGrid.limits = roi;
-	colorGrid.grid = Eigen::MatrixXi::Constant(roi.height(), roi.width(),
+	colorGrid.grid = ColorGrid::GridType::Constant(roi.height(), roi.width(),
 		Color::missingColor.data());
 	MapLimits intersection = MapLimits::intersect(mapLimits_, roi);
 	int height = intersection.height();
@@ -385,18 +385,18 @@ void TemporaryOccupancyGridBuilder::clear()
 		node.transformedLocalMap.reset();
 	}
 	mapLimits_ = MapLimits();
-	hitCounter_ = Eigen::MatrixXi();
-	missCounter_ = Eigen::MatrixXi();
-	colors_ = Eigen::MatrixXi();
+	hitCounter_ = CounterType();
+	missCounter_ = CounterType();
+	colors_ = ColorsType();
 }
 
 void TemporaryOccupancyGridBuilder::reset()
 {
 	nodes_.clear();
 	mapLimits_ = MapLimits();
-	hitCounter_ = Eigen::MatrixXi();
-	missCounter_ = Eigen::MatrixXi();
-	colors_ = Eigen::MatrixXi();
+	hitCounter_ = CounterType();
+	missCounter_ = CounterType();
+	colors_ = ColorsType();
 }
 
 }

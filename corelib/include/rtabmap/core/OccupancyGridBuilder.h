@@ -14,6 +14,10 @@ namespace rtabmap {
 
 class OccupancyGridBuilder : BaseClasses
 {
+private:
+	using MapType = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+	using ColorsType = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
 public:
 	OccupancyGridBuilder(const ParametersMap& parameters = ParametersMap());
 	void parseParameters(const ParametersMap& parameters);
@@ -51,36 +55,54 @@ private:
 
 	void clear();
 
+	float valueToProbability(int value)
+	{
+		if (value == 0)
+		{
+			return 0.5f;
+		}
+		return 1.0f * (value - 1) / splitNum_;
+	}
+
+	int probabilityToVlaue(float probability)
+	{
+		return std::lround(probability * splitNum_) + 1;
+	}
+
 private:
 	float cellSize_;
 	float missProb_;
-	float miss_;
 	float hitProb_;
-	float hit_;
 	float minClampingProb_;
-	float minClamping_;
 	float maxClampingProb_;
-	float maxClamping_;
 	float occupancyProbThr_;
-	float occupancyThr_;
-	float unknown_;
-	float markUpdated_;
-	float updated_;
+	int occupancyThr_;
+	int updated_;
 	int temporarilyOccupiedCellColorRgb_;
 	Color temporarilyOccupiedCellColor_;
 	bool showTemporarilyOccupiedCells_;
 
 	std::map<int, Node> nodes_;
 	MapLimits mapLimits_;
-	Eigen::MatrixXf map_;
-	Eigen::MatrixXi colors_;
+	MapType map_;
+	ColorsType colors_;
 	std::list<std::pair<int, int>> temporarilyOccupiedCells_;
 
 	std::map<int, Transform> cachedPoses_;
 	MapLimits cachedMapLimits_;
-	Eigen::MatrixXf cachedMap_;
-	Eigen::MatrixXi cachedColors_;
+	MapType cachedMap_;
+	ColorsType cachedColors_;
 	std::list<std::pair<int, int>> cachedTemporarilyOccupiedCells_;
+
+	// value 0 = unknown
+	// value 1 = prob 0.0
+	// value (splitNum_ + 1) = prob 1.0
+	static constexpr int splitNum_ = 1000;
+	static constexpr int unknown_ = 0;
+	std::vector<int> missUpdates_;
+	std::vector<int> hitUpdates_;
+	std::vector<std::int8_t> probabilities_;
+	std::vector<std::int8_t> probabilitiesThr_;
 };
 
 }

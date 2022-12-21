@@ -7,11 +7,11 @@ namespace rtabmap {
 
 OccupancyGridBuilder::OccupancyGridBuilder(const ParametersMap& parameters) :
 	cellSize_(Parameters::defaultGridCellSize()),
-	missProb_(Parameters::defaultGridGlobalProbMiss()),
-	hitProb_(Parameters::defaultGridGlobalProbHit()),
+	missProb_(Parameters::defaultGridGlobalMissProb()),
+	hitProb_(Parameters::defaultGridGlobalHitProb()),
 	minClampingProb_(Parameters::defaultGridGlobalMinClampingProb()),
 	maxClampingProb_(Parameters::defaultGridGlobalMaxClampingProb()),
-	occupancyProbThr_(Parameters::defaultGridGlobalOccupancyProbThr()),
+	occupancyProbThr_(Parameters::defaultGridGlobalOccupancyThr()),
 	temporarilyOccupiedCellColorRgb_(Parameters::defaultGridGlobalTemporarilyOccupiedCellColor()),
 	showTemporarilyOccupiedCells_(Parameters::defaultGridGlobalShowTemporarilyOccupiedCells())
 {
@@ -21,11 +21,11 @@ OccupancyGridBuilder::OccupancyGridBuilder(const ParametersMap& parameters) :
 void OccupancyGridBuilder::parseParameters(const ParametersMap & parameters)
 {
 	Parameters::parse(parameters, Parameters::kGridCellSize(), cellSize_);
-	Parameters::parse(parameters, Parameters::kGridGlobalProbMiss(), missProb_);
-	Parameters::parse(parameters, Parameters::kGridGlobalProbHit(), hitProb_);
+	Parameters::parse(parameters, Parameters::kGridGlobalMissProb(), missProb_);
+	Parameters::parse(parameters, Parameters::kGridGlobalHitProb(), hitProb_);
 	Parameters::parse(parameters, Parameters::kGridGlobalMinClampingProb(), minClampingProb_);
 	Parameters::parse(parameters, Parameters::kGridGlobalMaxClampingProb(), maxClampingProb_);
-	Parameters::parse(parameters, Parameters::kGridGlobalOccupancyProbThr(), occupancyProbThr_);
+	Parameters::parse(parameters, Parameters::kGridGlobalOccupancyThr(), occupancyProbThr_);
 	Parameters::parse(parameters, Parameters::kGridGlobalTemporarilyOccupiedCellColor(), temporarilyOccupiedCellColorRgb_);
 	Parameters::parse(parameters, Parameters::kGridGlobalShowTemporarilyOccupiedCells(), showTemporarilyOccupiedCells_);
 	UASSERT(missProb_ > 0.0f && missProb_ <= 0.5f);
@@ -35,17 +35,72 @@ void OccupancyGridBuilder::parseParameters(const ParametersMap & parameters)
 	UASSERT(minClampingProb_ < maxClampingProb_);
 	UASSERT(occupancyProbThr_ > 0.0f && occupancyProbThr_ < 1.0f);
 
-	miss_ = logodds(missProb_);
-	hit_ = logodds(hitProb_);
-	minClamping_ = logodds(minClampingProb_);
-	maxClamping_ = logodds(maxClampingProb_);
-	occupancyThr_ = logodds(occupancyProbThr_);
-	unknown_ = maxClamping_ + 1.0f;
-	markUpdated_ = maxClamping_ - minClamping_ + 3.0f;
-	updated_ = maxClamping_ + 2.0f;
+	float missLogit = logodds(missProb_);
+	float hitLogit = logodds(hitProb_);
+	float minClampingLogit = logodds(minClampingProb_);
+	float maxClampingLogit = logodds(maxClampingProb_);
+	occupancyThr_ = probabilityToVlaue(occupancyProbThr_);
+	updated_ = splitNum_ * 2;
 	if (temporarilyOccupiedCellColorRgb_ >= 0)
 	{
 		temporarilyOccupiedCellColor_.setRgb(temporarilyOccupiedCellColorRgb_);
+	}
+
+	missUpdates_.clear();
+	hitUpdates_.clear();
+	probabilities_.clear();
+	probabilitiesThr_.clear();
+	for (int value = 0; value <= splitNum_ + 1; value++)
+	{
+		float prob = valueToProbability(value);
+		if (value == 1 || value == splitNum_ + 1)
+		{
+			// prob = 0.0 or prob = 1.0
+			missUpdates_.push_back(value);
+			hitUpdates_.push_back(value);
+		}
+		else
+		{
+			float logit = logodds(prob);
+			float missUpdate = logit + missLogit;
+			if (missUpdate < minClampingLogit)
+			{
+				missUpdate = minClampingLogit;
+			}
+			float hitUpdate = logit + hitLogit;
+			if (hitUpdate > maxClampingLogit)
+			{
+				hitUpdate = maxClampingLogit;
+			}
+			missUpdates_.push_back(probabilityToVlaue(probability(missUpdate)));
+			hitUpdates_.push_back(probabilityToVlaue(probability(hitUpdate)));
+		}
+		if (value == 0)
+		{
+			// unknown
+			probabilitiesThr_.push_back(-1);
+			probabilities_.push_back(-1);
+		}
+		else
+		{
+			probabilities_.push_back(std::lround(prob * 100.0f));
+			if (prob >= occupancyProbThr_)
+			{
+				probabilitiesThr_.push_back(100);
+			}
+			else
+			{
+				probabilitiesThr_.push_back(0);
+			}
+		}
+	}
+	for (int& updatedValue : missUpdates_)
+	{
+		updatedValue += updated_;
+	}
+	for (int& updatedValue : hitUpdates_)
+	{
+		updatedValue += updated_;
 	}
 }
 
@@ -80,8 +135,8 @@ void OccupancyGridBuilder::cacheCurrentMap()
 {
 	cachedPoses_.clear();
 	cachedMapLimits_ = MapLimits();
-	cachedMap_ = Eigen::MatrixXf();
-	cachedColors_ = Eigen::MatrixXi();
+	cachedMap_ = MapType();
+	cachedColors_ = ColorsType();
 	cachedTemporarilyOccupiedCells_.clear();
 	if(!mapLimits_.valid())
 	{
@@ -248,8 +303,8 @@ void OccupancyGridBuilder::createOrResizeMap(const MapLimits& newMapLimits)
 		mapLimits_ = newMapLimits;
 		int height = newMapLimits.height();
 		int width = newMapLimits.width();
-		map_ = Eigen::MatrixXf::Constant(height, width, unknown_);
-		colors_ = Eigen::MatrixXi::Constant(height, width, Color::missingColor.data());
+		map_ = MapType::Constant(height, width, unknown_);
+		colors_ = ColorsType::Constant(height, width, Color::missingColor.data());
 	}
 	else if(mapLimits_ != newMapLimits)
 	{
@@ -265,10 +320,9 @@ void OccupancyGridBuilder::createOrResizeMap(const MapLimits& newMapLimits)
 
 		int height = newMapLimits.height();
 		int width = newMapLimits.width();
-		Eigen::MatrixXf newMap =
-			Eigen::MatrixXf::Constant(height, width, unknown_);
-		Eigen::MatrixXi newColors =
-			Eigen::MatrixXi::Constant(height, width, Color::missingColor.data());
+		MapType newMap = MapType::Constant(height, width, unknown_);
+		ColorsType newColors =
+			ColorsType::Constant(height, width, Color::missingColor.data());
 
 		newMap.block(dstStartY, dstStartX, copyHeight, copyWidth) =
 			map_.block(srcStartY, srcStartX, copyHeight, copyWidth);
@@ -298,8 +352,8 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
 		int x = transformedPoints.coeff(0, i) - mapLimits_.minX;
 		UASSERT(y >= 0 && x >= 0 && y < map_.rows() && x < map_.cols());
 
-		float& value = map_.coeffRef(y, x);
-		if (value > updated_)
+		int& value = map_.coeffRef(y, x);
+		if (value >= updated_)
 		{
 			continue;
 		}
@@ -315,42 +369,25 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
 					continue;
 				}
 			}
-
-			if (value == unknown_)
-			{
-				value = 0.0f;
-			}
-			value += hit_;
-			if (value > maxClamping_)
-			{
-				value = maxClamping_;
-			}
+			value = hitUpdates_[value];
 		}
 		else
 		{
 			if (node.localMap->sensorBlindRange2dSqr != 0.0f &&
-				value != unknown_ && value >= occupancyThr_)
+				value >= occupancyThr_)
 			{
 				float localX = node.localMap->points.coeff(0, i);
 				float localY = node.localMap->points.coeff(1, i);
 				float sensorX = localX - node.localMap->toSensor.translation().x();
 				float sensorY = localY - node.localMap->toSensor.translation().y();
-				if (sensorX * sensorX + sensorY * sensorY <= node.localMap->sensorBlindRange2dSqr)
+				if (sensorX * sensorX + sensorY * sensorY <=
+					node.localMap->sensorBlindRange2dSqr)
 				{
 					continue;
 				}
 			}
-			if (value == unknown_)
-			{
-				value = 0.0f;
-			}
-			value += miss_;
-			if (value < minClamping_)
-			{
-				value = minClamping_;
-			}
+			value = missUpdates_[value];
 		}
-		value += markUpdated_;
 
 		const Color& color = node.localMap->colors[i];
 		if (!color.missing())
@@ -362,9 +399,9 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
 	{
 		for (int x = 0; x < map_.cols(); x++)
 		{
-			if (map_.coeffRef(y, x) > updated_)
+			if (map_.coeffRef(y, x) >= updated_)
 			{
-				map_.coeffRef(y, x) -= markUpdated_;
+				map_.coeffRef(y, x) -= updated_;
 			}
 		}
 	}
@@ -401,19 +438,9 @@ OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getOccupancyGrid(
 	{
 		for(int x = 0; x < width; ++x)
 		{
-			float value = map_.coeff(y + srcStartY, x + srcStartX);
-			if(value == unknown_)
-			{
-				occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) = -1;
-			}
-			else if(value >= occupancyThr_)
-			{
-				occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) = 100;
-			}
-			else
-			{
-				occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) = 0;
-			}
+			int value = map_.coeff(y + srcStartY, x + srcStartX);
+			occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) =
+				probabilitiesThr_[value];
 		}
 	}
 	if (showTemporarilyOccupiedCells_)
@@ -464,16 +491,9 @@ OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getProbOccupancyGrid(
 	{
 		for(int x = 0; x < width; ++x)
 		{
-			float value = map_.coeff(y + srcStartY, x + srcStartX);
-			if(value == unknown_)
-			{
-				occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) = -1;
-			}
-			else
-			{
-				occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) =
-					probability(value) * 100.0;
-			}
+			int value = map_.coeff(y + srcStartY, x + srcStartX);
+			occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) =
+				probabilities_[value];
 		}
 	}
 	if (showTemporarilyOccupiedCells_)
@@ -508,7 +528,7 @@ OccupancyGridBuilder::ColorGrid OccupancyGridBuilder::getColorGrid(
 	MEASURE_BLOCK_TIME(OccupancyGridBuilder__getColorGrid);
 	ColorGrid colorGrid;
 	colorGrid.limits = roi;
-	colorGrid.grid = Eigen::MatrixXi::Constant(roi.height(), roi.width(),
+	colorGrid.grid = ColorGrid::GridType::Constant(roi.height(), roi.width(),
 		Color::missingColor.data());
 	MapLimits intersection = MapLimits::intersect(mapLimits_, roi);
 	int height = intersection.height();
@@ -548,8 +568,8 @@ void OccupancyGridBuilder::clear()
 		entry.second.transformedLocalMap.reset();
 	}
 	mapLimits_ = MapLimits();
-	map_ = Eigen::MatrixXf();
-	colors_ = Eigen::MatrixXi();
+	map_ = MapType();
+	colors_ = ColorsType();
 	temporarilyOccupiedCells_.clear();
 }
 
@@ -557,8 +577,8 @@ void OccupancyGridBuilder::reset()
 {
 	nodes_.clear();
 	mapLimits_ = MapLimits();
-	map_ = Eigen::MatrixXf();
-	colors_ = Eigen::MatrixXi();
+	map_ = MapType();
+	colors_ = ColorsType();
 	temporarilyOccupiedCells_.clear();
 }
 

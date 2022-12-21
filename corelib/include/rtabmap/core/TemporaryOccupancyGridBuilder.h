@@ -14,6 +14,10 @@ namespace rtabmap {
 
 class TemporaryOccupancyGridBuilder : BaseClasses
 {
+private:
+	using CounterType = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+	using ColorsType = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
 public:
 	TemporaryOccupancyGridBuilder(const ParametersMap& parameters = ParametersMap());
 	void parseParameters(const ParametersMap& parameters);
@@ -51,19 +55,19 @@ private:
 private:
 	float cellSize_;
 	float temporaryMissProb_;
-	float miss_;
 	float temporaryHitProb_;
-	float hit_;
 	float temporaryOccupancyProbThr_;
-	float occupancyThr_;
+	int updated_;
 	int maxTemporaryLocalMaps_;
-	int updated_ = 999999;  // just some large number
 
 	std::list<Node> nodes_;
 	MapLimits mapLimits_;
-	Eigen::MatrixXi hitCounter_;
-	Eigen::MatrixXi missCounter_;
-	Eigen::MatrixXi colors_;
+	CounterType hitCounter_;
+	CounterType missCounter_;
+	ColorsType colors_;
+
+	Eigen::Matrix<std::int8_t, Eigen::Dynamic, Eigen::Dynamic> probabilities_;
+	Eigen::Matrix<std::int8_t, Eigen::Dynamic, Eigen::Dynamic> probabilitiesThr_;
 };
 
 }
