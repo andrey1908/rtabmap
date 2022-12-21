@@ -56,6 +56,7 @@ void TemporaryOccupancyGridBuilder::parseParameters(const ParametersMap & parame
 void TemporaryOccupancyGridBuilder::addLocalMap(
 	std::shared_ptr<const LocalMap> localMap, const Transform& pose)
 {
+	MEASURE_BLOCK_TIME(TemporaryOccupancyGridBuilder__addLocalMap);
 	UASSERT(localMap);
 	TransformedLocalMap transformedLocalMap = transformLocalMap(*localMap, pose);
 	Node node(localMap, std::move(transformedLocalMap));
@@ -100,7 +101,6 @@ void TemporaryOccupancyGridBuilder::updatePoses(const std::list<Transform>& upda
 TemporaryOccupancyGridBuilder::TransformedLocalMap TemporaryOccupancyGridBuilder::transformLocalMap(
 	const LocalMap& localMap, const Transform& transform)
 {
-	MEASURE_BLOCK_TIME(TemporaryOccupancyGridBuilder__transformLocalMap);
 	TransformedLocalMap transformedLocalMap;
 	transformedLocalMap.pose = transform;
 	transformedLocalMap.points.resize(2, localMap.points.cols());
@@ -124,7 +124,6 @@ void TemporaryOccupancyGridBuilder::createOrResizeMap(const MapLimits& newMapLim
 	UASSERT(newMapLimits.valid());
 	if(!mapLimits_.valid())
 	{
-		MEASURE_BLOCK_TIME(TemporaryOccupancyGridBuilder__createOrResizeMap__createMap);
 		mapLimits_ = newMapLimits;
 		int height = newMapLimits.height();
 		int width = newMapLimits.width();
@@ -134,7 +133,6 @@ void TemporaryOccupancyGridBuilder::createOrResizeMap(const MapLimits& newMapLim
 	}
 	else if(mapLimits_ != newMapLimits)
 	{
-		MEASURE_BLOCK_TIME(TemporaryOccupancyGridBuilder__createOrResizeMap__resizeMap);
 		int dstStartY = std::max(mapLimits_.minY - newMapLimits.minY, 0);
 		int dstStartX = std::max(mapLimits_.minX - newMapLimits.minX, 0);
 		int srcStartY = std::max(newMapLimits.minY - mapLimits_.minY, 0);
@@ -173,7 +171,6 @@ void TemporaryOccupancyGridBuilder::deployLastLocalMap()
 
 void TemporaryOccupancyGridBuilder::deployLocalMap(const Node& node)
 {
-	MEASURE_BLOCK_TIME(TemporaryOccupancyGridBuilder__deployLocalMap);
 	UASSERT(node.transformedLocalMap.has_value());
 	const Eigen::Matrix2Xi& transformedPoints = node.transformedLocalMap->points;
 	for (int i = 0; i < transformedPoints.cols(); i++)
@@ -219,7 +216,6 @@ void TemporaryOccupancyGridBuilder::removeFirstLocalMap()
 
 void TemporaryOccupancyGridBuilder::removeLocalMap(std::list<Node>::iterator nodeIt)
 {
-	MEASURE_BLOCK_TIME(TemporaryOccupancyGridBuilder__removeLocalMap);
 	UASSERT(nodeIt->transformedLocalMap.has_value());
 	const Eigen::Matrix2Xi& transformedPoints = nodeIt->transformedLocalMap->points;
 	for (int i = 0; i < transformedPoints.cols(); i++)
@@ -277,7 +273,6 @@ TemporaryOccupancyGridBuilder::OccupancyGrid TemporaryOccupancyGridBuilder::getO
 TemporaryOccupancyGridBuilder::OccupancyGrid TemporaryOccupancyGridBuilder::getOccupancyGrid(
 	const MapLimits& roi) const
 {
-	MEASURE_BLOCK_TIME(TemporaryOccupancyGridBuilder__getOccupancyGrid);
 	OccupancyGrid occupancyGrid;
 	occupancyGrid.limits = roi;
 	occupancyGrid.grid = OccupancyGrid::GridType::Constant(roi.height(), roi.width(), -1);
@@ -317,7 +312,6 @@ TemporaryOccupancyGridBuilder::OccupancyGrid TemporaryOccupancyGridBuilder::getP
 TemporaryOccupancyGridBuilder::OccupancyGrid TemporaryOccupancyGridBuilder::getProbOccupancyGrid(
 	const MapLimits& roi) const
 {
-	MEASURE_BLOCK_TIME(TemporaryOccupancyGridBuilder__getProbOccupancyGrid);
 	OccupancyGrid occupancyGrid;
 	occupancyGrid.limits = roi;
 	occupancyGrid.grid = OccupancyGrid::GridType::Constant(roi.height(), roi.width(), -1);
@@ -357,7 +351,6 @@ TemporaryOccupancyGridBuilder::ColorGrid TemporaryOccupancyGridBuilder::getColor
 TemporaryOccupancyGridBuilder::ColorGrid TemporaryOccupancyGridBuilder::getColorGrid(
 	const MapLimits& roi) const
 {
-	MEASURE_BLOCK_TIME(TemporaryOccupancyGridBuilder__getColorGrid);
 	ColorGrid colorGrid;
 	colorGrid.limits = roi;
 	colorGrid.grid = ColorGrid::GridType::Constant(roi.height(), roi.width(),

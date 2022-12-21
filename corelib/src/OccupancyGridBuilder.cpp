@@ -116,6 +116,7 @@ void OccupancyGridBuilder::addLocalMap(int nodeId, std::shared_ptr<const LocalMa
 void OccupancyGridBuilder::addLocalMap(int nodeId, std::shared_ptr<const LocalMap> localMap,
 	const Transform& pose)
 {
+	MEASURE_BLOCK_TIME(OccupancyGridBuilder__addLocalMap__withPose);
 	UASSERT(localMap);
 	UASSERT(nodeId >= 0);
 	UASSERT(nodes_.empty() || nodes_.rbegin()->first < nodeId);
@@ -275,7 +276,6 @@ void OccupancyGridBuilder::updatePoses(const std::map<int, Transform>& updatedPo
 OccupancyGridBuilder::TransformedLocalMap OccupancyGridBuilder::transformLocalMap(
 	const LocalMap& localMap, const Transform& transform)
 {
-	MEASURE_BLOCK_TIME(OccupancyGridBuilder__transformLocalMap);
 	TransformedLocalMap transformedLocalMap;
 	transformedLocalMap.pose = transform;
 	transformedLocalMap.points.resize(2, localMap.points.cols());
@@ -299,7 +299,6 @@ void OccupancyGridBuilder::createOrResizeMap(const MapLimits& newMapLimits)
 	UASSERT(newMapLimits.valid());
 	if(!mapLimits_.valid())
 	{
-		MEASURE_BLOCK_TIME(OccupancyGridBuilder__createOrResizeMap__createMap);
 		mapLimits_ = newMapLimits;
 		int height = newMapLimits.height();
 		int width = newMapLimits.width();
@@ -308,7 +307,6 @@ void OccupancyGridBuilder::createOrResizeMap(const MapLimits& newMapLimits)
 	}
 	else if(mapLimits_ != newMapLimits)
 	{
-		MEASURE_BLOCK_TIME(OccupancyGridBuilder__createOrResizeMap__resizeMap);
 		int dstStartY = std::max(mapLimits_.minY - newMapLimits.minY, 0);
 		int dstStartX = std::max(mapLimits_.minX - newMapLimits.minX, 0);
 		int srcStartY = std::max(newMapLimits.minY - mapLimits_.minY, 0);
@@ -342,7 +340,6 @@ void OccupancyGridBuilder::deployLocalMap(int nodeId)
 
 void OccupancyGridBuilder::deployLocalMap(const Node& node)
 {
-	MEASURE_BLOCK_TIME(OccupancyGridBuilder__deployLocalMap);
 	UASSERT(node.transformedLocalMap.has_value());
 	temporarilyOccupiedCells_.clear();
 	const Eigen::Matrix2Xi& transformedPoints = node.transformedLocalMap->points;
@@ -419,7 +416,6 @@ OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getOccupancyGrid() con
 OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getOccupancyGrid(
 	const MapLimits& roi) const
 {
-	MEASURE_BLOCK_TIME(OccupancyGridBuilder__getOccupancyGrid);
 	OccupancyGrid occupancyGrid;
 	occupancyGrid.limits = roi;
 	occupancyGrid.grid = OccupancyGrid::GridType::Constant(roi.height(), roi.width(), -1);
@@ -472,7 +468,6 @@ OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getProbOccupancyGrid()
 OccupancyGridBuilder::OccupancyGrid OccupancyGridBuilder::getProbOccupancyGrid(
 	const MapLimits& roi) const
 {
-	MEASURE_BLOCK_TIME(OccupancyGridBuilder__getProbOccupancyGrid);
 	OccupancyGrid occupancyGrid;
 	occupancyGrid.limits = roi;
 	occupancyGrid.grid = OccupancyGrid::GridType::Constant(roi.height(), roi.width(), -1);
@@ -525,7 +520,6 @@ OccupancyGridBuilder::ColorGrid OccupancyGridBuilder::getColorGrid() const
 OccupancyGridBuilder::ColorGrid OccupancyGridBuilder::getColorGrid(
 	const MapLimits& roi) const
 {
-	MEASURE_BLOCK_TIME(OccupancyGridBuilder__getColorGrid);
 	ColorGrid colorGrid;
 	colorGrid.limits = roi;
 	colorGrid.grid = ColorGrid::GridType::Constant(roi.height(), roi.width(),

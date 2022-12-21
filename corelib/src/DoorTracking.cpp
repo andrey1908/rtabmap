@@ -49,7 +49,6 @@ void DoorTracking::precomputeCellToCheckForOccupation()
 std::vector<DoorTracking::Cell>
 DoorTracking::getOccupiedCells(const cv::Mat& occupancyGrid, const Cell& doorCenterEstimation)
 {
-	MEASURE_BLOCK_TIME(getOccupiedCells);
 	std::vector<Cell> occupiedCells;
 	int ey = doorCenterEstimation.first;
 	int ex = doorCenterEstimation.second;
@@ -71,7 +70,6 @@ DoorTracking::getOccupiedCells(const cv::Mat& occupancyGrid, const Cell& doorCen
 
 std::vector<DoorTracking::Segment> DoorTracking::segmentation(const std::vector<Cell>& cells)
 {
-	MEASURE_BLOCK_TIME(segmentation);
 	std::vector<Segment> segments;
 	std::vector<int> notUsedCellIndices;
 	notUsedCellIndices.reserve(cells.size());
@@ -120,7 +118,6 @@ std::vector<DoorTracking::Segment> DoorTracking::segmentation(const std::vector<
 std::pair<DoorTracking::Cell, DoorTracking::Cell>
 DoorTracking::findClosestCellsInSegments(const Segment& segment1, const Segment& segment2)
 {
-	MEASURE_BLOCK_TIME(findClosestCellsInSegments);
 	int minDistanceSqr = std::numeric_limits<int>::max();
 	Cell closestCell1;
 	Cell closestCell2;
@@ -145,7 +142,7 @@ DoorTracking::findClosestCellsInSegments(const Segment& segment1, const Segment&
 std::pair<DoorTracking::Cell, DoorTracking::Cell>
 DoorTracking::trackDoor(const cv::Mat& occupancyGrid, const Cell& doorCenterEstimation)
 {
-	MEASURE_BLOCK_TIME(trackDoor);
+	MEASURE_BLOCK_TIME(DoorTracking__trackDoor);
 	UASSERT(initialized_ == true);
 	UASSERT(occupancyGrid.type() == CV_8U);
 	const std::vector<Cell>& occupiedCells = getOccupiedCells(occupancyGrid, doorCenterEstimation);

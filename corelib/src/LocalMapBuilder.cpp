@@ -118,7 +118,6 @@ std::shared_ptr<LocalMapBuilder::LocalMap> LocalMapBuilder::createLocalMap(
 
 Eigen::Matrix3Xf LocalMapBuilder::convertLaserScan(const LaserScan& laserScan) const
 {
-	MEASURE_BLOCK_TIME(LocalMapBuilder__convertLaserScan);
 	Eigen::Matrix3Xf points(3, laserScan.size());
 	for (int i = 0; i < laserScan.size(); i++)
 	{
@@ -134,7 +133,6 @@ Eigen::Matrix3Xf LocalMapBuilder::convertLaserScan(const LaserScan& laserScan) c
 
 Eigen::Matrix3Xf LocalMapBuilder::filterMaxVisibleRange(const Eigen::Matrix3Xf& points) const
 {
-	MEASURE_BLOCK_TIME(LocalMapBuilder__filterMaxVisibleRange);
 	std::vector<int> indices;
 	indices.reserve(points.cols());
 	for (int i = 0; i < points.cols(); i++)
@@ -163,7 +161,6 @@ Eigen::Matrix3Xf LocalMapBuilder::filterMaxVisibleRange(const Eigen::Matrix3Xf& 
 Eigen::Matrix3Xf LocalMapBuilder::transformPoints(const Eigen::Matrix3Xf& points,
 	const Transform& transform) const
 {
-	MEASURE_BLOCK_TIME(LocalMapBuilder__transformPoints);
 	Eigen::Matrix3Xf transformed =
 		(transform.toEigen3fRotation() * points).colwise() +
 		transform.toEigen3fTranslation();
@@ -172,7 +169,6 @@ Eigen::Matrix3Xf LocalMapBuilder::transformPoints(const Eigen::Matrix3Xf& points
 
 Eigen::Matrix3Xf LocalMapBuilder::getObstaclePoints(const Eigen::Matrix3Xf& points) const
 {
-	MEASURE_BLOCK_TIME(LocalMapBuilder__getObstaclePoints);
 	std::vector<int> obstaclePointsIndices;
 	obstaclePointsIndices.reserve(points.cols());
 	for (int i = 0; i < points.cols(); i++)
@@ -201,7 +197,6 @@ std::vector<LocalMapBuilder::Color> LocalMapBuilder::getPointsColors(
 	const std::vector<cv::Mat>& images,
 	const std::vector<CameraModel>& cameraModels) const
 {
-	MEASURE_BLOCK_TIME(LocalMapBuilder__getPointsColors);
 	UASSERT(images.size() == cameraModels.size());
 	std::vector<Color> colors;
 	colors.resize(points.cols(), Color::missingColor);
@@ -246,7 +241,6 @@ LocalMapBuilder::ColoredGrid LocalMapBuilder::coloredGridFromObstacles(
 	const std::vector<Color>& colors,
 	const Eigen::Vector2f& sensor) const
 {
-	MEASURE_BLOCK_TIME(LocalMapBuilder__coloredGridFromObstacles);
 	float minXf = sensor.x();
 	float minYf = sensor.y();
 	float maxXf = sensor.x();
@@ -312,7 +306,6 @@ void LocalMapBuilder::traceRays(ColoredGrid& coloredGrid,
 std::shared_ptr<LocalMapBuilder::LocalMap> LocalMapBuilder::localMapFromColoredGrid(
 	const ColoredGrid& coloredGrid) const
 {
-	MEASURE_BLOCK_TIME(LocalMapBuilder__localMapFromColoredGrid);
 	std::vector<std::pair<int, int>> occupiedCells;
 	std::vector<std::pair<int, int>> emptyCells;
 	for (int y = 0; y < coloredGrid.grid.rows; y++)
