@@ -133,10 +133,10 @@ void TemporaryOccupancyGridBuilder::createOrResizeMap(const MapLimits& newMapLim
 	}
 	else if(mapLimits_ != newMapLimits)
 	{
-		int dstStartY = std::max(mapLimits_.minY - newMapLimits.minY, 0);
-		int dstStartX = std::max(mapLimits_.minX - newMapLimits.minX, 0);
-		int srcStartY = std::max(newMapLimits.minY - mapLimits_.minY, 0);
-		int srcStartX = std::max(newMapLimits.minX - mapLimits_.minX, 0);
+		int dstStartY = std::max(mapLimits_.minY() - newMapLimits.minY(), 0);
+		int dstStartX = std::max(mapLimits_.minX() - newMapLimits.minX(), 0);
+		int srcStartY = std::max(newMapLimits.minY() - mapLimits_.minY(), 0);
+		int srcStartX = std::max(newMapLimits.minX() - mapLimits_.minX(), 0);
 		MapLimits intersection = MapLimits::intersect(mapLimits_, newMapLimits);
 		int copyHeight = intersection.height();
 		int copyWidth = intersection.width();
@@ -175,8 +175,8 @@ void TemporaryOccupancyGridBuilder::deployLocalMap(const Node& node)
 	const Eigen::Matrix2Xi& transformedPoints = node.transformedLocalMap->points;
 	for (int i = 0; i < transformedPoints.cols(); i++)
 	{
-		int y = transformedPoints.coeff(1, i) - mapLimits_.minY;
-		int x = transformedPoints.coeff(0, i) - mapLimits_.minX;
+		int y = transformedPoints.coeff(1, i) - mapLimits_.minY();
+		int x = transformedPoints.coeff(0, i) - mapLimits_.minX();
 		UASSERT(y >= 0 && x >= 0 && y < missCounter_.rows() && x < missCounter_.cols());
 
 		if (hitCounter_.coeffRef(y, x) >= updated_)
@@ -220,8 +220,8 @@ void TemporaryOccupancyGridBuilder::removeLocalMap(std::list<Node>::iterator nod
 	const Eigen::Matrix2Xi& transformedPoints = nodeIt->transformedLocalMap->points;
 	for (int i = 0; i < transformedPoints.cols(); i++)
 	{
-		int y = transformedPoints.coeff(1, i) - mapLimits_.minY;
-		int x = transformedPoints.coeff(0, i) - mapLimits_.minX;
+		int y = transformedPoints.coeff(1, i) - mapLimits_.minY();
+		int x = transformedPoints.coeff(0, i) - mapLimits_.minX();
 		UASSERT(y >= 0 && x >= 0 && y < missCounter_.rows() && x < missCounter_.cols());
 
 		if (hitCounter_.coeffRef(y, x) >= updated_)
@@ -283,10 +283,10 @@ TemporaryOccupancyGridBuilder::OccupancyGrid TemporaryOccupancyGridBuilder::getO
 	{
 		return occupancyGrid;
 	}
-	int dstStartY = std::max(mapLimits_.minY - roi.minY, 0);
-	int dstStartX = std::max(mapLimits_.minX - roi.minX, 0);
-	int srcStartY = std::max(roi.minY - mapLimits_.minY, 0);
-	int srcStartX = std::max(roi.minX - mapLimits_.minX, 0);
+	int dstStartY = std::max(mapLimits_.minY() - roi.minY(), 0);
+	int dstStartX = std::max(mapLimits_.minX() - roi.minX(), 0);
+	int srcStartY = std::max(roi.minY() - mapLimits_.minY(), 0);
+	int srcStartX = std::max(roi.minX() - mapLimits_.minX(), 0);
 	for(int y = 0; y < height; ++y)
 	{
 		for(int x = 0; x < width; ++x)
@@ -322,10 +322,10 @@ TemporaryOccupancyGridBuilder::OccupancyGrid TemporaryOccupancyGridBuilder::getP
 	{
 		return occupancyGrid;
 	}
-	int dstStartY = std::max(mapLimits_.minY - roi.minY, 0);
-	int dstStartX = std::max(mapLimits_.minX - roi.minX, 0);
-	int srcStartY = std::max(roi.minY - mapLimits_.minY, 0);
-	int srcStartX = std::max(roi.minX - mapLimits_.minX, 0);
+	int dstStartY = std::max(mapLimits_.minY() - roi.minY(), 0);
+	int dstStartX = std::max(mapLimits_.minX() - roi.minX(), 0);
+	int srcStartY = std::max(roi.minY() - mapLimits_.minY(), 0);
+	int srcStartX = std::max(roi.minX() - mapLimits_.minX(), 0);
 	for(int y = 0; y < height; ++y)
 	{
 		for(int x = 0; x < width; ++x)
@@ -362,10 +362,10 @@ TemporaryOccupancyGridBuilder::ColorGrid TemporaryOccupancyGridBuilder::getColor
 	{
 		return colorGrid;
 	}
-	int dstStartY = std::max(mapLimits_.minY - roi.minY, 0);
-	int dstStartX = std::max(mapLimits_.minX - roi.minX, 0);
-	int srcStartY = std::max(roi.minY - mapLimits_.minY, 0);
-	int srcStartX = std::max(roi.minX - mapLimits_.minX, 0);
+	int dstStartY = std::max(mapLimits_.minY() - roi.minY(), 0);
+	int dstStartX = std::max(mapLimits_.minX() - roi.minX(), 0);
+	int srcStartY = std::max(roi.minY() - mapLimits_.minY(), 0);
+	int srcStartX = std::max(roi.minX() - mapLimits_.minX(), 0);
 	colorGrid.grid.block(dstStartY, dstStartX, height, width) =
 		colors_.block(srcStartY, srcStartX, height, width);
 	return colorGrid;

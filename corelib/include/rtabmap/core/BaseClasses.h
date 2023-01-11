@@ -65,20 +65,33 @@ public:
 		};
 	};
 
-	struct MapLimits
+	class MapLimits
 	{
+	public:
 		MapLimits() :
-			minX(std::numeric_limits<int>::max()),
-			minY(std::numeric_limits<int>::max()),
-			maxX(std::numeric_limits<int>::min()),
-			maxY(std::numeric_limits<int>::min()) {}
+			minX_(std::numeric_limits<int>::max()),
+			minY_(std::numeric_limits<int>::max()),
+			maxX_(std::numeric_limits<int>::min()),
+			maxY_(std::numeric_limits<int>::min()) {}
+		int minX() const {
+			return minX_;
+		}
+		int minY() const {
+			return minY_;
+		}
+		int maxX() const {
+			return maxX_;
+		}
+		int maxY() const {
+			return maxY_;
+		}
 		bool operator==(const MapLimits& other) const
 		{
 			return
-				minX == other.minX &&
-				minY == other.minY &&
-				maxX == other.maxX &&
-				maxY == other.maxY;
+				minX_ == other.minX_ &&
+				minY_ == other.minY_ &&
+				maxX_ == other.maxX_ &&
+				maxY_ == other.maxY_;
 		}
 		bool operator!=(const MapLimits& other) const
 		{
@@ -86,53 +99,55 @@ public:
 		}
 		bool valid() const
 		{
-			return minX != std::numeric_limits<int>::max();
+			return minX_ != std::numeric_limits<int>::max();
 		}
 		void update(int x, int y)
 		{
-			if (x < minX)
-				minX = x;
-			if (x > maxX)
-				maxX = x;
-			if (y < minY)
-				minY = y;
-			if (y > maxY)
-				maxY = y;
+			if (x < minX_)
+				minX_ = x;
+			if (x > maxX_)
+				maxX_ = x;
+			if (y < minY_)
+				minY_ = y;
+			if (y > maxY_)
+				maxY_ = y;
 		}
 		int width() const
 		{
-			return maxX - minX + 1;
+			return maxX_ - minX_ + 1;
 		}
 		int height() const
 		{
-			return maxY - minY + 1;
+			return maxY_ - minY_ + 1;
 		}
 		static MapLimits unite(const MapLimits& a, const MapLimits& b)
 		{
 			MapLimits res;
-			res.minX = std::min(a.minX, b.minX);
-			res.minY = std::min(a.minY, b.minY);
-			res.maxX = std::max(a.maxX, b.maxX);
-			res.maxY = std::max(a.maxY, b.maxY);
+			res.minX_ = std::min(a.minX_, b.minX_);
+			res.minY_ = std::min(a.minY_, b.minY_);
+			res.maxX_ = std::max(a.maxX_, b.maxX_);
+			res.maxY_ = std::max(a.maxY_, b.maxY_);
 			return res;
 		}
 		static MapLimits intersect(const MapLimits& a, const MapLimits& b)
 		{
 			MapLimits res;
-			res.minX = std::max(a.minX, b.minX);
-			res.minY = std::max(a.minY, b.minY);
-			res.maxX = std::min(a.maxX, b.maxX);
-			res.maxY = std::min(a.maxY, b.maxY);
-			if (res.minX > res.maxX)
-				res.minX = res.maxX + 1;
-			if (res.minY > res.maxY)
-				res.minY = res.maxY + 1;
+			res.minX_ = std::max(a.minX_, b.minX_);
+			res.minY_ = std::max(a.minY_, b.minY_);
+			res.maxX_ = std::min(a.maxX_, b.maxX_);
+			res.maxY_ = std::min(a.maxY_, b.maxY_);
+			if (res.minX_ > res.maxX_)
+				res.minX_ = res.maxX_ + 1;
+			if (res.minY_ > res.maxY_)
+				res.minY_ = res.maxY_ + 1;
 			return res;
 		}
-		int minX;
-		int minY;
-		int maxX;
-		int maxY;
+	
+	private:
+		int minX_;
+		int minY_;
+		int maxX_;
+		int maxY_;
 	};
 
 	struct OccupancyGrid

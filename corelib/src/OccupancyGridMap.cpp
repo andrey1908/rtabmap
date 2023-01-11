@@ -112,8 +112,8 @@ OccupancyGridMap::OccupancyGrid OccupancyGridMap::getOccupancyGrid() const
 	OccupancyGrid temporaryOccupancyGrid =
 		temporaryOccupancyGridBuilder_->getOccupancyGrid();
 
-	int dstStartY = temporaryOccupancyGrid.limits.minY - occupancyGrid.limits.minY;
-	int dstStartX = temporaryOccupancyGrid.limits.minX - occupancyGrid.limits.minX;
+	int dstStartY = temporaryOccupancyGrid.limits.minY() - occupancyGrid.limits.minY();
+	int dstStartX = temporaryOccupancyGrid.limits.minX() - occupancyGrid.limits.minX();
 	int height = temporaryOccupancyGrid.limits.height();
 	int width = temporaryOccupancyGrid.limits.width();
 	for (int y = 0; y < height; y++)
@@ -152,8 +152,8 @@ OccupancyGridMap::OccupancyGrid OccupancyGridMap::getProbOccupancyGrid() const
 	OccupancyGrid temporaryOccupancyGrid =
 		temporaryOccupancyGridBuilder_->getProbOccupancyGrid();
 
-	int dstStartY = temporaryOccupancyGrid.limits.minY - occupancyGrid.limits.minY;
-	int dstStartX = temporaryOccupancyGrid.limits.minX - occupancyGrid.limits.minX;
+	int dstStartY = temporaryOccupancyGrid.limits.minY() - occupancyGrid.limits.minY();
+	int dstStartX = temporaryOccupancyGrid.limits.minX() - occupancyGrid.limits.minX();
 	int height = temporaryOccupancyGrid.limits.height();
 	int width = temporaryOccupancyGrid.limits.width();
 	for (int y = 0; y < height; y++)
@@ -192,8 +192,8 @@ OccupancyGridMap::ColorGrid OccupancyGridMap::getColorGrid() const
 	ColorGrid temporaryColorGrid =
 		temporaryOccupancyGridBuilder_->getColorGrid();
 
-	int dstStartY = temporaryColorGrid.limits.minY - colorGrid.limits.minY;
-	int dstStartX = temporaryColorGrid.limits.minX - colorGrid.limits.minX;
+	int dstStartY = temporaryColorGrid.limits.minY() - colorGrid.limits.minY();
+	int dstStartX = temporaryColorGrid.limits.minX() - colorGrid.limits.minX();
 	int height = temporaryColorGrid.limits.height();
 	int width = temporaryColorGrid.limits.width();
 	for (int y = 0; y < height; y++)
@@ -215,8 +215,8 @@ std::pair<float, float> OccupancyGridMap::getGridOrigin() const
 	MapLimits mapLimits = MapLimits::unite(occupancyGridBuilder_->mapLimits(),
 		temporaryOccupancyGridBuilder_->mapLimits());
 	UASSERT(mapLimits.valid());
-	float originX = mapLimits.minX * cellSize_;
-	float originY = mapLimits.minY * cellSize_;
+	float originX = mapLimits.minX() * cellSize_;
+	float originY = mapLimits.minY() * cellSize_;
 	return std::make_pair(originX, originY);
 }
 
