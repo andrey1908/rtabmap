@@ -777,6 +777,8 @@ class RTABMAP_EXP Parameters
 	RTABMAP_PARAM(Grid, TemporaryHitProb,           float,  0.7,     "Probability of a hit (value between 0.5 and 1).");
 	RTABMAP_PARAM(Grid, TemporaryOccupancyThr,      float,  0.5,     "Occupancy threshold (value between 0 and 1).");
 	RTABMAP_PARAM(Grid, MaxTemporaryLocalMaps,      int,    1,       "Maximum number of temporary local maps.");
+	RTABMAP_PARAM(TimedGrid, MaxInterpolationTimeError,  float,   0.06,   "TODO.");
+	RTABMAP_PARAM(TimedGrid, MaxExtrapolationTime,       float,   1.0,    "TODO.");
 	RTABMAP_PARAM(LocalMap, MaxVisibleRange,         float,  0.0,     "Maximum range from sensor (0=inf).");
 	RTABMAP_PARAM(LocalMap, MaxRange2d,              float,  10.0,    "Maximum range shown on the grid (0=inf).");
 	RTABMAP_PARAM(LocalMap, MinObstacleHeight,       float,  0.2,     "Minimum obstacles height.");
@@ -790,8 +792,6 @@ class RTABMAP_EXP Parameters
 	RTABMAP_PARAM(RayTracing, MaxVisibleRange,            float,  100.0,   "Maximum visible range for ray tracing.");
 	RTABMAP_PARAM(RayTracing, MaxRayTracingRange,         float,  10.0,    "Maximum ray tracing range.");
 	RTABMAP_PARAM(RayTracing, TraceRaysIntoUnknownSpace,  bool,   false,   "Trace rays even towards directions where there are no obstacles.");
-	RTABMAP_PARAM(TimedGrid, MaxInterpolationTimeError,  float,   0.06,   "TODO.");
-	RTABMAP_PARAM(TimedGrid, MaxExtrapolationTime,       float,   1.0,    "TODO.");
 
 
 
