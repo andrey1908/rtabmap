@@ -2,13 +2,13 @@
 
 #include <rtabmap/core/Parameters.h>
 #include <rtabmap/core/SemanticDilation.h>
-#include <rtabmap/core/BaseClasses.h>
+#include <rtabmap/core/LocalMap.h>
 
 #include <memory>
 
 namespace rtabmap {
 
-class ObstacleDilation : BaseClasses
+class ObstacleDilation
 {
 public:
 	ObstacleDilation(const ParametersMap& parameters = ParametersMap());

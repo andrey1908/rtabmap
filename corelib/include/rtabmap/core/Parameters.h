@@ -790,6 +790,8 @@ class RTABMAP_EXP Parameters
 	RTABMAP_PARAM(RayTracing, MaxVisibleRange,            float,  100.0,   "Maximum visible range for ray tracing.");
 	RTABMAP_PARAM(RayTracing, MaxRayTracingRange,         float,  10.0,    "Maximum ray tracing range.");
 	RTABMAP_PARAM(RayTracing, TraceRaysIntoUnknownSpace,  bool,   false,   "Trace rays even towards directions where there are no obstacles.");
+	RTABMAP_PARAM(TimedGrid, MaxInterpolationTimeError,  float,   0.06,   "TODO.");
+	RTABMAP_PARAM(TimedGrid, MaxExtrapolationTime,       float,   1.0,    "TODO.");
 
 
 

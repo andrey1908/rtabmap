@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package rtabmap.proto;
+
+import "Color.proto";
+import "Transform.proto";
+
+message LocalMap
+{
+	int32 num_obstacles = 1;
+	int32 num_empty = 2;
+	repeated float points = 3;  // col-major order
+	repeated Color colors = 4;
+	float sensor_blind_range_2d_sqr = 5;
+	Transform to_sensor = 6;
+	Transform from_updated_pose = 7;
+}

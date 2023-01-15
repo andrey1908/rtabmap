@@ -6,7 +6,6 @@
 #include <rtabmap/core/OccupancyGridBuilder.h>
 #include <rtabmap/core/TemporaryOccupancyGridBuilder.h>
 #include <rtabmap/core/ObstacleDilation.h>
-#include <rtabmap/core/BaseClasses.h>
 
 #include <memory>
 #include <optional>
@@ -14,25 +13,26 @@
 
 namespace rtabmap {
 
-class OccupancyGridMap : public BaseClasses
+class OccupancyGridMap
 {
 public:
 	OccupancyGridMap(const ParametersMap& parameters = ParametersMap());
 	void parseParameters(const ParametersMap& parameters);
 
-	std::shared_ptr<const LocalMap> createLocalMap(const Signature& signature) const;
+	std::shared_ptr<LocalMap> createLocalMap(const Signature& signature,
+		const Transform& fromUpdatedPose = Transform::getIdentity()) const;
 
 	void addLocalMap(int nodeId, std::shared_ptr<const LocalMap> localMap);
-	void addLocalMap(int nodeId, std::shared_ptr<const LocalMap> localMap,
-		const Transform& pose);
-	void addTemporaryLocalMap(std::shared_ptr<const LocalMap> localMap,
-		const Transform &pose);
+	void addLocalMap(int nodeId, const Transform& pose,
+		std::shared_ptr<const LocalMap> localMap);
+	void addTemporaryLocalMap(const Transform& pose,
+		std::shared_ptr<const LocalMap> localMap);
 
 	void cacheCurrentMap();
 
 	void updatePoses(const std::map<int, Transform>& updatedPoses,
-			const std::list<Transform>& updatedTemporaryPoses,
-			int lastNodeIdForCachedMap = -1);
+		const std::list<Transform>& updatedTemporaryPoses,
+		int lastNodeIdToIncludeInCachedMap = -1);
 
 	OccupancyGrid getOccupancyGrid() const;
 	OccupancyGrid getProbOccupancyGrid() const;
@@ -48,8 +48,7 @@ public:
 	const cv::Mat& lastDilatedSemantic() const
 		{ return localMapBuilder_->lastDilatedSemantic(); }
 
-	void resetAll();
-	void resetTemporaryMap();
+	void reset();
 
 private:
 	float cellSize_;

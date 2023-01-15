@@ -26,7 +26,7 @@ void ObstacleDilation::parseParameters(const ParametersMap& parameters)
 	semanticDilation_ = std::make_unique<SemanticDilation>(dilationSize_);
 }
 
-std::shared_ptr<ObstacleDilation::LocalMap> ObstacleDilation::dilate(
+std::shared_ptr<LocalMap> ObstacleDilation::dilate(
 	const LocalMap& localMap) const
 {
 	UASSERT(dilationSize_ > 0);

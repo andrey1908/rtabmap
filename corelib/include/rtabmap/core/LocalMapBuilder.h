@@ -6,7 +6,8 @@
 #include <rtabmap/core/Transform.h>
 #include <rtabmap/core/SemanticDilation.h>
 #include <rtabmap/core/RayTracing.h>
-#include <rtabmap/core/BaseClasses.h>
+#include <rtabmap/core/LocalMap.h>
+#include <rtabmap/core/Color.h>
 
 #include <vector>
 #include <utility>
@@ -14,7 +15,7 @@
 
 namespace rtabmap {
 
-class LocalMapBuilder : BaseClasses
+class LocalMapBuilder
 {
 public:
 	static const cv::Vec3b semanticBackgroundColor;  // (0, 0, 0)

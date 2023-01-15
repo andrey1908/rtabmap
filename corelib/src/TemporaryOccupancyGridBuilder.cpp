@@ -54,7 +54,7 @@ void TemporaryOccupancyGridBuilder::parseParameters(const ParametersMap & parame
 }
 
 void TemporaryOccupancyGridBuilder::addLocalMap(
-	std::shared_ptr<const LocalMap> localMap, const Transform& pose)
+	const Transform& pose, std::shared_ptr<const LocalMap> localMap)
 {
 	MEASURE_BLOCK_TIME(TemporaryOccupancyGridBuilder__addLocalMap);
 	UASSERT(localMap);
@@ -75,18 +75,29 @@ void TemporaryOccupancyGridBuilder::addLocalMap(
 	}
 }
 
-void TemporaryOccupancyGridBuilder::updatePoses(const std::list<Transform>& updatedPoses)
+void TemporaryOccupancyGridBuilder::updatePoses(
+	const std::list<Transform>& updatedPoses)
 {
 	MEASURE_BLOCK_TIME(TemporaryOccupancyGridBuilder__updatePoses);
 	UASSERT(nodes_.size() == updatedPoses.size());
+	std::list<Transform> newPoses;
+	auto nodeIt = nodes_.begin();
+	for (const Transform& updatedPose : updatedPoses)
+	{
+		const Transform& fromUpdatedPose = nodeIt->localMap->fromUpdatedPose;
+		newPoses.emplace_back(updatedPose * fromUpdatedPose);
+		++nodeIt;
+	}
+
 	clear();
+
 	MapLimits newMapLimits = MapLimits();
-	auto updatedPoseIt = updatedPoses.begin();
+	auto newPoseIt = newPoses.begin();
 	for (Node& node : nodes_)
 	{
-		node.transformedLocalMap = transformLocalMap(*node.localMap, *updatedPoseIt);
+		node.transformedLocalMap = transformLocalMap(*node.localMap, *newPoseIt);
 		newMapLimits = MapLimits::unite(newMapLimits, node.transformedLocalMap->mapLimits);
-		++updatedPoseIt;
+		++newPoseIt;
 	}
 	if (newMapLimits.valid())
 	{
@@ -98,7 +109,7 @@ void TemporaryOccupancyGridBuilder::updatePoses(const std::list<Transform>& upda
 	}
 }
 
-TemporaryOccupancyGridBuilder::TransformedLocalMap TemporaryOccupancyGridBuilder::transformLocalMap(
+TransformedLocalMap TemporaryOccupancyGridBuilder::transformLocalMap(
 	const LocalMap& localMap, const Transform& transform)
 {
 	TransformedLocalMap transformedLocalMap;
@@ -261,7 +272,7 @@ void TemporaryOccupancyGridBuilder::removeLocalMap(std::list<Node>::iterator nod
 	createOrResizeMap(newMapLimits);
 }
 
-TemporaryOccupancyGridBuilder::OccupancyGrid TemporaryOccupancyGridBuilder::getOccupancyGrid() const
+OccupancyGrid TemporaryOccupancyGridBuilder::getOccupancyGrid() const
 {
 	if (!mapLimits_.valid())
 	{
@@ -270,7 +281,7 @@ TemporaryOccupancyGridBuilder::OccupancyGrid TemporaryOccupancyGridBuilder::getO
 	return getOccupancyGrid(mapLimits_);
 }
 
-TemporaryOccupancyGridBuilder::OccupancyGrid TemporaryOccupancyGridBuilder::getOccupancyGrid(
+OccupancyGrid TemporaryOccupancyGridBuilder::getOccupancyGrid(
 	const MapLimits& roi) const
 {
 	OccupancyGrid occupancyGrid;
@@ -300,7 +311,7 @@ TemporaryOccupancyGridBuilder::OccupancyGrid TemporaryOccupancyGridBuilder::getO
 	return occupancyGrid;
 }
 
-TemporaryOccupancyGridBuilder::OccupancyGrid TemporaryOccupancyGridBuilder::getProbOccupancyGrid() const
+OccupancyGrid TemporaryOccupancyGridBuilder::getProbOccupancyGrid() const
 {
 	if (!mapLimits_.valid())
 	{
@@ -309,7 +320,7 @@ TemporaryOccupancyGridBuilder::OccupancyGrid TemporaryOccupancyGridBuilder::getP
 	return getProbOccupancyGrid(mapLimits_);
 }
 
-TemporaryOccupancyGridBuilder::OccupancyGrid TemporaryOccupancyGridBuilder::getProbOccupancyGrid(
+OccupancyGrid TemporaryOccupancyGridBuilder::getProbOccupancyGrid(
 	const MapLimits& roi) const
 {
 	OccupancyGrid occupancyGrid;
@@ -339,7 +350,7 @@ TemporaryOccupancyGridBuilder::OccupancyGrid TemporaryOccupancyGridBuilder::getP
 	return occupancyGrid;
 }
 
-TemporaryOccupancyGridBuilder::ColorGrid TemporaryOccupancyGridBuilder::getColorGrid() const
+ColorGrid TemporaryOccupancyGridBuilder::getColorGrid() const
 {
 	if (!mapLimits_.valid())
 	{
@@ -348,7 +359,7 @@ TemporaryOccupancyGridBuilder::ColorGrid TemporaryOccupancyGridBuilder::getColor
 	return getColorGrid(mapLimits_);
 }
 
-TemporaryOccupancyGridBuilder::ColorGrid TemporaryOccupancyGridBuilder::getColorGrid(
+ColorGrid TemporaryOccupancyGridBuilder::getColorGrid(
 	const MapLimits& roi) const
 {
 	ColorGrid colorGrid;

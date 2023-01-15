@@ -36,6 +36,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Eigen/Geometry>
 #include <opencv2/core/core.hpp>
 
+#include <rtabmap/proto/Transform.pb.h>
+
 namespace rtabmap {
 
 class RTABMAP_EXP Transform
@@ -180,20 +182,8 @@ private:
 
 RTABMAP_EXP std::ostream& operator<<(std::ostream& os, const Transform& s);
 
-class TransformStamped
-{
-public:
-	TransformStamped(const Transform & transform, const double & stamp) :
-		transform_(transform),
-		stamp_(stamp)
-	{}
-	const Transform & transform() const {return transform_;}
-	const double & stamp() const {return stamp_;}
-
-private:
-	Transform transform_;
-	double stamp_;
-};
+proto::Transform toProto(const Transform& transform);
+Transform fromProto(const proto::Transform& proto);
 
 }
 

@@ -1,3 +1,4 @@
+ADD_SUBDIRECTORY( rtabmap/proto )
 
 SET(SRC_FILES
 	CameraModel.cpp
@@ -26,8 +27,11 @@ SET(SRC_FILES
 	stereo/StereoSGBM.cpp
 
 	OccupancyGridMap.cpp
+	TimedOccupancyGridMap.cpp
 
-	BaseClasses.cpp
+	Time.cpp
+	Color.cpp
+	LocalMap.cpp
 	LocalMapBuilder.cpp
 	OccupancyGridBuilder.cpp
 	TemporaryOccupancyGridBuilder.cpp
@@ -35,6 +39,9 @@ SET(SRC_FILES
 	SemanticDilation.cpp
 	RayTracing.cpp
 	ObstacleDilation.cpp
+
+	Compression.cpp
+	Serialization.cpp
 )
 
 # to get includes in visual studio
@@ -54,6 +61,7 @@ SET(INCLUDE_DIRS
 	${PCL_INCLUDE_DIRS}
 	${ZLIB_INCLUDE_DIRS}
 	${time_measurer_INCLUDE_DIRS}
+	${Protobuf_INCLUDE_DIRS}
 )
 
 SET(LIBRARIES
@@ -61,6 +69,7 @@ SET(LIBRARIES
 	${PCL_LIBRARIES}
 	${ZLIB_LIBRARIES}
 	${time_measurer_LIBRARIES}
+	${Protobuf_LIBRARIES}
 )
 
 IF(TORCH_FOUND)
@@ -601,8 +610,7 @@ ENDIF()
 # Generate resources files END
 ####################################
 
-add_definitions(${PCL_DEFINITIONS})
-
+ADD_DEFINITIONS(${PCL_DEFINITIONS})
 
 # Make sure the compiler can find include files from our library.
 INCLUDE_DIRECTORIES(${INCLUDE_DIRS})
@@ -610,7 +618,8 @@ INCLUDE_DIRECTORIES(${INCLUDE_DIRS})
 # Add binary that is built from the source file "main.cpp".
 # The extension is automatically found.
 ADD_LIBRARY(rtabmap_core ${SRC_FILES} ${RESOURCES_HEADERS})
-TARGET_LINK_LIBRARIES(rtabmap_core rtabmap_utilite ${LIBRARIES})
+ADD_DEPENDENCIES(rtabmap_core generated_protobuf_code)
+TARGET_LINK_LIBRARIES(rtabmap_core rtabmap_utilite ${LIBRARIES} ${PROTO_SRCS})
 
 SET_TARGET_PROPERTIES(
 	 rtabmap_core
@@ -629,4 +638,8 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../include/
 		COMPONENT devel 
 		FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp" 
 		PATTERN ".svn" EXCLUDE)
+
+install(FILES ${PROTO_HDRS}
+		DESTINATION "${INSTALL_INCLUDE_DIR}/rtabmap/proto"
+		COMPONENT devel)
 

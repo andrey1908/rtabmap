@@ -2,7 +2,10 @@
 
 #include <rtabmap/core/Parameters.h>
 #include <rtabmap/core/LocalMapBuilder.h>
-#include <rtabmap/core/BaseClasses.h>
+#include <rtabmap/core/Grid.h>
+#include <rtabmap/core/MapLimits.h>
+#include <rtabmap/core/Color.h>
+#include <rtabmap/core/Node.h>
 
 #include <list>
 #include <map>
@@ -12,7 +15,7 @@
 
 namespace rtabmap {
 
-class OccupancyGridBuilder : BaseClasses
+class OccupancyGridBuilder
 {
 private:
 	using MapType = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
@@ -23,13 +26,13 @@ public:
 	void parseParameters(const ParametersMap& parameters);
 
 	void addLocalMap(int nodeId, std::shared_ptr<const LocalMap> localMap);
-	void addLocalMap(int nodeId, std::shared_ptr<const LocalMap> localMap,
-		const Transform& pose);
+	void addLocalMap(int nodeId, const Transform& pose,
+		std::shared_ptr<const LocalMap> localMap);
 
 	void cacheCurrentMap();
 
 	void updatePoses(const std::map<int, Transform>& updatedPoses,
-		int lastNodeIdForCachedMap = -1);
+		int lastNodeIdToIncludeInMapCache = -1);
 
 	OccupancyGrid getOccupancyGrid() const;
 	OccupancyGrid getOccupancyGrid(const MapLimits& roi) const;

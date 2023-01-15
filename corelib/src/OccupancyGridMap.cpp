@@ -22,10 +22,14 @@ void OccupancyGridMap::parseParameters(const ParametersMap& parameters)
 		std::make_unique<TemporaryOccupancyGridBuilder>(parameters);
 }
 
-std::shared_ptr<const OccupancyGridMap::LocalMap> OccupancyGridMap::createLocalMap(
-	const Signature & signature) const
+std::shared_ptr<LocalMap> OccupancyGridMap::createLocalMap(
+	const Signature& signature,
+	const Transform& fromUpdatedPose /* Transform::getIdentity() */) const
 {
-	return localMapBuilder_->createLocalMap(signature);
+	UASSERT(!fromUpdatedPose.isNull());
+	std::shared_ptr<LocalMap> localMap = localMapBuilder_->createLocalMap(signature);
+    localMap->fromUpdatedPose = fromUpdatedPose;
+    return localMap;
 }
 
 void OccupancyGridMap::addLocalMap(int nodeId, std::shared_ptr<const LocalMap> localMap)
@@ -44,8 +48,8 @@ void OccupancyGridMap::addLocalMap(int nodeId, std::shared_ptr<const LocalMap> l
 	occupancyGridBuilder_->addLocalMap(nodeId, dilatedLocalMap);
 }
 
-void OccupancyGridMap::addLocalMap(int nodeId, std::shared_ptr<const LocalMap> localMap,
-	const Transform& pose)
+void OccupancyGridMap::addLocalMap(int nodeId, const Transform& pose,
+	std::shared_ptr<const LocalMap> localMap)
 {
 	localMapsWithoutObstacleDilation_.emplace(nodeId, localMap);
 	std::shared_ptr<const LocalMap> dilatedLocalMap;
@@ -58,11 +62,11 @@ void OccupancyGridMap::addLocalMap(int nodeId, std::shared_ptr<const LocalMap> l
 	{
 		dilatedLocalMap = localMap;
 	}
-	occupancyGridBuilder_->addLocalMap(nodeId, dilatedLocalMap, pose);
+	occupancyGridBuilder_->addLocalMap(nodeId, pose, dilatedLocalMap);
 }
 
-void OccupancyGridMap::addTemporaryLocalMap(std::shared_ptr<const LocalMap> localMap,
-	const Transform& pose)
+void OccupancyGridMap::addTemporaryLocalMap(const Transform& pose,
+	std::shared_ptr<const LocalMap> localMap)
 {
 	std::shared_ptr<const LocalMap> dilatedLocalMap;
 	if (obstacleDilation_->dilationSize() != 0.0f)
@@ -74,7 +78,7 @@ void OccupancyGridMap::addTemporaryLocalMap(std::shared_ptr<const LocalMap> loca
 	{
 		dilatedLocalMap = localMap;
 	}
-	temporaryOccupancyGridBuilder_->addLocalMap(dilatedLocalMap, pose);
+	temporaryOccupancyGridBuilder_->addLocalMap(pose, dilatedLocalMap);
 }
 
 void OccupancyGridMap::cacheCurrentMap()
@@ -84,13 +88,13 @@ void OccupancyGridMap::cacheCurrentMap()
 
 void OccupancyGridMap::updatePoses(const std::map<int, Transform>& updatedPoses,
 		const std::list<Transform>& updatedTemporaryPoses,
-		int lastNodeIdForCachedMap /* -1 */)
+		int lastNodeIdToIncludeInCachedMap /* -1 */)
 {
-	occupancyGridBuilder_->updatePoses(updatedPoses, lastNodeIdForCachedMap);
+	occupancyGridBuilder_->updatePoses(updatedPoses, lastNodeIdToIncludeInCachedMap);
 	temporaryOccupancyGridBuilder_->updatePoses(updatedTemporaryPoses);
 }
 
-OccupancyGridMap::OccupancyGrid OccupancyGridMap::getOccupancyGrid() const
+OccupancyGrid OccupancyGridMap::getOccupancyGrid() const
 {
 	MEASURE_BLOCK_TIME(OccupancyGridMap__getOccupancyGrid);
 	MapLimits mapLimits = occupancyGridBuilder_->mapLimits();
@@ -130,7 +134,7 @@ OccupancyGridMap::OccupancyGrid OccupancyGridMap::getOccupancyGrid() const
 	return occupancyGrid;
 }
 
-OccupancyGridMap::OccupancyGrid OccupancyGridMap::getProbOccupancyGrid() const
+OccupancyGrid OccupancyGridMap::getProbOccupancyGrid() const
 {
 	MEASURE_BLOCK_TIME(OccupancyGridMap__getProbOccupancyGrid);
 	MapLimits mapLimits = occupancyGridBuilder_->mapLimits();
@@ -170,7 +174,7 @@ OccupancyGridMap::OccupancyGrid OccupancyGridMap::getProbOccupancyGrid() const
 	return occupancyGrid;
 }
 
-OccupancyGridMap::ColorGrid OccupancyGridMap::getColorGrid() const
+ColorGrid OccupancyGridMap::getColorGrid() const
 {
 	MEASURE_BLOCK_TIME(OccupancyGridMap__getColorGrid);
 	MapLimits mapLimits = occupancyGridBuilder_->mapLimits();
@@ -220,14 +224,9 @@ std::pair<float, float> OccupancyGridMap::getGridOrigin() const
 	return std::make_pair(originX, originY);
 }
 
-void OccupancyGridMap::resetAll()
+void OccupancyGridMap::reset()
 {
 	occupancyGridBuilder_->reset();
-	temporaryOccupancyGridBuilder_->reset();
-}
-
-void OccupancyGridMap::resetTemporaryMap()
-{
 	temporaryOccupancyGridBuilder_->reset();
 }
 

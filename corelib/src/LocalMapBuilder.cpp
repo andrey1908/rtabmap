@@ -54,7 +54,7 @@ void LocalMapBuilder::parseParameters(const ParametersMap& parameters)
 	}
 }
 
-std::shared_ptr<LocalMapBuilder::LocalMap> LocalMapBuilder::createLocalMap(
+std::shared_ptr<LocalMap> LocalMapBuilder::createLocalMap(
 	const Signature& signature) const
 {
 	MEASURE_BLOCK_TIME(LocalMapBuilder__createLocalMap);
@@ -113,6 +113,8 @@ std::shared_ptr<LocalMapBuilder::LocalMap> LocalMapBuilder::createLocalMap(
 
 	localMap->sensorBlindRange2dSqr = sensorBlindRange2dSqr_;
 	localMap->toSensor = signature.sensorData().laserScan().localTransform();
+	UASSERT(!localMap->toSensor.isNull());
+	localMap->fromUpdatedPose = Transform::getIdentity();
 	return localMap;
 }
 
@@ -192,7 +194,7 @@ Eigen::Matrix3Xf LocalMapBuilder::getObstaclePoints(const Eigen::Matrix3Xf& poin
 	return obstaclePoints;
 }
 
-std::vector<LocalMapBuilder::Color> LocalMapBuilder::getPointsColors(
+std::vector<Color> LocalMapBuilder::getPointsColors(
 	const Eigen::Matrix3Xf& points,
 	const std::vector<cv::Mat>& images,
 	const std::vector<CameraModel>& cameraModels) const
@@ -303,7 +305,7 @@ void LocalMapBuilder::traceRays(ColoredGrid& coloredGrid,
 	rayTracing_->traceRays(coloredGrid.grid, origin);
 }
 
-std::shared_ptr<LocalMapBuilder::LocalMap> LocalMapBuilder::localMapFromColoredGrid(
+std::shared_ptr<LocalMap> LocalMapBuilder::localMapFromColoredGrid(
 	const ColoredGrid& coloredGrid) const
 {
 	std::vector<std::pair<int, int>> occupiedCells;
@@ -359,6 +361,7 @@ std::shared_ptr<LocalMapBuilder::LocalMap> LocalMapBuilder::localMapFromColoredG
 		float yf = (y + coloredGrid.minY + 0.5f) * cellSize_;
 		const Color& color =
 			reinterpret_cast<const Color&>(coloredGrid.colors.at<int>(y, x));
+		// this format with duplicated points is assumed in other code
 		localMap->points(0, i) = xf;
 		localMap->points(1, i) = yf;
 		localMap->points(2, i) = 0.0f;

@@ -596,5 +596,46 @@ Transform Transform::getClosestTransform(
 	return imuT;
 }
 
+proto::Transform toProto(const Transform& transform)
+{
+	proto::Transform proto;
+	if (transform.isNull())
+	{
+		proto.set_x(0.0f);
+		proto.set_y(0.0f);
+		proto.set_z(0.0f);
+		proto.set_qx(0.0f);
+		proto.set_qy(0.0f);
+		proto.set_qz(0.0f);
+		proto.set_qw(0.0f);
+		return proto;
+	}
+	proto.set_x(transform.x());
+	proto.set_y(transform.y());
+	proto.set_z(transform.z());
+	Eigen::Quaternionf q = transform.getQuaternionf();
+	proto.set_qx(q.x());
+	proto.set_qy(q.y());
+	proto.set_qz(q.z());
+	proto.set_qw(q.w());
+	return proto;
+}
+
+Transform fromProto(const proto::Transform& proto)
+{
+	float x = proto.x();
+	float y = proto.y();
+	float z = proto.z();
+	float qx = proto.qx();
+	float qy = proto.qy();
+	float qz = proto.qz();
+	float qw = proto.qw();
+	if (qx == 0.0f && qy == 0.0f && qz == 0.0f && qw == 0.0f)
+	{
+		return Transform();
+	}
+	Transform transform(x, y, z, qx, qy, qz, qw);
+	return transform;
+}
 
 }
