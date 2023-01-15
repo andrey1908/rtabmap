@@ -382,6 +382,13 @@ ColorGrid TemporaryOccupancyGridBuilder::getColorGrid(
 	return colorGrid;
 }
 
+Transform TemporaryOccupancyGridBuilder::getNodePose(int index) const
+{
+	UASSERT(index < nodes_.size());
+	auto it = std::next(nodes_.begin(), index);
+	return it->transformedLocalMap->pose;
+}
+
 void TemporaryOccupancyGridBuilder::clear()
 {
 	for (Node& node : nodes_)

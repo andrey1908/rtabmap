@@ -48,6 +48,11 @@ public:
 	const cv::Mat& lastDilatedSemantic() const
 		{ return localMapBuilder_->lastDilatedSemantic(); }
 
+	std::optional<Transform> getNodePose(int nodeId) const
+		{ return occupancyGridBuilder_->getNodePose(nodeId); }
+	Transform getTemporaryNodePose(int index) const
+		{ return temporaryOccupancyGridBuilder_->getNodePose(index); }
+
 	void reset();
 
 private:

@@ -10,7 +10,8 @@ namespace rtabmap {
 TimedOccupancyGridMap::TimedOccupancyGridMap(
     const ParametersMap& parameters /* ParametersMap() */) :
     maxInterpolationTimeError_(Parameters::defaultTimedGridMaxInterpolationTimeError()),
-    maxExtrapolationTime_(Parameters::defaultTimedGridMaxExtrapolationTime())
+    guaranteedInterpolationTimeWindow_(
+        Parameters::defaultTimedGridGuaranteedInterpolationTimeWindow())
 {
     parseParameters(parameters);
 }
@@ -19,8 +20,9 @@ void TimedOccupancyGridMap::parseParameters(const ParametersMap& parameters)
 {
     Parameters::parse(parameters, Parameters::kTimedGridMaxInterpolationTimeError(),
         maxInterpolationTimeError_);
-    Parameters::parse(parameters, Parameters::kTimedGridMaxExtrapolationTime(),
-        maxExtrapolationTime_);
+    Parameters::parse(
+        parameters, Parameters::kTimedGridGuaranteedInterpolationTimeWindow(),
+        guaranteedInterpolationTimeWindow_);
 
     occupancyGridMap_ = std::make_unique<OccupancyGridMap>(parameters);
 }
@@ -64,8 +66,9 @@ void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories,
 		int nodeId = idTime.first;
 		Time time = idTime.second;
 		std::optional<Transform> pose;
+        std::optional<Transform> prevPose = getNodePose(nodeId);
         const Trajectory* trajectory;
-        std::tie(pose, trajectory) = getPose(trajectories, time);
+        std::tie(pose, trajectory) = getPose(trajectories, time, prevPose);
 		if (pose.has_value())
 		{
 			updatedPoses[nodeId] = *pose;
@@ -78,80 +81,88 @@ void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories,
 	}
 
     std::list<Transform> updatedTemporaryPoses;
+    int i = 0;
     for (const Time& temporaryTime : temporaryTimes_)
     {
-        std::optional<Transform> pose = getPose(trajectories, temporaryTime).first;
+        Transform prevPose = getTemporaryNodePose(i);
+        std::optional<Transform> pose =
+            getPose(trajectories, temporaryTime, prevPose).first;
         UASSERT(pose.has_value());
         updatedTemporaryPoses.push_back(*pose);
+        i++;
     }
 
     occupancyGridMap_->updatePoses(updatedPoses,
         updatedTemporaryPoses, lastNodeIdToIncludeInCachedMap);
+
+    prevTrajectories_ = trajectories;
 }
 
 std::pair<std::optional<Transform>, const TimedOccupancyGridMap::Trajectory*>
 TimedOccupancyGridMap::getPose(
-    const Trajectories& trajectories, const Time& time)
+    const Trajectories& trajectories, const Time& time,
+    std::optional<Transform> prevPose /* std::nullopt */)
 {
     if (trajectories.size() == 0)
     {
         return std::make_pair(std::nullopt, nullptr);
     }
-
-    const Trajectory* closestTrajectory = nullptr;
-    double minDist = std::numeric_limits<double>::max();
     for (const Trajectory& trajectory : trajectories)
     {
-        if (trajectory.maxTime() < time)
+        std::optional<Transform> pose = getPose(trajectory, time);
+        if (pose.has_value())
         {
-            double dist = time.toSec() - trajectory.maxTime().toSec();
-            if (dist < minDist)
-            {
-                closestTrajectory = &trajectory;
-                minDist = dist;
-            }
-            continue;
+            return std::make_pair(std::move(pose), &trajectory);
         }
-        const auto& bounds = trajectory.getBounds(time);
-        if (bounds.first == trajectory.end())
-        {
-            continue;
-        }
-        if (bounds.first->time == time)
-        {
-            return std::make_pair(bounds.first->pose, &trajectory);
-        }
-        UASSERT(bounds.second != trajectory.end());
-        if (std::min(
-                std::abs(time.toSec() - bounds.first->time.toSec()),
-                std::abs(time.toSec() - bounds.second->time.toSec())) >
-            maxInterpolationTimeError_)
-        {
-            continue;
-        }
-        float t = (time.toSec() - bounds.first->time.toSec()) /
-            (bounds.second->time.toSec() - bounds.first->time.toSec());
-        UASSERT(t > 0.0 && t < 1.0);
-        return std::make_pair(
-            bounds.first->pose.interpolate(t, bounds.second->pose),
-            &trajectory);
     }
-    if (closestTrajectory != nullptr && minDist <= maxExtrapolationTime_)
+    if (prevPose.has_value())
     {
-        if (closestTrajectory->size() == 1)
+        const Trajectory* prevTrajectory = prevTrajectories_.findContinuedTrajectory(time);
+        const Trajectory* trajectory = trajectories.findContinuedTrajectory(time);
+        if (prevTrajectory && trajectory)
         {
-            return std::make_pair(closestTrajectory->begin()->pose,
-                closestTrajectory);
+            Time commonEndTime = std::min(prevTrajectory->maxTime(), trajectory->maxTime());
+            std::optional<Transform> prevTrajectoryEnd =
+                getPose(*prevTrajectory, commonEndTime);
+            std::optional<Transform> trajectoryEnd =
+                getPose(*trajectory, commonEndTime);
+            if (prevTrajectoryEnd.has_value() && trajectoryEnd.has_value())
+            {
+                Transform shift = prevTrajectoryEnd->inverse() * (*trajectoryEnd);
+                Transform pose = shift * (*prevPose);
+                return std::make_pair(std::move(pose), trajectory);
+            }
         }
-        auto second = std::prev(closestTrajectory->end());
-        auto first = std::prev(second);
-        float t = (time.toSec() - first->time.toSec()) /
-            (second->time.toSec() - first->time.toSec());
-        UASSERT(t > 1.0);
-        return std::make_pair(first->pose.interpolate(t, second->pose),
-            closestTrajectory);
     }
     return std::make_pair(std::nullopt, nullptr);
+}
+
+std::optional<Transform> TimedOccupancyGridMap::getPose(
+	const Trajectory& trajectory, const Time& time)
+{
+    const auto& bounds = trajectory.getBounds(time);
+    if (bounds.first == trajectory.end())
+    {
+        return std::nullopt;
+    }
+    if (bounds.first->time == time)
+    {
+        return bounds.first->pose;
+    }
+    UASSERT(bounds.second != trajectory.end());
+    if (std::min(
+            std::abs(time.toSec() - bounds.first->time.toSec()),
+            std::abs(time.toSec() - bounds.second->time.toSec())) >
+                maxInterpolationTimeError_ &&
+        trajectory.maxTime().toSec() - time.toSec() >
+            guaranteedInterpolationTimeWindow_)
+    {
+        return std::nullopt;
+    }
+    float t = (time.toSec() - bounds.first->time.toSec()) /
+        (bounds.second->time.toSec() - bounds.first->time.toSec());
+    UASSERT(t > 0.0 && t < 1.0);
+    return bounds.first->pose.interpolate(t, bounds.second->pose);
 }
 
 void TimedOccupancyGridMap::reset()

@@ -96,6 +96,7 @@ public:
 		std::set<TimedPose, TimedPose::CompareId> trajectory_;
 	};
 
+	// assumes that trajectoies are not overlapping
 	class Trajectories
 	{
 	public:
@@ -126,6 +127,26 @@ public:
 				}
 			}
 			return latestTrajectory;
+		}
+		const Trajectory* findContinuedTrajectory(const Time& time) const
+		{
+			// assumes that there are no trajectories containing time
+			double minDiff = std::numeric_limits<double>::max();
+			const Trajectory* continuedTrajectory = nullptr;
+			for (const Trajectory& trajectory : trajectories_)
+			{
+				if (trajectory.maxTime() > time)
+				{
+					continue;
+				}
+				double diff = time.toSec() - trajectory.maxTime().toSec();
+				if (diff < minDiff)
+				{
+					minDiff = diff;
+					continuedTrajectory = &trajectory;
+				}
+			}
+			return continuedTrajectory;
 		}
 		size_t size() const
 		{
@@ -181,6 +202,11 @@ public:
 	const cv::Mat& lastDilatedSemantic() const
 		{ return occupancyGridMap_->lastDilatedSemantic(); }
 
+	std::optional<Transform> getNodePose(int nodeId) const
+		{ return occupancyGridMap_->getNodePose(nodeId); }
+	Transform getTemporaryNodePose(int index) const
+		{ return occupancyGridMap_->getTemporaryNodePose(index); }
+
 	void reset();
 
 	void save(const std::string& file);
@@ -188,15 +214,20 @@ public:
 
 private:
 	std::pair<std::optional<Transform>, const Trajectory*> getPose(
-		const Trajectories& trajectories, const Time& time);
+		const Trajectories& trajectories, const Time& time,
+		std::optional<Transform> prevPose = std::nullopt);
+	std::optional<Transform> getPose(
+		const Trajectory& trajectory, const Time& time);
 
 private:
 	double maxInterpolationTimeError_;
-	double maxExtrapolationTime_;
+	double guaranteedInterpolationTimeWindow_;
 
 	std::map<int, Time> times_;
 	std::list<Time> temporaryTimes_;
 	std::unique_ptr<OccupancyGridMap> occupancyGridMap_;
+
+	Trajectories prevTrajectories_;
 };
 
 }

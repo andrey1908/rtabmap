@@ -42,6 +42,7 @@ public:
 	ColorGrid getColorGrid(const MapLimits& roi) const;
 
 	const std::map<int, Node>& nodes() const { return nodes_; }
+	std::optional<Transform> getNodePose(int nodeId) const;
 	const MapLimits& mapLimits() const { return mapLimits_; }
 
 	void reset();

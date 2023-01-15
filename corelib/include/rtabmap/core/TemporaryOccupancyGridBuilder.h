@@ -38,6 +38,7 @@ public:
 
 	int maxTemporaryLocalMaps() const { return maxTemporaryLocalMaps_; }
 	const MapLimits& mapLimits() const { return mapLimits_; }
+	Transform getNodePose(int index) const;
 
 	void reset();
 

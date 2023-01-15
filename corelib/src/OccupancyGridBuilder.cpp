@@ -564,6 +564,20 @@ ColorGrid OccupancyGridBuilder::getColorGrid(
 	return colorGrid;
 }
 
+std::optional<Transform> OccupancyGridBuilder::getNodePose(int nodeId) const
+{
+	UASSERT(nodes_.count(nodeId));
+	const Node& node = nodes_.at(nodeId);
+	if (node.transformedLocalMap.has_value())
+	{
+		return node.transformedLocalMap->pose;
+	}
+	else
+	{
+		return std::nullopt;
+	}
+}
+
 void OccupancyGridBuilder::clear()
 {
 	for (auto& entry : nodes_)
