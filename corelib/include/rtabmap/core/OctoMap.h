@@ -52,32 +52,32 @@ class RtabmapColorOcTree;
 class RtabmapColorOcTreeNode : public octomap::ColorOcTreeNode
 {
 public:
-	enum OccupancyType {kTypeUnknown=-1, kTypeEmpty=0, kTypeGround=1, kTypeObstacle=100};
+    enum OccupancyType {kTypeUnknown=-1, kTypeEmpty=0, kTypeGround=1, kTypeObstacle=100};
 
 public:
-	friend class RtabmapColorOcTree; // needs access to node children (inherited)
+    friend class RtabmapColorOcTree; // needs access to node children (inherited)
 
-	RtabmapColorOcTreeNode() : ColorOcTreeNode(), nodeRefId_(0), type_(kTypeUnknown) {}
-	RtabmapColorOcTreeNode(const RtabmapColorOcTreeNode& rhs) : ColorOcTreeNode(rhs), nodeRefId_(rhs.nodeRefId_), type_(rhs.type_) {}
+    RtabmapColorOcTreeNode() : ColorOcTreeNode(), nodeRefId_(0), type_(kTypeUnknown) {}
+    RtabmapColorOcTreeNode(const RtabmapColorOcTreeNode& rhs) : ColorOcTreeNode(rhs), nodeRefId_(rhs.nodeRefId_), type_(rhs.type_) {}
 
-	void setNodeRefId(int nodeRefId) {nodeRefId_ = nodeRefId;}
-	void setOccupancyType(char type) {type_=type;}
-	void setPointRef(const octomap::point3d & point) {pointRef_ = point;}
-	int getNodeRefId() const {return nodeRefId_;}
-	int getOccupancyType() const {return type_;}
-	const octomap::point3d & getPointRef() const {return pointRef_;}
+    void setNodeRefId(int nodeRefId) {nodeRefId_ = nodeRefId;}
+    void setOccupancyType(char type) {type_=type;}
+    void setPointRef(const octomap::point3d & point) {pointRef_ = point;}
+    int getNodeRefId() const {return nodeRefId_;}
+    int getOccupancyType() const {return type_;}
+    const octomap::point3d & getPointRef() const {return pointRef_;}
 
-	// following methods defined for octomap < 1.8 compatibility
-	RtabmapColorOcTreeNode* getChild(unsigned int i);
-	const RtabmapColorOcTreeNode* getChild(unsigned int i) const;
-	bool pruneNode();
-	void expandNode();
-	bool createChild(unsigned int i);
+    // following methods defined for octomap < 1.8 compatibility
+    RtabmapColorOcTreeNode* getChild(unsigned int i);
+    const RtabmapColorOcTreeNode* getChild(unsigned int i) const;
+    bool pruneNode();
+    void expandNode();
+    bool createChild(unsigned int i);
 
 private:
-	int nodeRefId_;
-	int type_; // -1=undefined, 0=empty, 100=obstacle, 1=ground
-	octomap::point3d pointRef_;
+    int nodeRefId_;
+    int type_; // -1=undefined, 0=empty, 100=obstacle, 1=ground
+    octomap::point3d pointRef_;
 };
 
 // Same as official ColorOctree but using RtabmapColorOcTreeNode, which is inheriting ColorOcTreeNode
@@ -85,12 +85,12 @@ class RtabmapColorOcTree : public octomap::OccupancyOcTreeBase <RtabmapColorOcTr
 
   public:
     /// Default constructor, sets resolution of leafs
-	RtabmapColorOcTree(double resolution);
-	virtual ~RtabmapColorOcTree() {}
+    RtabmapColorOcTree(double resolution);
+    virtual ~RtabmapColorOcTree() {}
 
     /// virtual constructor: creates a new object of same type
     /// (Covariant return type requires an up-to-date compiler)
-	RtabmapColorOcTree* create() const {return new RtabmapColorOcTree(resolution); }
+    RtabmapColorOcTree* create() const {return new RtabmapColorOcTree(resolution); }
 
     std::string getTreeType() const {return "ColorOcTree";} // same type as ColorOcTree to be compatible with ROS OctoMap msg
 
@@ -111,7 +111,7 @@ class RtabmapColorOcTree : public octomap::OccupancyOcTreeBase <RtabmapColorOcTr
     RtabmapColorOcTreeNode* setNodeColor(float x, float y,
                                  float z, uint8_t r,
                                  uint8_t g, uint8_t b) {
-    	octomap::OcTreeKey key;
+        octomap::OcTreeKey key;
       if (!this->coordToKeyChecked(octomap::point3d(x,y,z), key)) return NULL;
       return setNodeColor(key,r,g,b);
     }
@@ -123,7 +123,7 @@ class RtabmapColorOcTree : public octomap::OccupancyOcTreeBase <RtabmapColorOcTr
     RtabmapColorOcTreeNode* averageNodeColor(float x, float y,
                                       float z, uint8_t r,
                                       uint8_t g, uint8_t b) {
-    	octomap:: OcTreeKey key;
+        octomap:: OcTreeKey key;
       if (!this->coordToKeyChecked(octomap::point3d(x,y,z), key)) return NULL;
       return averageNodeColor(key,r,g,b);
     }
@@ -135,7 +135,7 @@ class RtabmapColorOcTree : public octomap::OccupancyOcTreeBase <RtabmapColorOcTr
     RtabmapColorOcTreeNode* integrateNodeColor(float x, float y,
                                       float z, uint8_t r,
                                       uint8_t g, uint8_t b) {
-    	octomap::OcTreeKey key;
+        octomap::OcTreeKey key;
       if (!this->coordToKeyChecked(octomap::point3d(x,y,z), key)) return NULL;
       return integrateNodeColor(key,r,g,b);
     }
@@ -171,49 +171,49 @@ class RtabmapColorOcTree : public octomap::OccupancyOcTreeBase <RtabmapColorOcTr
 
 class RTABMAP_EXP OctoMap {
 public:
-	OctoMap(const ParametersMap & parameters = ParametersMap());
+    OctoMap(const ParametersMap & parameters = ParametersMap());
 
-	const std::map<int, Transform> & addedNodes() const {return addedNodes_;}
-	void addToCache(int nodeId,
-			const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & ground,
-			const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & obstacles,
-			const pcl::PointXYZ & viewPoint);
-	void addToCache(int nodeId,
-			const cv::Mat & ground,
-			const cv::Mat & obstacles,
-			const cv::Mat & empty,
-			const cv::Point3f & viewPoint);
-	bool update(const std::map<int, Transform> & poses); // return true if map has changed
+    const std::map<int, Transform> & addedNodes() const {return addedNodes_;}
+    void addToCache(int nodeId,
+            const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & ground,
+            const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & obstacles,
+            const pcl::PointXYZ & viewPoint);
+    void addToCache(int nodeId,
+            const cv::Mat & ground,
+            const cv::Mat & obstacles,
+            const cv::Mat & empty,
+            const cv::Point3f & viewPoint);
+    bool update(const std::map<int, Transform> & poses); // return true if map has changed
 
-	const RtabmapColorOcTree * octree() const {return octree_;}
+    const RtabmapColorOcTree * octree() const {return octree_;}
 
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr createCloud(
-			unsigned int treeDepth = 0,
-			std::vector<int> * obstacleIndices = 0,
-			std::vector<int> * emptyIndices = 0,
-			std::vector<int> * groundIndices = 0,
-			bool originalRefPoints = true,
-			std::vector<int> * frontierIndices = 0,
-			std::vector<double> * cloudProb = 0) const;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr createCloud(
+            unsigned int treeDepth = 0,
+            std::vector<int> * obstacleIndices = 0,
+            std::vector<int> * emptyIndices = 0,
+            std::vector<int> * groundIndices = 0,
+            bool originalRefPoints = true,
+            std::vector<int> * frontierIndices = 0,
+            std::vector<double> * cloudProb = 0) const;
 
-	cv::Mat createProjectionMap(
-			float & xMin,
-			float & yMin,
-			float & gridCellSize,
-			float minGridSize = 0.0f,
-			unsigned int treeDepth = 0);
+    cv::Mat createProjectionMap(
+            float & xMin,
+            float & yMin,
+            float & gridCellSize,
+            float minGridSize = 0.0f,
+            unsigned int treeDepth = 0);
 
-	bool writeBinary(const std::string & path);
+    bool writeBinary(const std::string & path);
 
-	virtual ~OctoMap();
-	void clear();
+    virtual ~OctoMap();
+    void clear();
 
-	void getGridMin(double & x, double & y, double & z) const {x=minValues_[0];y=minValues_[1];z=minValues_[2];}
-	void getGridMax(double & x, double & y, double & z) const {x=maxValues_[0];y=maxValues_[1];z=maxValues_[2];}
+    void getGridMin(double & x, double & y, double & z) const {x=minValues_[0];y=minValues_[1];z=minValues_[2];}
+    void getGridMax(double & x, double & y, double & z) const {x=maxValues_[0];y=maxValues_[1];z=maxValues_[2];}
 
-	void setMaxRange(float value) {rangeMax_ = value;}
-	void setRayTracing(bool enabled) {rayTracing_ = enabled;}
-	bool hasColor() const {return hasColor_;}
+    void setMaxRange(float value) {rangeMax_ = value;}
+    void setRayTracing(bool enabled) {rayTracing_ = enabled;}
+    bool hasColor() const {return hasColor_;}
 
     static std::unordered_set<octomap::OcTreeKey, octomap::OcTreeKey::KeyHash> findEmptyNode(RtabmapColorOcTree* octree_, unsigned int treeDepth, octomap::point3d startPosition);
     static void floodFill(RtabmapColorOcTree* octree_, unsigned int treeDepth,octomap::point3d startPosition, std::unordered_set<octomap::OcTreeKey, octomap::OcTreeKey::KeyHash> & EmptyNodes,std::queue<octomap::point3d>& positionToExplore);
@@ -222,22 +222,22 @@ public:
     static bool isValidEmpty(RtabmapColorOcTree* octree_, unsigned int treeDepth,octomap::point3d startPosition);
 
 private:
-	void updateMinMax(const octomap::point3d & point);
+    void updateMinMax(const octomap::point3d & point);
 
 private:
-	std::map<int, std::pair<std::pair<cv::Mat, cv::Mat>, cv::Mat> > cache_; // [id: < <ground, obstacles>, empty>]
-	std::map<int, std::pair<const pcl::PointCloud<pcl::PointXYZRGB>::Ptr, const pcl::PointCloud<pcl::PointXYZRGB>::Ptr> > cacheClouds_; // [id: <ground, obstacles>]
-	std::map<int, cv::Point3f> cacheViewPoints_;
-	RtabmapColorOcTree * octree_;
-	std::map<int, Transform> addedNodes_;
-	bool hasColor_;
-	bool fullUpdate_;
-	float updateError_;
-	float rangeMax_;
-	bool rayTracing_;
+    std::map<int, std::pair<std::pair<cv::Mat, cv::Mat>, cv::Mat> > cache_; // [id: < <ground, obstacles>, empty>]
+    std::map<int, std::pair<const pcl::PointCloud<pcl::PointXYZRGB>::Ptr, const pcl::PointCloud<pcl::PointXYZRGB>::Ptr> > cacheClouds_; // [id: <ground, obstacles>]
+    std::map<int, cv::Point3f> cacheViewPoints_;
+    RtabmapColorOcTree * octree_;
+    std::map<int, Transform> addedNodes_;
+    bool hasColor_;
+    bool fullUpdate_;
+    float updateError_;
+    float rangeMax_;
+    bool rayTracing_;
     unsigned int emptyFloodFillDepth_;
-	double minValues_[3];
-	double maxValues_[3];
+    double minValues_[3];
+    double maxValues_[3];
 };
 
 } /* namespace rtabmap */

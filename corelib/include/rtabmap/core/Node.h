@@ -12,22 +12,22 @@ namespace rtabmap {
 
 struct TransformedLocalMap
 {
-	Transform pose;
-	Eigen::Matrix2Xi points;
-	MapLimits mapLimits;
+    Transform pose;
+    Eigen::Matrix2Xi points;
+    MapLimits mapLimits;
 };
 
 struct Node
 {
-	template <typename LocalMapType, typename TransformedLocalMapType>
-	Node(
-		const std::shared_ptr<LocalMapType>& otherLocalMap,
-		TransformedLocalMapType&& otherTransformedLocalMap) :
-			localMap(otherLocalMap),
-			transformedLocalMap(
-				std::forward<TransformedLocalMapType>(otherTransformedLocalMap)) {}
-	const std::shared_ptr<const LocalMap> localMap;
-	std::optional<TransformedLocalMap> transformedLocalMap;
+    template <typename LocalMapType, typename TransformedLocalMapType>
+    Node(
+        const std::shared_ptr<LocalMapType>& otherLocalMap,
+        TransformedLocalMapType&& otherTransformedLocalMap) :
+            localMap(otherLocalMap),
+            transformedLocalMap(
+                std::forward<TransformedLocalMapType>(otherTransformedLocalMap)) {}
+    const std::shared_ptr<const LocalMap> localMap;
+    std::optional<TransformedLocalMap> transformedLocalMap;
 };
 
 }

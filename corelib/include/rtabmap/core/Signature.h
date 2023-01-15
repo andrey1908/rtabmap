@@ -48,116 +48,116 @@ class RTABMAP_EXP Signature
 {
 
 public:
-	Signature();
-	Signature(int id,
-			int mapId = -1,
-			int weight = 0,
-			double stamp = 0.0,
-			const std::string & label = std::string(),
-			const Transform & pose = Transform(),
-			const Transform & groundTruthPose = Transform(),
-			const SensorData & sensorData = SensorData());
-	Signature(int id,
-			int mapId = -1,
-			int weight = 0,
-			uint32_t sec = 0,
-			uint32_t nsec = 0,
-			const std::string & label = std::string(),
-			const Transform & pose = Transform(),
-			const Transform & groundTruthPose = Transform(),
-			const SensorData & sensorData = SensorData());
-	Signature(const SensorData & data);
-	virtual ~Signature();
+    Signature();
+    Signature(int id,
+            int mapId = -1,
+            int weight = 0,
+            double stamp = 0.0,
+            const std::string & label = std::string(),
+            const Transform & pose = Transform(),
+            const Transform & groundTruthPose = Transform(),
+            const SensorData & sensorData = SensorData());
+    Signature(int id,
+            int mapId = -1,
+            int weight = 0,
+            uint32_t sec = 0,
+            uint32_t nsec = 0,
+            const std::string & label = std::string(),
+            const Transform & pose = Transform(),
+            const Transform & groundTruthPose = Transform(),
+            const SensorData & sensorData = SensorData());
+    Signature(const SensorData & data);
+    virtual ~Signature();
 
-	/**
-	 * Must return a value between >=0 and <=1 (1 means 100% similarity).
-	 */
-	bool isBadSignature() const;
+    /**
+     * Must return a value between >=0 and <=1 (1 means 100% similarity).
+     */
+    bool isBadSignature() const;
 
-	int id() const {return _id;}
-	int mapId() const {return _mapId;}
+    int id() const {return _id;}
+    int mapId() const {return _mapId;}
 
-	void setWeight(int weight) {_modified=_weight!=weight;_weight = weight;}
-	int getWeight() const {return _weight;}
+    void setWeight(int weight) {_modified=_weight!=weight;_weight = weight;}
+    int getWeight() const {return _weight;}
 
-	void setLabel(const std::string & label) {_modified=_label.compare(label)!=0;_label = label;}
-	const std::string & getLabel() const {return _label;}
+    void setLabel(const std::string & label) {_modified=_label.compare(label)!=0;_label = label;}
+    const std::string & getLabel() const {return _label;}
 
-	double getStamp() const {return uSecNSecStamp2Double(_sec, _nsec);}
-	uint32_t getSec() const {return _sec;}
-	uint32_t getNSec() const {return _nsec;}
+    double getStamp() const {return uSecNSecStamp2Double(_sec, _nsec);}
+    uint32_t getSec() const {return _sec;}
+    uint32_t getNSec() const {return _nsec;}
 
-	void setSaved(bool saved) {_saved = saved;}
-	void setModified(bool modified) {_modified = modified;}
+    void setSaved(bool saved) {_saved = saved;}
+    void setModified(bool modified) {_modified = modified;}
 
-	bool isSaved() const {return _saved;}
-	bool isModified() const {return _modified;}
+    bool isSaved() const {return _saved;}
+    bool isModified() const {return _modified;}
 
-	//visual words stuff
-	void removeAllWords();
-	void changeWordsRef(int oldWordId, int activeWordId);
-	void setWords(const std::multimap<int, int> & words, const std::vector<cv::KeyPoint> & keypoints, const std::vector<cv::Point3f> & words3, const cv::Mat & descriptors);
-	bool isEnabled() const {return _enabled;}
-	void setEnabled(bool enabled) {_enabled = enabled;}
-	const std::multimap<int, int> & getWords() const {return _words;}
-	const std::vector<cv::KeyPoint> & getWordsKpts() const {return _wordsKpts;}
-	int getInvalidWordsCount() const {return _invalidWordsCount;}
-	const std::map<int, int> & getWordsChanged() const {return _wordsChanged;}
-	const cv::Mat & getWordsDescriptors() const {return _wordsDescriptors;}
-	void setWordsDescriptors(const cv::Mat & descriptors);
+    //visual words stuff
+    void removeAllWords();
+    void changeWordsRef(int oldWordId, int activeWordId);
+    void setWords(const std::multimap<int, int> & words, const std::vector<cv::KeyPoint> & keypoints, const std::vector<cv::Point3f> & words3, const cv::Mat & descriptors);
+    bool isEnabled() const {return _enabled;}
+    void setEnabled(bool enabled) {_enabled = enabled;}
+    const std::multimap<int, int> & getWords() const {return _words;}
+    const std::vector<cv::KeyPoint> & getWordsKpts() const {return _wordsKpts;}
+    int getInvalidWordsCount() const {return _invalidWordsCount;}
+    const std::map<int, int> & getWordsChanged() const {return _wordsChanged;}
+    const cv::Mat & getWordsDescriptors() const {return _wordsDescriptors;}
+    void setWordsDescriptors(const cv::Mat & descriptors);
 
-	//metric stuff
-	void setPose(const Transform & pose) {_pose = pose;}
-	void setGroundTruthPose(const Transform & pose) {_groundTruthPose = pose;}
-	void setVelocity(float vx, float vy, float vz, float vroll, float vpitch, float vyaw) {
-		_velocity = std::vector<float>(6,0);
-		_velocity[0]=vx;
-		_velocity[1]=vy;
-		_velocity[2]=vz;
-		_velocity[3]=vroll;
-		_velocity[4]=vpitch;
-		_velocity[5]=vyaw;
-	}
+    //metric stuff
+    void setPose(const Transform & pose) {_pose = pose;}
+    void setGroundTruthPose(const Transform & pose) {_groundTruthPose = pose;}
+    void setVelocity(float vx, float vy, float vz, float vroll, float vpitch, float vyaw) {
+        _velocity = std::vector<float>(6,0);
+        _velocity[0]=vx;
+        _velocity[1]=vy;
+        _velocity[2]=vz;
+        _velocity[3]=vroll;
+        _velocity[4]=vpitch;
+        _velocity[5]=vyaw;
+    }
 
-	const std::vector<cv::Point3f> & getWords3() const {return _words3;}
-	const Transform & getPose() const {return _pose;}
-	cv::Mat getPoseCovariance() const;
-	const Transform & getGroundTruthPose() const {return _groundTruthPose;}
-	const std::vector<float> & getVelocity() const {return _velocity;}
+    const std::vector<cv::Point3f> & getWords3() const {return _words3;}
+    const Transform & getPose() const {return _pose;}
+    cv::Mat getPoseCovariance() const;
+    const Transform & getGroundTruthPose() const {return _groundTruthPose;}
+    const std::vector<float> & getVelocity() const {return _velocity;}
 
-	SensorData & sensorData() {return _sensorData;}
-	const SensorData & sensorData() const {return _sensorData;}
+    SensorData & sensorData() {return _sensorData;}
+    const SensorData & sensorData() const {return _sensorData;}
 
-	unsigned long getMemoryUsed(bool withSensorData=true) const; // Return memory usage in Bytes
+    unsigned long getMemoryUsed(bool withSensorData=true) const; // Return memory usage in Bytes
 
 private:
-	int _id;
-	int _mapId;
-	uint32_t _sec;
-	uint32_t _nsec;
+    int _id;
+    int _mapId;
+    uint32_t _sec;
+    uint32_t _nsec;
 
-	int _weight;
-	std::string _label;
-	bool _saved; // If it's saved to bd
-	bool _modified;
+    int _weight;
+    std::string _label;
+    bool _saved; // If it's saved to bd
+    bool _modified;
 
-	// Contains all words (Some can be duplicates -> if a word appears 2
-	// times in the signature, it will be 2 times in this list)
-	// Words match with the CvSeq keypoints and descriptors
-	std::multimap<int, int> _words; // word <id, keypoint index>
-									// first - id слова в словаре
-	std::vector<cv::KeyPoint> _wordsKpts;
-	std::vector<cv::Point3f> _words3; // in base_link frame (localTransform applied))
-	cv::Mat _wordsDescriptors;
-	std::map<int, int> _wordsChanged; // <oldId, newId>
-	bool _enabled;
-	int _invalidWordsCount;
+    // Contains all words (Some can be duplicates -> if a word appears 2
+    // times in the signature, it will be 2 times in this list)
+    // Words match with the CvSeq keypoints and descriptors
+    std::multimap<int, int> _words; // word <id, keypoint index>
+                                    // first - id слова в словаре
+    std::vector<cv::KeyPoint> _wordsKpts;
+    std::vector<cv::Point3f> _words3; // in base_link frame (localTransform applied))
+    cv::Mat _wordsDescriptors;
+    std::map<int, int> _wordsChanged; // <oldId, newId>
+    bool _enabled;
+    int _invalidWordsCount;
 
-	Transform _pose;
-	Transform _groundTruthPose;
-	std::vector<float> _velocity;
+    Transform _pose;
+    Transform _groundTruthPose;
+    std::vector<float> _velocity;
 
-	SensorData _sensorData;
+    SensorData _sensorData;
 };
 
 } // namespace rtabmap

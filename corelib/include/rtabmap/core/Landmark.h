@@ -39,10 +39,10 @@ namespace rtabmap {
 class Landmark
 {
 public:
-	Landmark() :
-		id_(0),
+    Landmark() :
+        id_(0),
         size_(0.0f)
-	{}
+    {}
     Landmark(const int & id, const float & size, const Transform & pose, const cv::Mat & covariance) :
         id_(id),
         size_(size),
@@ -61,18 +61,18 @@ public:
     }
     RTABMAP_DEPRECATED(Landmark(const int & id, const Transform & pose, const cv::Mat & covariance), "Use constructor with size=0 instead.");
 
-	virtual ~Landmark() {}
+    virtual ~Landmark() {}
 
-	const int & id() const {return id_;}
+    const int & id() const {return id_;}
     const float & size() const {return size_;}
-	const Transform & pose() const {return pose_;}
-	const cv::Mat & covariance() const {return covariance_;}
+    const Transform & pose() const {return pose_;}
+    const cv::Mat & covariance() const {return covariance_;}
 
 private:
-	int id_;
+    int id_;
     float size_;
-	Transform pose_;
-	cv::Mat covariance_;
+    Transform pose_;
+    cv::Mat covariance_;
 };
 
 typedef std::map<int, Landmark> Landmarks;

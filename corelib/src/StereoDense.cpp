@@ -32,26 +32,26 @@ namespace rtabmap {
 
 StereoDense * StereoDense::create(const ParametersMap & parameters)
 {
-	int stereoTypeInt = Parameters::defaultStereoDenseStrategy();
-	Parameters::parse(parameters, Parameters::kStereoDenseStrategy(), stereoTypeInt);
-	return create((StereoDense::Type)stereoTypeInt, parameters);
+    int stereoTypeInt = Parameters::defaultStereoDenseStrategy();
+    Parameters::parse(parameters, Parameters::kStereoDenseStrategy(), stereoTypeInt);
+    return create((StereoDense::Type)stereoTypeInt, parameters);
 }
 
 StereoDense * StereoDense::create(StereoDense::Type type, const ParametersMap & parameters)
 {
-	StereoDense * stereo = 0;
-	switch(type)
-	{
-	case StereoDense::kTypeSGBM:
-		stereo = new StereoSGBM(parameters);
-		break;
-	case StereoDense::kTypeBM:
-	default:
-		stereo = new StereoBM(parameters);
-		break;
+    StereoDense * stereo = 0;
+    switch(type)
+    {
+    case StereoDense::kTypeSGBM:
+        stereo = new StereoSGBM(parameters);
+        break;
+    case StereoDense::kTypeBM:
+    default:
+        stereo = new StereoBM(parameters);
+        break;
 
-	}
-	return stereo;
+    }
+    return stereo;
 }
 
 } /* namespace rtabmap */

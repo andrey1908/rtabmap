@@ -107,40 +107,40 @@ std::vector<torch::Tensor> SuperPoint::forward(torch::Tensor x) {
   }
 
 void NMS(const std::vector<cv::KeyPoint> & ptsIn,
-		const cv::Mat & conf,
-		const cv::Mat & descriptorsIn,
-		std::vector<cv::KeyPoint> & ptsOut,
-		cv::Mat & descriptorsOut,
+        const cv::Mat & conf,
+        const cv::Mat & descriptorsIn,
+        std::vector<cv::KeyPoint> & ptsOut,
+        cv::Mat & descriptorsOut,
         int border, int dist_thresh, int img_width, int img_height);
 
 SPDetector::SPDetector(const std::string & modelPath, float threshold, bool nms, int minDistance, bool cuda) :
-		threshold_(threshold),
-		nms_(nms),
-		minDistance_(minDistance),
-		detected_(false)
+        threshold_(threshold),
+        nms_(nms),
+        minDistance_(minDistance),
+        detected_(false)
 {
-	UDEBUG("modelPath=%s thr=%f nms=%d cuda=%d", modelPath.c_str(), threshold, nms?1:0, cuda?1:0);
-	if(modelPath.empty())
-	{
-		UERROR("Model's path is empty!");
-		return;
-	}
-	std::string path = uReplaceChar(modelPath, '~', UDirectory::homeDir());
-	if(!UFile::exists(path))
-	{
-		UERROR("Model's path \"%s\" doesn't exist!", path.c_str());
-		return;
-	}
-	model_ = std::make_shared<SuperPoint>();
-	torch::load(model_, uReplaceChar(path, '~', UDirectory::homeDir()));
+    UDEBUG("modelPath=%s thr=%f nms=%d cuda=%d", modelPath.c_str(), threshold, nms?1:0, cuda?1:0);
+    if(modelPath.empty())
+    {
+        UERROR("Model's path is empty!");
+        return;
+    }
+    std::string path = uReplaceChar(modelPath, '~', UDirectory::homeDir());
+    if(!UFile::exists(path))
+    {
+        UERROR("Model's path \"%s\" doesn't exist!", path.c_str());
+        return;
+    }
+    model_ = std::make_shared<SuperPoint>();
+    torch::load(model_, uReplaceChar(path, '~', UDirectory::homeDir()));
 
-	if(cuda && !torch::cuda::is_available())
-	{
-		UWARN("Cuda option is enabled but torch doesn't have cuda support on this platform, using CPU instead.");
-	}
-	cuda_ = cuda && torch::cuda::is_available();
-	torch::Device device(cuda_?torch::kCUDA:torch::kCPU);
-	model_->to(device);
+    if(cuda && !torch::cuda::is_available())
+    {
+        UWARN("Cuda option is enabled but torch doesn't have cuda support on this platform, using CPU instead.");
+    }
+    cuda_ = cuda && torch::cuda::is_available();
+    torch::Device device(cuda_?torch::kCUDA:torch::kCPU);
+    model_->to(device);
 }
 
 SPDetector::~SPDetector()
@@ -149,123 +149,123 @@ SPDetector::~SPDetector()
 
 std::vector<cv::KeyPoint> SPDetector::detect(const cv::Mat &img, const cv::Mat & mask)
 {
-	UASSERT(img.type() == CV_8UC1);
-	UASSERT(mask.empty() || (mask.type() == CV_8UC1 && img.cols == mask.cols && img.rows == mask.rows));
-	detected_ = false;
-	if(model_)
-	{
-		torch::NoGradGuard no_grad_guard;
-		auto x = torch::from_blob(img.data, {1, 1, img.rows, img.cols}, torch::kByte);
-		x = x.to(torch::kFloat) / 255;
+    UASSERT(img.type() == CV_8UC1);
+    UASSERT(mask.empty() || (mask.type() == CV_8UC1 && img.cols == mask.cols && img.rows == mask.rows));
+    detected_ = false;
+    if(model_)
+    {
+        torch::NoGradGuard no_grad_guard;
+        auto x = torch::from_blob(img.data, {1, 1, img.rows, img.cols}, torch::kByte);
+        x = x.to(torch::kFloat) / 255;
 
-		torch::Device device(cuda_?torch::kCUDA:torch::kCPU);
-		x = x.set_requires_grad(false);
-		auto out = model_->forward(x.to(device));
+        torch::Device device(cuda_?torch::kCUDA:torch::kCPU);
+        x = x.set_requires_grad(false);
+        auto out = model_->forward(x.to(device));
 
-		prob_ = out[0].squeeze(0);  // [H, W]
-		desc_ = out[1];             // [1, 256, H/8, W/8]
+        prob_ = out[0].squeeze(0);  // [H, W]
+        desc_ = out[1];             // [1, 256, H/8, W/8]
 
-		auto kpts = (prob_ > threshold_);
-		kpts = torch::nonzero(kpts);  // [n_keypoints, 2]  (y, x)
+        auto kpts = (prob_ > threshold_);
+        kpts = torch::nonzero(kpts);  // [n_keypoints, 2]  (y, x)
 
-		//convert back to cpu if in gpu
-		auto kpts_cpu = kpts.to(torch::kCPU);
-		auto prob_cpu = prob_.to(torch::kCPU);
+        //convert back to cpu if in gpu
+        auto kpts_cpu = kpts.to(torch::kCPU);
+        auto prob_cpu = prob_.to(torch::kCPU);
 
-		std::vector<cv::KeyPoint> keypoints_no_nms;
-		for (int i = 0; i < kpts_cpu.size(0); i++) {
-			if(mask.empty() || mask.at<unsigned char>(kpts_cpu[i][0].item<int>(), kpts_cpu[i][1].item<int>()) != 0)
-			{
-				float response = prob_cpu[kpts_cpu[i][0]][kpts_cpu[i][1]].item<float>();
-				keypoints_no_nms.push_back(cv::KeyPoint(kpts_cpu[i][1].item<float>(), kpts_cpu[i][0].item<float>(), 8, -1, response));
-			}
-		}
+        std::vector<cv::KeyPoint> keypoints_no_nms;
+        for (int i = 0; i < kpts_cpu.size(0); i++) {
+            if(mask.empty() || mask.at<unsigned char>(kpts_cpu[i][0].item<int>(), kpts_cpu[i][1].item<int>()) != 0)
+            {
+                float response = prob_cpu[kpts_cpu[i][0]][kpts_cpu[i][1]].item<float>();
+                keypoints_no_nms.push_back(cv::KeyPoint(kpts_cpu[i][1].item<float>(), kpts_cpu[i][0].item<float>(), 8, -1, response));
+            }
+        }
 
-		detected_ = true;
-		if (nms_ && !keypoints_no_nms.empty()) {
-			cv::Mat conf(keypoints_no_nms.size(), 1, CV_32F);
-			for (size_t i = 0; i < keypoints_no_nms.size(); i++) {
-				int x = keypoints_no_nms[i].pt.x;
-				int y = keypoints_no_nms[i].pt.y;
-				conf.at<float>(i, 0) = prob_cpu[y][x].item<float>();
-			}
+        detected_ = true;
+        if (nms_ && !keypoints_no_nms.empty()) {
+            cv::Mat conf(keypoints_no_nms.size(), 1, CV_32F);
+            for (size_t i = 0; i < keypoints_no_nms.size(); i++) {
+                int x = keypoints_no_nms[i].pt.x;
+                int y = keypoints_no_nms[i].pt.y;
+                conf.at<float>(i, 0) = prob_cpu[y][x].item<float>();
+            }
 
-			int border = 0;
-			int dist_thresh = minDistance_;
-			int height = img.rows;
-			int width = img.cols;
+            int border = 0;
+            int dist_thresh = minDistance_;
+            int height = img.rows;
+            int width = img.cols;
 
-			std::vector<cv::KeyPoint> keypoints;
-			cv::Mat descEmpty;
-			NMS(keypoints_no_nms, conf, descEmpty, keypoints, descEmpty, border, dist_thresh, width, height);
-			return keypoints;
-		}
-		else {
-			return keypoints_no_nms;
-		}
-	}
-	else
-	{
-		UERROR("No model is loaded!");
-		return std::vector<cv::KeyPoint>();
-	}
+            std::vector<cv::KeyPoint> keypoints;
+            cv::Mat descEmpty;
+            NMS(keypoints_no_nms, conf, descEmpty, keypoints, descEmpty, border, dist_thresh, width, height);
+            return keypoints;
+        }
+        else {
+            return keypoints_no_nms;
+        }
+    }
+    else
+    {
+        UERROR("No model is loaded!");
+        return std::vector<cv::KeyPoint>();
+    }
 }
 
 cv::Mat SPDetector::compute(const std::vector<cv::KeyPoint> &keypoints)
 {
-	if(!detected_)
-	{
-		UERROR("SPDetector has been reset before extracting the descriptors! detect() should be called before compute().");
-		return cv::Mat();
-	}
-	if(model_.get())
-	{
-		cv::Mat kpt_mat(keypoints.size(), 2, CV_32F);  // [n_keypoints, 2]  (y, x)
+    if(!detected_)
+    {
+        UERROR("SPDetector has been reset before extracting the descriptors! detect() should be called before compute().");
+        return cv::Mat();
+    }
+    if(model_.get())
+    {
+        cv::Mat kpt_mat(keypoints.size(), 2, CV_32F);  // [n_keypoints, 2]  (y, x)
 
-		// Based on sample_descriptors() of SuperPoint implementation in SuperGlue:
-		// https://github.com/magicleap/SuperGluePretrainedNetwork/blob/45a750e5707696da49472f1cad35b0b203325417/models/superpoint.py#L80-L92
-		float s = 8;
-		for (size_t i = 0; i < keypoints.size(); i++) {
-			kpt_mat.at<float>(i, 0) = (float)keypoints[i].pt.y - s/2 + 0.5;
-			kpt_mat.at<float>(i, 1) = (float)keypoints[i].pt.x - s/2 + 0.5;
-		}
+        // Based on sample_descriptors() of SuperPoint implementation in SuperGlue:
+        // https://github.com/magicleap/SuperGluePretrainedNetwork/blob/45a750e5707696da49472f1cad35b0b203325417/models/superpoint.py#L80-L92
+        float s = 8;
+        for (size_t i = 0; i < keypoints.size(); i++) {
+            kpt_mat.at<float>(i, 0) = (float)keypoints[i].pt.y - s/2 + 0.5;
+            kpt_mat.at<float>(i, 1) = (float)keypoints[i].pt.x - s/2 + 0.5;
+        }
 
-		auto fkpts = torch::from_blob(kpt_mat.data, {(long int)keypoints.size(), 2}, torch::kFloat);
+        auto fkpts = torch::from_blob(kpt_mat.data, {(long int)keypoints.size(), 2}, torch::kFloat);
 
-		float w = desc_.size(3); //W/8
-		float h = desc_.size(2); //H/8
+        float w = desc_.size(3); //W/8
+        float h = desc_.size(2); //H/8
 
-		torch::Device device(cuda_?torch::kCUDA:torch::kCPU);
-		auto grid = torch::zeros({1, 1, fkpts.size(0), 2}).to(device);  // [1, 1, n_keypoints, 2]
-		grid[0][0].slice(1, 0, 1) = 2.0 * fkpts.slice(1, 1, 2) / (w*s - s/2 - 0.5) - 1;  // x
-		grid[0][0].slice(1, 1, 2) = 2.0 * fkpts.slice(1, 0, 1) / (h*s - s/2 - 0.5) - 1;  // y
+        torch::Device device(cuda_?torch::kCUDA:torch::kCPU);
+        auto grid = torch::zeros({1, 1, fkpts.size(0), 2}).to(device);  // [1, 1, n_keypoints, 2]
+        grid[0][0].slice(1, 0, 1) = 2.0 * fkpts.slice(1, 1, 2) / (w*s - s/2 - 0.5) - 1;  // x
+        grid[0][0].slice(1, 1, 2) = 2.0 * fkpts.slice(1, 0, 1) / (h*s - s/2 - 0.5) - 1;  // y
 
-		auto desc = torch::grid_sampler(desc_, grid, 0, 0, true);  // [1, 256, 1, n_keypoints]
+        auto desc = torch::grid_sampler(desc_, grid, 0, 0, true);  // [1, 256, 1, n_keypoints]
 
-		// normalize to 1
-		desc = torch::nn::functional::normalize(desc.reshape({1, desc_.size(1), -1})); //[1, 256, n_keypoints]
-		desc = desc.squeeze(); //[256, n_keypoints]
-		desc = desc.transpose(0, 1).contiguous(); //[n_keypoints, 256]
+        // normalize to 1
+        desc = torch::nn::functional::normalize(desc.reshape({1, desc_.size(1), -1})); //[1, 256, n_keypoints]
+        desc = desc.squeeze(); //[256, n_keypoints]
+        desc = desc.transpose(0, 1).contiguous(); //[n_keypoints, 256]
 
-		if(cuda_)
-			desc = desc.to(torch::kCPU);
+        if(cuda_)
+            desc = desc.to(torch::kCPU);
 
-		cv::Mat desc_mat(cv::Size(desc.size(1), desc.size(0)), CV_32FC1, desc.data_ptr<float>());
+        cv::Mat desc_mat(cv::Size(desc.size(1), desc.size(0)), CV_32FC1, desc.data_ptr<float>());
 
-		return desc_mat.clone();
-	}
-	else
-	{
-		UERROR("No model is loaded!");
-		return cv::Mat();
-	}
+        return desc_mat.clone();
+    }
+    else
+    {
+        UERROR("No model is loaded!");
+        return cv::Mat();
+    }
 }
 
 void NMS(const std::vector<cv::KeyPoint> & ptsIn,
-		const cv::Mat & conf,
-		const cv::Mat & descriptorsIn,
-		std::vector<cv::KeyPoint> & ptsOut,
-		cv::Mat & descriptorsOut,
+        const cv::Mat & conf,
+        const cv::Mat & descriptorsIn,
+        std::vector<cv::KeyPoint> & ptsOut,
+        cv::Mat & descriptorsOut,
         int border, int dist_thresh, int img_width, int img_height)
 {
 
@@ -273,11 +273,11 @@ void NMS(const std::vector<cv::KeyPoint> & ptsIn,
 
     for (size_t i = 0; i < ptsIn.size(); i++)
     {
-		int u = (int) ptsIn[i].pt.x;
-		int v = (int) ptsIn[i].pt.y;
+        int u = (int) ptsIn[i].pt.x;
+        int v = (int) ptsIn[i].pt.y;
 
-		pts_raw.push_back(cv::Point2f(u, v));
-	}
+        pts_raw.push_back(cv::Point2f(u, v));
+    }
 
     //Grid Value Legend:
     //    255  : Kept.
@@ -313,27 +313,27 @@ void NMS(const std::vector<cv::KeyPoint> & ptsIn,
 
     for (size_t i = 0; i < pts_raw.size(); i++)
     {
-    	// account for top left padding
+        // account for top left padding
         int uu = (int) pts_raw[i].x + dist_thresh;
         int vv = (int) pts_raw[i].y + dist_thresh;
         float c = confidence.at<float>(vv-dist_thresh, uu-dist_thresh);
 
         if (grid.at<unsigned char>(vv, uu) == 100)  // If not yet suppressed.
         {
-			for(int k = -dist_thresh; k < (dist_thresh+1); k++)
-			{
-				for(int j = -dist_thresh; j < (dist_thresh+1); j++)
-				{
-					if(j==0 && k==0)
-						continue;
+            for(int k = -dist_thresh; k < (dist_thresh+1); k++)
+            {
+                for(int j = -dist_thresh; j < (dist_thresh+1); j++)
+                {
+                    if(j==0 && k==0)
+                        continue;
 
-					if ( confidence.at<float>(vv + k - dist_thresh, uu + j - dist_thresh) <= c )
-					{
-						grid.at<unsigned char>(vv + k, uu + j) = 0;
-					}
-				}
-			}
-			grid.at<unsigned char>(vv, uu) = 255;
+                    if ( confidence.at<float>(vv + k - dist_thresh, uu + j - dist_thresh) <= c )
+                    {
+                        grid.at<unsigned char>(vv + k, uu + j) = 0;
+                    }
+                }
+            }
+            grid.at<unsigned char>(vv, uu) = 255;
         }
     }
 
@@ -363,16 +363,16 @@ void NMS(const std::vector<cv::KeyPoint> & ptsIn,
 
     if(!descriptorsIn.empty())
     {
-    	UASSERT(descriptorsIn.rows == (int)ptsIn.size());
-		descriptorsOut.create(select_indice.size(), 256, CV_32F);
+        UASSERT(descriptorsIn.rows == (int)ptsIn.size());
+        descriptorsOut.create(select_indice.size(), 256, CV_32F);
 
-		for (size_t i=0; i<select_indice.size(); i++)
-		{
-			for (int j=0; j < 256; j++)
-			{
-				descriptorsOut.at<float>(i, j) = descriptorsIn.at<float>(select_indice[i], j);
-			}
-		}
+        for (size_t i=0; i<select_indice.size(); i++)
+        {
+            for (int j=0; j < 256; j++)
+            {
+                descriptorsOut.at<float>(i, j) = descriptorsIn.at<float>(select_indice[i], j);
+            }
+        }
     }
 }
 

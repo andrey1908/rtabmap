@@ -48,10 +48,10 @@ namespace clams
   class ProjectivePoint
   {
   public:
-	  ProjectivePoint() :
-		  u_(0),
-		  v_(0),
-		  z_(0.0f) {}
+      ProjectivePoint() :
+          u_(0),
+          v_(0),
+          z_(0.0f) {}
 
     int u_;
     int v_;
@@ -73,11 +73,11 @@ namespace clams
     //! The best depth estimate from the map corresponding to the measurement depth frame
     //! will be returned.
     cv::Mat estimateMapDepth(
-    		const pcl::PointCloud<pcl::PointXYZ>::Ptr & map,
-    		const rtabmap::Transform & transform,
-			const cv::Mat & measurement,
-			double coneRadius = 0.02,
-			double coneStdevThresh = 0.03) const;
+            const pcl::PointCloud<pcl::PointXYZ>::Ptr & map,
+            const rtabmap::Transform & transform,
+            const cv::Mat & measurement,
+            double coneRadius = 0.02,
+            double coneStdevThresh = 0.03) const;
                           
     pcl::PointXYZ project(const ProjectivePoint& ppt) const;
     ProjectivePoint reproject(const pcl::PointXYZ& pt) const;

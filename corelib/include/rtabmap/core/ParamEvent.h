@@ -41,18 +41,18 @@ namespace rtabmap
 class ParamEvent : public UEvent
 {
 public:
-	ParamEvent(const ParametersMap & parameters) : UEvent(0), parameters_(parameters) {}
-	ParamEvent(const std::string & parameterKey, const std::string & parameterValue) : UEvent(0)
-	{
-		parameters_.insert(std::pair<std::string, std::string>(parameterKey, parameterValue));
-	}
-	~ParamEvent() {}
-	virtual std::string getClassName() const {return "ParamEvent";}
+    ParamEvent(const ParametersMap & parameters) : UEvent(0), parameters_(parameters) {}
+    ParamEvent(const std::string & parameterKey, const std::string & parameterValue) : UEvent(0)
+    {
+        parameters_.insert(std::pair<std::string, std::string>(parameterKey, parameterValue));
+    }
+    ~ParamEvent() {}
+    virtual std::string getClassName() const {return "ParamEvent";}
 
-	const ParametersMap & getParameters() const {return parameters_;}
+    const ParametersMap & getParameters() const {return parameters_;}
 
 private:
-	ParametersMap parameters_; /**< The parameters map (key,value). */
+    ParametersMap parameters_; /**< The parameters map (key,value). */
 };
 
 }

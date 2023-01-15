@@ -79,14 +79,14 @@ namespace clams
 
   public:
     DiscreteDepthDistortionModel() :
-    	width_(0),
-		height_(0),
-		bin_width_(0),
-		bin_height_(0),
-		bin_depth_(0),
-		num_bins_x_(0),
-		num_bins_y_(0),
-		training_samples_(0)
+        width_(0),
+        height_(0),
+        bin_width_(0),
+        bin_height_(0),
+        bin_depth_(0),
+        num_bins_x_(0),
+        num_bins_y_(0),
+        training_samples_(0)
     {}
     virtual ~DiscreteDepthDistortionModel();
     DiscreteDepthDistortionModel(int width, int height, int bin_width = 8, int bin_height = 6, double bin_depth = 2.0, int smoothing = 1, double max_depth = 10.0);
@@ -98,9 +98,9 @@ namespace clams
     size_t accumulate(const cv::Mat& ground_truth, const cv::Mat& measurement);
     void addExample(int v, int u, double ground_truth, double measurement);
     void save(const std::string& path) const;
-	void load(const std::string& path);
-	void serialize(std::ostream& out, bool ascii) const;
-	void deserialize(std::istream& in, bool ascii);
+    void load(const std::string& path);
+    void serialize(std::ostream& out, bool ascii) const;
+    void deserialize(std::istream& in, bool ascii);
     cv::Mat visualize(const std::string& path = "") const;
 
     int getWidth() const {return width_;}
@@ -108,7 +108,7 @@ namespace clams
     size_t getTrainingSamples() const {return training_samples_;}
     bool isValid() const
     {
-    	return !frustums_.empty();
+        return !frustums_.empty();
     }
 
   protected:

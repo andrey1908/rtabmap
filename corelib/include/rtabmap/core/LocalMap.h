@@ -16,16 +16,16 @@ namespace rtabmap {
 
 struct LocalMap
 {
-	int numObstacles;
-	int numEmpty;
-	Eigen::Matrix3Xf points;  // z = 0
-	std::vector<Color> colors;
+    int numObstacles;
+    int numEmpty;
+    Eigen::Matrix3Xf points;  // z = 0
+    std::vector<Color> colors;
 
-	float sensorBlindRange2dSqr;
-	Transform toSensor;
+    float sensorBlindRange2dSqr;
+    Transform toSensor;
 
-	// used to correct poses passed to updatePoses() function
-	Transform fromUpdatedPose;
+    // used to correct poses passed to updatePoses() function
+    Transform fromUpdatedPose;
 };
 
 proto::LocalMap toProto(const LocalMap& localMap);

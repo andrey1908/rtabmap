@@ -37,23 +37,23 @@ namespace rtabmap {
 
 class RTABMAP_EXP StereoDense {
 public:
-	enum Type {
-		kTypeBM = 0,
-		kTypeSGBM = 1
-	};
-	static StereoDense * create(const ParametersMap & parameters);
-	static StereoDense * create(StereoDense::Type type, const ParametersMap & parameters = ParametersMap());
+    enum Type {
+        kTypeBM = 0,
+        kTypeSGBM = 1
+    };
+    static StereoDense * create(const ParametersMap & parameters);
+    static StereoDense * create(StereoDense::Type type, const ParametersMap & parameters = ParametersMap());
 
 public:
-	virtual ~StereoDense() {}
+    virtual ~StereoDense() {}
 
-	virtual void parseParameters(const ParametersMap & parameters) {}
-	virtual cv::Mat computeDisparity(
-			const cv::Mat & leftImage,
-			const cv::Mat & rightImage) const = 0;
+    virtual void parseParameters(const ParametersMap & parameters) {}
+    virtual cv::Mat computeDisparity(
+            const cv::Mat & leftImage,
+            const cv::Mat & rightImage) const = 0;
 
 protected:
-	StereoDense(const ParametersMap & parameters = ParametersMap()) {}
+    StereoDense(const ParametersMap & parameters = ParametersMap()) {}
 };
 
 } /* namespace rtabmap */

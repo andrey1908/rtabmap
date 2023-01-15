@@ -335,12 +335,12 @@ ColoredVoxelGrid<PointT>::applyFilter (PointCloud &output)
     catch (std::bad_alloc&)
     {
       throw pcl::PCLException("VoxelGrid bin size is too low; impossible to allocate memory for layout", 
-        "voxel_grid.hpp", "applyFilter");	
+        "voxel_grid.hpp", "applyFilter");    
     }
     catch (std::length_error&)
     {
       throw pcl::PCLException("VoxelGrid bin size is too low; impossible to allocate memory for layout", 
-        "voxel_grid.hpp", "applyFilter");	
+        "voxel_grid.hpp", "applyFilter");    
     }
   }
   
@@ -348,8 +348,8 @@ ColoredVoxelGrid<PointT>::applyFilter (PointCloud &output)
   for (const auto &cp : first_and_last_indices_vector)
   {
     // calculate centroid - sum values from all input points, that have the same idx value in index_vector array
-  	unsigned int first_index = cp.first;
-  	unsigned int last_index = cp.second;
+      unsigned int first_index = cp.first;
+      unsigned int last_index = cp.second;
 
     // index is centroid final position in resulting PointCloud
     if (save_leaf_layout_)

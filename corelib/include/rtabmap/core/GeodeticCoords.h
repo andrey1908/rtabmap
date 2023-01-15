@@ -52,33 +52,33 @@ namespace rtabmap {
 class RTABMAP_EXP GeodeticCoords
 {
 public:
-	GeodeticCoords();
-	GeodeticCoords(double latitude, double longitude, double altitude);
+    GeodeticCoords();
+    GeodeticCoords(double latitude, double longitude, double altitude);
 
-	const double & latitude() const {return latitude_;}
-	const double & longitude() const {return longitude_;}
-	const double & altitude() const {return altitude_;}
+    const double & latitude() const {return latitude_;}
+    const double & longitude() const {return longitude_;}
+    const double & altitude() const {return altitude_;}
 
-	void setLatitude(const double & value) {latitude_ = value;}
-	void setLongitude(const double & value) {longitude_ = value;}
-	void setAltitude(const double & value) {altitude_ = value;}
+    void setLatitude(const double & value) {latitude_ = value;}
+    void setLongitude(const double & value) {longitude_ = value;}
+    void setAltitude(const double & value) {altitude_ = value;}
 
-	cv::Point3d toGeocentric_WGS84() const;
-	cv::Point3d toENU_WGS84(const GeodeticCoords & origin) const; // East=X, North=Y
+    cv::Point3d toGeocentric_WGS84() const;
+    cv::Point3d toENU_WGS84(const GeodeticCoords & origin) const; // East=X, North=Y
 
-	void fromGeocentric_WGS84(const cv::Point3d& geocentric);
-	void fromENU_WGS84(const cv::Point3d & enu, const GeodeticCoords & origin);
+    void fromGeocentric_WGS84(const cv::Point3d& geocentric);
+    void fromENU_WGS84(const cv::Point3d & enu, const GeodeticCoords & origin);
 
-	static cv::Point3d ENU_WGS84ToGeocentric_WGS84(const cv::Point3d & enu, const GeodeticCoords & origin);
-	static cv::Point3d Geocentric_WGS84ToENU_WGS84(
-			const cv::Point3d & geocentric_WGS84,
-			const cv::Point3d & origin_geocentric_WGS84,
-			const GeodeticCoords & origin);
+    static cv::Point3d ENU_WGS84ToGeocentric_WGS84(const cv::Point3d & enu, const GeodeticCoords & origin);
+    static cv::Point3d Geocentric_WGS84ToENU_WGS84(
+            const cv::Point3d & geocentric_WGS84,
+            const cv::Point3d & origin_geocentric_WGS84,
+            const GeodeticCoords & origin);
 
 private:
-	double latitude_;  // deg
-	double longitude_; // deg
-	double altitude_;  // m
+    double latitude_;  // deg
+    double longitude_; // deg
+    double altitude_;  // m
 };
 
 }

@@ -11,19 +11,19 @@ namespace rtabmap {
 class ObstacleDilation
 {
 public:
-	ObstacleDilation(const ParametersMap& parameters = ParametersMap());
-	void parseParameters(const ParametersMap& parameters);
+    ObstacleDilation(const ParametersMap& parameters = ParametersMap());
+    void parseParameters(const ParametersMap& parameters);
 
-	std::shared_ptr<LocalMap> dilate(const LocalMap& localMap) const;
+    std::shared_ptr<LocalMap> dilate(const LocalMap& localMap) const;
 
-	float dilationSize() { return dilationSizeMeters_; }
+    float dilationSize() { return dilationSizeMeters_; }
 
 private:
-	float cellSize_;
-	float dilationSizeMeters_;
-	int dilationSize_;
+    float cellSize_;
+    float dilationSizeMeters_;
+    int dilationSize_;
 
-	std::unique_ptr<SemanticDilation> semanticDilation_;
+    std::unique_ptr<SemanticDilation> semanticDilation_;
 };
 
 }

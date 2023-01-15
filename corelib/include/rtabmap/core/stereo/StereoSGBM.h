@@ -38,26 +38,26 @@ namespace rtabmap {
 
 class RTABMAP_EXP StereoSGBM : public StereoDense {
 public:
-	StereoSGBM(const ParametersMap & parameters = ParametersMap());
-	virtual ~StereoSGBM() {}
+    StereoSGBM(const ParametersMap & parameters = ParametersMap());
+    virtual ~StereoSGBM() {}
 
-	virtual void parseParameters(const ParametersMap & parameters);
-	virtual cv::Mat computeDisparity(
-			const cv::Mat & leftImage,
-			const cv::Mat & rightImage) const;
+    virtual void parseParameters(const ParametersMap & parameters);
+    virtual cv::Mat computeDisparity(
+            const cv::Mat & leftImage,
+            const cv::Mat & rightImage) const;
 
 private:
-	int blockSize_;         //15
-	int minDisparity_;      //0
-	int numDisparities_;    //64
-	int preFilterCap_;      //31
-	int uniquenessRatio_;   //15
-	int speckleWindowSize_; //100
-	int speckleRange_;      //4
-	int P1_;                //0
-	int P2_;                //0
-	int disp12MaxDiff_;     //0
-	int mode_;              //0=cv::StereoSGBM::MODE_SGBM;
+    int blockSize_;         //15
+    int minDisparity_;      //0
+    int numDisparities_;    //64
+    int preFilterCap_;      //31
+    int uniquenessRatio_;   //15
+    int speckleWindowSize_; //100
+    int speckleRange_;      //4
+    int P1_;                //0
+    int P2_;                //0
+    int disp12MaxDiff_;     //0
+    int mode_;              //0=cv::StereoSGBM::MODE_SGBM;
 };
 
 } /* namespace rtabmap */

@@ -28,7 +28,7 @@ void TimedOccupancyGridMap::parseParameters(const ParametersMap& parameters)
 }
 
 void TimedOccupancyGridMap::addLocalMap(int nodeId, const Time& time,
-	std::shared_ptr<const LocalMap> localMap)
+    std::shared_ptr<const LocalMap> localMap)
 {
     UASSERT(times_.count(nodeId) == 0);
     times_[nodeId] = time;
@@ -36,7 +36,7 @@ void TimedOccupancyGridMap::addLocalMap(int nodeId, const Time& time,
 }
 
 void TimedOccupancyGridMap::addLocalMap(int nodeId, const Time& time,
-	const Transform& pose, std::shared_ptr<const LocalMap> localMap)
+    const Transform& pose, std::shared_ptr<const LocalMap> localMap)
 {
     UASSERT(times_.count(nodeId) == 0);
     times_[nodeId] = time;
@@ -44,7 +44,7 @@ void TimedOccupancyGridMap::addLocalMap(int nodeId, const Time& time,
 }
 
 void TimedOccupancyGridMap::addTemporaryLocalMap(const Time& time,
-	const Transform& pose, std::shared_ptr<const LocalMap> localMap)
+    const Transform& pose, std::shared_ptr<const LocalMap> localMap)
 {
     temporaryTimes_.push_back(time);
     if ((int)temporaryTimes_.size() > maxTemporaryLocalMaps())
@@ -61,24 +61,24 @@ void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories,
     const Trajectory* latestTrajectory = trajectories.getLatestTrajectory();
 
     std::map<int, Transform> updatedPoses;
-	for (const auto& idTime: times_)
-	{
-		int nodeId = idTime.first;
-		Time time = idTime.second;
-		std::optional<Transform> pose;
+    for (const auto& idTime: times_)
+    {
+        int nodeId = idTime.first;
+        Time time = idTime.second;
+        std::optional<Transform> pose;
         std::optional<Transform> prevPose = getNodePose(nodeId);
         const Trajectory* trajectory;
         std::tie(pose, trajectory) = getPose(trajectories, time, prevPose);
-		if (pose.has_value())
-		{
-			updatedPoses[nodeId] = *pose;
+        if (pose.has_value())
+        {
+            updatedPoses[nodeId] = *pose;
             if (autoCaching && trajectory != latestTrajectory)
             {
                 lastNodeIdToIncludeInCachedMap =
                     std::max(lastNodeIdToIncludeInCachedMap, nodeId);
             }
-		}
-	}
+        }
+    }
 
     std::list<Transform> updatedTemporaryPoses;
     int i = 0;
@@ -138,7 +138,7 @@ TimedOccupancyGridMap::getPose(
 }
 
 std::optional<Transform> TimedOccupancyGridMap::getPose(
-	const Trajectory& trajectory, const Time& time)
+    const Trajectory& trajectory, const Time& time)
 {
     const auto& bounds = trajectory.getBounds(time);
     if (bounds.first == trajectory.end())

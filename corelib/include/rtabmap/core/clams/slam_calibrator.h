@@ -41,11 +41,11 @@ namespace clams
 {
   
 DiscreteDepthDistortionModel RTABMAP_EXP calibrate(
-		const std::map<int, rtabmap::SensorData> & sequence,
-		const std::map<int, rtabmap::Transform> & trajectory,
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & map,
-		double coneRadius = 0.02,
-		double coneStdevThresh = 0.03);
+        const std::map<int, rtabmap::SensorData> & sequence,
+        const std::map<int, rtabmap::Transform> & trajectory,
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & map,
+        double coneRadius = 0.02,
+        double coneStdevThresh = 0.03);
 
 }
 

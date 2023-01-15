@@ -36,24 +36,24 @@ class GlobalDescriptor
 {
 
 public:
-	GlobalDescriptor(int type, const cv::Mat & data, const cv::Mat & info = cv::Mat()) :
-		type_(type),
-		info_(info),
-		data_(data)
-	{}
-	GlobalDescriptor() :
-		type_(-1) // Not set
-	{}
-	virtual ~GlobalDescriptor() {}
+    GlobalDescriptor(int type, const cv::Mat & data, const cv::Mat & info = cv::Mat()) :
+        type_(type),
+        info_(info),
+        data_(data)
+    {}
+    GlobalDescriptor() :
+        type_(-1) // Not set
+    {}
+    virtual ~GlobalDescriptor() {}
 
-	int type() const {return type_;}
-	const cv::Mat info() const {return info_;}
-	const cv::Mat data() const {return data_;}
+    int type() const {return type_;}
+    const cv::Mat info() const {return info_;}
+    const cv::Mat data() const {return data_;}
 
 private:
-	int type_;
-	cv::Mat info_;
-	cv::Mat data_;
+    int type_;
+    cv::Mat info_;
+    cv::Mat data_;
 };
 
 } // namespace rtabmap

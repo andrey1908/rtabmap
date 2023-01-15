@@ -34,94 +34,94 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace rtabmap {
 
 StereoBM::StereoBM(int blockSize, int numDisparities) :
-		blockSize_(blockSize),
-		minDisparity_(Parameters::defaultStereoBMMinDisparity()),
-		numDisparities_(numDisparities),
-		preFilterSize_(Parameters::defaultStereoBMPreFilterSize()),
-		preFilterCap_(Parameters::defaultStereoBMPreFilterCap()),
-		uniquenessRatio_(Parameters::defaultStereoBMUniquenessRatio()),
-		textureThreshold_(Parameters::defaultStereoBMTextureThreshold()),
-		speckleWindowSize_(Parameters::defaultStereoBMSpeckleWindowSize()),
-		speckleRange_(Parameters::defaultStereoBMSpeckleRange()),
-		disp12MaxDiff_(Parameters::defaultStereoBMDisp12MaxDiff())
+        blockSize_(blockSize),
+        minDisparity_(Parameters::defaultStereoBMMinDisparity()),
+        numDisparities_(numDisparities),
+        preFilterSize_(Parameters::defaultStereoBMPreFilterSize()),
+        preFilterCap_(Parameters::defaultStereoBMPreFilterCap()),
+        uniquenessRatio_(Parameters::defaultStereoBMUniquenessRatio()),
+        textureThreshold_(Parameters::defaultStereoBMTextureThreshold()),
+        speckleWindowSize_(Parameters::defaultStereoBMSpeckleWindowSize()),
+        speckleRange_(Parameters::defaultStereoBMSpeckleRange()),
+        disp12MaxDiff_(Parameters::defaultStereoBMDisp12MaxDiff())
 {
 }
 StereoBM::StereoBM(const ParametersMap & parameters) :
-		StereoDense(parameters),
-		blockSize_(Parameters::defaultStereoBMBlockSize()),
-		minDisparity_(Parameters::defaultStereoBMMinDisparity()),
-		numDisparities_(Parameters::defaultStereoBMNumDisparities()),
-		preFilterSize_(Parameters::defaultStereoBMPreFilterSize()),
-		preFilterCap_(Parameters::defaultStereoBMPreFilterCap()),
-		uniquenessRatio_(Parameters::defaultStereoBMUniquenessRatio()),
-		textureThreshold_(Parameters::defaultStereoBMTextureThreshold()),
-		speckleWindowSize_(Parameters::defaultStereoBMSpeckleWindowSize()),
-		speckleRange_(Parameters::defaultStereoBMSpeckleRange()),
-		disp12MaxDiff_(Parameters::defaultStereoBMDisp12MaxDiff())
+        StereoDense(parameters),
+        blockSize_(Parameters::defaultStereoBMBlockSize()),
+        minDisparity_(Parameters::defaultStereoBMMinDisparity()),
+        numDisparities_(Parameters::defaultStereoBMNumDisparities()),
+        preFilterSize_(Parameters::defaultStereoBMPreFilterSize()),
+        preFilterCap_(Parameters::defaultStereoBMPreFilterCap()),
+        uniquenessRatio_(Parameters::defaultStereoBMUniquenessRatio()),
+        textureThreshold_(Parameters::defaultStereoBMTextureThreshold()),
+        speckleWindowSize_(Parameters::defaultStereoBMSpeckleWindowSize()),
+        speckleRange_(Parameters::defaultStereoBMSpeckleRange()),
+        disp12MaxDiff_(Parameters::defaultStereoBMDisp12MaxDiff())
 {
-	this->parseParameters(parameters);
+    this->parseParameters(parameters);
 }
 
 void StereoBM::parseParameters(const ParametersMap & parameters)
 {
-	Parameters::parse(parameters, Parameters::kStereoBMBlockSize(), blockSize_);
-	Parameters::parse(parameters, Parameters::kStereoBMMinDisparity(), minDisparity_);
-	Parameters::parse(parameters, Parameters::kStereoBMNumDisparities(), numDisparities_);
-	Parameters::parse(parameters, Parameters::kStereoBMPreFilterSize(), preFilterSize_);
-	Parameters::parse(parameters, Parameters::kStereoBMPreFilterCap(), preFilterCap_);
-	Parameters::parse(parameters, Parameters::kStereoBMUniquenessRatio(), uniquenessRatio_);
-	Parameters::parse(parameters, Parameters::kStereoBMTextureThreshold(), textureThreshold_);
-	Parameters::parse(parameters, Parameters::kStereoBMSpeckleWindowSize(), speckleWindowSize_);
-	Parameters::parse(parameters, Parameters::kStereoBMSpeckleRange(), speckleRange_);
-	Parameters::parse(parameters, Parameters::kStereoBMDisp12MaxDiff(), disp12MaxDiff_);
+    Parameters::parse(parameters, Parameters::kStereoBMBlockSize(), blockSize_);
+    Parameters::parse(parameters, Parameters::kStereoBMMinDisparity(), minDisparity_);
+    Parameters::parse(parameters, Parameters::kStereoBMNumDisparities(), numDisparities_);
+    Parameters::parse(parameters, Parameters::kStereoBMPreFilterSize(), preFilterSize_);
+    Parameters::parse(parameters, Parameters::kStereoBMPreFilterCap(), preFilterCap_);
+    Parameters::parse(parameters, Parameters::kStereoBMUniquenessRatio(), uniquenessRatio_);
+    Parameters::parse(parameters, Parameters::kStereoBMTextureThreshold(), textureThreshold_);
+    Parameters::parse(parameters, Parameters::kStereoBMSpeckleWindowSize(), speckleWindowSize_);
+    Parameters::parse(parameters, Parameters::kStereoBMSpeckleRange(), speckleRange_);
+    Parameters::parse(parameters, Parameters::kStereoBMDisp12MaxDiff(), disp12MaxDiff_);
 }
 
 cv::Mat StereoBM::computeDisparity(
-		const cv::Mat & leftImage,
-		const cv::Mat & rightImage) const
+        const cv::Mat & leftImage,
+        const cv::Mat & rightImage) const
 {
-	UASSERT(!leftImage.empty() && !rightImage.empty());
-	UASSERT(leftImage.cols == rightImage.cols && leftImage.rows == rightImage.rows);
-	UASSERT((leftImage.type() == CV_8UC1 || leftImage.type() == CV_8UC3) && rightImage.type() == CV_8UC1);
+    UASSERT(!leftImage.empty() && !rightImage.empty());
+    UASSERT(leftImage.cols == rightImage.cols && leftImage.rows == rightImage.rows);
+    UASSERT((leftImage.type() == CV_8UC1 || leftImage.type() == CV_8UC3) && rightImage.type() == CV_8UC1);
 
-	cv::Mat leftMono;
-	if(leftImage.channels() == 3)
-	{
-		cv::cvtColor(leftImage, leftMono, CV_BGR2GRAY);
-	}
-	else
-	{
-		leftMono = leftImage;
-	}
+    cv::Mat leftMono;
+    if(leftImage.channels() == 3)
+    {
+        cv::cvtColor(leftImage, leftMono, CV_BGR2GRAY);
+    }
+    else
+    {
+        leftMono = leftImage;
+    }
 
-	cv::Mat disparity;
+    cv::Mat disparity;
 #if CV_MAJOR_VERSION < 3
-	cv::StereoBM stereo(cv::StereoBM::BASIC_PRESET);
-	stereo.state->SADWindowSize = blockSize_;
-	stereo.state->minDisparity = minDisparity_;
-	stereo.state->numberOfDisparities = numDisparities_;
-	stereo.state->preFilterSize = preFilterSize_;
-	stereo.state->preFilterCap = preFilterCap_;
-	stereo.state->uniquenessRatio = uniquenessRatio_;
-	stereo.state->textureThreshold = textureThreshold_;
-	stereo.state->speckleWindowSize = speckleWindowSize_;
-	stereo.state->speckleRange = speckleRange_;
-	stereo(leftMono, rightImage, disparity, CV_16SC1);
+    cv::StereoBM stereo(cv::StereoBM::BASIC_PRESET);
+    stereo.state->SADWindowSize = blockSize_;
+    stereo.state->minDisparity = minDisparity_;
+    stereo.state->numberOfDisparities = numDisparities_;
+    stereo.state->preFilterSize = preFilterSize_;
+    stereo.state->preFilterCap = preFilterCap_;
+    stereo.state->uniquenessRatio = uniquenessRatio_;
+    stereo.state->textureThreshold = textureThreshold_;
+    stereo.state->speckleWindowSize = speckleWindowSize_;
+    stereo.state->speckleRange = speckleRange_;
+    stereo(leftMono, rightImage, disparity, CV_16SC1);
 #else
-	cv::Ptr<cv::StereoBM> stereo = cv::StereoBM::create();
-	stereo->setBlockSize(blockSize_);
-	stereo->setMinDisparity(minDisparity_);
-	stereo->setNumDisparities(numDisparities_);
-	stereo->setPreFilterSize(preFilterSize_);
-	stereo->setPreFilterCap(preFilterCap_);
-	stereo->setUniquenessRatio(uniquenessRatio_);
-	stereo->setTextureThreshold(textureThreshold_);
-	stereo->setSpeckleWindowSize(speckleWindowSize_);
-	stereo->setSpeckleRange(speckleRange_);
-	stereo->setDisp12MaxDiff(disp12MaxDiff_);
-	stereo->compute(leftMono, rightImage, disparity);
+    cv::Ptr<cv::StereoBM> stereo = cv::StereoBM::create();
+    stereo->setBlockSize(blockSize_);
+    stereo->setMinDisparity(minDisparity_);
+    stereo->setNumDisparities(numDisparities_);
+    stereo->setPreFilterSize(preFilterSize_);
+    stereo->setPreFilterCap(preFilterCap_);
+    stereo->setUniquenessRatio(uniquenessRatio_);
+    stereo->setTextureThreshold(textureThreshold_);
+    stereo->setSpeckleWindowSize(speckleWindowSize_);
+    stereo->setSpeckleRange(speckleRange_);
+    stereo->setDisp12MaxDiff(disp12MaxDiff_);
+    stereo->compute(leftMono, rightImage, disparity);
 #endif
-	return disparity;
+    return disparity;
 }
 
 } /* namespace rtabmap */

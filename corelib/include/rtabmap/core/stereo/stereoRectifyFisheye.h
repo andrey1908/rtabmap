@@ -155,8 +155,8 @@ int cvRodrigues2( const CvMat* src, CvMat* dst, CvMat* jacobian CV_DEFAULT(0))
     }
     else if( src->cols == 3 && src->rows == 3 )
     {
-    	cv::Matx33d U, Vt;
-    	cv::Vec3d W;
+        cv::Matx33d U, Vt;
+        cv::Vec3d W;
         double theta, s, c;
         int step = dst->rows > 1 ? dst->step / elem_size : 1;
 
@@ -310,9 +310,9 @@ template <typename FLOAT>
 void computeTiltProjectionMatrix(FLOAT tauX,
     FLOAT tauY,
     cv::Matx<FLOAT, 3, 3>* matTilt = 0,
-	cv::Matx<FLOAT, 3, 3>* dMatTiltdTauX = 0,
-	cv::Matx<FLOAT, 3, 3>* dMatTiltdTauY = 0,
-	cv::Matx<FLOAT, 3, 3>* invMatTilt = 0)
+    cv::Matx<FLOAT, 3, 3>* dMatTiltdTauX = 0,
+    cv::Matx<FLOAT, 3, 3>* dMatTiltdTauY = 0,
+    cv::Matx<FLOAT, 3, 3>* invMatTilt = 0)
 {
     FLOAT cTauX = cos(tauX);
     FLOAT sTauX = sin(tauX);
@@ -330,16 +330,16 @@ void computeTiltProjectionMatrix(FLOAT tauX,
     if (dMatTiltdTauX)
     {
         // Derivative with respect to tauX
-    	cv::Matx<FLOAT, 3, 3> dMatRotXYdTauX = matRotY * cv::Matx<FLOAT, 3, 3>(0,0,0,0,-sTauX,cTauX,0,-cTauX,-sTauX);
-    	cv::Matx<FLOAT, 3, 3> dMatProjZdTauX = cv::Matx<FLOAT, 3, 3>(dMatRotXYdTauX(2,2),0,-dMatRotXYdTauX(0,2),
+        cv::Matx<FLOAT, 3, 3> dMatRotXYdTauX = matRotY * cv::Matx<FLOAT, 3, 3>(0,0,0,0,-sTauX,cTauX,0,-cTauX,-sTauX);
+        cv::Matx<FLOAT, 3, 3> dMatProjZdTauX = cv::Matx<FLOAT, 3, 3>(dMatRotXYdTauX(2,2),0,-dMatRotXYdTauX(0,2),
           0,dMatRotXYdTauX(2,2),-dMatRotXYdTauX(1,2),0,0,0);
         *dMatTiltdTauX = (matProjZ * dMatRotXYdTauX) + (dMatProjZdTauX * matRotXY);
     }
     if (dMatTiltdTauY)
     {
         // Derivative with respect to tauY
-    	cv::Matx<FLOAT, 3, 3> dMatRotXYdTauY = cv::Matx<FLOAT, 3, 3>(-sTauY,0,-cTauY,0,0,0,cTauY,0,-sTauY) * matRotX;
-    	cv::Matx<FLOAT, 3, 3> dMatProjZdTauY = cv::Matx<FLOAT, 3, 3>(dMatRotXYdTauY(2,2),0,-dMatRotXYdTauY(0,2),
+        cv::Matx<FLOAT, 3, 3> dMatRotXYdTauY = cv::Matx<FLOAT, 3, 3>(-sTauY,0,-cTauY,0,0,0,cTauY,0,-sTauY) * matRotX;
+        cv::Matx<FLOAT, 3, 3> dMatProjZdTauY = cv::Matx<FLOAT, 3, 3>(dMatRotXYdTauY(2,2),0,-dMatRotXYdTauY(0,2),
           0,dMatRotXYdTauY(2,2),-dMatRotXYdTauY(1,2),0,0,0);
         *dMatTiltdTauY = (matProjZ * dMatRotXYdTauY) + (dMatProjZdTauY * matRotXY);
     }
@@ -362,9 +362,9 @@ void cvProjectPoints2Internal( const CvMat* objectPoints,
                   CvMat* dpdo CV_DEFAULT(NULL),
                   double aspectRatio CV_DEFAULT(0) )
 {
-	cv::Ptr<CvMat> matM, _m;
-	cv::Ptr<CvMat> _dpdr, _dpdt, _dpdc, _dpdf, _dpdk;
-	cv::Ptr<CvMat> _dpdo;
+    cv::Ptr<CvMat> matM, _m;
+    cv::Ptr<CvMat> _dpdr, _dpdt, _dpdc, _dpdf, _dpdk;
+    cv::Ptr<CvMat> _dpdo;
 
     int i, j, count;
     int calc_derivatives;
@@ -488,7 +488,7 @@ void cvProjectPoints2Internal( const CvMat* objectPoints,
         cvConvert( distCoeffs, &_k );
         if(k[12] != 0 || k[13] != 0)
         {
-        	computeTiltProjectionMatrix(k[12], k[13],
+            computeTiltProjectionMatrix(k[12], k[13],
             &matTilt, &dMatTiltdTauX, &dMatTiltdTauY);
         }
     }
@@ -1179,17 +1179,17 @@ void cvStereoRectifyFisheye( const CvMat* _cameraMatrix1, const CvMat* _cameraMa
 }
 
 void stereoRectifyFisheye( cv::InputArray _cameraMatrix1, cv::InputArray _distCoeffs1,
-				cv::InputArray _cameraMatrix2, cv::InputArray _distCoeffs2,
-				cv::Size imageSize, cv::InputArray _Rmat, cv::InputArray _Tmat,
-				cv::OutputArray _Rmat1, cv::OutputArray _Rmat2,
-				cv::OutputArray _Pmat1, cv::OutputArray _Pmat2,
-				cv::OutputArray _Qmat, int flags,
-				double alpha, cv::Size newImageSize)
+                cv::InputArray _cameraMatrix2, cv::InputArray _distCoeffs2,
+                cv::Size imageSize, cv::InputArray _Rmat, cv::InputArray _Tmat,
+                cv::OutputArray _Rmat1, cv::OutputArray _Rmat2,
+                cv::OutputArray _Pmat1, cv::OutputArray _Pmat2,
+                cv::OutputArray _Qmat, int flags,
+                double alpha, cv::Size newImageSize)
 {
     cv::Mat cameraMatrix1 = _cameraMatrix1.getMat(), cameraMatrix2 = _cameraMatrix2.getMat();
     cv::Mat distCoeffs1 = _distCoeffs1.getMat(), distCoeffs2 = _distCoeffs2.getMat();
     cv::Mat Rmat = _Rmat.getMat(), Tmat = _Tmat.getMat();
-	
+    
 #if CV_MAJOR_VERSION > 3 || (CV_MAJOR_VERSION >= 3 && (CV_MINOR_VERSION>4 || (CV_MINOR_VERSION>=4 && CV_SUBMINOR_VERSION>=4)))
     CvMat c_cameraMatrix1 = cvMat(cameraMatrix1);
     CvMat c_cameraMatrix2 = cvMat(cameraMatrix2);

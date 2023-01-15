@@ -33,49 +33,49 @@ namespace rtabmap {
 class EnvSensor
 {
 public:
-	enum Type {
-		// built-in types
-		kUndefined = 0,
-		kWifiSignalStrength,      // dBm
-		kAmbientTemperature,      // Celcius
-		kAmbientAirPressure,      // hPa
-		kAmbientLight,            // lx
-		kAmbientRelativeHumidity, // %
+    enum Type {
+        // built-in types
+        kUndefined = 0,
+        kWifiSignalStrength,      // dBm
+        kAmbientTemperature,      // Celcius
+        kAmbientAirPressure,      // hPa
+        kAmbientLight,            // lx
+        kAmbientRelativeHumidity, // %
 
-		// user types
-		kCustomSensor1 = 100,
-		kCustomSensor2,
-		kCustomSensor3,
-		kCustomSensor4,
-		kCustomSensor5,
-		kCustomSensor6,
-		kCustomSensor7,
-		kCustomSensor8,
-		kCustomSensor9
-	};
+        // user types
+        kCustomSensor1 = 100,
+        kCustomSensor2,
+        kCustomSensor3,
+        kCustomSensor4,
+        kCustomSensor5,
+        kCustomSensor6,
+        kCustomSensor7,
+        kCustomSensor8,
+        kCustomSensor9
+    };
 
 public:
-	EnvSensor() :
-		type_(kUndefined),
-		value_(0.0),
-		stamp_(0.0)
-	{}
-	EnvSensor(const Type & type, const double & value,const double & stamp = 0) :
-		type_(type),
-		value_(value),
-		stamp_(stamp)
-	{}
+    EnvSensor() :
+        type_(kUndefined),
+        value_(0.0),
+        stamp_(0.0)
+    {}
+    EnvSensor(const Type & type, const double & value,const double & stamp = 0) :
+        type_(type),
+        value_(value),
+        stamp_(stamp)
+    {}
 
-	virtual ~EnvSensor() {}
+    virtual ~EnvSensor() {}
 
-	const Type & type() const {return type_;}
-	const double & value() const {return value_;}
-	const double & stamp() const {return stamp_;}
+    const Type & type() const {return type_;}
+    const double & value() const {return value_;}
+    const double & stamp() const {return stamp_;}
 
 private:
-	Type type_;
-	double value_;
-	double stamp_;
+    Type type_;
+    double value_;
+    double stamp_;
 };
 
 typedef std::map<EnvSensor::Type, EnvSensor> EnvSensors;

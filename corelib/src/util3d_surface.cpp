@@ -89,881 +89,881 @@ namespace util3d
 {
 
 void createPolygonIndexes(
-		const std::vector<pcl::Vertices> & polygons,
-		int cloudSize,
-		std::vector<std::set<int> > & neighbors,
-		std::vector<std::set<int> > & vertexToPolygons)
+        const std::vector<pcl::Vertices> & polygons,
+        int cloudSize,
+        std::vector<std::set<int> > & neighbors,
+        std::vector<std::set<int> > & vertexToPolygons)
 {
-	vertexToPolygons = std::vector<std::set<int> >(cloudSize);
-	neighbors = std::vector<std::set<int> >(polygons.size());
+    vertexToPolygons = std::vector<std::set<int> >(cloudSize);
+    neighbors = std::vector<std::set<int> >(polygons.size());
 
-	for(unsigned int i=0; i<polygons.size(); ++i)
-	{
-		std::set<int> vertices(polygons[i].vertices.begin(), polygons[i].vertices.end());
+    for(unsigned int i=0; i<polygons.size(); ++i)
+    {
+        std::set<int> vertices(polygons[i].vertices.begin(), polygons[i].vertices.end());
 
-		for(unsigned int j=0; j<polygons[i].vertices.size(); ++j)
-		{
-			int v = polygons[i].vertices.at(j);
-			for(std::set<int>::iterator iter=vertexToPolygons[v].begin(); iter!=vertexToPolygons[v].end(); ++iter)
-			{
-				int numSharedVertices = 0;
-				for(unsigned int k=0; k<polygons.at(*iter).vertices.size() && numSharedVertices<2; ++k)
-				{
-					if(vertices.find(polygons.at(*iter).vertices.at(k)) != vertices.end())
-					{
-						++numSharedVertices;
-					}
-				}
-				if(numSharedVertices >= 2)
-				{
-					neighbors[*iter].insert(i);
-					neighbors[i].insert(*iter);
-				}
-			}
-			vertexToPolygons[v].insert(i);
-		}
-	}
+        for(unsigned int j=0; j<polygons[i].vertices.size(); ++j)
+        {
+            int v = polygons[i].vertices.at(j);
+            for(std::set<int>::iterator iter=vertexToPolygons[v].begin(); iter!=vertexToPolygons[v].end(); ++iter)
+            {
+                int numSharedVertices = 0;
+                for(unsigned int k=0; k<polygons.at(*iter).vertices.size() && numSharedVertices<2; ++k)
+                {
+                    if(vertices.find(polygons.at(*iter).vertices.at(k)) != vertices.end())
+                    {
+                        ++numSharedVertices;
+                    }
+                }
+                if(numSharedVertices >= 2)
+                {
+                    neighbors[*iter].insert(i);
+                    neighbors[i].insert(*iter);
+                }
+            }
+            vertexToPolygons[v].insert(i);
+        }
+    }
 }
 
 std::list<std::list<int> > clusterPolygons(
-		const std::vector<std::set<int> > & neighborPolygons,
-		int minClusterSize)
+        const std::vector<std::set<int> > & neighborPolygons,
+        int minClusterSize)
 {
-	std::set<int> polygonsChecked;
+    std::set<int> polygonsChecked;
 
-	std::list<std::list<int> > clusters;
+    std::list<std::list<int> > clusters;
 
-	for(unsigned int i=0; i<neighborPolygons.size(); ++i)
-	{
-		if(polygonsChecked.find(i) == polygonsChecked.end())
-		{
-			std::list<int> currentCluster;
-			currentCluster.push_back(i);
-			polygonsChecked.insert(i);
+    for(unsigned int i=0; i<neighborPolygons.size(); ++i)
+    {
+        if(polygonsChecked.find(i) == polygonsChecked.end())
+        {
+            std::list<int> currentCluster;
+            currentCluster.push_back(i);
+            polygonsChecked.insert(i);
 
-			for(std::list<int>::iterator iter=currentCluster.begin(); iter!=currentCluster.end(); ++iter)
-			{
-				// get neighbor polygons
-				std::set<int> neighbors = neighborPolygons[*iter];
-				for(std::set<int>::iterator jter=neighbors.begin(); jter!=neighbors.end(); ++jter)
-				{
-					if(polygonsChecked.insert(*jter).second)
-					{
-						currentCluster.push_back(*jter);
-					}
-				}
-			}
-			if((int)currentCluster.size() > minClusterSize)
-			{
-				clusters.push_back(currentCluster);
-			}
-		}
-	}
-	return clusters;
+            for(std::list<int>::iterator iter=currentCluster.begin(); iter!=currentCluster.end(); ++iter)
+            {
+                // get neighbor polygons
+                std::set<int> neighbors = neighborPolygons[*iter];
+                for(std::set<int>::iterator jter=neighbors.begin(); jter!=neighbors.end(); ++jter)
+                {
+                    if(polygonsChecked.insert(*jter).second)
+                    {
+                        currentCluster.push_back(*jter);
+                    }
+                }
+            }
+            if((int)currentCluster.size() > minClusterSize)
+            {
+                clusters.push_back(currentCluster);
+            }
+        }
+    }
+    return clusters;
 }
 
 std::vector<pcl::Vertices> organizedFastMesh(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
-		double angleTolerance,
-		bool quad,
-		int trianglePixelSize,
-		const Eigen::Vector3f & viewpoint)
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
+        double angleTolerance,
+        bool quad,
+        int trianglePixelSize,
+        const Eigen::Vector3f & viewpoint)
 {
-	UDEBUG("size=%d angle=%f quad=%d triangleSize=%d", (int)cloud->size(), angleTolerance, quad?1:0, trianglePixelSize);
-	UASSERT(cloud->is_dense == false);
-	UASSERT(cloud->width > 1 && cloud->height > 1);
+    UDEBUG("size=%d angle=%f quad=%d triangleSize=%d", (int)cloud->size(), angleTolerance, quad?1:0, trianglePixelSize);
+    UASSERT(cloud->is_dense == false);
+    UASSERT(cloud->width > 1 && cloud->height > 1);
 
-	pcl::OrganizedFastMesh<pcl::PointXYZ> ofm;
-	ofm.setTrianglePixelSize (trianglePixelSize);
-	ofm.setTriangulationType (quad?pcl::OrganizedFastMesh<pcl::PointXYZ>::QUAD_MESH:pcl::OrganizedFastMesh<pcl::PointXYZ>::TRIANGLE_RIGHT_CUT);
-	ofm.setInputCloud (cloud);
-	ofm.setAngleTolerance(angleTolerance);
-	ofm.setViewpoint(viewpoint);
+    pcl::OrganizedFastMesh<pcl::PointXYZ> ofm;
+    ofm.setTrianglePixelSize (trianglePixelSize);
+    ofm.setTriangulationType (quad?pcl::OrganizedFastMesh<pcl::PointXYZ>::QUAD_MESH:pcl::OrganizedFastMesh<pcl::PointXYZ>::TRIANGLE_RIGHT_CUT);
+    ofm.setInputCloud (cloud);
+    ofm.setAngleTolerance(angleTolerance);
+    ofm.setViewpoint(viewpoint);
 
-	std::vector<pcl::Vertices> vertices;
-	ofm.reconstruct (vertices);
+    std::vector<pcl::Vertices> vertices;
+    ofm.reconstruct (vertices);
 
-	if(quad)
-	{
-		//flip all polygons (right handed)
-		std::vector<pcl::Vertices> output(vertices.size());
-		for(unsigned int i=0; i<vertices.size(); ++i)
-		{
-			output[i].vertices.resize(4);
-			output[i].vertices[0] = vertices[i].vertices[0];
-			output[i].vertices[3] = vertices[i].vertices[1];
-			output[i].vertices[2] = vertices[i].vertices[2];
-			output[i].vertices[1] = vertices[i].vertices[3];
-		}
-		return output;
-	}
+    if(quad)
+    {
+        //flip all polygons (right handed)
+        std::vector<pcl::Vertices> output(vertices.size());
+        for(unsigned int i=0; i<vertices.size(); ++i)
+        {
+            output[i].vertices.resize(4);
+            output[i].vertices[0] = vertices[i].vertices[0];
+            output[i].vertices[3] = vertices[i].vertices[1];
+            output[i].vertices[2] = vertices[i].vertices[2];
+            output[i].vertices[1] = vertices[i].vertices[3];
+        }
+        return output;
+    }
 
-	return vertices;
+    return vertices;
 }
 std::vector<pcl::Vertices> organizedFastMesh(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
-		double angleTolerance,
-		bool quad,
-		int trianglePixelSize,
-		const Eigen::Vector3f & viewpoint)
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
+        double angleTolerance,
+        bool quad,
+        int trianglePixelSize,
+        const Eigen::Vector3f & viewpoint)
 {
-	UDEBUG("size=%d angle=%f quad=%d triangleSize=%d", (int)cloud->size(), angleTolerance, quad?1:0, trianglePixelSize);
-	UASSERT(cloud->is_dense == false);
-	UASSERT(cloud->width > 1 && cloud->height > 1);
+    UDEBUG("size=%d angle=%f quad=%d triangleSize=%d", (int)cloud->size(), angleTolerance, quad?1:0, trianglePixelSize);
+    UASSERT(cloud->is_dense == false);
+    UASSERT(cloud->width > 1 && cloud->height > 1);
 
-	pcl::OrganizedFastMesh<pcl::PointXYZRGB> ofm;
-	ofm.setTrianglePixelSize (trianglePixelSize);
-	ofm.setTriangulationType (quad?pcl::OrganizedFastMesh<pcl::PointXYZRGB>::QUAD_MESH:pcl::OrganizedFastMesh<pcl::PointXYZRGB>::TRIANGLE_RIGHT_CUT);
-	ofm.setInputCloud (cloud);
-	ofm.setAngleTolerance(angleTolerance);
-	ofm.setViewpoint(viewpoint);
+    pcl::OrganizedFastMesh<pcl::PointXYZRGB> ofm;
+    ofm.setTrianglePixelSize (trianglePixelSize);
+    ofm.setTriangulationType (quad?pcl::OrganizedFastMesh<pcl::PointXYZRGB>::QUAD_MESH:pcl::OrganizedFastMesh<pcl::PointXYZRGB>::TRIANGLE_RIGHT_CUT);
+    ofm.setInputCloud (cloud);
+    ofm.setAngleTolerance(angleTolerance);
+    ofm.setViewpoint(viewpoint);
 
-	std::vector<pcl::Vertices> vertices;
-	ofm.reconstruct (vertices);
+    std::vector<pcl::Vertices> vertices;
+    ofm.reconstruct (vertices);
 
-	if(quad)
-	{
-		//flip all polygons (right handed)
-		std::vector<pcl::Vertices> output(vertices.size());
-		for(unsigned int i=0; i<vertices.size(); ++i)
-		{
-			output[i].vertices.resize(4);
-			output[i].vertices[0] = vertices[i].vertices[0];
-			output[i].vertices[3] = vertices[i].vertices[1];
-			output[i].vertices[2] = vertices[i].vertices[2];
-			output[i].vertices[1] = vertices[i].vertices[3];
-		}
-		return output;
-	}
+    if(quad)
+    {
+        //flip all polygons (right handed)
+        std::vector<pcl::Vertices> output(vertices.size());
+        for(unsigned int i=0; i<vertices.size(); ++i)
+        {
+            output[i].vertices.resize(4);
+            output[i].vertices[0] = vertices[i].vertices[0];
+            output[i].vertices[3] = vertices[i].vertices[1];
+            output[i].vertices[2] = vertices[i].vertices[2];
+            output[i].vertices[1] = vertices[i].vertices[3];
+        }
+        return output;
+    }
 
-	return vertices;
+    return vertices;
 }
 std::vector<pcl::Vertices> organizedFastMesh(
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
-		double angleTolerance,
-		bool quad,
-		int trianglePixelSize,
-		const Eigen::Vector3f & viewpoint)
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
+        double angleTolerance,
+        bool quad,
+        int trianglePixelSize,
+        const Eigen::Vector3f & viewpoint)
 {
-	UDEBUG("size=%d angle=%f quad=%d triangleSize=%d", (int)cloud->size(), angleTolerance, quad?1:0, trianglePixelSize);
-	UASSERT(cloud->is_dense == false);
-	UASSERT(cloud->width > 1 && cloud->height > 1);
+    UDEBUG("size=%d angle=%f quad=%d triangleSize=%d", (int)cloud->size(), angleTolerance, quad?1:0, trianglePixelSize);
+    UASSERT(cloud->is_dense == false);
+    UASSERT(cloud->width > 1 && cloud->height > 1);
 
-	pcl::OrganizedFastMesh<pcl::PointXYZRGBNormal> ofm;
-	ofm.setTrianglePixelSize (trianglePixelSize);
-	ofm.setTriangulationType (quad?pcl::OrganizedFastMesh<pcl::PointXYZRGBNormal>::QUAD_MESH:pcl::OrganizedFastMesh<pcl::PointXYZRGBNormal>::TRIANGLE_RIGHT_CUT);
-	ofm.setInputCloud (cloud);
-	ofm.setAngleTolerance(angleTolerance);
-	ofm.setViewpoint(viewpoint);
+    pcl::OrganizedFastMesh<pcl::PointXYZRGBNormal> ofm;
+    ofm.setTrianglePixelSize (trianglePixelSize);
+    ofm.setTriangulationType (quad?pcl::OrganizedFastMesh<pcl::PointXYZRGBNormal>::QUAD_MESH:pcl::OrganizedFastMesh<pcl::PointXYZRGBNormal>::TRIANGLE_RIGHT_CUT);
+    ofm.setInputCloud (cloud);
+    ofm.setAngleTolerance(angleTolerance);
+    ofm.setViewpoint(viewpoint);
 
-	std::vector<pcl::Vertices> vertices;
-	ofm.reconstruct (vertices);
+    std::vector<pcl::Vertices> vertices;
+    ofm.reconstruct (vertices);
 
-	if(quad)
-	{
-		//flip all polygons (right handed)
-		std::vector<pcl::Vertices> output(vertices.size());
-		for(unsigned int i=0; i<vertices.size(); ++i)
-		{
-			output[i].vertices.resize(4);
-			output[i].vertices[0] = vertices[i].vertices[0];
-			output[i].vertices[3] = vertices[i].vertices[1];
-			output[i].vertices[2] = vertices[i].vertices[2];
-			output[i].vertices[1] = vertices[i].vertices[3];
-		}
-		return output;
-	}
+    if(quad)
+    {
+        //flip all polygons (right handed)
+        std::vector<pcl::Vertices> output(vertices.size());
+        for(unsigned int i=0; i<vertices.size(); ++i)
+        {
+            output[i].vertices.resize(4);
+            output[i].vertices[0] = vertices[i].vertices[0];
+            output[i].vertices[3] = vertices[i].vertices[1];
+            output[i].vertices[2] = vertices[i].vertices[2];
+            output[i].vertices[1] = vertices[i].vertices[3];
+        }
+        return output;
+    }
 
-	return vertices;
+    return vertices;
 }
 
 void appendMesh(
-		pcl::PointCloud<pcl::PointXYZRGBNormal> & cloudA,
-		std::vector<pcl::Vertices> & polygonsA,
-		const pcl::PointCloud<pcl::PointXYZRGBNormal> & cloudB,
-		const std::vector<pcl::Vertices> & polygonsB)
+        pcl::PointCloud<pcl::PointXYZRGBNormal> & cloudA,
+        std::vector<pcl::Vertices> & polygonsA,
+        const pcl::PointCloud<pcl::PointXYZRGBNormal> & cloudB,
+        const std::vector<pcl::Vertices> & polygonsB)
 {
-	UDEBUG("cloudA=%d polygonsA=%d cloudB=%d polygonsB=%d", (int)cloudA.size(), (int)polygonsA.size(), (int)cloudB.size(), (int)polygonsB.size());
-	UASSERT(!cloudA.isOrganized() && !cloudB.isOrganized());
+    UDEBUG("cloudA=%d polygonsA=%d cloudB=%d polygonsB=%d", (int)cloudA.size(), (int)polygonsA.size(), (int)cloudB.size(), (int)polygonsB.size());
+    UASSERT(!cloudA.isOrganized() && !cloudB.isOrganized());
 
-	int sizeA = (int)cloudA.size();
-	cloudA += cloudB;
+    int sizeA = (int)cloudA.size();
+    cloudA += cloudB;
 
-	int sizePolygonsA = (int)polygonsA.size();
-	polygonsA.resize(sizePolygonsA+polygonsB.size());
+    int sizePolygonsA = (int)polygonsA.size();
+    polygonsA.resize(sizePolygonsA+polygonsB.size());
 
-	for(unsigned int i=0; i<polygonsB.size(); ++i)
-	{
-		pcl::Vertices vertices = polygonsB[i];
-		for(unsigned int j=0; j<vertices.vertices.size(); ++j)
-		{
-			vertices.vertices[j] += sizeA;
-		}
-		polygonsA[i+sizePolygonsA] = vertices;
-	}
+    for(unsigned int i=0; i<polygonsB.size(); ++i)
+    {
+        pcl::Vertices vertices = polygonsB[i];
+        for(unsigned int j=0; j<vertices.vertices.size(); ++j)
+        {
+            vertices.vertices[j] += sizeA;
+        }
+        polygonsA[i+sizePolygonsA] = vertices;
+    }
 }
 
 void appendMesh(
-		pcl::PointCloud<pcl::PointXYZRGB> & cloudA,
-		std::vector<pcl::Vertices> & polygonsA,
-		const pcl::PointCloud<pcl::PointXYZRGB> & cloudB,
-		const std::vector<pcl::Vertices> & polygonsB)
+        pcl::PointCloud<pcl::PointXYZRGB> & cloudA,
+        std::vector<pcl::Vertices> & polygonsA,
+        const pcl::PointCloud<pcl::PointXYZRGB> & cloudB,
+        const std::vector<pcl::Vertices> & polygonsB)
 {
-	UDEBUG("cloudA=%d polygonsA=%d cloudB=%d polygonsB=%d", (int)cloudA.size(), (int)polygonsA.size(), (int)cloudB.size(), (int)polygonsB.size());
-	UASSERT(!cloudA.isOrganized() && !cloudB.isOrganized());
+    UDEBUG("cloudA=%d polygonsA=%d cloudB=%d polygonsB=%d", (int)cloudA.size(), (int)polygonsA.size(), (int)cloudB.size(), (int)polygonsB.size());
+    UASSERT(!cloudA.isOrganized() && !cloudB.isOrganized());
 
-	int sizeA = (int)cloudA.size();
-	cloudA += cloudB;
+    int sizeA = (int)cloudA.size();
+    cloudA += cloudB;
 
-	int sizePolygonsA = (int)polygonsA.size();
-	polygonsA.resize(sizePolygonsA+polygonsB.size());
+    int sizePolygonsA = (int)polygonsA.size();
+    polygonsA.resize(sizePolygonsA+polygonsB.size());
 
-	for(unsigned int i=0; i<polygonsB.size(); ++i)
-	{
-		pcl::Vertices vertices = polygonsB[i];
-		for(unsigned int j=0; j<vertices.vertices.size(); ++j)
-		{
-			vertices.vertices[j] += sizeA;
-		}
-		polygonsA[i+sizePolygonsA] = vertices;
-	}
+    for(unsigned int i=0; i<polygonsB.size(); ++i)
+    {
+        pcl::Vertices vertices = polygonsB[i];
+        for(unsigned int j=0; j<vertices.vertices.size(); ++j)
+        {
+            vertices.vertices[j] += sizeA;
+        }
+        polygonsA[i+sizePolygonsA] = vertices;
+    }
 }
 
 std::vector<int> filterNotUsedVerticesFromMesh(
-		const pcl::PointCloud<pcl::PointXYZRGBNormal> & cloud,
-		const std::vector<pcl::Vertices> & polygons,
-		pcl::PointCloud<pcl::PointXYZRGBNormal> & outputCloud,
-		std::vector<pcl::Vertices> & outputPolygons)
+        const pcl::PointCloud<pcl::PointXYZRGBNormal> & cloud,
+        const std::vector<pcl::Vertices> & polygons,
+        pcl::PointCloud<pcl::PointXYZRGBNormal> & outputCloud,
+        std::vector<pcl::Vertices> & outputPolygons)
 {
-	UDEBUG("size=%d polygons=%d", (int)cloud.size(), (int)polygons.size());
-	std::map<int, int> addedVertices; //<oldIndex, newIndex>
-	std::vector<int> output; //<oldIndex>
-	output.resize(cloud.size());
-	outputCloud.resize(cloud.size());
-	outputCloud.is_dense = true;
-	outputPolygons.resize(polygons.size());
-	int oi = 0;
-	for(unsigned int i=0; i<polygons.size(); ++i)
-	{
-		pcl::Vertices & v = outputPolygons[i];
-		v.vertices.resize(polygons[i].vertices.size());
-		for(unsigned int j=0; j<polygons[i].vertices.size(); ++j)
-		{
-			std::map<int, int>::iterator iter = addedVertices.find(polygons[i].vertices[j]);
-			if(iter == addedVertices.end())
-			{
-				outputCloud[oi] = cloud.at(polygons[i].vertices[j]);
-				addedVertices.insert(std::make_pair(polygons[i].vertices[j], oi));
-				output[oi] = polygons[i].vertices[j];
-				v.vertices[j] = oi++;
-			}
-			else
-			{
-				v.vertices[j] = iter->second;
-			}
-		}
-	}
-	outputCloud.resize(oi);
-	output.resize(oi);
+    UDEBUG("size=%d polygons=%d", (int)cloud.size(), (int)polygons.size());
+    std::map<int, int> addedVertices; //<oldIndex, newIndex>
+    std::vector<int> output; //<oldIndex>
+    output.resize(cloud.size());
+    outputCloud.resize(cloud.size());
+    outputCloud.is_dense = true;
+    outputPolygons.resize(polygons.size());
+    int oi = 0;
+    for(unsigned int i=0; i<polygons.size(); ++i)
+    {
+        pcl::Vertices & v = outputPolygons[i];
+        v.vertices.resize(polygons[i].vertices.size());
+        for(unsigned int j=0; j<polygons[i].vertices.size(); ++j)
+        {
+            std::map<int, int>::iterator iter = addedVertices.find(polygons[i].vertices[j]);
+            if(iter == addedVertices.end())
+            {
+                outputCloud[oi] = cloud.at(polygons[i].vertices[j]);
+                addedVertices.insert(std::make_pair(polygons[i].vertices[j], oi));
+                output[oi] = polygons[i].vertices[j];
+                v.vertices[j] = oi++;
+            }
+            else
+            {
+                v.vertices[j] = iter->second;
+            }
+        }
+    }
+    outputCloud.resize(oi);
+    output.resize(oi);
 
-	return output;
+    return output;
 }
 
 std::vector<int> filterNotUsedVerticesFromMesh(
-		const pcl::PointCloud<pcl::PointXYZRGB> & cloud,
-		const std::vector<pcl::Vertices> & polygons,
-		pcl::PointCloud<pcl::PointXYZRGB> & outputCloud,
-		std::vector<pcl::Vertices> & outputPolygons)
+        const pcl::PointCloud<pcl::PointXYZRGB> & cloud,
+        const std::vector<pcl::Vertices> & polygons,
+        pcl::PointCloud<pcl::PointXYZRGB> & outputCloud,
+        std::vector<pcl::Vertices> & outputPolygons)
 {
-	UDEBUG("size=%d polygons=%d", (int)cloud.size(), (int)polygons.size());
-	std::map<int, int> addedVertices; //<oldIndex, newIndex>
-	std::vector<int> output; //<oldIndex>
-	output.resize(cloud.size());
-	outputCloud.resize(cloud.size());
-	outputCloud.is_dense = true;
-	outputPolygons.resize(polygons.size());
-	int oi = 0;
-	for(unsigned int i=0; i<polygons.size(); ++i)
-	{
-		pcl::Vertices & v = outputPolygons[i];
-		v.vertices.resize(polygons[i].vertices.size());
-		for(unsigned int j=0; j<polygons[i].vertices.size(); ++j)
-		{
-			std::map<int, int>::iterator iter = addedVertices.find(polygons[i].vertices[j]);
-			if(iter == addedVertices.end())
-			{
-				outputCloud[oi] = cloud.at(polygons[i].vertices[j]);
-				addedVertices.insert(std::make_pair(polygons[i].vertices[j], oi));
-				output[oi] = polygons[i].vertices[j];
-				v.vertices[j] = oi++;
-			}
-			else
-			{
-				v.vertices[j] = iter->second;
-			}
-		}
-	}
-	outputCloud.resize(oi);
-	output.resize(oi);
+    UDEBUG("size=%d polygons=%d", (int)cloud.size(), (int)polygons.size());
+    std::map<int, int> addedVertices; //<oldIndex, newIndex>
+    std::vector<int> output; //<oldIndex>
+    output.resize(cloud.size());
+    outputCloud.resize(cloud.size());
+    outputCloud.is_dense = true;
+    outputPolygons.resize(polygons.size());
+    int oi = 0;
+    for(unsigned int i=0; i<polygons.size(); ++i)
+    {
+        pcl::Vertices & v = outputPolygons[i];
+        v.vertices.resize(polygons[i].vertices.size());
+        for(unsigned int j=0; j<polygons[i].vertices.size(); ++j)
+        {
+            std::map<int, int>::iterator iter = addedVertices.find(polygons[i].vertices[j]);
+            if(iter == addedVertices.end())
+            {
+                outputCloud[oi] = cloud.at(polygons[i].vertices[j]);
+                addedVertices.insert(std::make_pair(polygons[i].vertices[j], oi));
+                output[oi] = polygons[i].vertices[j];
+                v.vertices[j] = oi++;
+            }
+            else
+            {
+                v.vertices[j] = iter->second;
+            }
+        }
+    }
+    outputCloud.resize(oi);
+    output.resize(oi);
 
-	return output;
+    return output;
 }
 
 std::vector<int> filterNaNPointsFromMesh(
-		const pcl::PointCloud<pcl::PointXYZRGB> & cloud,
-		const std::vector<pcl::Vertices> & polygons,
-		pcl::PointCloud<pcl::PointXYZRGB> & outputCloud,
-		std::vector<pcl::Vertices> & outputPolygons)
+        const pcl::PointCloud<pcl::PointXYZRGB> & cloud,
+        const std::vector<pcl::Vertices> & polygons,
+        pcl::PointCloud<pcl::PointXYZRGB> & outputCloud,
+        std::vector<pcl::Vertices> & outputPolygons)
 {
-	UDEBUG("size=%d polygons=%d", (int)cloud.size(), (int)polygons.size());
-	std::map<int, int> addedVertices; //<oldIndex, newIndex>
-	std::vector<int> output; //<oldIndex>
-	output.resize(cloud.size());
-	outputCloud.resize(cloud.size());
-	outputCloud.is_dense = true;
-	std::vector<int> organizedToDense(cloud.size(), -1);
+    UDEBUG("size=%d polygons=%d", (int)cloud.size(), (int)polygons.size());
+    std::map<int, int> addedVertices; //<oldIndex, newIndex>
+    std::vector<int> output; //<oldIndex>
+    output.resize(cloud.size());
+    outputCloud.resize(cloud.size());
+    outputCloud.is_dense = true;
+    std::vector<int> organizedToDense(cloud.size(), -1);
 
-	int oi = 0;
-	for(unsigned int i=0; i<cloud.size(); ++i)
-	{
-		if(pcl::isFinite(cloud.at(i)))
-		{
-			outputCloud.at(oi) = cloud.at(i);
-			output[oi] = i;
-			organizedToDense[i] = oi;
-			++oi;
- 		}
-	}
-	outputCloud.resize(oi);
-	output.resize(oi);
+    int oi = 0;
+    for(unsigned int i=0; i<cloud.size(); ++i)
+    {
+        if(pcl::isFinite(cloud.at(i)))
+        {
+            outputCloud.at(oi) = cloud.at(i);
+            output[oi] = i;
+            organizedToDense[i] = oi;
+            ++oi;
+         }
+    }
+    outputCloud.resize(oi);
+    output.resize(oi);
 
-	// remap polygons to dense cloud
-	outputPolygons = polygons;
-	for(unsigned int i=0; i<outputPolygons.size(); ++i)
-	{
-		pcl::Vertices & v = outputPolygons[i];
-		for(unsigned int j=0; j<v.vertices.size(); ++j)
-		{
-			UASSERT(organizedToDense[v.vertices[j]] >= 0);
-			v.vertices[j] = organizedToDense[v.vertices[j]];
-		}
-	}
+    // remap polygons to dense cloud
+    outputPolygons = polygons;
+    for(unsigned int i=0; i<outputPolygons.size(); ++i)
+    {
+        pcl::Vertices & v = outputPolygons[i];
+        for(unsigned int j=0; j<v.vertices.size(); ++j)
+        {
+            UASSERT(organizedToDense[v.vertices[j]] >= 0);
+            v.vertices[j] = organizedToDense[v.vertices[j]];
+        }
+    }
 
-	return output;
+    return output;
 }
 
 std::vector<pcl::Vertices> filterCloseVerticesFromMesh(
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud,
-		const std::vector<pcl::Vertices> & polygons,
-		float radius,
-		float angle, // FIXME angle not used
-		bool keepLatestInRadius)
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud,
+        const std::vector<pcl::Vertices> & polygons,
+        float radius,
+        float angle, // FIXME angle not used
+        bool keepLatestInRadius)
 {
-	UDEBUG("size=%d polygons=%d radius=%f angle=%f keepLatest=%d",
-			(int)cloud->size(), (int)polygons.size(), radius, angle, keepLatestInRadius?1:0);
-	std::vector<pcl::Vertices> outputPolygons;
-	pcl::KdTreeFLANN<pcl::PointXYZRGBNormal>::Ptr kdtree(new pcl::KdTreeFLANN<pcl::PointXYZRGBNormal>);
-	kdtree->setInputCloud(cloud);
+    UDEBUG("size=%d polygons=%d radius=%f angle=%f keepLatest=%d",
+            (int)cloud->size(), (int)polygons.size(), radius, angle, keepLatestInRadius?1:0);
+    std::vector<pcl::Vertices> outputPolygons;
+    pcl::KdTreeFLANN<pcl::PointXYZRGBNormal>::Ptr kdtree(new pcl::KdTreeFLANN<pcl::PointXYZRGBNormal>);
+    kdtree->setInputCloud(cloud);
 
-	std::map<int, int> verticesDone;
-	outputPolygons = polygons;
-	for(unsigned int i=0; i<outputPolygons.size(); ++i)
-	{
-		pcl::Vertices & polygon = outputPolygons[i];
-		for(unsigned int j=0; j<polygon.vertices.size(); ++j)
-		{
-			std::map<int, int>::iterator iter = verticesDone.find(polygon.vertices[j]);
-			if(iter != verticesDone.end())
-			{
-				polygon.vertices[j] = iter->second;
-			}
-			else
-			{
-				std::vector<int> kIndices;
-				std::vector<float> kDistances;
-				kdtree->radiusSearch(polygon.vertices[j], radius, kIndices, kDistances);
-				if(kIndices.size())
-				{
-					int reference = -1;
-					for(unsigned int z=0; z<kIndices.size(); ++z)
-					{
-						if(reference == -1)
-						{
-							reference = kIndices[z];
-						}
-						else if(keepLatestInRadius)
-						{
-							if(kIndices[z] < reference)
-							{
-								reference = kIndices[z];
-							}
-						}
-						else
-						{
-							if(kIndices[z] > reference)
-							{
-								reference = kIndices[z];
-							}
-						}
-					}
-					if(reference >= 0)
-					{
-						for(unsigned int z=0; z<kIndices.size(); ++z)
-						{
-							verticesDone.insert(std::make_pair(kIndices[j], reference));
-						}
-						polygon.vertices[j] = reference;
-					}
-				}
-				else
-				{
-					verticesDone.insert(std::make_pair(polygon.vertices[j], polygon.vertices[j]));
-				}
-			}
-		}
-	}
-	return outputPolygons;
+    std::map<int, int> verticesDone;
+    outputPolygons = polygons;
+    for(unsigned int i=0; i<outputPolygons.size(); ++i)
+    {
+        pcl::Vertices & polygon = outputPolygons[i];
+        for(unsigned int j=0; j<polygon.vertices.size(); ++j)
+        {
+            std::map<int, int>::iterator iter = verticesDone.find(polygon.vertices[j]);
+            if(iter != verticesDone.end())
+            {
+                polygon.vertices[j] = iter->second;
+            }
+            else
+            {
+                std::vector<int> kIndices;
+                std::vector<float> kDistances;
+                kdtree->radiusSearch(polygon.vertices[j], radius, kIndices, kDistances);
+                if(kIndices.size())
+                {
+                    int reference = -1;
+                    for(unsigned int z=0; z<kIndices.size(); ++z)
+                    {
+                        if(reference == -1)
+                        {
+                            reference = kIndices[z];
+                        }
+                        else if(keepLatestInRadius)
+                        {
+                            if(kIndices[z] < reference)
+                            {
+                                reference = kIndices[z];
+                            }
+                        }
+                        else
+                        {
+                            if(kIndices[z] > reference)
+                            {
+                                reference = kIndices[z];
+                            }
+                        }
+                    }
+                    if(reference >= 0)
+                    {
+                        for(unsigned int z=0; z<kIndices.size(); ++z)
+                        {
+                            verticesDone.insert(std::make_pair(kIndices[j], reference));
+                        }
+                        polygon.vertices[j] = reference;
+                    }
+                }
+                else
+                {
+                    verticesDone.insert(std::make_pair(polygon.vertices[j], polygon.vertices[j]));
+                }
+            }
+        }
+    }
+    return outputPolygons;
 }
 
 std::vector<pcl::Vertices> filterInvalidPolygons(const std::vector<pcl::Vertices> & polygons)
 {
-	std::vector<pcl::Vertices> output(polygons.size());
-	int oi=0;
-	for(unsigned int i=0; i<polygons.size(); ++i)
-	{
-		bool valid = true;
-		for(unsigned int j=0; j<polygons[i].vertices.size(); ++j)
-		{
-			if(polygons[i].vertices[j] == polygons[i].vertices[(j+1)%polygons[i].vertices.size()])
-			{
-				valid = false;
-				break;
-			}
-		}
-		if(valid)
-		{
-			output[oi++] = polygons[i];
-		}
-	}
-	output.resize(oi);
-	return output;
+    std::vector<pcl::Vertices> output(polygons.size());
+    int oi=0;
+    for(unsigned int i=0; i<polygons.size(); ++i)
+    {
+        bool valid = true;
+        for(unsigned int j=0; j<polygons[i].vertices.size(); ++j)
+        {
+            if(polygons[i].vertices[j] == polygons[i].vertices[(j+1)%polygons[i].vertices.size()])
+            {
+                valid = false;
+                break;
+            }
+        }
+        if(valid)
+        {
+            output[oi++] = polygons[i];
+        }
+    }
+    output.resize(oi);
+    return output;
 }
 
 pcl::PolygonMesh::Ptr createMesh(
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloudWithNormals,
-		float gp3SearchRadius,
-		float gp3Mu,
-		int gp3MaximumNearestNeighbors,
-		float gp3MaximumSurfaceAngle,
-		float gp3MinimumAngle,
-		float gp3MaximumAngle,
-		bool gp3NormalConsistency)
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloudWithNormals,
+        float gp3SearchRadius,
+        float gp3Mu,
+        int gp3MaximumNearestNeighbors,
+        float gp3MaximumSurfaceAngle,
+        float gp3MinimumAngle,
+        float gp3MaximumAngle,
+        bool gp3NormalConsistency)
 {
-	pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloudWithNormalsNoNaN = removeNaNNormalsFromPointCloud(cloudWithNormals);
+    pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloudWithNormalsNoNaN = removeNaNNormalsFromPointCloud(cloudWithNormals);
 
-	// Create search tree*
-	pcl::search::KdTree<pcl::PointXYZRGBNormal>::Ptr tree2 (new pcl::search::KdTree<pcl::PointXYZRGBNormal>);
-	tree2->setInputCloud (cloudWithNormalsNoNaN);
+    // Create search tree*
+    pcl::search::KdTree<pcl::PointXYZRGBNormal>::Ptr tree2 (new pcl::search::KdTree<pcl::PointXYZRGBNormal>);
+    tree2->setInputCloud (cloudWithNormalsNoNaN);
 
-	// Initialize objects
-	pcl::GreedyProjectionTriangulation<pcl::PointXYZRGBNormal> gp3;
-	pcl::PolygonMesh::Ptr mesh(new pcl::PolygonMesh);
+    // Initialize objects
+    pcl::GreedyProjectionTriangulation<pcl::PointXYZRGBNormal> gp3;
+    pcl::PolygonMesh::Ptr mesh(new pcl::PolygonMesh);
 
-	// Set the maximum distance between connected points (maximum edge length)
-	gp3.setSearchRadius (gp3SearchRadius);
+    // Set the maximum distance between connected points (maximum edge length)
+    gp3.setSearchRadius (gp3SearchRadius);
 
-	// Set typical values for the parameters
-	gp3.setMu (gp3Mu);
-	gp3.setMaximumNearestNeighbors (gp3MaximumNearestNeighbors);
-	gp3.setMaximumSurfaceAngle(gp3MaximumSurfaceAngle); // 45 degrees
-	gp3.setMinimumAngle(gp3MinimumAngle); // 10 degrees
-	gp3.setMaximumAngle(gp3MaximumAngle); // 120 degrees
-	gp3.setNormalConsistency(gp3NormalConsistency);
-	gp3.setConsistentVertexOrdering(gp3NormalConsistency);
+    // Set typical values for the parameters
+    gp3.setMu (gp3Mu);
+    gp3.setMaximumNearestNeighbors (gp3MaximumNearestNeighbors);
+    gp3.setMaximumSurfaceAngle(gp3MaximumSurfaceAngle); // 45 degrees
+    gp3.setMinimumAngle(gp3MinimumAngle); // 10 degrees
+    gp3.setMaximumAngle(gp3MaximumAngle); // 120 degrees
+    gp3.setNormalConsistency(gp3NormalConsistency);
+    gp3.setConsistentVertexOrdering(gp3NormalConsistency);
 
-	// Get result
-	gp3.setInputCloud (cloudWithNormalsNoNaN);
-	gp3.setSearchMethod (tree2);
-	gp3.reconstruct (*mesh);
+    // Get result
+    gp3.setInputCloud (cloudWithNormalsNoNaN);
+    gp3.setSearchMethod (tree2);
+    gp3.reconstruct (*mesh);
 
-	//UASSERT(mesh->cloud.data.size()/mesh->cloud.point_step == cloudWithNormalsNoNaN->size());
-	//mesh->polygons = normalizePolygonsSide(*cloudWithNormalsNoNaN, mesh->polygons);
+    //UASSERT(mesh->cloud.data.size()/mesh->cloud.point_step == cloudWithNormalsNoNaN->size());
+    //mesh->polygons = normalizePolygonsSide(*cloudWithNormalsNoNaN, mesh->polygons);
 
-	return mesh;
+    return mesh;
 }
 
 pcl::texture_mapping::CameraVector createTextureCameras(
-		const std::map<int, Transform> & poses,
-		const std::map<int, std::vector<CameraModel> > & cameraModels,
-		const std::map<int, cv::Mat> & cameraDepths,
-		const std::vector<float> & roiRatios)
+        const std::map<int, Transform> & poses,
+        const std::map<int, std::vector<CameraModel> > & cameraModels,
+        const std::map<int, cv::Mat> & cameraDepths,
+        const std::vector<float> & roiRatios)
 {
-	UASSERT_MSG(poses.size() == cameraModels.size(), uFormat("%d vs %d", (int)poses.size(), (int)cameraModels.size()).c_str());
-	UASSERT(roiRatios.empty() || roiRatios.size() == 4);
-	pcl::texture_mapping::CameraVector cameras;
-	std::map<int, Transform>::const_iterator poseIter=poses.begin();
-	std::map<int, std::vector<CameraModel> >::const_iterator modelIter=cameraModels.begin();
-	for(; poseIter!=poses.end(); ++poseIter, ++modelIter)
-	{
-		UASSERT(poseIter->first == modelIter->first);
+    UASSERT_MSG(poses.size() == cameraModels.size(), uFormat("%d vs %d", (int)poses.size(), (int)cameraModels.size()).c_str());
+    UASSERT(roiRatios.empty() || roiRatios.size() == 4);
+    pcl::texture_mapping::CameraVector cameras;
+    std::map<int, Transform>::const_iterator poseIter=poses.begin();
+    std::map<int, std::vector<CameraModel> >::const_iterator modelIter=cameraModels.begin();
+    for(; poseIter!=poses.end(); ++poseIter, ++modelIter)
+    {
+        UASSERT(poseIter->first == modelIter->first);
 
-		std::map<int, cv::Mat>::const_iterator depthIter = cameraDepths.find(poseIter->first);
+        std::map<int, cv::Mat>::const_iterator depthIter = cameraDepths.find(poseIter->first);
 
-		// for each sub camera
-		for(unsigned int i=0; i<modelIter->second.size(); ++i)
-		{
-			pcl::TextureMapping<pcl::PointXYZ>::Camera cam;
-			// should be in camera frame
-			UASSERT(!modelIter->second[i].localTransform().isNull() && !poseIter->second.isNull());
-			Transform t = poseIter->second*modelIter->second[i].localTransform();
+        // for each sub camera
+        for(unsigned int i=0; i<modelIter->second.size(); ++i)
+        {
+            pcl::TextureMapping<pcl::PointXYZ>::Camera cam;
+            // should be in camera frame
+            UASSERT(!modelIter->second[i].localTransform().isNull() && !poseIter->second.isNull());
+            Transform t = poseIter->second*modelIter->second[i].localTransform();
 
-			cam.pose = t.toEigen3f();
+            cam.pose = t.toEigen3f();
 
-			if(modelIter->second[i].imageHeight() <=0 || modelIter->second[i].imageWidth() <=0)
-			{
-				UERROR("Should have camera models with width/height set to create texture cameras!");
-				return pcl::texture_mapping::CameraVector();
-			}
+            if(modelIter->second[i].imageHeight() <=0 || modelIter->second[i].imageWidth() <=0)
+            {
+                UERROR("Should have camera models with width/height set to create texture cameras!");
+                return pcl::texture_mapping::CameraVector();
+            }
 
-			UASSERT(modelIter->second[i].fx()>0 && modelIter->second[i].imageHeight()>0 && modelIter->second[i].imageWidth()>0);
-			cam.focal_length_w=modelIter->second[i].fx();
-			cam.focal_length_h=modelIter->second[i].fy();
-			cam.center_w=modelIter->second[i].cx();
-			cam.center_h=modelIter->second[i].cy();
-			cam.height=modelIter->second[i].imageHeight();
-			cam.width=modelIter->second[i].imageWidth();
-			if(modelIter->second.size() == 1)
-			{
-				cam.texture_file = uFormat("%d", poseIter->first); // camera index
-			}
-			else
-			{
-				cam.texture_file = uFormat("%d_%d", poseIter->first, (int)i); // camera index, sub camera model index
-			}
-			if(!roiRatios.empty())
-			{
-				cam.roi.resize(4);
-				cam.roi[0] = cam.width * roiRatios[0]; // left -> x
-				cam.roi[1] = cam.height * roiRatios[2]; // top -> y
-				cam.roi[2] = cam.width * (1.0 - roiRatios[1]) - cam.roi[0]; // right -> width
-				cam.roi[3] = cam.height * (1.0 - roiRatios[3]) - cam.roi[1]; // bottom -> height
-			}
+            UASSERT(modelIter->second[i].fx()>0 && modelIter->second[i].imageHeight()>0 && modelIter->second[i].imageWidth()>0);
+            cam.focal_length_w=modelIter->second[i].fx();
+            cam.focal_length_h=modelIter->second[i].fy();
+            cam.center_w=modelIter->second[i].cx();
+            cam.center_h=modelIter->second[i].cy();
+            cam.height=modelIter->second[i].imageHeight();
+            cam.width=modelIter->second[i].imageWidth();
+            if(modelIter->second.size() == 1)
+            {
+                cam.texture_file = uFormat("%d", poseIter->first); // camera index
+            }
+            else
+            {
+                cam.texture_file = uFormat("%d_%d", poseIter->first, (int)i); // camera index, sub camera model index
+            }
+            if(!roiRatios.empty())
+            {
+                cam.roi.resize(4);
+                cam.roi[0] = cam.width * roiRatios[0]; // left -> x
+                cam.roi[1] = cam.height * roiRatios[2]; // top -> y
+                cam.roi[2] = cam.width * (1.0 - roiRatios[1]) - cam.roi[0]; // right -> width
+                cam.roi[3] = cam.height * (1.0 - roiRatios[3]) - cam.roi[1]; // bottom -> height
+            }
 
-			if(depthIter != cameraDepths.end() && !depthIter->second.empty())
-			{
-				UASSERT(depthIter->second.type() == CV_32FC1 || depthIter->second.type() == CV_16UC1);
-				UASSERT(depthIter->second.cols % modelIter->second.size() == 0);
-				int subWidth = depthIter->second.cols/(modelIter->second.size());
-				cam.depth = cv::Mat(depthIter->second, cv::Range(0, depthIter->second.rows), cv::Range(subWidth*i, subWidth*(i+1)));
-			}
+            if(depthIter != cameraDepths.end() && !depthIter->second.empty())
+            {
+                UASSERT(depthIter->second.type() == CV_32FC1 || depthIter->second.type() == CV_16UC1);
+                UASSERT(depthIter->second.cols % modelIter->second.size() == 0);
+                int subWidth = depthIter->second.cols/(modelIter->second.size());
+                cam.depth = cv::Mat(depthIter->second, cv::Range(0, depthIter->second.rows), cv::Range(subWidth*i, subWidth*(i+1)));
+            }
 
-			UDEBUG("%f", cam.focal_length);
-			UDEBUG("%f", cam.height);
-			UDEBUG("%f", cam.width);
-			UDEBUG("cam.pose=%s", t.prettyPrint().c_str());
+            UDEBUG("%f", cam.focal_length);
+            UDEBUG("%f", cam.height);
+            UDEBUG("%f", cam.width);
+            UDEBUG("cam.pose=%s", t.prettyPrint().c_str());
 
-			cameras.push_back(cam);
-		}
-	}
-	return cameras;
+            cameras.push_back(cam);
+        }
+    }
+    return cameras;
 }
 
 pcl::TextureMesh::Ptr createTextureMesh(
-		const pcl::PolygonMesh::Ptr & mesh,
-		const std::map<int, Transform> & poses,
-		const std::map<int, CameraModel> & cameraModels,
-		const std::map<int, cv::Mat> & cameraDepths,
-		float maxDistance,
-		float maxDepthError,
-		float maxAngle,
-		int minClusterSize,
-		const std::vector<float> & roiRatios,
-		const ProgressState * state,
-		std::vector<std::map<int, pcl::PointXY> > * vertexToPixels,
-		bool distanceToCamPolicy)
+        const pcl::PolygonMesh::Ptr & mesh,
+        const std::map<int, Transform> & poses,
+        const std::map<int, CameraModel> & cameraModels,
+        const std::map<int, cv::Mat> & cameraDepths,
+        float maxDistance,
+        float maxDepthError,
+        float maxAngle,
+        int minClusterSize,
+        const std::vector<float> & roiRatios,
+        const ProgressState * state,
+        std::vector<std::map<int, pcl::PointXY> > * vertexToPixels,
+        bool distanceToCamPolicy)
 {
-	std::map<int, std::vector<CameraModel> > cameraSubModels;
-	for(std::map<int, CameraModel>::const_iterator iter=cameraModels.begin(); iter!=cameraModels.end(); ++iter)
-	{
-		std::vector<CameraModel> models;
-		models.push_back(iter->second);
-		cameraSubModels.insert(std::make_pair(iter->first, models));
-	}
+    std::map<int, std::vector<CameraModel> > cameraSubModels;
+    for(std::map<int, CameraModel>::const_iterator iter=cameraModels.begin(); iter!=cameraModels.end(); ++iter)
+    {
+        std::vector<CameraModel> models;
+        models.push_back(iter->second);
+        cameraSubModels.insert(std::make_pair(iter->first, models));
+    }
 
-	return createTextureMesh(
-			mesh,
-			poses,
-			cameraSubModels,
-			cameraDepths,
-			maxDistance,
-			maxDepthError,
-			maxAngle,
-			minClusterSize,
-			roiRatios,
-			state,
-			vertexToPixels,
-			distanceToCamPolicy);
+    return createTextureMesh(
+            mesh,
+            poses,
+            cameraSubModels,
+            cameraDepths,
+            maxDistance,
+            maxDepthError,
+            maxAngle,
+            minClusterSize,
+            roiRatios,
+            state,
+            vertexToPixels,
+            distanceToCamPolicy);
 }
 
 pcl::TextureMesh::Ptr createTextureMesh(
-		const pcl::PolygonMesh::Ptr & mesh,
-		const std::map<int, Transform> & poses,
-		const std::map<int, std::vector<CameraModel> > & cameraModels,
-		const std::map<int, cv::Mat> & cameraDepths,
-		float maxDistance,
-		float maxDepthError,
-		float maxAngle,
-		int minClusterSize,
-		const std::vector<float> & roiRatios,
-		const ProgressState * state,
-		std::vector<std::map<int, pcl::PointXY> > * vertexToPixels,
-		bool distanceToCamPolicy)
+        const pcl::PolygonMesh::Ptr & mesh,
+        const std::map<int, Transform> & poses,
+        const std::map<int, std::vector<CameraModel> > & cameraModels,
+        const std::map<int, cv::Mat> & cameraDepths,
+        float maxDistance,
+        float maxDepthError,
+        float maxAngle,
+        int minClusterSize,
+        const std::vector<float> & roiRatios,
+        const ProgressState * state,
+        std::vector<std::map<int, pcl::PointXY> > * vertexToPixels,
+        bool distanceToCamPolicy)
 {
-	UASSERT(mesh->polygons.size());
-	pcl::TextureMesh::Ptr textureMesh(new pcl::TextureMesh);
-	textureMesh->cloud = mesh->cloud;
-	textureMesh->tex_polygons.push_back(mesh->polygons);
+    UASSERT(mesh->polygons.size());
+    pcl::TextureMesh::Ptr textureMesh(new pcl::TextureMesh);
+    textureMesh->cloud = mesh->cloud;
+    textureMesh->tex_polygons.push_back(mesh->polygons);
 
-	// Original from pcl/gpu/kinfu_large_scale/tools/standalone_texture_mapping.cpp:
-	// Author: Raphael Favier, Technical University Eindhoven, (r.mysurname <aT> tue.nl)
+    // Original from pcl/gpu/kinfu_large_scale/tools/standalone_texture_mapping.cpp:
+    // Author: Raphael Favier, Technical University Eindhoven, (r.mysurname <aT> tue.nl)
 
-	// Create the texturemesh object that will contain our UV-mapped mesh
+    // Create the texturemesh object that will contain our UV-mapped mesh
 
-	// create cameras
-	pcl::texture_mapping::CameraVector cameras = createTextureCameras(
-			poses,
-			cameraModels,
-			cameraDepths,
-			roiRatios);
+    // create cameras
+    pcl::texture_mapping::CameraVector cameras = createTextureCameras(
+            poses,
+            cameraModels,
+            cameraDepths,
+            roiRatios);
 
-	// Create materials for each texture (and one extra for occluded faces)
-	textureMesh->tex_materials.resize (cameras.size () + 1);
-	for(unsigned int i = 0 ; i <= cameras.size() ; ++i)
-	{
-		pcl::TexMaterial mesh_material;
-		mesh_material.tex_Ka.r = 0.2f;
-		mesh_material.tex_Ka.g = 0.2f;
-		mesh_material.tex_Ka.b = 0.2f;
+    // Create materials for each texture (and one extra for occluded faces)
+    textureMesh->tex_materials.resize (cameras.size () + 1);
+    for(unsigned int i = 0 ; i <= cameras.size() ; ++i)
+    {
+        pcl::TexMaterial mesh_material;
+        mesh_material.tex_Ka.r = 0.2f;
+        mesh_material.tex_Ka.g = 0.2f;
+        mesh_material.tex_Ka.b = 0.2f;
 
-		mesh_material.tex_Kd.r = 0.8f;
-		mesh_material.tex_Kd.g = 0.8f;
-		mesh_material.tex_Kd.b = 0.8f;
+        mesh_material.tex_Kd.r = 0.8f;
+        mesh_material.tex_Kd.g = 0.8f;
+        mesh_material.tex_Kd.b = 0.8f;
 
-		mesh_material.tex_Ks.r = 1.0f;
-		mesh_material.tex_Ks.g = 1.0f;
-		mesh_material.tex_Ks.b = 1.0f;
+        mesh_material.tex_Ks.r = 1.0f;
+        mesh_material.tex_Ks.g = 1.0f;
+        mesh_material.tex_Ks.b = 1.0f;
 
-		mesh_material.tex_d = 1.0f;
-		mesh_material.tex_Ns = 75.0f;
-		mesh_material.tex_illum = 2;
+        mesh_material.tex_d = 1.0f;
+        mesh_material.tex_Ns = 75.0f;
+        mesh_material.tex_illum = 2;
 
-		std::stringstream tex_name;
-		tex_name << "material_" << i;
-		tex_name >> mesh_material.tex_name;
+        std::stringstream tex_name;
+        tex_name << "material_" << i;
+        tex_name >> mesh_material.tex_name;
 
-		if(i < cameras.size ())
-		{
-			mesh_material.tex_file = cameras[i].texture_file;
-		}
-		else
-		{
-			mesh_material.tex_file = "occluded";
-		}
+        if(i < cameras.size ())
+        {
+            mesh_material.tex_file = cameras[i].texture_file;
+        }
+        else
+        {
+            mesh_material.tex_file = "occluded";
+        }
 
-		textureMesh->tex_materials[i] = mesh_material;
-	}
+        textureMesh->tex_materials[i] = mesh_material;
+    }
 
-	// Texture by projection
-	pcl::TextureMapping<pcl::PointXYZ> tm; // TextureMapping object that will perform the sort
-	tm.setMaxDistance(maxDistance);
-	tm.setMaxAngle(maxAngle);
-	if(maxDepthError > 0.0f)
-	{
-		tm.setMaxDepthError(maxDepthError);
-	}
-	tm.setMinClusterSize(minClusterSize);
-	if(tm.textureMeshwithMultipleCameras2(*textureMesh, cameras, state, vertexToPixels, distanceToCamPolicy))
-	{
-		// compute normals for the mesh if not already here
-		bool hasNormals = false;
-		bool hasColors = false;
-		for(unsigned int i=0; i<textureMesh->cloud.fields.size(); ++i)
-		{
-			if(textureMesh->cloud.fields[i].name.compare("normal_x") == 0)
-			{
-				hasNormals = true;
-			}
-			else if(textureMesh->cloud.fields[i].name.compare("rgb") == 0)
-			{
-				hasColors = true;
-			}
-		}
-		if(!hasNormals)
-		{
-			// use polygons
-			if(hasColors)
-			{
-				pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGBNormal>);
-				pcl::fromPCLPointCloud2(mesh->cloud, *cloud);
+    // Texture by projection
+    pcl::TextureMapping<pcl::PointXYZ> tm; // TextureMapping object that will perform the sort
+    tm.setMaxDistance(maxDistance);
+    tm.setMaxAngle(maxAngle);
+    if(maxDepthError > 0.0f)
+    {
+        tm.setMaxDepthError(maxDepthError);
+    }
+    tm.setMinClusterSize(minClusterSize);
+    if(tm.textureMeshwithMultipleCameras2(*textureMesh, cameras, state, vertexToPixels, distanceToCamPolicy))
+    {
+        // compute normals for the mesh if not already here
+        bool hasNormals = false;
+        bool hasColors = false;
+        for(unsigned int i=0; i<textureMesh->cloud.fields.size(); ++i)
+        {
+            if(textureMesh->cloud.fields[i].name.compare("normal_x") == 0)
+            {
+                hasNormals = true;
+            }
+            else if(textureMesh->cloud.fields[i].name.compare("rgb") == 0)
+            {
+                hasColors = true;
+            }
+        }
+        if(!hasNormals)
+        {
+            // use polygons
+            if(hasColors)
+            {
+                pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGBNormal>);
+                pcl::fromPCLPointCloud2(mesh->cloud, *cloud);
 
-				for(unsigned int i=0; i<mesh->polygons.size(); ++i)
-				{
-					pcl::Vertices & v = mesh->polygons[i];
-					UASSERT(v.vertices.size()>2);
-					Eigen::Vector3f v0(
-							cloud->at(v.vertices[1]).x - cloud->at(v.vertices[0]).x,
-							cloud->at(v.vertices[1]).y - cloud->at(v.vertices[0]).y,
-							cloud->at(v.vertices[1]).z - cloud->at(v.vertices[0]).z);
-					int last = v.vertices.size()-1;
-					Eigen::Vector3f v1(
-							cloud->at(v.vertices[last]).x - cloud->at(v.vertices[0]).x,
-							cloud->at(v.vertices[last]).y - cloud->at(v.vertices[0]).y,
-							cloud->at(v.vertices[last]).z - cloud->at(v.vertices[0]).z);
-					Eigen::Vector3f normal = v0.cross(v1);
-					normal.normalize();
-					// flat normal (per face)
-					for(unsigned int j=0; j<v.vertices.size(); ++j)
-					{
-						cloud->at(v.vertices[j]).normal_x = normal[0];
-						cloud->at(v.vertices[j]).normal_y = normal[1];
-						cloud->at(v.vertices[j]).normal_z = normal[2];
-					}
-				}
-				pcl::toPCLPointCloud2 (*cloud, textureMesh->cloud);
-			}
-			else
-			{
-				pcl::PointCloud<pcl::PointNormal>::Ptr cloud (new pcl::PointCloud<pcl::PointNormal>);
-				pcl::fromPCLPointCloud2(mesh->cloud, *cloud);
+                for(unsigned int i=0; i<mesh->polygons.size(); ++i)
+                {
+                    pcl::Vertices & v = mesh->polygons[i];
+                    UASSERT(v.vertices.size()>2);
+                    Eigen::Vector3f v0(
+                            cloud->at(v.vertices[1]).x - cloud->at(v.vertices[0]).x,
+                            cloud->at(v.vertices[1]).y - cloud->at(v.vertices[0]).y,
+                            cloud->at(v.vertices[1]).z - cloud->at(v.vertices[0]).z);
+                    int last = v.vertices.size()-1;
+                    Eigen::Vector3f v1(
+                            cloud->at(v.vertices[last]).x - cloud->at(v.vertices[0]).x,
+                            cloud->at(v.vertices[last]).y - cloud->at(v.vertices[0]).y,
+                            cloud->at(v.vertices[last]).z - cloud->at(v.vertices[0]).z);
+                    Eigen::Vector3f normal = v0.cross(v1);
+                    normal.normalize();
+                    // flat normal (per face)
+                    for(unsigned int j=0; j<v.vertices.size(); ++j)
+                    {
+                        cloud->at(v.vertices[j]).normal_x = normal[0];
+                        cloud->at(v.vertices[j]).normal_y = normal[1];
+                        cloud->at(v.vertices[j]).normal_z = normal[2];
+                    }
+                }
+                pcl::toPCLPointCloud2 (*cloud, textureMesh->cloud);
+            }
+            else
+            {
+                pcl::PointCloud<pcl::PointNormal>::Ptr cloud (new pcl::PointCloud<pcl::PointNormal>);
+                pcl::fromPCLPointCloud2(mesh->cloud, *cloud);
 
-				for(unsigned int i=0; i<mesh->polygons.size(); ++i)
-				{
-					pcl::Vertices & v = mesh->polygons[i];
-					UASSERT(v.vertices.size()>2);
-					Eigen::Vector3f v0(
-							cloud->at(v.vertices[1]).x - cloud->at(v.vertices[0]).x,
-							cloud->at(v.vertices[1]).y - cloud->at(v.vertices[0]).y,
-							cloud->at(v.vertices[1]).z - cloud->at(v.vertices[0]).z);
-					int last = v.vertices.size()-1;
-					Eigen::Vector3f v1(
-							cloud->at(v.vertices[last]).x - cloud->at(v.vertices[0]).x,
-							cloud->at(v.vertices[last]).y - cloud->at(v.vertices[0]).y,
-							cloud->at(v.vertices[last]).z - cloud->at(v.vertices[0]).z);
-					Eigen::Vector3f normal = v0.cross(v1);
-					normal.normalize();
-					// flat normal (per face)
-					for(unsigned int j=0; j<v.vertices.size(); ++j)
-					{
-						cloud->at(v.vertices[j]).normal_x = normal[0];
-						cloud->at(v.vertices[j]).normal_y = normal[1];
-						cloud->at(v.vertices[j]).normal_z = normal[2];
-					}
-				}
-				pcl::toPCLPointCloud2 (*cloud, textureMesh->cloud);
-			}
-		}
-	}
-	return textureMesh;
+                for(unsigned int i=0; i<mesh->polygons.size(); ++i)
+                {
+                    pcl::Vertices & v = mesh->polygons[i];
+                    UASSERT(v.vertices.size()>2);
+                    Eigen::Vector3f v0(
+                            cloud->at(v.vertices[1]).x - cloud->at(v.vertices[0]).x,
+                            cloud->at(v.vertices[1]).y - cloud->at(v.vertices[0]).y,
+                            cloud->at(v.vertices[1]).z - cloud->at(v.vertices[0]).z);
+                    int last = v.vertices.size()-1;
+                    Eigen::Vector3f v1(
+                            cloud->at(v.vertices[last]).x - cloud->at(v.vertices[0]).x,
+                            cloud->at(v.vertices[last]).y - cloud->at(v.vertices[0]).y,
+                            cloud->at(v.vertices[last]).z - cloud->at(v.vertices[0]).z);
+                    Eigen::Vector3f normal = v0.cross(v1);
+                    normal.normalize();
+                    // flat normal (per face)
+                    for(unsigned int j=0; j<v.vertices.size(); ++j)
+                    {
+                        cloud->at(v.vertices[j]).normal_x = normal[0];
+                        cloud->at(v.vertices[j]).normal_y = normal[1];
+                        cloud->at(v.vertices[j]).normal_z = normal[2];
+                    }
+                }
+                pcl::toPCLPointCloud2 (*cloud, textureMesh->cloud);
+            }
+        }
+    }
+    return textureMesh;
 }
 
 void cleanTextureMesh(
-		pcl::TextureMesh & textureMesh,
-		int minClusterSize)
+        pcl::TextureMesh & textureMesh,
+        int minClusterSize)
 {
-	UDEBUG("minClusterSize=%d", minClusterSize);
-	// Remove occluded polygons (polygons with no texture)
-	if(textureMesh.tex_coordinates.size())
-	{
-		// assume last texture is the occluded texture
-		textureMesh.tex_coordinates.pop_back();
-		textureMesh.tex_polygons.pop_back();
-		textureMesh.tex_materials.pop_back();
+    UDEBUG("minClusterSize=%d", minClusterSize);
+    // Remove occluded polygons (polygons with no texture)
+    if(textureMesh.tex_coordinates.size())
+    {
+        // assume last texture is the occluded texture
+        textureMesh.tex_coordinates.pop_back();
+        textureMesh.tex_polygons.pop_back();
+        textureMesh.tex_materials.pop_back();
 
-		if(minClusterSize!=0)
-		{
-			// concatenate all polygons
-			unsigned int totalSize = 0;
-			for(unsigned int t=0; t<textureMesh.tex_polygons.size(); ++t)
-			{
-				totalSize+=textureMesh.tex_polygons[t].size();
-			}
-			std::vector<pcl::Vertices> allPolygons(totalSize);
-			int oi=0;
-			for(unsigned int t=0; t<textureMesh.tex_polygons.size(); ++t)
-			{
-				for(unsigned int i=0; i<textureMesh.tex_polygons[t].size(); ++i)
-				{
-					allPolygons[oi++] =  textureMesh.tex_polygons[t][i];
-				}
-			}
+        if(minClusterSize!=0)
+        {
+            // concatenate all polygons
+            unsigned int totalSize = 0;
+            for(unsigned int t=0; t<textureMesh.tex_polygons.size(); ++t)
+            {
+                totalSize+=textureMesh.tex_polygons[t].size();
+            }
+            std::vector<pcl::Vertices> allPolygons(totalSize);
+            int oi=0;
+            for(unsigned int t=0; t<textureMesh.tex_polygons.size(); ++t)
+            {
+                for(unsigned int i=0; i<textureMesh.tex_polygons[t].size(); ++i)
+                {
+                    allPolygons[oi++] =  textureMesh.tex_polygons[t][i];
+                }
+            }
 
-			// filter polygons
-			std::vector<std::set<int> > neighbors;
-			std::vector<std::set<int> > vertexToPolygons;
-			util3d::createPolygonIndexes(allPolygons,
-					(int)textureMesh.cloud.data.size()/textureMesh.cloud.point_step,
-					neighbors,
-					vertexToPolygons);
+            // filter polygons
+            std::vector<std::set<int> > neighbors;
+            std::vector<std::set<int> > vertexToPolygons;
+            util3d::createPolygonIndexes(allPolygons,
+                    (int)textureMesh.cloud.data.size()/textureMesh.cloud.point_step,
+                    neighbors,
+                    vertexToPolygons);
 
-			std::list<std::list<int> > clusters = util3d::clusterPolygons(
-					neighbors,
-					minClusterSize<0?0:minClusterSize);
+            std::list<std::list<int> > clusters = util3d::clusterPolygons(
+                    neighbors,
+                    minClusterSize<0?0:minClusterSize);
 
-			std::set<int> validPolygons;
-			if(minClusterSize < 0)
-			{
-				// only keep the biggest cluster
-				std::list<std::list<int> >::iterator biggestClusterIndex = clusters.end();
-				unsigned int biggestClusterSize = 0;
-				for(std::list<std::list<int> >::iterator iter=clusters.begin(); iter!=clusters.end(); ++iter)
-				{
-					if(iter->size() > biggestClusterSize)
-					{
-						biggestClusterIndex = iter;
-						biggestClusterSize = iter->size();
-					}
-				}
-				if(biggestClusterIndex != clusters.end())
-				{
-					for(std::list<int>::iterator jter=biggestClusterIndex->begin(); jter!=biggestClusterIndex->end(); ++jter)
-					{
-						validPolygons.insert(*jter);
-					}
-				}
-			}
-			else
-			{
-				for(std::list<std::list<int> >::iterator iter=clusters.begin(); iter!=clusters.end(); ++iter)
-				{
-					for(std::list<int>::iterator jter=iter->begin(); jter!=iter->end(); ++jter)
-					{
-						validPolygons.insert(*jter);
-					}
-				}
-			}
+            std::set<int> validPolygons;
+            if(minClusterSize < 0)
+            {
+                // only keep the biggest cluster
+                std::list<std::list<int> >::iterator biggestClusterIndex = clusters.end();
+                unsigned int biggestClusterSize = 0;
+                for(std::list<std::list<int> >::iterator iter=clusters.begin(); iter!=clusters.end(); ++iter)
+                {
+                    if(iter->size() > biggestClusterSize)
+                    {
+                        biggestClusterIndex = iter;
+                        biggestClusterSize = iter->size();
+                    }
+                }
+                if(biggestClusterIndex != clusters.end())
+                {
+                    for(std::list<int>::iterator jter=biggestClusterIndex->begin(); jter!=biggestClusterIndex->end(); ++jter)
+                    {
+                        validPolygons.insert(*jter);
+                    }
+                }
+            }
+            else
+            {
+                for(std::list<std::list<int> >::iterator iter=clusters.begin(); iter!=clusters.end(); ++iter)
+                {
+                    for(std::list<int>::iterator jter=iter->begin(); jter!=iter->end(); ++jter)
+                    {
+                        validPolygons.insert(*jter);
+                    }
+                }
+            }
 
-			if(validPolygons.size() == 0)
-			{
-				UWARN("All %d polygons filtered after polygon cluster filtering. Cluster minimum size is %d.",totalSize, minClusterSize);
-			}
+            if(validPolygons.size() == 0)
+            {
+                UWARN("All %d polygons filtered after polygon cluster filtering. Cluster minimum size is %d.",totalSize, minClusterSize);
+            }
 
-			// for each texture
-			unsigned int allPolygonsIndex = 0;
-			for(unsigned int t=0; t<textureMesh.tex_polygons.size(); ++t)
-			{
-				std::vector<pcl::Vertices> filteredPolygons(textureMesh.tex_polygons[t].size());
+            // for each texture
+            unsigned int allPolygonsIndex = 0;
+            for(unsigned int t=0; t<textureMesh.tex_polygons.size(); ++t)
+            {
+                std::vector<pcl::Vertices> filteredPolygons(textureMesh.tex_polygons[t].size());
 #if PCL_VERSION_COMPARE(>=, 1, 8, 0)
-				std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > filteredCoordinates(textureMesh.tex_coordinates[t].size());
+                std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > filteredCoordinates(textureMesh.tex_coordinates[t].size());
 #else
-				std::vector<Eigen::Vector2f> filteredCoordinates(textureMesh.tex_coordinates[t].size());
+                std::vector<Eigen::Vector2f> filteredCoordinates(textureMesh.tex_coordinates[t].size());
 #endif
 
-				if(textureMesh.tex_polygons[t].size())
-				{
-					UASSERT_MSG(allPolygonsIndex < allPolygons.size(), uFormat("%d vs %d", (int)allPolygonsIndex, (int)allPolygons.size()).c_str());
+                if(textureMesh.tex_polygons[t].size())
+                {
+                    UASSERT_MSG(allPolygonsIndex < allPolygons.size(), uFormat("%d vs %d", (int)allPolygonsIndex, (int)allPolygons.size()).c_str());
 
-					// make index polygon to coordinate
-					std::vector<unsigned int> polygonToCoord(textureMesh.tex_polygons[t].size());
+                    // make index polygon to coordinate
+    				std::vector<unsigned int> polygonToCoord(textureMesh.tex_polygons[t].size());
 					unsigned int totalCoord = 0;
 					for(unsigned int i=0; i<textureMesh.tex_polygons[t].size(); ++i)
 					{

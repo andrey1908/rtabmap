@@ -18,22 +18,22 @@ namespace rtabmap {
 class PythonInterface
 {
 public:
-	PythonInterface();
-	virtual ~PythonInterface();
+    PythonInterface();
+    virtual ~PythonInterface();
 
 protected:
-	std::string getTraceback(); // should be called between lock() and unlock()
-	void lock();
-	void unlock();
+    std::string getTraceback(); // should be called between lock() and unlock()
+    void lock();
+    void unlock();
 
 private:
-	static UMutex mutex_;
-	static int refCount_;
+    static UMutex mutex_;
+    static int refCount_;
 
 protected:
-	static PyThreadState * mainThreadState_;
-	static unsigned long mainThreadID_;
-	PyThreadState * threadState_;
+    static PyThreadState * mainThreadState_;
+    static unsigned long mainThreadID_;
+    PyThreadState * threadState_;
 };
 
 }

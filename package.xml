@@ -39,6 +39,6 @@
   <run_depend>time_measurer</run_depend>
 
   <export>
-	 <build_type>cmake</build_type>
+     <build_type>cmake</build_type>
   </export>
 </package>

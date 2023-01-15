@@ -34,86 +34,86 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace rtabmap {
 
 StereoSGBM::StereoSGBM(const ParametersMap & parameters) :
-		StereoDense(parameters),
-		blockSize_(Parameters::defaultStereoSGBMBlockSize()),
-		minDisparity_(Parameters::defaultStereoSGBMMinDisparity()),
-		numDisparities_(Parameters::defaultStereoSGBMNumDisparities()),
-		preFilterCap_(Parameters::defaultStereoSGBMPreFilterCap()),
-		uniquenessRatio_(Parameters::defaultStereoSGBMUniquenessRatio()),
-		speckleWindowSize_(Parameters::defaultStereoSGBMSpeckleWindowSize()),
-		speckleRange_(Parameters::defaultStereoSGBMSpeckleRange()),
-		P1_(Parameters::defaultStereoSGBMP1()),
-		P2_(Parameters::defaultStereoSGBMP2()),
-		disp12MaxDiff_(Parameters::defaultStereoSGBMDisp12MaxDiff()),
-		mode_(Parameters::defaultStereoSGBMMode())
+        StereoDense(parameters),
+        blockSize_(Parameters::defaultStereoSGBMBlockSize()),
+        minDisparity_(Parameters::defaultStereoSGBMMinDisparity()),
+        numDisparities_(Parameters::defaultStereoSGBMNumDisparities()),
+        preFilterCap_(Parameters::defaultStereoSGBMPreFilterCap()),
+        uniquenessRatio_(Parameters::defaultStereoSGBMUniquenessRatio()),
+        speckleWindowSize_(Parameters::defaultStereoSGBMSpeckleWindowSize()),
+        speckleRange_(Parameters::defaultStereoSGBMSpeckleRange()),
+        P1_(Parameters::defaultStereoSGBMP1()),
+        P2_(Parameters::defaultStereoSGBMP2()),
+        disp12MaxDiff_(Parameters::defaultStereoSGBMDisp12MaxDiff()),
+        mode_(Parameters::defaultStereoSGBMMode())
 {
-	this->parseParameters(parameters);
+    this->parseParameters(parameters);
 }
 
 void StereoSGBM::parseParameters(const ParametersMap & parameters)
 {
-	Parameters::parse(parameters, Parameters::kStereoSGBMBlockSize(), blockSize_);
-	Parameters::parse(parameters, Parameters::kStereoSGBMMinDisparity(), minDisparity_);
-	Parameters::parse(parameters, Parameters::kStereoSGBMNumDisparities(), numDisparities_);
-	Parameters::parse(parameters, Parameters::kStereoSGBMPreFilterCap(), preFilterCap_);
-	Parameters::parse(parameters, Parameters::kStereoSGBMUniquenessRatio(), uniquenessRatio_);
-	Parameters::parse(parameters, Parameters::kStereoSGBMSpeckleWindowSize(), speckleWindowSize_);
-	Parameters::parse(parameters, Parameters::kStereoSGBMSpeckleRange(), speckleRange_);
-	Parameters::parse(parameters, Parameters::kStereoSGBMP1(), P1_);
-	Parameters::parse(parameters, Parameters::kStereoSGBMP2(), P2_);
-	Parameters::parse(parameters, Parameters::kStereoSGBMDisp12MaxDiff(), disp12MaxDiff_);
-	Parameters::parse(parameters, Parameters::kStereoSGBMMode(), mode_);
+    Parameters::parse(parameters, Parameters::kStereoSGBMBlockSize(), blockSize_);
+    Parameters::parse(parameters, Parameters::kStereoSGBMMinDisparity(), minDisparity_);
+    Parameters::parse(parameters, Parameters::kStereoSGBMNumDisparities(), numDisparities_);
+    Parameters::parse(parameters, Parameters::kStereoSGBMPreFilterCap(), preFilterCap_);
+    Parameters::parse(parameters, Parameters::kStereoSGBMUniquenessRatio(), uniquenessRatio_);
+    Parameters::parse(parameters, Parameters::kStereoSGBMSpeckleWindowSize(), speckleWindowSize_);
+    Parameters::parse(parameters, Parameters::kStereoSGBMSpeckleRange(), speckleRange_);
+    Parameters::parse(parameters, Parameters::kStereoSGBMP1(), P1_);
+    Parameters::parse(parameters, Parameters::kStereoSGBMP2(), P2_);
+    Parameters::parse(parameters, Parameters::kStereoSGBMDisp12MaxDiff(), disp12MaxDiff_);
+    Parameters::parse(parameters, Parameters::kStereoSGBMMode(), mode_);
 }
 
 cv::Mat StereoSGBM::computeDisparity(
-		const cv::Mat & leftImage,
-		const cv::Mat & rightImage) const
+        const cv::Mat & leftImage,
+        const cv::Mat & rightImage) const
 {
-	UASSERT(!leftImage.empty() && !rightImage.empty());
-	UASSERT(leftImage.cols == rightImage.cols && leftImage.rows == rightImage.rows);
-	UASSERT((leftImage.type() == CV_8UC1 || leftImage.type() == CV_8UC3) && rightImage.type() == CV_8UC1);
+    UASSERT(!leftImage.empty() && !rightImage.empty());
+    UASSERT(leftImage.cols == rightImage.cols && leftImage.rows == rightImage.rows);
+    UASSERT((leftImage.type() == CV_8UC1 || leftImage.type() == CV_8UC3) && rightImage.type() == CV_8UC1);
 
-	cv::Mat leftMono;
-	if(leftImage.channels() == 3)
-	{
-		cv::cvtColor(leftImage, leftMono, CV_BGR2GRAY);
-	}
-	else
-	{
-		leftMono = leftImage;
-	}
+    cv::Mat leftMono;
+    if(leftImage.channels() == 3)
+    {
+        cv::cvtColor(leftImage, leftMono, CV_BGR2GRAY);
+    }
+    else
+    {
+        leftMono = leftImage;
+    }
 
-	cv::Mat disparity;
+    cv::Mat disparity;
 #if CV_MAJOR_VERSION < 3
-	cv::StereoSGBM stereo(
-			minDisparity_,
-			numDisparities_,
-			blockSize_,
+    cv::StereoSGBM stereo(
+            minDisparity_,
+            numDisparities_,
+            blockSize_,
             P1_,
-			P2_,
-			disp12MaxDiff_,
-			preFilterCap_,
-			uniquenessRatio_,
-			speckleWindowSize_,
-			speckleRange_,
+            P2_,
+            disp12MaxDiff_,
+            preFilterCap_,
+            uniquenessRatio_,
+            speckleWindowSize_,
+            speckleRange_,
             mode_==1);
-	stereo(leftMono, rightImage, disparity);
+    stereo(leftMono, rightImage, disparity);
 #else
-	cv::Ptr<cv::StereoSGBM> stereo = cv::StereoSGBM::create(
-			minDisparity_,
-			numDisparities_,
-			blockSize_,
+    cv::Ptr<cv::StereoSGBM> stereo = cv::StereoSGBM::create(
+            minDisparity_,
+            numDisparities_,
+            blockSize_,
             P1_,
-			P2_,
-			disp12MaxDiff_,
-			preFilterCap_,
-			uniquenessRatio_,
-			speckleWindowSize_,
-			speckleRange_,
+            P2_,
+            disp12MaxDiff_,
+            preFilterCap_,
+            uniquenessRatio_,
+            speckleWindowSize_,
+            speckleRange_,
             mode_);
-	stereo->compute(leftMono, rightImage, disparity);
+    stereo->compute(leftMono, rightImage, disparity);
 #endif
-	return disparity;
+    return disparity;
 }
 
 } /* namespace rtabmap */

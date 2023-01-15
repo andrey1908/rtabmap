@@ -11,41 +11,41 @@ namespace rtabmap {
 class SemanticDilation
 {
 private:
-	struct PixelCoords {
-		bool inFrame(int h, int w) const {
-			return y >= 0 && x >= 0 && y < h && x < w;
-		}
+    struct PixelCoords {
+        bool inFrame(int h, int w) const {
+            return y >= 0 && x >= 0 && y < h && x < w;
+        }
 
-		int y;
-		int x;
-	};
+        int y;
+        int x;
+    };
 
 public:
-	SemanticDilation(const ParametersMap& parameters = ParametersMap());
-	SemanticDilation(int dilationSize);
-	void parseParameters(const ParametersMap& parameters);
-	void parseParameters(int dilationSize);
+    SemanticDilation(const ParametersMap& parameters = ParametersMap());
+    SemanticDilation(int dilationSize);
+    void parseParameters(const ParametersMap& parameters);
+    void parseParameters(int dilationSize);
 
-	template <typename T, size_t size>
-	cv::Mat dilate(const cv::Mat& image, const T (&backgroundColors)[size],
-		bool inverseBackground = false) const;
+    template <typename T, size_t size>
+    cv::Mat dilate(const cv::Mat& image, const T (&backgroundColors)[size],
+        bool inverseBackground = false) const;
 
-	inline int dilationSize() const
-	{
-		return dilationSize_;
-	}
-
-private:
-	void initialize();
-	void computeDilationPixels();
+    inline int dilationSize() const
+    {
+        return dilationSize_;
+    }
 
 private:
-	int dilationSize_;
-	int dilationSizeSqr_;
-	int dilationWidth_;
+    void initialize();
+    void computeDilationPixels();
 
-	std::vector<PixelCoords> dilationPixels_;
-	std::vector<int> dilationWidthToPixelsNum_;
+private:
+    int dilationSize_;
+    int dilationSizeSqr_;
+    int dilationWidth_;
+
+    std::vector<PixelCoords> dilationPixels_;
+    std::vector<int> dilationWidthToPixelsNum_;
 };
 
 }

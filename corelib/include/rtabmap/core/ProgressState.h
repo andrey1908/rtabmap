@@ -35,26 +35,26 @@ namespace rtabmap {
 class ProgressState
 {
 public:
-	ProgressState():canceled_(false){}
-	virtual bool callback(const std::string & msg) const
-	{
-		if(!msg.empty())
-			UDEBUG("msg=%s", msg.c_str());
-		return true;
-	}
-	virtual ~ProgressState(){}
+    ProgressState():canceled_(false){}
+    virtual bool callback(const std::string & msg) const
+    {
+        if(!msg.empty())
+            UDEBUG("msg=%s", msg.c_str());
+        return true;
+    }
+    virtual ~ProgressState(){}
 
-	void setCanceled(bool canceled)
-	{
-		canceled_ = canceled;
-	}
-	bool isCanceled() const
-	{
-		return canceled_;
-	}
+    void setCanceled(bool canceled)
+    {
+        canceled_ = canceled;
+    }
+    bool isCanceled() const
+    {
+        return canceled_;
+    }
 
 private:
-	bool canceled_;
+    bool canceled_;
 };
 
 }

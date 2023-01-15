@@ -49,362 +49,362 @@ namespace util3d
  * normals and voxel filtering is not used.
  */
 LaserScan RTABMAP_EXP commonFiltering(
-		const LaserScan & scan,
-		int downsamplingStep,
-		float rangeMin = 0.0f,
-		float rangeMax = 0.0f,
-		float voxelSize = 0.0f,
-		int normalK = 0,
-		float normalRadius = 0.0f,
-		float groundNormalsUp = 0.0f);
+        const LaserScan & scan,
+        int downsamplingStep,
+        float rangeMin = 0.0f,
+        float rangeMax = 0.0f,
+        float voxelSize = 0.0f,
+        int normalK = 0,
+        float normalRadius = 0.0f,
+        float groundNormalsUp = 0.0f);
 RTABMAP_DEPRECATED(LaserScan RTABMAP_EXP commonFiltering(
-		const LaserScan & scan,
-		int downsamplingStep,
-		float rangeMin,
-		float rangeMax,
-		float voxelSize,
-		int normalK,
-		float normalRadius,
-		bool forceGroundNormalsUp), "Use version with groundNormalsUp as float. For forceGroundNormalsUp=true, set groundNormalsUp=0.8, otherwise set groundNormalsUp=0.0.");
+        const LaserScan & scan,
+        int downsamplingStep,
+        float rangeMin,
+        float rangeMax,
+        float voxelSize,
+        int normalK,
+        float normalRadius,
+        bool forceGroundNormalsUp), "Use version with groundNormalsUp as float. For forceGroundNormalsUp=true, set groundNormalsUp=0.8, otherwise set groundNormalsUp=0.0.");
 
 LaserScan RTABMAP_EXP rangeFiltering(
-		const LaserScan & scan,
-		float rangeMin,
-		float rangeMax);
+        const LaserScan & scan,
+        float rangeMin,
+        float rangeMax);
 
 LaserScan RTABMAP_EXP downsample(
-		const LaserScan & cloud,
-		int step);
+        const LaserScan & cloud,
+        int step);
 pcl::PointCloud<pcl::PointXYZ>::Ptr RTABMAP_EXP downsample(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
-		int step);
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
+        int step);
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr RTABMAP_EXP downsample(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
-		int step);
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
+        int step);
 pcl::PointCloud<pcl::PointXYZI>::Ptr RTABMAP_EXP downsample(
-		const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
-		int step);
+        const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
+        int step);
 pcl::PointCloud<pcl::PointNormal>::Ptr RTABMAP_EXP downsample(
-		const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
-		int step);
+        const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
+        int step);
 pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr RTABMAP_EXP downsample(
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
-		int step);
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
+        int step);
 pcl::PointCloud<pcl::PointXYZINormal>::Ptr RTABMAP_EXP downsample(
-		const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
-		int step);
+        const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
+        int step);
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr RTABMAP_EXP voxelize(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float voxelSize);
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float voxelSize);
 pcl::PointCloud<pcl::PointNormal>::Ptr RTABMAP_EXP voxelize(
-		const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float voxelSize);
+        const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float voxelSize);
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr RTABMAP_EXP voxelize(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float voxelSize);
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float voxelSize);
 pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr RTABMAP_EXP voxelize(
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float voxelSize);
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float voxelSize);
 pcl::PointCloud<pcl::PointXYZI>::Ptr RTABMAP_EXP voxelize(
-		const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float voxelSize);
+        const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float voxelSize);
 pcl::PointCloud<pcl::PointXYZINormal>::Ptr RTABMAP_EXP voxelize(
-		const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float voxelSize);
+        const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float voxelSize);
 pcl::PointCloud<pcl::PointXYZ>::Ptr RTABMAP_EXP voxelize(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
-		float voxelSize);
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
+        float voxelSize);
 pcl::PointCloud<pcl::PointNormal>::Ptr RTABMAP_EXP voxelize(
-		const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
-		float voxelSize);
+        const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
+        float voxelSize);
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr RTABMAP_EXP voxelize(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
-		float voxelSize);
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
+        float voxelSize);
 pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr RTABMAP_EXP voxelize(
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
-		float voxelSize);
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
+        float voxelSize);
 pcl::PointCloud<pcl::PointXYZI>::Ptr RTABMAP_EXP voxelize(
-		const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
-		float voxelSize);
+        const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
+        float voxelSize);
 pcl::PointCloud<pcl::PointXYZINormal>::Ptr RTABMAP_EXP voxelize(
-		const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
-		float voxelSize);
+        const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
+        float voxelSize);
 
 inline pcl::PointCloud<pcl::PointXYZ>::Ptr uniformSampling(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
-		float voxelSize)
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
+        float voxelSize)
 {
-	return voxelize(cloud, voxelSize);
+    return voxelize(cloud, voxelSize);
 }
 inline pcl::PointCloud<pcl::PointXYZRGB>::Ptr uniformSampling(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
-		float voxelSize)
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
+        float voxelSize)
 {
-	return voxelize(cloud, voxelSize);
+    return voxelize(cloud, voxelSize);
 }
 inline pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr uniformSampling(
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
-		float voxelSize)
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
+        float voxelSize)
 {
-	return voxelize(cloud, voxelSize);
+    return voxelize(cloud, voxelSize);
 }
 
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr RTABMAP_EXP randomSampling(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
-		int samples);
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
+        int samples);
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr RTABMAP_EXP randomSampling(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
-		int samples);
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
+        int samples);
 
 
 pcl::IndicesPtr RTABMAP_EXP passThrough(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		const std::string & axis,
-		float min,
-		float max,
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        const std::string & axis,
+        float min,
+        float max,
+        bool negative = false);
 pcl::IndicesPtr RTABMAP_EXP passThrough(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		const std::string & axis,
-		float min,
-		float max,
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        const std::string & axis,
+        float min,
+        float max,
+        bool negative = false);
 pcl::IndicesPtr RTABMAP_EXP passThrough(
-		const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		const std::string & axis,
-		float min,
-		float max,
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        const std::string & axis,
+        float min,
+        float max,
+        bool negative = false);
 pcl::IndicesPtr RTABMAP_EXP passThrough(
-		const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		const std::string & axis,
-		float min,
-		float max,
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        const std::string & axis,
+        float min,
+        float max,
+        bool negative = false);
 pcl::IndicesPtr RTABMAP_EXP passThrough(
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		const std::string & axis,
-		float min,
-		float max,
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        const std::string & axis,
+        float min,
+        float max,
+        bool negative = false);
 pcl::IndicesPtr RTABMAP_EXP passThrough(
-		const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		const std::string & axis,
-		float min,
-		float max,
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        const std::string & axis,
+        float min,
+        float max,
+        bool negative = false);
 pcl::PointCloud<pcl::PointXYZ>::Ptr RTABMAP_EXP passThrough(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
-		const std::string & axis,
-		float min,
-		float max,
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
+        const std::string & axis,
+        float min,
+        float max,
+        bool negative = false);
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr RTABMAP_EXP passThrough(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
-		const std::string & axis,
-		float min,
-		float max,
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
+        const std::string & axis,
+        float min,
+        float max,
+        bool negative = false);
 pcl::PointCloud<pcl::PointXYZI>::Ptr RTABMAP_EXP passThrough(
-		const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
-		const std::string & axis,
-		float min,
-		float max,
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
+        const std::string & axis,
+        float min,
+        float max,
+        bool negative = false);
 pcl::PointCloud<pcl::PointNormal>::Ptr RTABMAP_EXP passThrough(
-		const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
-		const std::string & axis,
-		float min,
-		float max,
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
+        const std::string & axis,
+        float min,
+        float max,
+        bool negative = false);
 pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr RTABMAP_EXP passThrough(
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
-		const std::string & axis,
-		float min,
-		float max,
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
+        const std::string & axis,
+        float min,
+        float max,
+        bool negative = false);
 pcl::PointCloud<pcl::PointXYZINormal>::Ptr RTABMAP_EXP passThrough(
-		const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
-		const std::string & axis,
-		float min,
-		float max,
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
+        const std::string & axis,
+        float min,
+        float max,
+        bool negative = false);
 
 pcl::IndicesPtr RTABMAP_EXP cropBox(
-		const pcl::PCLPointCloud2::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		const Eigen::Vector4f & min,
-		const Eigen::Vector4f & max,
-		const Transform & transform = Transform::getIdentity(),
-		bool negative = false);
+        const pcl::PCLPointCloud2::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        const Eigen::Vector4f & min,
+        const Eigen::Vector4f & max,
+        const Transform & transform = Transform::getIdentity(),
+        bool negative = false);
 pcl::IndicesPtr RTABMAP_EXP cropBox(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		const Eigen::Vector4f & min,
-		const Eigen::Vector4f & max,
-		const Transform & transform = Transform::getIdentity(),
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        const Eigen::Vector4f & min,
+        const Eigen::Vector4f & max,
+        const Transform & transform = Transform::getIdentity(),
+        bool negative = false);
 pcl::IndicesPtr RTABMAP_EXP cropBox(
-		const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		const Eigen::Vector4f & min,
-		const Eigen::Vector4f & max,
-		const Transform & transform = Transform::getIdentity(),
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        const Eigen::Vector4f & min,
+        const Eigen::Vector4f & max,
+        const Transform & transform = Transform::getIdentity(),
+        bool negative = false);
 pcl::IndicesPtr RTABMAP_EXP cropBox(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		const Eigen::Vector4f & min,
-		const Eigen::Vector4f & max,
-		const Transform & transform = Transform::getIdentity(),
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        const Eigen::Vector4f & min,
+        const Eigen::Vector4f & max,
+        const Transform & transform = Transform::getIdentity(),
+        bool negative = false);
 pcl::IndicesPtr RTABMAP_EXP cropBox(
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		const Eigen::Vector4f & min,
-		const Eigen::Vector4f & max,
-		const Transform & transform = Transform::getIdentity(),
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        const Eigen::Vector4f & min,
+        const Eigen::Vector4f & max,
+        const Transform & transform = Transform::getIdentity(),
+        bool negative = false);
 pcl::IndicesPtr RTABMAP_EXP cropBox(
-		const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		const Eigen::Vector4f & min,
-		const Eigen::Vector4f & max,
-		const Transform & transform = Transform::getIdentity(),
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        const Eigen::Vector4f & min,
+        const Eigen::Vector4f & max,
+        const Transform & transform = Transform::getIdentity(),
+        bool negative = false);
 pcl::IndicesPtr RTABMAP_EXP cropBox(
-		const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		const Eigen::Vector4f & min,
-		const Eigen::Vector4f & max,
-		const Transform & transform = Transform::getIdentity(),
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        const Eigen::Vector4f & min,
+        const Eigen::Vector4f & max,
+        const Transform & transform = Transform::getIdentity(),
+        bool negative = false);
 pcl::PointCloud<pcl::PointXYZ>::Ptr RTABMAP_EXP cropBox(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
-		const Eigen::Vector4f & min,
-		const Eigen::Vector4f & max,
-		const Transform & transform = Transform::getIdentity(),
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
+        const Eigen::Vector4f & min,
+        const Eigen::Vector4f & max,
+        const Transform & transform = Transform::getIdentity(),
+        bool negative = false);
 pcl::PointCloud<pcl::PointNormal>::Ptr RTABMAP_EXP cropBox(
-		const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
-		const Eigen::Vector4f & min,
-		const Eigen::Vector4f & max,
-		const Transform & transform = Transform::getIdentity(),
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
+        const Eigen::Vector4f & min,
+        const Eigen::Vector4f & max,
+        const Transform & transform = Transform::getIdentity(),
+        bool negative = false);
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr RTABMAP_EXP cropBox(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
-		const Eigen::Vector4f & min,
-		const Eigen::Vector4f & max,
-		const Transform & transform = Transform::getIdentity(),
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
+        const Eigen::Vector4f & min,
+        const Eigen::Vector4f & max,
+        const Transform & transform = Transform::getIdentity(),
+        bool negative = false);
 pcl::PointCloud<pcl::PointXYZI>::Ptr RTABMAP_EXP cropBox(
-		const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
-		const Eigen::Vector4f & min,
-		const Eigen::Vector4f & max,
-		const Transform & transform = Transform::getIdentity(),
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
+        const Eigen::Vector4f & min,
+        const Eigen::Vector4f & max,
+        const Transform & transform = Transform::getIdentity(),
+        bool negative = false);
 pcl::PointCloud<pcl::PointXYZINormal>::Ptr RTABMAP_EXP cropBox(
-		const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
-		const Eigen::Vector4f & min,
-		const Eigen::Vector4f & max,
-		const Transform & transform = Transform::getIdentity(),
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
+        const Eigen::Vector4f & min,
+        const Eigen::Vector4f & max,
+        const Transform & transform = Transform::getIdentity(),
+        bool negative = false);
 pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr RTABMAP_EXP cropBox(
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
-		const Eigen::Vector4f & min,
-		const Eigen::Vector4f & max,
-		const Transform & transform = Transform::getIdentity(),
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
+        const Eigen::Vector4f & min,
+        const Eigen::Vector4f & max,
+        const Transform & transform = Transform::getIdentity(),
+        bool negative = false);
 
 //Note: This assumes a coordinate system where X is forward, * Y is up, and Z is right.
 pcl::IndicesPtr RTABMAP_EXP frustumFiltering(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		const Transform & cameraPose,
-		float horizontalFOV, // in degrees, xfov = atan((image_width/2)/fx)*2
-		float verticalFOV,   // in degrees, yfov = atan((image_height/2)/fy)*2
-		float nearClipPlaneDistance,
-		float farClipPlaneDistance,
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        const Transform & cameraPose,
+        float horizontalFOV, // in degrees, xfov = atan((image_width/2)/fx)*2
+        float verticalFOV,   // in degrees, yfov = atan((image_height/2)/fy)*2
+        float nearClipPlaneDistance,
+        float farClipPlaneDistance,
+        bool negative = false);
 //Note: This assumes a coordinate system where X is forward, * Y is up, and Z is right.
 pcl::PointCloud<pcl::PointXYZ>::Ptr RTABMAP_EXP frustumFiltering(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
-		const Transform & cameraPose,
-		float horizontalFOV, // in degrees, xfov = atan((image_width/2)/fx)*2
-		float verticalFOV,   // in degrees, yfov = atan((image_height/2)/fy)*2
-		float nearClipPlaneDistance,
-		float farClipPlaneDistance,
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
+        const Transform & cameraPose,
+        float horizontalFOV, // in degrees, xfov = atan((image_width/2)/fx)*2
+        float verticalFOV,   // in degrees, yfov = atan((image_height/2)/fy)*2
+        float nearClipPlaneDistance,
+        float farClipPlaneDistance,
+        bool negative = false);
 //Note: This assumes a coordinate system where X is forward, * Y is up, and Z is right.
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr RTABMAP_EXP frustumFiltering(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
-		const Transform & cameraPose,
-		float horizontalFOV, // in degrees, xfov = atan((image_width/2)/fx)*2
-		float verticalFOV,   // in degrees, yfov = atan((image_height/2)/fy)*2
-		float nearClipPlaneDistance,
-		float farClipPlaneDistance,
-		bool negative = false);
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
+        const Transform & cameraPose,
+        float horizontalFOV, // in degrees, xfov = atan((image_width/2)/fx)*2
+        float verticalFOV,   // in degrees, yfov = atan((image_height/2)/fy)*2
+        float nearClipPlaneDistance,
+        float farClipPlaneDistance,
+        bool negative = false);
 
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr RTABMAP_EXP removeNaNFromPointCloud(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud);
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud);
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr RTABMAP_EXP removeNaNFromPointCloud(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud);
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud);
 pcl::PointCloud<pcl::PointXYZI>::Ptr RTABMAP_EXP removeNaNFromPointCloud(
-		const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud);
+        const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud);
 pcl::PCLPointCloud2::Ptr RTABMAP_EXP removeNaNFromPointCloud(
-		const pcl::PCLPointCloud2::Ptr & cloud);
+        const pcl::PCLPointCloud2::Ptr & cloud);
 
 
 pcl::PointCloud<pcl::PointNormal>::Ptr RTABMAP_EXP removeNaNNormalsFromPointCloud(
-		const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud);
+        const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud);
 pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr RTABMAP_EXP removeNaNNormalsFromPointCloud(
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud);
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud);
 pcl::PointCloud<pcl::PointXYZINormal>::Ptr RTABMAP_EXP removeNaNNormalsFromPointCloud(
-		const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud);
+        const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud);
 
 /**
  * For convenience.
  */
 
 pcl::IndicesPtr RTABMAP_EXP radiusFiltering(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
-		float radiusSearch,
-		int minNeighborsInRadius);
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
+        float radiusSearch,
+        int minNeighborsInRadius);
 pcl::IndicesPtr RTABMAP_EXP radiusFiltering(
-		const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
-		float radiusSearch,
-		int minNeighborsInRadius);
+        const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
+        float radiusSearch,
+        int minNeighborsInRadius);
 pcl::IndicesPtr RTABMAP_EXP radiusFiltering(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
-		float radiusSearch,
-		int minNeighborsInRadius);
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
+        float radiusSearch,
+        int minNeighborsInRadius);
 pcl::IndicesPtr RTABMAP_EXP radiusFiltering(
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
-		float radiusSearch,
-		int minNeighborsInRadius);
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
+        float radiusSearch,
+        int minNeighborsInRadius);
 pcl::IndicesPtr RTABMAP_EXP radiusFiltering(
-		const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
-		float radiusSearch,
-		int minNeighborsInRadius);
+        const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
+        float radiusSearch,
+        int minNeighborsInRadius);
 pcl::IndicesPtr RTABMAP_EXP radiusFiltering(
-		const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
-		float radiusSearch,
-		int minNeighborsInRadius);
+        const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
+        float radiusSearch,
+        int minNeighborsInRadius);
 
 /**
  * @brief Wrapper of the pcl::RadiusOutlierRemoval class.
@@ -419,44 +419,44 @@ pcl::IndicesPtr RTABMAP_EXP radiusFiltering(
  */
 
 pcl::IndicesPtr RTABMAP_EXP radiusFiltering(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float radiusSearch,
-		int minNeighborsInRadius);
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float radiusSearch,
+        int minNeighborsInRadius);
 pcl::IndicesPtr RTABMAP_EXP radiusFiltering(
-		const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float radiusSearch,
-		int minNeighborsInRadius);
+        const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float radiusSearch,
+        int minNeighborsInRadius);
 pcl::IndicesPtr RTABMAP_EXP radiusFiltering(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float radiusSearch,
-		int minNeighborsInRadius);
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float radiusSearch,
+        int minNeighborsInRadius);
 pcl::IndicesPtr RTABMAP_EXP radiusFiltering(
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float radiusSearch,
-		int minNeighborsInRadius);
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float radiusSearch,
+        int minNeighborsInRadius);
 pcl::IndicesPtr RTABMAP_EXP radiusFiltering(
-		const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float radiusSearch,
-		int minNeighborsInRadius);
+        const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float radiusSearch,
+        int minNeighborsInRadius);
 pcl::IndicesPtr RTABMAP_EXP radiusFiltering(
-		const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float radiusSearch,
-		int minNeighborsInRadius);
+        const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float radiusSearch,
+        int minNeighborsInRadius);
 
 /**
  * For convenience.
  */
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr RTABMAP_EXP subtractFiltering(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & substractCloud,
-		float radiusSearch,
-		int minNeighborsInRadius = 1);
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & substractCloud,
+        float radiusSearch,
+        int minNeighborsInRadius = 1);
 
 /**
  * Subtract a cloud from another one using radius filtering.
@@ -468,22 +468,22 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr RTABMAP_EXP subtractFiltering(
  * @return the indices of the points satisfying the parameters.
  */
 pcl::IndicesPtr RTABMAP_EXP subtractFiltering(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & substractCloud,
-		const pcl::IndicesPtr & substractIndices,
-		float radiusSearch,
-		int minNeighborsInRadius = 1);
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & substractCloud,
+        const pcl::IndicesPtr & substractIndices,
+        float radiusSearch,
+        int minNeighborsInRadius = 1);
 
 /**
  * For convenience.
  */
 pcl::PointCloud<pcl::PointNormal>::Ptr RTABMAP_EXP subtractFiltering(
-		const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
-		const pcl::PointCloud<pcl::PointNormal>::Ptr & substractCloud,
-		float radiusSearch,
-		float maxAngle = M_PI/4.0f,
-		int minNeighborsInRadius = 1);
+        const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
+        const pcl::PointCloud<pcl::PointNormal>::Ptr & substractCloud,
+        float radiusSearch,
+        float maxAngle = M_PI/4.0f,
+        int minNeighborsInRadius = 1);
 
 /**
  * Subtract a cloud from another one using radius filtering.
@@ -495,29 +495,29 @@ pcl::PointCloud<pcl::PointNormal>::Ptr RTABMAP_EXP subtractFiltering(
  * @return the indices of the points satisfying the parameters.
  */
 pcl::IndicesPtr RTABMAP_EXP subtractFiltering(
-		const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		const pcl::PointCloud<pcl::PointNormal>::Ptr & substractCloud,
-		const pcl::IndicesPtr & substractIndices,
-		float radiusSearch,
-		float maxAngle = M_PI/4.0f,
-		int minNeighborsInRadius = 1);
+        const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        const pcl::PointCloud<pcl::PointNormal>::Ptr & substractCloud,
+        const pcl::IndicesPtr & substractIndices,
+        float radiusSearch,
+        float maxAngle = M_PI/4.0f,
+        int minNeighborsInRadius = 1);
 
 /**
  * For convenience.
  */
 pcl::PointCloud<pcl::PointXYZINormal>::Ptr RTABMAP_EXP subtractFiltering(
-		const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
-		const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & substractCloud,
-		float radiusSearch,
-		float maxAngle = M_PI/4.0f,
-		int minNeighborsInRadius = 1);
+        const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
+        const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & substractCloud,
+        float radiusSearch,
+        float maxAngle = M_PI/4.0f,
+        int minNeighborsInRadius = 1);
 pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr RTABMAP_EXP subtractFiltering(
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & substractCloud,
-		float radiusSearch,
-		float maxAngle = M_PI/4.0f,
-		int minNeighborsInRadius = 1);
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & substractCloud,
+        float radiusSearch,
+        float maxAngle = M_PI/4.0f,
+        int minNeighborsInRadius = 1);
 
 /**
  * Subtract a cloud from another one using radius filtering.
@@ -529,21 +529,21 @@ pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr RTABMAP_EXP subtractFiltering(
  * @return the indices of the points satisfying the parameters.
  */
 pcl::IndicesPtr RTABMAP_EXP subtractFiltering(
-		const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & substractCloud,
-		const pcl::IndicesPtr & substractIndices,
-		float radiusSearch,
-		float maxAngle = M_PI/4.0f,
-		int minNeighborsInRadius = 1);
+        const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & substractCloud,
+        const pcl::IndicesPtr & substractIndices,
+        float radiusSearch,
+        float maxAngle = M_PI/4.0f,
+        int minNeighborsInRadius = 1);
 pcl::IndicesPtr RTABMAP_EXP subtractFiltering(
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & substractCloud,
-		const pcl::IndicesPtr & substractIndices,
-		float radiusSearch,
-		float maxAngle = M_PI/4.0f,
-		int minNeighborsInRadius = 1);
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & substractCloud,
+        const pcl::IndicesPtr & substractIndices,
+        float radiusSearch,
+        float maxAngle = M_PI/4.0f,
+        int minNeighborsInRadius = 1);
 
 /**
  * Subtract a cloud from another one using radius filtering.
@@ -555,13 +555,13 @@ pcl::IndicesPtr RTABMAP_EXP subtractFiltering(
  * @return the indices of the points satisfying the parameters.
  */
 pcl::IndicesPtr RTABMAP_EXP subtractAdaptiveFiltering(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & substractCloud,
-		const pcl::IndicesPtr & substractIndices,
-		float radiusSearchRatio = 0.01,
-		int minNeighborsInRadius = 1,
-		const Eigen::Vector3f & viewpoint = Eigen::Vector3f(0,0,0));
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & substractCloud,
+        const pcl::IndicesPtr & substractIndices,
+        float radiusSearchRatio = 0.01,
+        int minNeighborsInRadius = 1,
+        const Eigen::Vector3f & viewpoint = Eigen::Vector3f(0,0,0));
 
 /**
  * Subtract a cloud from another one using radius filtering.
@@ -573,14 +573,14 @@ pcl::IndicesPtr RTABMAP_EXP subtractAdaptiveFiltering(
  * @return the indices of the points satisfying the parameters.
  */
 pcl::IndicesPtr RTABMAP_EXP subtractAdaptiveFiltering(
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & substractCloud,
-		const pcl::IndicesPtr & substractIndices,
-		float radiusSearchRatio = 0.01,
-		float maxAngle = M_PI/4.0f,
-		int minNeighborsInRadius = 1,
-		const Eigen::Vector3f & viewpoint = Eigen::Vector3f(0,0,0));
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & substractCloud,
+        const pcl::IndicesPtr & substractIndices,
+        float radiusSearchRatio = 0.01,
+        float maxAngle = M_PI/4.0f,
+        int minNeighborsInRadius = 1,
+        const Eigen::Vector3f & viewpoint = Eigen::Vector3f(0,0,0));
 
 
 /**
@@ -588,17 +588,17 @@ pcl::IndicesPtr RTABMAP_EXP subtractAdaptiveFiltering(
  */
 
 pcl::IndicesPtr RTABMAP_EXP normalFiltering(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
-		float angleMax,
-		const Eigen::Vector4f & normal,
-		int normalKSearch,
-		const Eigen::Vector4f & viewpoint);
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
+        float angleMax,
+        const Eigen::Vector4f & normal,
+        int normalKSearch,
+        const Eigen::Vector4f & viewpoint);
 pcl::IndicesPtr RTABMAP_EXP normalFiltering(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
-		float angleMax,
-		const Eigen::Vector4f & normal,
-		int normalKSearch,
-		const Eigen::Vector4f & viewpoint);
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
+        float angleMax,
+        const Eigen::Vector4f & normal,
+        int normalKSearch,
+        const Eigen::Vector4f & viewpoint);
 
 /**
  * @brief Given a normal and a maximum angle error, keep all points of the cloud
@@ -617,63 +617,63 @@ pcl::IndicesPtr RTABMAP_EXP normalFiltering(
  * @return the indices of the points which respect the normal constraint.
  */
 pcl::IndicesPtr RTABMAP_EXP normalFiltering(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float angleMax,
-		const Eigen::Vector4f & normal,
-		int normalKSearch,
-		const Eigen::Vector4f & viewpoint);
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float angleMax,
+        const Eigen::Vector4f & normal,
+        int normalKSearch,
+        const Eigen::Vector4f & viewpoint);
 pcl::IndicesPtr RTABMAP_EXP normalFiltering(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float angleMax,
-		const Eigen::Vector4f & normal,
-		int normalKSearch,
-		const Eigen::Vector4f & viewpoint);
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float angleMax,
+        const Eigen::Vector4f & normal,
+        int normalKSearch,
+        const Eigen::Vector4f & viewpoint);
 pcl::IndicesPtr RTABMAP_EXP normalFiltering(
-		const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float angleMax,
-		const Eigen::Vector4f & normal,
-		int normalKSearch,
-		const Eigen::Vector4f & viewpoint);
+        const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float angleMax,
+        const Eigen::Vector4f & normal,
+        int normalKSearch,
+        const Eigen::Vector4f & viewpoint);
 pcl::IndicesPtr RTABMAP_EXP normalFiltering(
-		const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float angleMax,
-		const Eigen::Vector4f & normal,
-		int normalKSearch,
-		const Eigen::Vector4f & viewpoint);
+        const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float angleMax,
+        const Eigen::Vector4f & normal,
+        int normalKSearch,
+        const Eigen::Vector4f & viewpoint);
 pcl::IndicesPtr RTABMAP_EXP normalFiltering(
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float angleMax,
-		const Eigen::Vector4f & normal,
-		int normalKSearch,
-		const Eigen::Vector4f & viewpoint);
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float angleMax,
+        const Eigen::Vector4f & normal,
+        int normalKSearch,
+        const Eigen::Vector4f & viewpoint);
 pcl::IndicesPtr RTABMAP_EXP normalFiltering(
-		const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float angleMax,
-		const Eigen::Vector4f & normal,
-		int normalKSearch,
-		const Eigen::Vector4f & viewpoint);
+        const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float angleMax,
+        const Eigen::Vector4f & normal,
+        int normalKSearch,
+        const Eigen::Vector4f & viewpoint);
 
 /**
  * For convenience.
  */
 std::vector<pcl::IndicesPtr> RTABMAP_EXP extractClusters(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
-		float clusterTolerance,
-		int minClusterSize,
-		int maxClusterSize = std::numeric_limits<int>::max(),
-		int * biggestClusterIndex = 0);
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
+        float clusterTolerance,
+        int minClusterSize,
+        int maxClusterSize = std::numeric_limits<int>::max(),
+        int * biggestClusterIndex = 0);
 std::vector<pcl::IndicesPtr> RTABMAP_EXP extractClusters(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
-		float clusterTolerance,
-		int minClusterSize,
-		int maxClusterSize = std::numeric_limits<int>::max(),
-		int * biggestClusterIndex = 0);
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
+        float clusterTolerance,
+        int minClusterSize,
+        int maxClusterSize = std::numeric_limits<int>::max(),
+        int * biggestClusterIndex = 0);
 
 /**
  * @brief Wrapper of the pcl::EuclideanClusterExtraction class.
@@ -688,116 +688,116 @@ std::vector<pcl::IndicesPtr> RTABMAP_EXP extractClusters(
  * @return the indices of each cluster found.
  */
 std::vector<pcl::IndicesPtr> RTABMAP_EXP extractClusters(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float clusterTolerance,
-		int minClusterSize,
-		int maxClusterSize = std::numeric_limits<int>::max(),
-		int * biggestClusterIndex = 0);
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float clusterTolerance,
+        int minClusterSize,
+        int maxClusterSize = std::numeric_limits<int>::max(),
+        int * biggestClusterIndex = 0);
 std::vector<pcl::IndicesPtr> RTABMAP_EXP extractClusters(
-		const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float clusterTolerance,
-		int minClusterSize,
-		int maxClusterSize = std::numeric_limits<int>::max(),
-		int * biggestClusterIndex = 0);
+        const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float clusterTolerance,
+        int minClusterSize,
+        int maxClusterSize = std::numeric_limits<int>::max(),
+        int * biggestClusterIndex = 0);
 std::vector<pcl::IndicesPtr> RTABMAP_EXP extractClusters(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float clusterTolerance,
-		int minClusterSize,
-		int maxClusterSize = std::numeric_limits<int>::max(),
-		int * biggestClusterIndex = 0);
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float clusterTolerance,
+        int minClusterSize,
+        int maxClusterSize = std::numeric_limits<int>::max(),
+        int * biggestClusterIndex = 0);
 std::vector<pcl::IndicesPtr> RTABMAP_EXP extractClusters(
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float clusterTolerance,
-		int minClusterSize,
-		int maxClusterSize = std::numeric_limits<int>::max(),
-		int * biggestClusterIndex = 0);
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float clusterTolerance,
+        int minClusterSize,
+        int maxClusterSize = std::numeric_limits<int>::max(),
+        int * biggestClusterIndex = 0);
 std::vector<pcl::IndicesPtr> RTABMAP_EXP extractClusters(
-		const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float clusterTolerance,
-		int minClusterSize,
-		int maxClusterSize = std::numeric_limits<int>::max(),
-		int * biggestClusterIndex = 0);
+        const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float clusterTolerance,
+        int minClusterSize,
+        int maxClusterSize = std::numeric_limits<int>::max(),
+        int * biggestClusterIndex = 0);
 std::vector<pcl::IndicesPtr> RTABMAP_EXP extractClusters(
-		const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float clusterTolerance,
-		int minClusterSize,
-		int maxClusterSize = std::numeric_limits<int>::max(),
-		int * biggestClusterIndex = 0);
+        const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float clusterTolerance,
+        int minClusterSize,
+        int maxClusterSize = std::numeric_limits<int>::max(),
+        int * biggestClusterIndex = 0);
 
 pcl::IndicesPtr RTABMAP_EXP extractIndices(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		bool negative);
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        bool negative);
 pcl::IndicesPtr RTABMAP_EXP extractIndices(
-		const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		bool negative);
+        const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        bool negative);
 pcl::IndicesPtr RTABMAP_EXP extractIndices(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		bool negative);
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        bool negative);
 pcl::IndicesPtr RTABMAP_EXP extractIndices(
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		bool negative);
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        bool negative);
 pcl::IndicesPtr RTABMAP_EXP extractIndices(
-		const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		bool negative);
+        const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        bool negative);
 pcl::IndicesPtr RTABMAP_EXP extractIndices(
-		const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		bool negative);
+        const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        bool negative);
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr RTABMAP_EXP extractIndices(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		bool negative,
-		bool keepOrganized);
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        bool negative,
+        bool keepOrganized);
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr RTABMAP_EXP extractIndices(
-		const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		bool negative,
-		bool keepOrganized);
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        bool negative,
+        bool keepOrganized);
 // PCL default lacks of pcl::PointNormal type support
 //pcl::PointCloud<pcl::PointNormal>::Ptr RTABMAP_EXP extractIndices(
-//		const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
-//		const pcl::IndicesPtr & indices,
-//		bool negative,
-//		bool keepOrganized);
+//        const pcl::PointCloud<pcl::PointNormal>::Ptr & cloud,
+//        const pcl::IndicesPtr & indices,
+//        bool negative,
+//        bool keepOrganized);
 pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr RTABMAP_EXP extractIndices(
-		const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		bool negative,
-		bool keepOrganized);
+        const pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        bool negative,
+        bool keepOrganized);
 pcl::PointCloud<pcl::PointXYZI>::Ptr RTABMAP_EXP extractIndices(
-		const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		bool negative,
-		bool keepOrganized);
+        const pcl::PointCloud<pcl::PointXYZI>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        bool negative,
+        bool keepOrganized);
 pcl::PointCloud<pcl::PointXYZINormal>::Ptr RTABMAP_EXP extractIndices(
-		const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		bool negative,
-		bool keepOrganized);
+        const pcl::PointCloud<pcl::PointXYZINormal>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        bool negative,
+        bool keepOrganized);
 
 pcl::IndicesPtr extractPlane(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
-		float distanceThreshold,
-		int maxIterations = 100,
-		pcl::ModelCoefficients * coefficientsOut = 0);
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
+        float distanceThreshold,
+        int maxIterations = 100,
+        pcl::ModelCoefficients * coefficientsOut = 0);
 pcl::IndicesPtr extractPlane(
-		const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
-		const pcl::IndicesPtr & indices,
-		float distanceThreshold,
-		int maxIterations = 100,
-		pcl::ModelCoefficients * coefficientsOut = 0);
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud,
+        const pcl::IndicesPtr & indices,
+        float distanceThreshold,
+        int maxIterations = 100,
+        pcl::ModelCoefficients * coefficientsOut = 0);
 
 } // namespace util3d
 } // namespace rtabmap

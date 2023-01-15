@@ -52,123 +52,123 @@ namespace rtabmap {
 
 std::vector<double> cumSum(const std::vector<double> & v)
 {
-	std::vector<double> cum(v.size());
-	double sum = 0;
-	for(unsigned int i=0; i<v.size(); ++i)
-	{
-		cum[i] = v[i] + sum;
-		sum += v[i];
-	}
-	return cum;
+    std::vector<double> cum(v.size());
+    double sum = 0;
+    for(unsigned int i=0; i<v.size(); ++i)
+    {
+        cum[i] = v[i] + sum;
+        sum += v[i];
+    }
+    return cum;
 }
 
 std::vector<double> resample(const std::vector<double> & p, // particles
-							 const std::vector<double> & w, // weights
-							 bool normalizeWeights = false)
+                             const std::vector<double> & w, // weights
+                             bool normalizeWeights = false)
 {
-	std::vector<double> np; //new particles
-	if(p.size() != w.size() || p.size() == 0)
-	{
-		UERROR("particles (%d) and weights (%d) are not the same size", p.size(), w.size());
-		return np;
-	}
+    std::vector<double> np; //new particles
+    if(p.size() != w.size() || p.size() == 0)
+    {
+        UERROR("particles (%d) and weights (%d) are not the same size", p.size(), w.size());
+        return np;
+    }
 
-	std::vector<double> cs;
-	if(normalizeWeights)
-	{
-		double wSum = uSum(w);
-		std::vector<double> wNorm(w.size());
-		for(unsigned int i=0; i<w.size(); ++i)
-		{
-			wNorm[i] = w[i]/wSum;
-		}
-		cs = cumSum(wNorm); // cumulative sum
-	}
-	else
-	{
-		cs = cumSum(w); // cumulative sum
-	}
-	for(unsigned int j=0; j<cs.size(); ++j)
-	{
-		cs[j]/=cs.back();
-	}
+    std::vector<double> cs;
+    if(normalizeWeights)
+    {
+        double wSum = uSum(w);
+        std::vector<double> wNorm(w.size());
+        for(unsigned int i=0; i<w.size(); ++i)
+        {
+            wNorm[i] = w[i]/wSum;
+        }
+        cs = cumSum(wNorm); // cumulative sum
+    }
+    else
+    {
+        cs = cumSum(w); // cumulative sum
+    }
+    for(unsigned int j=0; j<cs.size(); ++j)
+    {
+        cs[j]/=cs.back();
+    }
 
-	np.resize(p.size());
-	for(unsigned int i=0; i<np.size(); ++i)
-	{
-		unsigned int index = 0;
-		double randnum = RAND;
-		for(unsigned int j=0; j<cs.size(); ++j)
-		{
-			if(randnum < cs[j])
-			{
-				index = j;
-				break;
-			}
-		}
-		np[i] = p[index];
-	}
-	return np;
+    np.resize(p.size());
+    for(unsigned int i=0; i<np.size(); ++i)
+    {
+        unsigned int index = 0;
+        double randnum = RAND;
+        for(unsigned int j=0; j<cs.size(); ++j)
+        {
+            if(randnum < cs[j])
+            {
+                index = j;
+                break;
+            }
+        }
+        np[i] = p[index];
+    }
+    return np;
 }
 
 
 class ParticleFilter
 {
 public:
-	ParticleFilter(unsigned int nParticles = 200,
-				   double noise = 0.1,
-				   double lambda = 10.0,
-				   double initValue = 0.0) :
-		noise_(noise),
-		lambda_(lambda)
-	{
-		particles_.resize(nParticles, initValue);
-	}
+    ParticleFilter(unsigned int nParticles = 200,
+                   double noise = 0.1,
+                   double lambda = 10.0,
+                   double initValue = 0.0) :
+        noise_(noise),
+        lambda_(lambda)
+    {
+        particles_.resize(nParticles, initValue);
+    }
 
-	void init(double initValue = 0.0f)
-	{
-		particles_ = std::vector<double>(particles_.size(), initValue);
-	}
+    void init(double initValue = 0.0f)
+    {
+        particles_ = std::vector<double>(particles_.size(), initValue);
+    }
 
-	double filter(double val)
-	{
-		std::vector<double> weights(particles_.size(), 1);
-		double sumWeights = 0;
-		for(unsigned int i=0; i<particles_.size(); ++i)
-		{
-			// add noise to particle
-			particles_[i] += noise_ * RANDN;
+    double filter(double val)
+    {
+        std::vector<double> weights(particles_.size(), 1);
+        double sumWeights = 0;
+        for(unsigned int i=0; i<particles_.size(); ++i)
+        {
+            // add noise to particle
+            particles_[i] += noise_ * RANDN;
 
-			// compute weight
-			double dist = fabs(particles_[i] - val);
-			//dist = sqrt(dist*dist);
-			double w = exp(-lambda_*dist);
-			if(uIsFinite(w) && w > 0)
-			{
-				weights[i] = w;
-			}
-			sumWeights += weights[i];
-		}
+            // compute weight
+            double dist = fabs(particles_[i] - val);
+            //dist = sqrt(dist*dist);
+            double w = exp(-lambda_*dist);
+            if(uIsFinite(w) && w > 0)
+            {
+                weights[i] = w;
+            }
+            sumWeights += weights[i];
+        }
 
 
-		//normalize and compute estimated value
-		double value =0.0;
-		for(unsigned int i=0; i<weights.size(); ++i)
-		{
-			weights[i] /= sumWeights;
-			value += weights[i] * particles_[i];
-		}
+        //normalize and compute estimated value
+        double value =0.0;
+        for(unsigned int i=0; i<weights.size(); ++i)
+        {
+            weights[i] /= sumWeights;
+            value += weights[i] * particles_[i];
+        }
 
-		//resample the particles
-		particles_ = resample(particles_, weights, false);
+        //resample the particles
+        particles_ = resample(particles_, weights, false);
 
-		return value;
-	}
+        return value;
+    }
 
 private:
-	std::vector<double> particles_;
-	double noise_;
-	double lambda_;
+    std::vector<double> particles_;
+    double noise_;
+    double lambda_;
 };
 
 }
