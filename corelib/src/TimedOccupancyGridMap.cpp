@@ -86,8 +86,8 @@ void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories)
         i++;
     }
 
-    occupancyGridMap_->updatePoses(updatedPoses, updatedTemporaryPoses);
     prevTrajectories_ = trajectories;
+    occupancyGridMap_->updatePoses(updatedPoses, updatedTemporaryPoses);
 }
 
 std::pair<std::optional<Transform>, bool /* if pose was extrapolated */>
