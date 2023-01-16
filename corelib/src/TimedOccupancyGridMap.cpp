@@ -94,7 +94,7 @@ void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories)
         {
             int nodeId = idTime.first;
             const NodeTime& time = idTime.second;
-            if (latestTrajectory->includesTime(time.time))
+            if (latestTrajectory->containsTime(time.time))
             {
                 break;
             }

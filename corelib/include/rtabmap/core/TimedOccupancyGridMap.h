@@ -69,7 +69,7 @@ public:
             UASSERT(trajectory_.size());
             return trajectory_.rbegin()->time;
         }
-        bool includesTime(const Time& time) const
+        bool containsTime(const Time& time) const
         {
             UASSERT(trajectory_.size());
             return minTime() <= time && time <= maxTime();
@@ -79,7 +79,7 @@ public:
             std::set<TimedPose>::const_iterator>
                 getBounds(const Time& time) const
         {
-            if (!includesTime(time))
+            if (!containsTime(time))
             {
                 return std::make_pair(trajectory_.cend(), trajectory_.cend());
             }
