@@ -16,6 +16,13 @@ namespace rtabmap {
 
 class TimedOccupancyGridMap
 {
+private:
+    struct NodeTime
+    {
+        const Time time;
+        bool canExtrapolate;
+    };
+
 public:
     struct TimedPose
     {
@@ -105,10 +112,11 @@ public:
             trajectories_.emplace_back();
             return trajectories_.size() - 1;
         }
-        void addPose(int trajectory_index, const Time& time, const Transform& pose)
+        void addPose(int trajectoryIndex, const Time& time, const Transform& pose)
         {
-            UASSERT(trajectory_index < (int)trajectories_.size());
-            trajectories_[trajectory_index].addPose(time, pose);
+            UASSERT(trajectoryIndex >= 0 &&
+                trajectoryIndex < (int)trajectories_.size());
+            trajectories_[trajectoryIndex].addPose(time, pose);
         }
         const Trajectory* getLatestTrajectory() const
         {
@@ -180,8 +188,7 @@ public:
 
     void cacheCurrentMap() { occupancyGridMap_->cacheCurrentMap(); }
 
-    void updatePoses(const Trajectories& trajectories,
-        bool autoCaching = false);
+    void updatePoses(const Trajectories& trajectories);
 
     OccupancyGrid getOccupancyGrid() const
         { return occupancyGridMap_->getOccupancyGrid(); }
@@ -213,8 +220,8 @@ public:
     int load(const std::string& file);
 
 private:
-    std::pair<std::optional<Transform>, const Trajectory*> getPose(
-        const Trajectories& trajectories, const Time& time,
+    std::pair<std::optional<Transform>, bool /* if pose was extrapolated */> getPose(
+        const Trajectories& trajectories, const NodeTime& time,
         std::optional<Transform> prevPose = std::nullopt);
     std::optional<Transform> getPose(
         const Trajectory& trajectory, const Time& time);
@@ -223,8 +230,8 @@ private:
     double maxInterpolationTimeError_;
     double guaranteedInterpolationTimeWindow_;
 
-    std::map<int, Time> times_;
-    std::list<Time> temporaryTimes_;
+    std::map<int, NodeTime> times_;
+    std::list<NodeTime> temporaryTimes_;
     std::unique_ptr<OccupancyGridMap> occupancyGridMap_;
 
     Trajectories prevTrajectories_;

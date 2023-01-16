@@ -31,7 +31,7 @@ void TimedOccupancyGridMap::addLocalMap(int nodeId, const Time& time,
     std::shared_ptr<const LocalMap> localMap)
 {
     UASSERT(times_.count(nodeId) == 0);
-    times_[nodeId] = time;
+    times_.emplace(nodeId, NodeTime{time, true});
     occupancyGridMap_->addLocalMap(nodeId, localMap);
 }
 
@@ -39,14 +39,14 @@ void TimedOccupancyGridMap::addLocalMap(int nodeId, const Time& time,
     const Transform& pose, std::shared_ptr<const LocalMap> localMap)
 {
     UASSERT(times_.count(nodeId) == 0);
-    times_[nodeId] = time;
+    times_.emplace(nodeId, NodeTime{time, true});
     occupancyGridMap_->addLocalMap(nodeId, pose, localMap);
 }
 
 void TimedOccupancyGridMap::addTemporaryLocalMap(const Time& time,
     const Transform& pose, std::shared_ptr<const LocalMap> localMap)
 {
-    temporaryTimes_.push_back(time);
+    temporaryTimes_.emplace_back(NodeTime{time, true});
     if ((int)temporaryTimes_.size() > maxTemporaryLocalMaps())
     {
         temporaryTimes_.pop_front();
@@ -54,71 +54,65 @@ void TimedOccupancyGridMap::addTemporaryLocalMap(const Time& time,
     occupancyGridMap_->addTemporaryLocalMap(pose, localMap);
 }
 
-void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories,
-    bool autoCaching /* false */)
+void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories)
 {
-    int lastNodeIdToIncludeInCachedMap = -1;
-    const Trajectory* latestTrajectory = trajectories.getLatestTrajectory();
-
     std::map<int, Transform> updatedPoses;
-    for (const auto& idTime: times_)
+    for (auto& idTime: times_)
     {
         int nodeId = idTime.first;
-        Time time = idTime.second;
-        std::optional<Transform> pose;
+        NodeTime& time = idTime.second;
         std::optional<Transform> prevPose = getNodePose(nodeId);
-        const Trajectory* trajectory;
-        std::tie(pose, trajectory) = getPose(trajectories, time, prevPose);
+        std::optional<Transform> pose;
+        bool extrapolated;
+        std::tie(pose, extrapolated) = getPose(trajectories, time, prevPose);
+        time.canExtrapolate = extrapolated;
         if (pose.has_value())
         {
             updatedPoses[nodeId] = *pose;
-            if (autoCaching && trajectory != latestTrajectory)
-            {
-                lastNodeIdToIncludeInCachedMap =
-                    std::max(lastNodeIdToIncludeInCachedMap, nodeId);
-            }
         }
     }
 
     std::list<Transform> updatedTemporaryPoses;
     int i = 0;
-    for (const Time& temporaryTime : temporaryTimes_)
+    for (NodeTime& temporaryTime : temporaryTimes_)
     {
         Transform prevPose = getTemporaryNodePose(i);
-        std::optional<Transform> pose =
-            getPose(trajectories, temporaryTime, prevPose).first;
+        std::optional<Transform> pose;
+        bool extrapolated;
+        std::tie(pose, extrapolated) = getPose(trajectories, temporaryTime, prevPose);
         UASSERT(pose.has_value());
+        temporaryTime.canExtrapolate = extrapolated;
         updatedTemporaryPoses.push_back(*pose);
         i++;
     }
 
-    occupancyGridMap_->updatePoses(updatedPoses,
-        updatedTemporaryPoses, lastNodeIdToIncludeInCachedMap);
-
+    occupancyGridMap_->updatePoses(updatedPoses, updatedTemporaryPoses);
     prevTrajectories_ = trajectories;
 }
 
-std::pair<std::optional<Transform>, const TimedOccupancyGridMap::Trajectory*>
+std::pair<std::optional<Transform>, bool /* if pose was extrapolated */>
 TimedOccupancyGridMap::getPose(
-    const Trajectories& trajectories, const Time& time,
+    const Trajectories& trajectories, const NodeTime& time,
     std::optional<Transform> prevPose /* std::nullopt */)
 {
     if (trajectories.size() == 0)
     {
-        return std::make_pair(std::nullopt, nullptr);
+        return std::make_pair(std::nullopt, false);
     }
     for (const Trajectory& trajectory : trajectories)
     {
-        std::optional<Transform> pose = getPose(trajectory, time);
+        std::optional<Transform> pose = getPose(trajectory, time.time);
         if (pose.has_value())
         {
-            return std::make_pair(std::move(pose), &trajectory);
+            return std::make_pair(std::move(pose), false);
         }
     }
-    if (prevPose.has_value())
+    if (time.canExtrapolate && prevPose.has_value())
     {
-        const Trajectory* prevTrajectory = prevTrajectories_.findContinuedTrajectory(time);
-        const Trajectory* trajectory = trajectories.findContinuedTrajectory(time);
+        const Trajectory* prevTrajectory =
+            prevTrajectories_.findContinuedTrajectory(time.time);
+        const Trajectory* trajectory =
+            trajectories.findContinuedTrajectory(time.time);
         if (prevTrajectory && trajectory)
         {
             Time commonEndTime = std::min(prevTrajectory->maxTime(), trajectory->maxTime());
@@ -130,11 +124,11 @@ TimedOccupancyGridMap::getPose(
             {
                 Transform shift = prevTrajectoryEnd->inverse() * (*trajectoryEnd);
                 Transform pose = shift * (*prevPose);
-                return std::make_pair(std::move(pose), trajectory);
+                return std::make_pair(std::move(pose), true);
             }
         }
     }
-    return std::make_pair(std::nullopt, nullptr);
+    return std::make_pair(std::nullopt, false);
 }
 
 std::optional<Transform> TimedOccupancyGridMap::getPose(
@@ -187,7 +181,7 @@ void TimedOccupancyGridMap::save(const std::string& file)
         UASSERT(localMaps.count(nodeId));
         proto::OccupancyGridMap::Node nodeProto;
         nodeProto.set_node_id(nodeId);
-        *nodeProto.mutable_time() = rtabmap::toProto(times_.at(nodeId));
+        *nodeProto.mutable_time() = rtabmap::toProto(times_.at(nodeId).time);
         if (node.transformedLocalMap.has_value())
         {
             *nodeProto.mutable_pose() =
@@ -223,6 +217,7 @@ int TimedOccupancyGridMap::load(const std::string& file)
         {
             addLocalMap(nodeId, time, localMap);
         }
+        times_.at(nodeId).canExtrapolate = false;
         maxNodeId = std::max(maxNodeId, nodeId);
     }
     reader.close();
