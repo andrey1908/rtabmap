@@ -86,8 +86,29 @@ void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories)
         i++;
     }
 
+    int lastNodeIdToIncludeInCachedMap = -1;
+    const Trajectory* latestTrajectory = trajectories.getLatestTrajectory();
+    if (latestTrajectory != nullptr)
+    {
+        for (const auto& idTime: times_)
+        {
+            int nodeId = idTime.first;
+            const NodeTime& time = idTime.second;
+            if (latestTrajectory->includesTime(time.time))
+            {
+                break;
+            }
+            if (updatedPoses.count(nodeId))
+            {
+                lastNodeIdToIncludeInCachedMap =
+                    std::max(lastNodeIdToIncludeInCachedMap, nodeId);
+            }
+        }
+    }
+
     prevTrajectories_ = trajectories;
-    occupancyGridMap_->updatePoses(updatedPoses, updatedTemporaryPoses);
+    occupancyGridMap_->updatePoses(updatedPoses, updatedTemporaryPoses,
+        lastNodeIdToIncludeInCachedMap);
 }
 
 std::pair<std::optional<Transform>, bool /* if pose was extrapolated */>
