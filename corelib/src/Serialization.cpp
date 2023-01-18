@@ -21,12 +21,12 @@ Serialization::Serialization(const std::string& fileName)
 
 void Serialization::write(const google::protobuf::Message& proto)
 {
-	std::string uncompressed_data;
-	proto.SerializeToString(&uncompressed_data);
-	std::string compressed_data = compress(uncompressed_data);
-	uint64_t size = compressed_data.size();
+	std::string uncompressedData;
+	proto.SerializeToString(&uncompressedData);
+	std::string compressedData = compress(uncompressedData);
+	uint64_t size = compressedData.size();
 	output_.write((const char*)&size, sizeof(size));
-	output_.write(compressed_data.data(), size);
+	output_.write(compressedData.data(), size);
 }
 
 void Serialization::close()
