@@ -6,15 +6,12 @@
 #include <vector>
 #include <list>
 
+#include <cstdint>
+
 namespace rtabmap {
 
 class RayTracing
 {
-public:
-    static constexpr std::int8_t unknownCellValue = -1;
-    static constexpr std::int8_t emptyCellValue = 0;
-    static constexpr std::int8_t occupiedCellValue = 100;
-
 public:
     struct Cell
     {
@@ -61,7 +58,8 @@ public:
     RayTracing(const ParametersMap& parameters = ParametersMap());
     void parseParameters(const ParametersMap& parameters);
 
-    void traceRays(cv::Mat& grid, const Cell& origin) const;
+    void traceRays(cv::Mat& grid, const Cell& origin,
+        std::int8_t occupiedCellValue, std::int8_t emptyCellValue) const;
 
     inline bool traceRaysIntoUnknownSpace() const
     {

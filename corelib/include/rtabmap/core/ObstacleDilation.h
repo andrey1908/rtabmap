@@ -1,6 +1,7 @@
 #pragma once
 
 #include <rtabmap/core/Parameters.h>
+#include <rtabmap/core/MapLimits.h>
 #include <rtabmap/core/SemanticDilation.h>
 #include <rtabmap/core/LocalMap.h>
 

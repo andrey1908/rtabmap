@@ -16,13 +16,6 @@ namespace rtabmap {
 
 class TimedOccupancyGridMap
 {
-private:
-    struct NodeTime
-    {
-        const Time time;
-        bool canExtrapolate;
-    };
-
 public:
     struct TimedPose
     {
@@ -160,10 +153,12 @@ public:
         {
             return trajectories_.size();
         }
-        std::vector<Trajectory>::const_iterator begin() const {
+        std::vector<Trajectory>::const_iterator begin() const
+        {
             return trajectories_.cbegin();
         }
-        std::vector<Trajectory>::const_iterator end() const {
+        std::vector<Trajectory>::const_iterator end() const
+        {
             return trajectories_.cend();
         }
 
@@ -175,16 +170,15 @@ public:
     TimedOccupancyGridMap(const ParametersMap& parameters = ParametersMap());
     void parseParameters(const ParametersMap& parameters);
 
-    std::shared_ptr<LocalMap> createLocalMap(const Signature& signature,
-        const Transform& fromUpdatedPose = Transform::getIdentity()) const
-            { return occupancyGridMap_->createLocalMap(signature, fromUpdatedPose); }
+    std::shared_ptr<LocalMap> createLocalMap(const Signature& signature, const Time& time,
+        const Transform& fromUpdatedPose = Transform::getIdentity()) const;
 
-    void addLocalMap(int nodeId, const Time& time,
+    void addLocalMap(int nodeId,
         std::shared_ptr<const LocalMap> localMap);
-    void addLocalMap(int nodeId, const Time& time,
-        const Transform& pose, std::shared_ptr<const LocalMap> localMap);
-    void addTemporaryLocalMap(const Time& time,
-        const Transform& pose, std::shared_ptr<const LocalMap> localMap);
+    void addLocalMap(int nodeId, const Transform& pose,
+        std::shared_ptr<const LocalMap> localMap);
+    void addTemporaryLocalMap(const Transform& pose,
+        std::shared_ptr<const LocalMap> localMap);
 
     void cacheCurrentMap() { occupancyGridMap_->cacheCurrentMap(); }
 
@@ -203,16 +197,13 @@ public:
     int maxTemporaryLocalMaps() const
         { return occupancyGridMap_->maxTemporaryLocalMaps(); }
     const std::map<int, Node>& nodes() const { return occupancyGridMap_->nodes(); }
+    const std::list<Node>& temporaryNodes() const
+        { return occupancyGridMap_->temporaryNodes(); }
     const std::map<int, const std::shared_ptr<const LocalMap>>&
         localMapsWithoutObstacleDilation() const
             { return occupancyGridMap_->localMapsWithoutObstacleDilation(); }
     const cv::Mat& lastDilatedSemantic() const
         { return occupancyGridMap_->lastDilatedSemantic(); }
-
-    std::optional<Transform> getNodePose(int nodeId) const
-        { return occupancyGridMap_->getNodePose(nodeId); }
-    Transform getTemporaryNodePose(int index) const
-        { return occupancyGridMap_->getTemporaryNodePose(index); }
 
     void reset();
 
@@ -221,8 +212,8 @@ public:
 
 private:
     std::pair<std::optional<Transform>, bool /* if pose was extrapolated */> getPose(
-        const Trajectories& trajectories, const NodeTime& time,
-        std::optional<Transform> prevPose = std::nullopt);
+        const Trajectories& trajectories, const Time& time, bool canExtrapolate,
+        const std::optional<Transform>& prevPose = std::nullopt);
     std::optional<Transform> getPose(
         const Trajectory& trajectory, const Time& time);
 
@@ -230,8 +221,8 @@ private:
     double maxInterpolationTimeError_;
     double guaranteedInterpolationTimeWindow_;
 
-    std::map<int, NodeTime> times_;
-    std::list<NodeTime> temporaryTimes_;
+    std::map<int, bool> canExtrapolate_;
+    std::list<bool> temporaryCanExtrapolate_;
     std::unique_ptr<OccupancyGridMap> occupancyGridMap_;
 
     Trajectories prevTrajectories_;

@@ -27,7 +27,8 @@ void RayTracing::parseParameters(const ParametersMap& parameters)
     computeRays();
 }
 
-void RayTracing::traceRays(cv::Mat& grid, const Cell& origin) const
+void RayTracing::traceRays(cv::Mat& grid, const Cell& origin,
+    std::int8_t occupiedCellValue, std::int8_t emptyCellValue) const
 {
     UASSERT(grid.type() == CV_8S);
     UASSERT(origin.inFrame(grid.rows, grid.cols));

@@ -22,7 +22,8 @@ public:
     std::shared_ptr<LocalMap> createLocalMap(const Signature& signature,
         const Transform& fromUpdatedPose = Transform::getIdentity()) const;
 
-    void addLocalMap(int nodeId, std::shared_ptr<const LocalMap> localMap);
+    void addLocalMap(int nodeId,
+        std::shared_ptr<const LocalMap> localMap);
     void addLocalMap(int nodeId, const Transform& pose,
         std::shared_ptr<const LocalMap> localMap);
     void addTemporaryLocalMap(const Transform& pose,
@@ -43,15 +44,12 @@ public:
     int maxTemporaryLocalMaps() const
         { return temporaryOccupancyGridBuilder_->maxTemporaryLocalMaps(); }
     const std::map<int, Node>& nodes() const { return occupancyGridBuilder_->nodes(); }
+    const std::list<Node>& temporaryNodes() const
+        { return temporaryOccupancyGridBuilder_->nodes(); }
     const std::map<int, const std::shared_ptr<const LocalMap>>&
         localMapsWithoutObstacleDilation() const { return localMapsWithoutObstacleDilation_; }
     const cv::Mat& lastDilatedSemantic() const
         { return localMapBuilder_->lastDilatedSemantic(); }
-
-    std::optional<Transform> getNodePose(int nodeId) const
-        { return occupancyGridBuilder_->getNodePose(nodeId); }
-    Transform getTemporaryNodePose(int index) const
-        { return temporaryOccupancyGridBuilder_->getNodePose(index); }
 
     void reset();
 

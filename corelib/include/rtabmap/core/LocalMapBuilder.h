@@ -8,6 +8,7 @@
 #include <rtabmap/core/RayTracing.h>
 #include <rtabmap/core/LocalMap.h>
 #include <rtabmap/core/Color.h>
+#include <rtabmap/core/Grid.h>
 
 #include <vector>
 #include <utility>
@@ -19,15 +20,6 @@ class LocalMapBuilder
 {
 public:
     static const cv::Vec3b semanticBackgroundColor;  // (0, 0, 0)
-
-private:
-    struct ColoredGrid
-    {
-        int minY;
-        int minX;
-        cv::Mat grid;
-        cv::Mat colors;
-    };
 
 public:
     LocalMapBuilder(const ParametersMap& parameters = ParametersMap());
@@ -48,12 +40,11 @@ private:
         const std::vector<cv::Mat>& images,
         const std::vector<rtabmap::CameraModel>& cameraModels) const;
 
-    ColoredGrid coloredGridFromObstacles(const Eigen::Matrix3Xf& points,
+    LocalMap::ColoredGrid coloredGridFromObstacles(const Eigen::Matrix3Xf& points,
         const std::vector<Color>& colors,
         const Eigen::Vector2f& sensor) const;
-    void traceRays(ColoredGrid& coloredGrid,
+    void traceRays(LocalMap::ColoredGrid& coloredGrid,
         const Eigen::Vector2f& sensor) const;
-    std::shared_ptr<LocalMap> localMapFromColoredGrid(const ColoredGrid& coloredGrid) const;
 
 private:
     float cellSize_;

@@ -123,7 +123,7 @@ void OccupancyGridBuilder::addLocalMap(int nodeId, const Transform& pose,
 	TransformedLocalMap transformedLocalMap = transformLocalMap(*localMap, pose);
 	Node node(localMap, std::move(transformedLocalMap));
 	auto newNodeIt = nodes_.emplace(nodeId, std::move(node)).first;
-	MapLimits newMapLimits = MapLimits::unite(mapLimits_,
+	MapLimitsI newMapLimits = MapLimitsI::unite(mapLimits_,
 		newNodeIt->second.transformedLocalMap->mapLimits);
 	if (mapLimits_ != newMapLimits)
 	{
@@ -135,7 +135,7 @@ void OccupancyGridBuilder::addLocalMap(int nodeId, const Transform& pose,
 void OccupancyGridBuilder::cacheCurrentMap()
 {
 	cachedPoses_.clear();
-	cachedMapLimits_ = MapLimits();
+	cachedMapLimits_ = MapLimitsI();
 	cachedMap_ = MapType();
 	cachedColors_ = ColorsType();
 	cachedTemporarilyOccupiedCells_.clear();
@@ -234,14 +234,14 @@ void OccupancyGridBuilder::updatePoses(
 	for (const auto& [nodeId, updatedPose] : updatedPoses)
 	{
 		UASSERT(nodes_.count(nodeId));
-		const Transform& fromUpdatedPose = nodes_.at(nodeId).localMap->fromUpdatedPose;
+		const Transform& fromUpdatedPose = nodes_.at(nodeId).localMap->fromUpdatedPose();
 		newPoses[nodeId] = updatedPose * fromUpdatedPose;
 	}
 
 	clear();
 	int lastNodeIdFromCache = tryToUseCachedMap(newPoses);
 
-	MapLimits newMapLimits = mapLimits_;
+	MapLimitsI newMapLimits = mapLimits_;
 	std::list<int> nodeIdsToDeploy;
 	auto nodeIt = nodes_.lower_bound(lastNodeIdFromCache + 1);
 	for(auto updatedPoseIt = newPoses.lower_bound(lastNodeIdFromCache + 1);
@@ -256,7 +256,7 @@ void OccupancyGridBuilder::updatePoses(
 		int nodeId = nodeIt->first;
 		Node& node = nodeIt->second;
 		node.transformedLocalMap = transformLocalMap(*node.localMap, updatedPoseIt->second);
-		newMapLimits = MapLimits::unite(newMapLimits, node.transformedLocalMap->mapLimits);
+		newMapLimits = MapLimitsI::unite(newMapLimits, node.transformedLocalMap->mapLimits);
 		nodeIdsToDeploy.push_back(nodeId);
 
 		if (nodeId == lastNodeIdToIncludeInCachedMap)
@@ -287,11 +287,11 @@ TransformedLocalMap OccupancyGridBuilder::transformLocalMap(
 {
 	TransformedLocalMap transformedLocalMap;
 	transformedLocalMap.pose = transform;
-	transformedLocalMap.points.resize(2, localMap.points.cols());
+	transformedLocalMap.points.resize(2, localMap.points().cols());
 	Eigen::Matrix3Xf transformedPoints =
-		(transform.toEigen3fRotation() * localMap.points).colwise() +
+		(transform.toEigen3fRotation() * localMap.points()).colwise() +
 		transform.toEigen3fTranslation();
-	transformedLocalMap.mapLimits = MapLimits();
+	transformedLocalMap.mapLimits = MapLimitsI();
 	for (int i = 0; i < transformedPoints.cols(); i++)
 	{
 		int x = std::floor(transformedPoints(0, i) / cellSize_);
@@ -303,7 +303,7 @@ TransformedLocalMap OccupancyGridBuilder::transformLocalMap(
 	return transformedLocalMap;
 }
 
-void OccupancyGridBuilder::createOrResizeMap(const MapLimits& newMapLimits)
+void OccupancyGridBuilder::createOrResizeMap(const MapLimitsI& newMapLimits)
 {
 	UASSERT(newMapLimits.valid());
 	if(!mapLimits_.valid())
@@ -320,7 +320,7 @@ void OccupancyGridBuilder::createOrResizeMap(const MapLimits& newMapLimits)
 		int dstStartX = std::max(mapLimits_.minX() - newMapLimits.minX(), 0);
 		int srcStartY = std::max(newMapLimits.minY() - mapLimits_.minY(), 0);
 		int srcStartX = std::max(newMapLimits.minX() - mapLimits_.minX(), 0);
-		MapLimits intersection = MapLimits::intersect(mapLimits_, newMapLimits);
+		MapLimitsI intersection = MapLimitsI::intersect(mapLimits_, newMapLimits);
 		int copyHeight = intersection.height();
 		int copyWidth = intersection.width();
 		UASSERT(copyHeight > 0 && copyWidth > 0);
@@ -363,12 +363,12 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
 		{
 			continue;
 		}
-		bool occupied = (i < node.localMap->numObstacles);
+		bool occupied = (i < node.localMap->numObstacles());
 		if (occupied)
 		{
 			if (temporarilyOccupiedCellColor_ != Color::missingColor)
 			{
-				const Color& color = node.localMap->colors[i];
+				const Color& color = node.localMap->colors()[i];
 				if (color == temporarilyOccupiedCellColor_)
 				{
 					temporarilyOccupiedCells_.emplace_back(y, x);
@@ -379,15 +379,15 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
 		}
 		else
 		{
-			if (node.localMap->sensorBlindRange2dSqr != 0.0f &&
+			if (node.localMap->sensorBlindRange2dSqr() != 0.0f &&
 				value >= occupancyThr_)
 			{
-				float localX = node.localMap->points.coeff(0, i);
-				float localY = node.localMap->points.coeff(1, i);
-				float sensorX = localX - node.localMap->toSensor.translation().x();
-				float sensorY = localY - node.localMap->toSensor.translation().y();
+				float localX = node.localMap->points().coeff(0, i);
+				float localY = node.localMap->points().coeff(1, i);
+				float sensorX = localX - node.localMap->toSensor().translation().x();
+				float sensorY = localY - node.localMap->toSensor().translation().y();
 				if (sensorX * sensorX + sensorY * sensorY <=
-					node.localMap->sensorBlindRange2dSqr)
+					node.localMap->sensorBlindRange2dSqr())
 				{
 					continue;
 				}
@@ -395,7 +395,7 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
 			value = missUpdates_[value];
 		}
 
-		const Color& color = node.localMap->colors[i];
+		const Color& color = node.localMap->colors()[i];
 		if (!color.missing())
 		{
 			colors_.coeffRef(y, x) = color.rgb();
@@ -423,12 +423,12 @@ OccupancyGrid OccupancyGridBuilder::getOccupancyGrid() const
 }
 
 OccupancyGrid OccupancyGridBuilder::getOccupancyGrid(
-	const MapLimits& roi) const
+	const MapLimitsI& roi) const
 {
 	OccupancyGrid occupancyGrid;
 	occupancyGrid.limits = roi;
 	occupancyGrid.grid = OccupancyGrid::GridType::Constant(roi.height(), roi.width(), -1);
-	MapLimits intersection = MapLimits::intersect(mapLimits_, roi);
+	MapLimitsI intersection = MapLimitsI::intersect(mapLimits_, roi);
 	int height = intersection.height();
 	int width = intersection.width();
 	if (height == 0 || width == 0)
@@ -475,12 +475,12 @@ OccupancyGrid OccupancyGridBuilder::getProbOccupancyGrid() const
 }
 
 OccupancyGrid OccupancyGridBuilder::getProbOccupancyGrid(
-	const MapLimits& roi) const
+	const MapLimitsI& roi) const
 {
 	OccupancyGrid occupancyGrid;
 	occupancyGrid.limits = roi;
 	occupancyGrid.grid = OccupancyGrid::GridType::Constant(roi.height(), roi.width(), -1);
-	MapLimits intersection = MapLimits::intersect(mapLimits_, roi);
+	MapLimitsI intersection = MapLimitsI::intersect(mapLimits_, roi);
 	int height = intersection.height();
 	int width = intersection.width();
 	if (height == 0 || width == 0)
@@ -527,13 +527,13 @@ ColorGrid OccupancyGridBuilder::getColorGrid() const
 }
 
 ColorGrid OccupancyGridBuilder::getColorGrid(
-	const MapLimits& roi) const
+	const MapLimitsI& roi) const
 {
 	ColorGrid colorGrid;
 	colorGrid.limits = roi;
 	colorGrid.grid = ColorGrid::GridType::Constant(roi.height(), roi.width(),
 		Color::missingColor.data());
-	MapLimits intersection = MapLimits::intersect(mapLimits_, roi);
+	MapLimitsI intersection = MapLimitsI::intersect(mapLimits_, roi);
 	int height = intersection.height();
 	int width = intersection.width();
 	if (height == 0 || width == 0)
@@ -564,27 +564,13 @@ ColorGrid OccupancyGridBuilder::getColorGrid(
 	return colorGrid;
 }
 
-std::optional<Transform> OccupancyGridBuilder::getNodePose(int nodeId) const
-{
-	UASSERT(nodes_.count(nodeId));
-	const Node& node = nodes_.at(nodeId);
-	if (node.transformedLocalMap.has_value())
-	{
-		return node.transformedLocalMap->pose;
-	}
-	else
-	{
-		return std::nullopt;
-	}
-}
-
 void OccupancyGridBuilder::clear()
 {
 	for (auto& entry : nodes_)
 	{
 		entry.second.transformedLocalMap.reset();
 	}
-	mapLimits_ = MapLimits();
+	mapLimits_ = MapLimitsI();
 	map_ = MapType();
 	colors_ = ColorsType();
 	temporarilyOccupiedCells_.clear();
@@ -593,13 +579,13 @@ void OccupancyGridBuilder::clear()
 void OccupancyGridBuilder::reset()
 {
 	nodes_.clear();
-	mapLimits_ = MapLimits();
+	mapLimits_ = MapLimitsI();
 	map_ = MapType();
 	colors_ = ColorsType();
 	temporarilyOccupiedCells_.clear();
 
 	cachedPoses_.clear();
-	cachedMapLimits_ = MapLimits();
+	cachedMapLimits_ = MapLimitsI();
 	cachedMap_ = MapType();
 	cachedColors_ = ColorsType();
 	cachedTemporarilyOccupiedCells_.clear();

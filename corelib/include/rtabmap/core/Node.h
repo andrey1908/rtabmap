@@ -14,7 +14,7 @@ struct TransformedLocalMap
 {
     Transform pose;
     Eigen::Matrix2Xi points;
-    MapLimits mapLimits;
+    MapLimitsI mapLimits;
 };
 
 struct Node

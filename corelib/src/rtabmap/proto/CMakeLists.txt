@@ -2,6 +2,7 @@ SET(PROTO_FILES
 	Time.proto
 	Color.proto
 	Transform.proto
+	MapLimits.proto
 	LocalMap.proto
 	OccupancyGridMap.proto
 )

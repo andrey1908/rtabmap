@@ -47,7 +47,9 @@ cv::Mat SemanticDilation::dilate(const cv::Mat& image,
     const T (&backgroundColors)[size], bool inverseBackground /* false */) const
 {
     constexpr bool isColor = std::is_same<T, typename cv::Vec3b>::value;
-    constexpr bool isGray = std::is_same<T, std::uint8_t>::value;
+    constexpr bool isGray =
+        std::is_same<T, std::uint8_t>::value ||
+        std::is_same<T, std::int8_t>::value;
     static_assert(isColor || isGray, "Unknown image type for dilation");
     if constexpr(isColor)
     {
@@ -55,7 +57,7 @@ cv::Mat SemanticDilation::dilate(const cv::Mat& image,
     }
     if constexpr(isGray)
     {
-        UASSERT(image.type() == CV_8U);
+        UASSERT(image.type() == CV_8U || image.type() == CV_8S);
     }
     UASSERT(dilationSize_ > 0);  // we need to make a copy of image
         // even if no dilation is applied, but it consumes time
@@ -132,8 +134,10 @@ void SemanticDilation::computeDilationPixels()
 }
 
 template cv::Mat SemanticDilation::dilate(const cv::Mat&,
-    const cv::Vec3b (&)[1], bool) const;
+    const cv::Vec3b(&)[1], bool) const;
 template cv::Mat SemanticDilation::dilate(const cv::Mat&,
-    const std::uint8_t (&)[1], bool) const;
+    const std::uint8_t(&)[1], bool) const;
+template cv::Mat SemanticDilation::dilate(const cv::Mat&,
+    const std::int8_t(&)[1], bool) const;
 
 }

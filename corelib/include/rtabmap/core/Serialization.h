@@ -29,7 +29,7 @@ class Deserialization
 public:
     Deserialization(const std::string& fileName);
 
-    const proto::OccupancyGridMap::MetaData& getMetaData();
+    const proto::OccupancyGridMap::MetaData& metaData();
     std::optional<proto::OccupancyGridMap::Node> readNode();
     void close();
 

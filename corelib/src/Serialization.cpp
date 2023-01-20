@@ -21,12 +21,12 @@ Serialization::Serialization(const std::string& fileName)
 
 void Serialization::write(const google::protobuf::Message& proto)
 {
-	std::string uncompressedData;
-	proto.SerializeToString(&uncompressedData);
-	std::string compressedData = compress(uncompressedData);
-	uint64_t size = compressedData.size();
+	std::string uncompressed;
+	proto.SerializeToString(&uncompressed);
+	std::string compressed = compressString(uncompressed);
+	size_t size = compressed.size();
 	output_.write((const char*)&size, sizeof(size));
-	output_.write(compressedData.data(), size);
+	output_.write(compressed.data(), size);
 }
 
 void Serialization::close()
@@ -51,14 +51,13 @@ Deserialization::Deserialization(const std::string& fileName)
 
 std::string Deserialization::readString()
 {
-	uint64_t size;
+	size_t size;
 	input_.read((char*)&size, sizeof(size));
 	UASSERT(input_.gcount() == sizeof(size));
 	std::string compressed(size, '\0');
 	input_.read(compressed.data(), size);
 	UASSERT(input_.gcount() == size);
-	std::string decompressed = decompress(compressed);
-	return decompressed;
+	return decompressString(compressed);
 }
 
 void Deserialization::readMetaData()
@@ -66,7 +65,7 @@ void Deserialization::readMetaData()
 	metaData_.ParseFromString(readString());
 }
 
-const proto::OccupancyGridMap::MetaData& Deserialization::getMetaData()
+const proto::OccupancyGridMap::MetaData& Deserialization::metaData()
 {
 	return metaData_;
 }

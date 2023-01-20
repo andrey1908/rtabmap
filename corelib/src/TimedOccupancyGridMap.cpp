@@ -27,29 +27,39 @@ void TimedOccupancyGridMap::parseParameters(const ParametersMap& parameters)
     occupancyGridMap_ = std::make_unique<OccupancyGridMap>(parameters);
 }
 
-void TimedOccupancyGridMap::addLocalMap(int nodeId, const Time& time,
+std::shared_ptr<LocalMap> TimedOccupancyGridMap::createLocalMap(
+    const Signature& signature, const Time& time,
+    const Transform& fromUpdatedPose /* Transform::getIdentity() */) const
+{
+    std::shared_ptr<LocalMap> localMap =
+        occupancyGridMap_->createLocalMap(signature, fromUpdatedPose);
+    localMap->setTime(time);
+    return localMap;
+}
+
+void TimedOccupancyGridMap::addLocalMap(int nodeId,
     std::shared_ptr<const LocalMap> localMap)
 {
-    UASSERT(times_.count(nodeId) == 0);
-    times_.emplace(nodeId, NodeTime{time, true});
+    UASSERT(canExtrapolate_.count(nodeId) == 0);
+    canExtrapolate_[nodeId] = true;
     occupancyGridMap_->addLocalMap(nodeId, localMap);
 }
 
-void TimedOccupancyGridMap::addLocalMap(int nodeId, const Time& time,
-    const Transform& pose, std::shared_ptr<const LocalMap> localMap)
+void TimedOccupancyGridMap::addLocalMap(int nodeId, const Transform& pose,
+    std::shared_ptr<const LocalMap> localMap)
 {
-    UASSERT(times_.count(nodeId) == 0);
-    times_.emplace(nodeId, NodeTime{time, true});
+    UASSERT(canExtrapolate_.count(nodeId) == 0);
+    canExtrapolate_[nodeId] = true;
     occupancyGridMap_->addLocalMap(nodeId, pose, localMap);
 }
 
-void TimedOccupancyGridMap::addTemporaryLocalMap(const Time& time,
-    const Transform& pose, std::shared_ptr<const LocalMap> localMap)
+void TimedOccupancyGridMap::addTemporaryLocalMap(const Transform& pose,
+    std::shared_ptr<const LocalMap> localMap)
 {
-    temporaryTimes_.emplace_back(NodeTime{time, true});
-    if ((int)temporaryTimes_.size() > maxTemporaryLocalMaps())
+    temporaryCanExtrapolate_.push_back(true);
+    if ((int)temporaryCanExtrapolate_.size() > maxTemporaryLocalMaps())
     {
-        temporaryTimes_.pop_front();
+        temporaryCanExtrapolate_.pop_front();
     }
     occupancyGridMap_->addTemporaryLocalMap(pose, localMap);
 }
@@ -57,44 +67,69 @@ void TimedOccupancyGridMap::addTemporaryLocalMap(const Time& time,
 void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories)
 {
     std::map<int, Transform> updatedPoses;
-    for (auto& idTime: times_)
     {
-        int nodeId = idTime.first;
-        NodeTime& time = idTime.second;
-        std::optional<Transform> prevPose = getNodePose(nodeId);
-        std::optional<Transform> pose;
-        bool extrapolated;
-        std::tie(pose, extrapolated) = getPose(trajectories, time, prevPose);
-        time.canExtrapolate = extrapolated;
-        if (pose.has_value())
+        auto canExtrapolateIt = canExtrapolate_.begin();
+        const auto& nodesRef = nodes();
+        auto nodeIt = nodesRef.begin();
+        while (canExtrapolateIt != canExtrapolate_.end())
         {
-            updatedPoses[nodeId] = *pose;
+            UASSERT(nodeIt != nodesRef.end());
+            int nodeId = canExtrapolateIt->first;
+            const Node& node = nodeIt->second;
+            const Time& time = node.localMap->time();
+            std::optional<Transform> prevPose = std::nullopt;
+            if (node.transformedLocalMap.has_value())
+            {
+                prevPose = node.transformedLocalMap->pose;
+            }
+            std::optional<Transform> pose;
+            bool extrapolated;
+            std::tie(pose, extrapolated) =
+                getPose(trajectories, time, canExtrapolateIt->second, prevPose);
+            canExtrapolateIt->second = extrapolated;
+            if (pose.has_value())
+            {
+                updatedPoses[nodeId] = *pose;
+            }
+            ++canExtrapolateIt;
+            ++nodeIt;
         }
+        UASSERT(nodeIt == nodesRef.end());
     }
 
     std::list<Transform> updatedTemporaryPoses;
-    int i = 0;
-    for (NodeTime& temporaryTime : temporaryTimes_)
     {
-        Transform prevPose = getTemporaryNodePose(i);
-        std::optional<Transform> pose;
-        bool extrapolated;
-        std::tie(pose, extrapolated) = getPose(trajectories, temporaryTime, prevPose);
-        UASSERT(pose.has_value());
-        temporaryTime.canExtrapolate = extrapolated;
-        updatedTemporaryPoses.push_back(*pose);
-        i++;
+        auto canExtrapolateIt = temporaryCanExtrapolate_.begin();
+        const auto& nodesRef = temporaryNodes();
+        auto nodeIt = nodesRef.begin();
+        while (canExtrapolateIt != temporaryCanExtrapolate_.end())
+        {
+            UASSERT(nodeIt != nodesRef.end());
+            const Node& node = *nodeIt;
+            const Time& time = node.localMap->time();
+            const Transform& prevPose = node.transformedLocalMap->pose;
+            std::optional<Transform> pose;
+            bool extrapolated;
+            std::tie(pose, extrapolated) =
+                getPose(trajectories, time, *canExtrapolateIt, prevPose);
+            UASSERT(pose.has_value());
+            *canExtrapolateIt = extrapolated;
+            updatedTemporaryPoses.push_back(*pose);
+            ++canExtrapolateIt;
+            ++nodeIt;
+        }
+        UASSERT(nodeIt == nodesRef.end());
     }
-
+    
     int lastNodeIdToIncludeInCachedMap = -1;
     const Trajectory* latestTrajectory = trajectories.getLatestTrajectory();
     if (latestTrajectory != nullptr)
     {
-        for (const auto& idTime: times_)
+        const auto& nodesRef = nodes();
+        for (const auto& [nodeId, node] : nodesRef)
         {
-            int nodeId = idTime.first;
-            const NodeTime& time = idTime.second;
-            if (latestTrajectory->containsTime(time.time))
+            const Time& time = node.localMap->time();
+            if (latestTrajectory->containsTime(time))
             {
                 break;
             }
@@ -113,8 +148,8 @@ void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories)
 
 std::pair<std::optional<Transform>, bool /* if pose was extrapolated */>
 TimedOccupancyGridMap::getPose(
-    const Trajectories& trajectories, const NodeTime& time,
-    std::optional<Transform> prevPose /* std::nullopt */)
+    const Trajectories& trajectories, const Time& time, bool canExtrapolate,
+    const std::optional<Transform>& prevPose /* std::nullopt */)
 {
     if (trajectories.size() == 0)
     {
@@ -122,18 +157,18 @@ TimedOccupancyGridMap::getPose(
     }
     for (const Trajectory& trajectory : trajectories)
     {
-        std::optional<Transform> pose = getPose(trajectory, time.time);
+        std::optional<Transform> pose = getPose(trajectory, time);
         if (pose.has_value())
         {
             return std::make_pair(std::move(pose), false);
         }
     }
-    if (time.canExtrapolate && prevPose.has_value())
+    if (canExtrapolate && prevPose.has_value())
     {
         const Trajectory* prevTrajectory =
-            prevTrajectories_.findContinuedTrajectory(time.time);
+            prevTrajectories_.findContinuedTrajectory(time);
         const Trajectory* trajectory =
-            trajectories.findContinuedTrajectory(time.time);
+            trajectories.findContinuedTrajectory(time);
         if (prevTrajectory && trajectory)
         {
             Time commonEndTime = std::min(prevTrajectory->maxTime(), trajectory->maxTime());
@@ -182,8 +217,8 @@ std::optional<Transform> TimedOccupancyGridMap::getPose(
 
 void TimedOccupancyGridMap::reset()
 {
-    times_.clear();
-    temporaryTimes_.clear();
+    canExtrapolate_.clear();
+    temporaryCanExtrapolate_.clear();
     occupancyGridMap_->reset();
 }
 
@@ -195,22 +230,28 @@ void TimedOccupancyGridMap::save(const std::string& file)
     metaData.set_cell_size(cellSize());
     writer.write(metaData);
 
-    const auto& localMaps = localMapsWithoutObstacleDilation();
-    for (const auto& [nodeId, node] : nodes())
+    const auto& localMapsRef = localMapsWithoutObstacleDilation();
+    auto localMapIt = localMapsRef.begin();
+    const auto& nodesRef = nodes();
+    auto nodeIt = nodesRef.begin();
+    while (localMapIt != localMapsRef.end())
     {
-        UASSERT(times_.count(nodeId));
-        UASSERT(localMaps.count(nodeId));
-        proto::OccupancyGridMap::Node nodeProto;
-        nodeProto.set_node_id(nodeId);
-        *nodeProto.mutable_time() = rtabmap::toProto(times_.at(nodeId).time);
+        UASSERT(nodeIt != nodesRef.end());
+        UASSERT(localMapIt->first == nodeIt->first);
+        const Node& node = nodeIt->second;
+        proto::OccupancyGridMap::Node proto;
+        proto.set_node_id(localMapIt->first);
         if (node.transformedLocalMap.has_value())
         {
-            *nodeProto.mutable_pose() =
+            *proto.mutable_pose() =
                 rtabmap::toProto(node.transformedLocalMap->pose);
         }
-        *nodeProto.mutable_local_map() = rtabmap::toProto(*localMaps.at(nodeId));
-        writer.write(nodeProto);
+        *proto.mutable_local_map() = rtabmap::toProto(*(localMapIt->second));
+        writer.write(proto);
+        ++localMapIt;
+        ++nodeIt;
     }
+    UASSERT(nodeIt == nodesRef.end());
     writer.close();
 }
 
@@ -219,26 +260,24 @@ int TimedOccupancyGridMap::load(const std::string& file)
     MEASURE_BLOCK_TIME(TimedOccupancyGridMap__load);
     reset();
     Deserialization reader(file);
-    UASSERT(cellSize() == reader.getMetaData().cell_size());
-    std::optional<proto::OccupancyGridMap::Node> nodeProto;
+    UASSERT(cellSize() == reader.metaData().cell_size());
+    std::optional<proto::OccupancyGridMap::Node> proto;
     int maxNodeId = -1;
-    while (nodeProto = reader.readNode())
+    while (proto = reader.readNode())
     {
-        UASSERT(nodeProto->has_time());
-        int nodeId = nodeProto->node_id();
-        Time time = rtabmap::fromProto(nodeProto->time());
+        int nodeId = proto->node_id();
         std::shared_ptr<LocalMap> localMap =
-            rtabmap::fromProto(nodeProto->local_map());
-        if (nodeProto->has_pose())
+            rtabmap::fromProto(proto->local_map());
+        if (proto->has_pose())
         {
-            Transform pose = rtabmap::fromProto(nodeProto->pose());
-            addLocalMap(nodeId, time, pose, localMap);
+            Transform pose = rtabmap::fromProto(proto->pose());
+            addLocalMap(nodeId, pose, localMap);
         }
         else
         {
-            addLocalMap(nodeId, time, localMap);
+            addLocalMap(nodeId, localMap);
         }
-        times_.at(nodeId).canExtrapolate = false;
+        canExtrapolate_[nodeId] = false;
         maxNodeId = std::max(maxNodeId, nodeId);
     }
     reader.close();

@@ -30,15 +30,15 @@ public:
     void updatePoses(const std::list<Transform>& updatedPoses);
 
     OccupancyGrid getOccupancyGrid() const;
-    OccupancyGrid getOccupancyGrid(const MapLimits& roi) const;
+    OccupancyGrid getOccupancyGrid(const MapLimitsI& roi) const;
     OccupancyGrid getProbOccupancyGrid() const;
-    OccupancyGrid getProbOccupancyGrid(const MapLimits& roi) const;
+    OccupancyGrid getProbOccupancyGrid(const MapLimitsI& roi) const;
     ColorGrid getColorGrid() const;
-    ColorGrid getColorGrid(const MapLimits& roi) const;
+    ColorGrid getColorGrid(const MapLimitsI& roi) const;
 
     int maxTemporaryLocalMaps() const { return maxTemporaryLocalMaps_; }
-    const MapLimits& mapLimits() const { return mapLimits_; }
-    Transform getNodePose(int index) const;
+    const std::list<Node>& nodes() const { return nodes_; }
+    const MapLimitsI& mapLimits() const { return mapLimits_; }
 
     void reset();
 
@@ -48,7 +48,7 @@ private:
     int tryToUseCachedMap(const std::map<int, Transform>& updatedPoses);
 
     TransformedLocalMap transformLocalMap(const LocalMap& localMap, const Transform& transform);
-    void createOrResizeMap(const MapLimits& newMapLimits);
+    void createOrResizeMap(const MapLimitsI& newMapLimits);
     void deployLastLocalMap();
     void deployLocalMap(const Node& node);
     void removeFirstLocalMap();
@@ -65,7 +65,7 @@ private:
     int maxTemporaryLocalMaps_;
 
     std::list<Node> nodes_;
-    MapLimits mapLimits_;
+    MapLimitsI mapLimits_;
     CounterType hitCounter_;
     CounterType missCounter_;
     ColorsType colors_;

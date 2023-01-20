@@ -15,7 +15,6 @@ private:
         bool inFrame(int h, int w) const {
             return y >= 0 && x >= 0 && y < h && x < w;
         }
-
         int y;
         int x;
     };
