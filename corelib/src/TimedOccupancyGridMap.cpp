@@ -129,7 +129,8 @@ void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories)
         for (const auto& [nodeId, node] : nodesRef)
         {
             const Time& time = node.localMap->time();
-            if (latestTrajectory->containsTime(time))
+            if (latestTrajectory->containsTime(time) ||
+                trajectories.findContinuedTrajectory(time) == latestTrajectory)
             {
                 break;
             }
@@ -157,10 +158,16 @@ TimedOccupancyGridMap::getPose(
     }
     for (const Trajectory& trajectory : trajectories)
     {
-        std::optional<Transform> pose = getPose(trajectory, time);
+        std::optional<Transform> pose;
+        bool containsTime;
+        std::tie(pose, containsTime) = getPose(trajectory, time);
         if (pose.has_value())
         {
             return std::make_pair(std::move(pose), false);
+        }
+        else if (containsTime)
+        {
+            return std::make_pair(std::nullopt, false);
         }
     }
     if (canExtrapolate && prevPose.has_value())
@@ -173,9 +180,9 @@ TimedOccupancyGridMap::getPose(
         {
             Time commonEndTime = std::min(prevTrajectory->maxTime(), trajectory->maxTime());
             std::optional<Transform> prevTrajectoryEnd =
-                getPose(*prevTrajectory, commonEndTime);
+                getPose(*prevTrajectory, commonEndTime).first;
             std::optional<Transform> trajectoryEnd =
-                getPose(*trajectory, commonEndTime);
+                getPose(*trajectory, commonEndTime).first;
             if (prevTrajectoryEnd.has_value() && trajectoryEnd.has_value())
             {
                 Transform shift = prevTrajectoryEnd->inverse() * (*trajectoryEnd);
@@ -187,17 +194,18 @@ TimedOccupancyGridMap::getPose(
     return std::make_pair(std::nullopt, false);
 }
 
-std::optional<Transform> TimedOccupancyGridMap::getPose(
+std::pair<std::optional<Transform>, bool /* if trajectory contains time */>
+TimedOccupancyGridMap::getPose(
     const Trajectory& trajectory, const Time& time)
 {
     const auto& bounds = trajectory.getBounds(time);
     if (bounds.first == trajectory.end())
     {
-        return std::nullopt;
+        return std::make_pair(std::nullopt, false);
     }
     if (bounds.first->time == time)
     {
-        return bounds.first->pose;
+        return std::make_pair(bounds.first->pose, true);
     }
     UASSERT(bounds.second != trajectory.end());
     if (std::min(
@@ -207,12 +215,13 @@ std::optional<Transform> TimedOccupancyGridMap::getPose(
         trajectory.maxTime().toSec() - time.toSec() >
             guaranteedInterpolationTimeWindow_)
     {
-        return std::nullopt;
+        return std::make_pair(std::nullopt, true);
     }
     float t = (time.toSec() - bounds.first->time.toSec()) /
         (bounds.second->time.toSec() - bounds.first->time.toSec());
     UASSERT(t > 0.0 && t < 1.0);
-    return bounds.first->pose.interpolate(t, bounds.second->pose);
+    return std::make_pair(
+        bounds.first->pose.interpolate(t, bounds.second->pose), true);
 }
 
 void TimedOccupancyGridMap::reset()

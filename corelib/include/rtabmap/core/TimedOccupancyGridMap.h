@@ -214,7 +214,7 @@ private:
     std::pair<std::optional<Transform>, bool /* if pose was extrapolated */> getPose(
         const Trajectories& trajectories, const Time& time, bool canExtrapolate,
         const std::optional<Transform>& prevPose = std::nullopt);
-    std::optional<Transform> getPose(
+    std::pair<std::optional<Transform>, bool /* if trajectory contains time */> getPose(
         const Trajectory& trajectory, const Time& time);
 
 private:
