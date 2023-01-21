@@ -1,7 +1,7 @@
 SET(INCLUDE_DIRS
-	${PROJECT_SOURCE_DIR}/corelib/include
-	${PROJECT_SOURCE_DIR}/utilite/include
-	${PROJECT_SOURCE_DIR}/guilib/include
+    ${PROJECT_SOURCE_DIR}/corelib/include
+    ${PROJECT_SOURCE_DIR}/utilite/include
+    ${PROJECT_SOURCE_DIR}/guilib/include
     ${OpenCV_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
 )
@@ -11,9 +11,9 @@ IF(QT4_FOUND)
 ENDIF(QT4_FOUND)
 
 SET(LIBRARIES
-	${OpenCV_LIBRARIES} 
-	${PCL_LIBRARIES}
-	${QT_LIBRARIES} 
+    ${OpenCV_LIBRARIES} 
+    ${PCL_LIBRARIES}
+    ${QT_LIBRARIES} 
 )
 
 add_definitions(${PCL_DEFINITIONS})

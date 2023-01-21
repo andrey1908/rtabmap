@@ -59,9 +59,9 @@ std::string compressMat(const cv::Mat& mat)
     std::uint16_t counter = 0;
     constexpr std::uint16_t newRow = 0xFFFF;
     for (int y = 0; y < mat.rows; y++)
-	{
-		for (int x = 0; x < mat.cols; x++)
-		{
+    {
+        for (int x = 0; x < mat.cols; x++)
+        {
             const char* valuePtr = mat.ptr<const char>(y, x);
             if (std::equal(currentValue.begin(), currentValue.end(), valuePtr))
             {
@@ -78,13 +78,13 @@ std::string compressMat(const cv::Mat& mat)
                 std::copy(valuePtr, valuePtr + mat.elemSize(), currentValue.begin());
                 counter++;
             }
-		}
+        }
         UASSERT(counter > 0);
         writeToString(compressed, counter);
         writeToString(compressed, currentValue.data(), currentValue.size());
-		writeToString(compressed, newRow);
+        writeToString(compressed, newRow);
         counter = 0;
-	}
+    }
     return compressed;
 }
 

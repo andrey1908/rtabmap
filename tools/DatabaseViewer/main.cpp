@@ -33,35 +33,35 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int main(int argc, char * argv[])
 {
-	ULogger::setType(ULogger::kTypeConsole);
-	ULogger::setLevel(ULogger::kInfo);
+    ULogger::setType(ULogger::kTypeConsole);
+    ULogger::setLevel(ULogger::kInfo);
 
 #ifdef WIN32
-	CoInitialize(nullptr);
+    CoInitialize(nullptr);
 #endif
 
 #if VTK_MAJOR_VERSION >= 8
-	vtkObject::GlobalWarningDisplayOff();
+    vtkObject::GlobalWarningDisplayOff();
 #endif
 
-	QApplication * app = new QApplication(argc, argv);
-	rtabmap::DatabaseViewer * mainWindow = new rtabmap::DatabaseViewer();
+    QApplication * app = new QApplication(argc, argv);
+    rtabmap::DatabaseViewer * mainWindow = new rtabmap::DatabaseViewer();
 
-	mainWindow->showNormal();
+    mainWindow->showNormal();
 
-	if(argc == 2)
-	{
-		mainWindow->openDatabase(argv[1]);
-	}
+    if(argc == 2)
+    {
+        mainWindow->openDatabase(argv[1]);
+    }
 
-	// Now wait for application to finish
-	app->connect( app, SIGNAL( lastWindowClosed() ),
-				app, SLOT( quit() ) );
-	app->exec();// MUST be called by the Main Thread
+    // Now wait for application to finish
+    app->connect( app, SIGNAL( lastWindowClosed() ),
+                app, SLOT( quit() ) );
+    app->exec();// MUST be called by the Main Thread
 
-	delete mainWindow;
-	delete app;
-	UINFO("All done! closing...");
+    delete mainWindow;
+    delete app;
+    UINFO("All done! closing...");
 
-	return 0;
+    return 0;
 }

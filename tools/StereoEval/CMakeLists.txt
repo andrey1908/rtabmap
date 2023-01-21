@@ -1,13 +1,13 @@
 SET(INCLUDE_DIRS
-	${PROJECT_SOURCE_DIR}/corelib/include
-	${PROJECT_SOURCE_DIR}/utilite/include
+    ${PROJECT_SOURCE_DIR}/corelib/include
+    ${PROJECT_SOURCE_DIR}/utilite/include
     ${OpenCV_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
 )
 
 SET(LIBRARIES
-	${OpenCV_LIBRARIES} 
-	${PCL_LIBRARIES}
+    ${OpenCV_LIBRARIES} 
+    ${PCL_LIBRARIES}
 )
 
 add_definitions(${PCL_DEFINITIONS})

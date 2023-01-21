@@ -4,13 +4,13 @@ SET(SRC_FILES
 )
 
 SET(INCLUDE_DIRS
-	${PROJECT_SOURCE_DIR}/utilite/include
+    ${PROJECT_SOURCE_DIR}/utilite/include
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${OpenCV_INCLUDE_DIRS}
 )
 
 SET(LIBRARIES
-	${OpenCV_LIBRARIES} 
+    ${OpenCV_LIBRARIES} 
 )
 
 # Make sure the compiler can find include files from our library.

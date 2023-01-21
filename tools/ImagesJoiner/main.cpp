@@ -35,137 +35,137 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 void showUsage()
 {
-	printf("Usage:\n"
-			"imagesJoiner.exe [option] path\n"
-			"imagesJoiner.exe path_left path_right\n"
-			"  Options:\n"
-			"    -inv       option for copying odd images on the right\n\n");
-	exit(1);
+    printf("Usage:\n"
+            "imagesJoiner.exe [option] path\n"
+            "imagesJoiner.exe path_left path_right\n"
+            "  Options:\n"
+            "    -inv       option for copying odd images on the right\n\n");
+    exit(1);
 }
 
 int main(int argc, char * argv[])
 {
-	if(argc < 2)
-	{
-		showUsage();
-	}
+    if(argc < 2)
+    {
+        showUsage();
+    }
 
-	bool inv = false;
-	for(int i=1; i<argc-1; ++i)
-	{
-		if(strcmp(argv[i], "-inv") == 0)
-		{
-			inv = true;
-			printf(" Inversing option activated...\n");
-			continue;
-		}
-		if(argc > 3)
-		{
-			showUsage();
-			printf(" Not recognized option: \"%s\"\n", argv[i]);
-		}
-	}
+    bool inv = false;
+    for(int i=1; i<argc-1; ++i)
+    {
+        if(strcmp(argv[i], "-inv") == 0)
+        {
+            inv = true;
+            printf(" Inversing option activated...\n");
+            continue;
+        }
+        if(argc > 3)
+        {
+            showUsage();
+            printf(" Not recognized option: \"%s\"\n", argv[i]);
+        }
+    }
 
-	std::string path, pathRight;
+    std::string path, pathRight;
 
-	if(argc == 3 && !inv)
-	{
-		//two paths
-		path = argv[1];
-		pathRight = argv[2];
+    if(argc == 3 && !inv)
+    {
+        //two paths
+        path = argv[1];
+        pathRight = argv[2];
 
-		printf(" Path left = %s\n", path.c_str());
-		printf(" Path right = %s\n", pathRight.c_str());
-	}
-	else
-	{
-		path = argv[argc-1];
-		printf(" Path = %s\n", path.c_str());
-	}
+        printf(" Path left = %s\n", path.c_str());
+        printf(" Path right = %s\n", pathRight.c_str());
+    }
+    else
+    {
+        path = argv[argc-1];
+        printf(" Path = %s\n", path.c_str());
+    }
 
-	UDirectory dir(path, "jpg bmp png tiff jpeg");
-	UDirectory dirRight(pathRight, "jpg bmp png tiff jpeg");
-	if(!dir.isValid() || (!pathRight.empty() && !dirRight.isValid()))
-	{
-		printf("Path invalid!\n");
-		exit(-1);
-	}
+    UDirectory dir(path, "jpg bmp png tiff jpeg");
+    UDirectory dirRight(pathRight, "jpg bmp png tiff jpeg");
+    if(!dir.isValid() || (!pathRight.empty() && !dirRight.isValid()))
+    {
+        printf("Path invalid!\n");
+        exit(-1);
+    }
 
-	std::string targetDirectory = path+"_joined";
-	UDirectory::makeDir(targetDirectory);
-	printf(" Creating directory \"%s\"\n", targetDirectory.c_str());
+    std::string targetDirectory = path+"_joined";
+    UDirectory::makeDir(targetDirectory);
+    printf(" Creating directory \"%s\"\n", targetDirectory.c_str());
 
 
-	std::string fileNameA = dir.getNextFilePath();
-	std::string fileNameB;
-	if(dirRight.isValid())
-	{
-		fileNameB = dirRight.getNextFilePath();
-	}
-	else
-	{
-		fileNameB = dir.getNextFilePath();
-	}
+    std::string fileNameA = dir.getNextFilePath();
+    std::string fileNameB;
+    if(dirRight.isValid())
+    {
+        fileNameB = dirRight.getNextFilePath();
+    }
+    else
+    {
+        fileNameB = dir.getNextFilePath();
+    }
 
-	int i=1;
-	while(!fileNameA.empty() && !fileNameB.empty())
-	{
-		if(inv)
-		{
-			std::string tmp = fileNameA;
-			fileNameA = fileNameB;
-			fileNameB = tmp;
-		}
+    int i=1;
+    while(!fileNameA.empty() && !fileNameB.empty())
+    {
+        if(inv)
+        {
+            std::string tmp = fileNameA;
+            fileNameA = fileNameB;
+            fileNameB = tmp;
+        }
 
-		std::string ext = UFile::getExtension(fileNameA);
+        std::string ext = UFile::getExtension(fileNameA);
 
-		std::string targetFilePath = targetDirectory+UDirectory::separator()+uNumber2Str(i++)+"."+ext;
+        std::string targetFilePath = targetDirectory+UDirectory::separator()+uNumber2Str(i++)+"."+ext;
 
-		cv::Mat imageA = cv::imread(fileNameA.c_str());
-		cv::Mat imageB = cv::imread(fileNameB.c_str());
+        cv::Mat imageA = cv::imread(fileNameA.c_str());
+        cv::Mat imageB = cv::imread(fileNameB.c_str());
 
-		fileNameA.clear();
-		fileNameB.clear();
+        fileNameA.clear();
+        fileNameB.clear();
 
-		if(!imageA.empty() && !imageB.empty())
-		{
-			cv::Size sizeA = imageA.size();
-			cv::Size sizeB = imageB.size();
-			cv::Size targetSize(0,0);
-			targetSize.width = sizeA.width + sizeB.width;
-			targetSize.height = sizeA.height > sizeB.height ? sizeA.height : sizeB.height;
-			cv::Mat targetImage(targetSize, imageA.type());
+        if(!imageA.empty() && !imageB.empty())
+        {
+            cv::Size sizeA = imageA.size();
+            cv::Size sizeB = imageB.size();
+            cv::Size targetSize(0,0);
+            targetSize.width = sizeA.width + sizeB.width;
+            targetSize.height = sizeA.height > sizeB.height ? sizeA.height : sizeB.height;
+            cv::Mat targetImage(targetSize, imageA.type());
 
-			cv::Mat roiA(targetImage, cv::Rect( 0, 0, sizeA.width, sizeA.height ));
-			imageA.copyTo(roiA);
-			cv::Mat roiB( targetImage, cv::Rect( sizeA.width, 0, sizeB.width, sizeB.height ) );
-			imageB.copyTo(roiB);
+            cv::Mat roiA(targetImage, cv::Rect( 0, 0, sizeA.width, sizeA.height ));
+            imageA.copyTo(roiA);
+            cv::Mat roiB( targetImage, cv::Rect( sizeA.width, 0, sizeB.width, sizeB.height ) );
+            imageB.copyTo(roiB);
 
-			if(!cv::imwrite(targetFilePath.c_str(), targetImage))
-			{
-				printf("Error : saving to \"%s\" goes wrong...\n", targetFilePath.c_str());
-			}
-			else
-			{
-				printf("Saved \"%s\" \n", targetFilePath.c_str());
-			}
+            if(!cv::imwrite(targetFilePath.c_str(), targetImage))
+            {
+                printf("Error : saving to \"%s\" goes wrong...\n", targetFilePath.c_str());
+            }
+            else
+            {
+                printf("Saved \"%s\" \n", targetFilePath.c_str());
+            }
 
-			fileNameA = dir.getNextFilePath();
-			if(dirRight.isValid())
-			{
-				fileNameB = dirRight.getNextFilePath();
-			}
-			else
-			{
-				fileNameB = dir.getNextFilePath();
-			}
-		}
-		else
-		{
-			printf("Error: loading images failed!\n");
-		}
-	}
-	printf("%d files processed\n", i-1);
+            fileNameA = dir.getNextFilePath();
+            if(dirRight.isValid())
+            {
+                fileNameB = dirRight.getNextFilePath();
+            }
+            else
+            {
+                fileNameB = dir.getNextFilePath();
+            }
+        }
+        else
+        {
+            printf("Error: loading images failed!\n");
+        }
+    }
+    printf("%d files processed\n", i-1);
 
-	return 0;
+    return 0;
 }

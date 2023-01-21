@@ -47,792 +47,792 @@ using namespace rtabmap;
 
 void showUsage()
 {
-	printf("\nUsage:\n"
-			"rtabmap-report [\"Statistic/Id\"] [options] path\n"
+    printf("\nUsage:\n"
+            "rtabmap-report [\"Statistic/Id\"] [options] path\n"
 #ifdef WITH_QT
-			"[Not built with Qt, statistics cannot be plotted]\n"
+            "[Not built with Qt, statistics cannot be plotted]\n"
 #endif
-			"  path               Directory containing rtabmap databases or path of a database.\n"
-			"  Options:"
-			"    --latex            Print table formatted in LaTeX with results.\n"
-			"    --kitti            Compute error based on KITTI benchmark.\n"
-			"    --relative         Compute relative motion error between poses.\n"
-			"    --loop             Compute relative motion error of loop closures.\n"
-			"    --scale            Find the best scale for the map against the ground truth\n"
-			"                         and compute error based on the scaled path.\n"
-			"    --poses            Export poses to [path]_poses.txt, ground truth to [path]_gt.txt\n"
-			"                         and valid ground truth indices to [path]_indices.txt \n"
-			"    --stats            Show available statistics \"Statistic/Id\" to plot or get localization statistics (if path is a file). \n"
+            "  path               Directory containing rtabmap databases or path of a database.\n"
+            "  Options:"
+            "    --latex            Print table formatted in LaTeX with results.\n"
+            "    --kitti            Compute error based on KITTI benchmark.\n"
+            "    --relative         Compute relative motion error between poses.\n"
+            "    --loop             Compute relative motion error of loop closures.\n"
+            "    --scale            Find the best scale for the map against the ground truth\n"
+            "                         and compute error based on the scaled path.\n"
+            "    --poses            Export poses to [path]_poses.txt, ground truth to [path]_gt.txt\n"
+            "                         and valid ground truth indices to [path]_indices.txt \n"
+            "    --stats            Show available statistics \"Statistic/Id\" to plot or get localization statistics (if path is a file). \n"
 #ifdef WITH_QT
-			"    --invert           When reading many databases, put all curves from a same \n"
-			"                       database in same figure, instead of all same curves from \n"
-			"                       different database in same figure. When reading a single \n"
-			"                       database, the inverse will be done. \n"
-			"    --ids              Use IDs for x axis instead of time in the figures. \n"
-			"    --start #          Start from this node ID for the figures.\n"
-			"    --export           Export figures' data to txt files.\n"
-			"    --export_prefix    Prefix to filenames of exported figures' data (default is \"Stat\").\n"
+            "    --invert           When reading many databases, put all curves from a same \n"
+            "                       database in same figure, instead of all same curves from \n"
+            "                       different database in same figure. When reading a single \n"
+            "                       database, the inverse will be done. \n"
+            "    --ids              Use IDs for x axis instead of time in the figures. \n"
+            "    --start #          Start from this node ID for the figures.\n"
+            "    --export           Export figures' data to txt files.\n"
+            "    --export_prefix    Prefix to filenames of exported figures' data (default is \"Stat\").\n"
 #endif
-			"    --report           Export all evaluation statistics values in report.txt \n"
-			"    --loc #            Show localization statistics for each \"Statistic/Id\" per\n"
-			"                       session for 1=min,2=max,4=mean,8=stddev,16=total,32=nonnull%%\n"
-			"    --loc_delay #      Delay to split sessions for localization statistics (default 60 seconds)\n"
-			"                       (it is a mask, we can combine those numbers, e.g., 63 for all) \n"
-			"    --ignore_inter_nodes  Ignore intermediate poses and statistics.\n"
-			"    --help             Show usage\n\n");
-	exit(1);
+            "    --report           Export all evaluation statistics values in report.txt \n"
+            "    --loc #            Show localization statistics for each \"Statistic/Id\" per\n"
+            "                       session for 1=min,2=max,4=mean,8=stddev,16=total,32=nonnull%%\n"
+            "    --loc_delay #      Delay to split sessions for localization statistics (default 60 seconds)\n"
+            "                       (it is a mask, we can combine those numbers, e.g., 63 for all) \n"
+            "    --ignore_inter_nodes  Ignore intermediate poses and statistics.\n"
+            "    --help             Show usage\n\n");
+    exit(1);
 }
 
 struct LocStats
 {
-	static LocStats from(const std::vector<float> & array)
-	{
-		LocStats values;
-		values.mean = uMean(array);
-		values.stddev = std::sqrt(uVariance(array, values.mean));
-		uMinMax(array, values.min, values.max);
-		values.total = array.size();
-		values.nonNull = 0.0f;
-		if(!array.empty())
-		{
-			for(size_t j=0; j<array.size(); ++j)
-			{
-				if(array[j] != 0)
-				{
-					values.nonNull+=1.0f;
-				}
-			}
-			values.nonNull = values.nonNull/float(array.size());
-		}
-		return values;
-	}
-	float mean;
-	float stddev;
-	float min;
-	float max;
-	int total;
-	float nonNull;
+    static LocStats from(const std::vector<float> & array)
+    {
+        LocStats values;
+        values.mean = uMean(array);
+        values.stddev = std::sqrt(uVariance(array, values.mean));
+        uMinMax(array, values.min, values.max);
+        values.total = array.size();
+        values.nonNull = 0.0f;
+        if(!array.empty())
+        {
+            for(size_t j=0; j<array.size(); ++j)
+            {
+                if(array[j] != 0)
+                {
+                    values.nonNull+=1.0f;
+                }
+            }
+            values.nonNull = values.nonNull/float(array.size());
+        }
+        return values;
+    }
+    float mean;
+    float stddev;
+    float min;
+    float max;
+    int total;
+    float nonNull;
 };
 
 int main(int argc, char * argv[])
 {
-	if(argc < 2)
-	{
-		showUsage();
-	}
+    if(argc < 2)
+    {
+        showUsage();
+    }
 
-	ULogger::setType(ULogger::kTypeConsole);
-	ULogger::setLevel(ULogger::kWarning);
+    ULogger::setType(ULogger::kTypeConsole);
+    ULogger::setLevel(ULogger::kWarning);
 #ifdef WITH_QT
-	QApplication app(argc, argv);
+    QApplication app(argc, argv);
 #endif
 
-	bool outputLatex = false;
-	bool outputScaled = false;
-	bool outputPoses = false;
-	bool outputKittiError = false;
-	bool outputRelativeError = false;
-	bool outputReport = false;
-	bool outputLoopAccuracy = false;
-	bool showAvailableStats = false;
-	bool invertFigures = false;
-	bool ignoreInterNodes = false;
-	bool useIds = false;
-	int startId = 0;
-	bool exportFigures = false;
-	std::string exportPrefix = "Stat";
-	int showLoc = 0;
-	float locDelay = 60;
-	std::vector<std::string> statsToShow;
+    bool outputLatex = false;
+    bool outputScaled = false;
+    bool outputPoses = false;
+    bool outputKittiError = false;
+    bool outputRelativeError = false;
+    bool outputReport = false;
+    bool outputLoopAccuracy = false;
+    bool showAvailableStats = false;
+    bool invertFigures = false;
+    bool ignoreInterNodes = false;
+    bool useIds = false;
+    int startId = 0;
+    bool exportFigures = false;
+    std::string exportPrefix = "Stat";
+    int showLoc = 0;
+    float locDelay = 60;
+    std::vector<std::string> statsToShow;
 #ifdef WITH_QT
-	std::map<std::string, UPlot*> figures;
+    std::map<std::string, UPlot*> figures;
 #endif
-	for(int i=1; i<argc-1; ++i)
-	{
-		if(strcmp(argv[i], "--help") == 0)
-		{
-			showUsage();
-		}
-		else if(strcmp(argv[i], "--latex") == 0)
-		{
-			outputLatex = true;
-		}
-		else if(strcmp(argv[i], "--kitti") == 0)
-		{
-			outputKittiError = true;
-		}
-		else if(strcmp(argv[i], "--relative") == 0)
-		{
-			outputRelativeError = true;
-		}
-		else if(strcmp(argv[i], "--scale") == 0)
-		{
-			outputScaled = true;
-		}
-		else if(strcmp(argv[i], "--poses") == 0)
-		{
-			outputPoses = true;
-		}
-		else if(strcmp(argv[i], "--loop") == 0)
-		{
-			outputLoopAccuracy = true;
-		}
-		else if(strcmp(argv[i],"--report") == 0)
-		{
-			outputReport = true;
-		}
-		else if(strcmp(argv[i],"--stats") == 0)
-		{
-			showAvailableStats = true;
-		}
-		else if(strcmp(argv[i],"--invert") == 0)
-		{
-			invertFigures = true;
-		}
-		else if(strcmp(argv[i],"--ids") == 0)
-		{
-			useIds = true;
-		}
-		else if(strcmp(argv[i],"--ignore_inter_nodes") == 0)
-		{
-			ignoreInterNodes = true;
-		}
-		else if(strcmp(argv[i],"--export") == 0)
-		{
-			exportFigures = true;
-		}
-		else if(strcmp(argv[i],"--export_prefix") == 0)
-		{
-			++i;
-			if(i<argc-1)
-			{
-				exportPrefix = argv[i];
-				printf("Export prefix=%s (--export_prefix)\n", exportPrefix.c_str());
-			}
-			else
-			{
-				printf("Missing value for \"--export_prefix\" option.\n");
-				showUsage();
-			}
-		}
-		else if(strcmp(argv[i],"--loc") == 0)
-		{
-			++i;
-			if(i<argc-1)
-			{
-				showLoc = atoi(argv[i]);
-				printf("Localization statistics=%d (--loc)\n", showLoc);
-			}
-			else
-			{
-				printf("Missing type for \"--loc\" option.\n");
-				showUsage();
-			}
-		}
-		else if(strcmp(argv[i],"--loc_delay") == 0)
-		{
-			++i;
-			if(i<argc-1)
-			{
-				locDelay = atof(argv[i]);
-				printf("Localization delay=%fs (--loc_delay)\n", locDelay);
-			}
-			else
-			{
-				printf("Missing value for \"--loc_delay\" option.\n");
-				showUsage();
-			}
-		}
-		else if(strcmp(argv[i],"--start") == 0)
-		{
-			++i;
-			if(i<argc-1)
-			{
-				startId = atoi(argv[i]);
-				printf("Figures will be plotted from id=%d (--start)\n", startId);
-			}
-			else
-			{
-				printf("Missing id for \"--start\" option.\n");
-				showUsage();
-			}
-		}
-		else
-		{
+    for(int i=1; i<argc-1; ++i)
+    {
+        if(strcmp(argv[i], "--help") == 0)
+        {
+            showUsage();
+        }
+        else if(strcmp(argv[i], "--latex") == 0)
+        {
+            outputLatex = true;
+        }
+        else if(strcmp(argv[i], "--kitti") == 0)
+        {
+            outputKittiError = true;
+        }
+        else if(strcmp(argv[i], "--relative") == 0)
+        {
+            outputRelativeError = true;
+        }
+        else if(strcmp(argv[i], "--scale") == 0)
+        {
+            outputScaled = true;
+        }
+        else if(strcmp(argv[i], "--poses") == 0)
+        {
+            outputPoses = true;
+        }
+        else if(strcmp(argv[i], "--loop") == 0)
+        {
+            outputLoopAccuracy = true;
+        }
+        else if(strcmp(argv[i],"--report") == 0)
+        {
+            outputReport = true;
+        }
+        else if(strcmp(argv[i],"--stats") == 0)
+        {
+            showAvailableStats = true;
+        }
+        else if(strcmp(argv[i],"--invert") == 0)
+        {
+            invertFigures = true;
+        }
+        else if(strcmp(argv[i],"--ids") == 0)
+        {
+            useIds = true;
+        }
+        else if(strcmp(argv[i],"--ignore_inter_nodes") == 0)
+        {
+            ignoreInterNodes = true;
+        }
+        else if(strcmp(argv[i],"--export") == 0)
+        {
+            exportFigures = true;
+        }
+        else if(strcmp(argv[i],"--export_prefix") == 0)
+        {
+            ++i;
+            if(i<argc-1)
+            {
+                exportPrefix = argv[i];
+                printf("Export prefix=%s (--export_prefix)\n", exportPrefix.c_str());
+            }
+            else
+            {
+                printf("Missing value for \"--export_prefix\" option.\n");
+                showUsage();
+            }
+        }
+        else if(strcmp(argv[i],"--loc") == 0)
+        {
+            ++i;
+            if(i<argc-1)
+            {
+                showLoc = atoi(argv[i]);
+                printf("Localization statistics=%d (--loc)\n", showLoc);
+            }
+            else
+            {
+                printf("Missing type for \"--loc\" option.\n");
+                showUsage();
+            }
+        }
+        else if(strcmp(argv[i],"--loc_delay") == 0)
+        {
+            ++i;
+            if(i<argc-1)
+            {
+                locDelay = atof(argv[i]);
+                printf("Localization delay=%fs (--loc_delay)\n", locDelay);
+            }
+            else
+            {
+                printf("Missing value for \"--loc_delay\" option.\n");
+                showUsage();
+            }
+        }
+        else if(strcmp(argv[i],"--start") == 0)
+        {
+            ++i;
+            if(i<argc-1)
+            {
+                startId = atoi(argv[i]);
+                printf("Figures will be plotted from id=%d (--start)\n", startId);
+            }
+            else
+            {
+                printf("Missing id for \"--start\" option.\n");
+                showUsage();
+            }
+        }
+        else
+        {
 
-			statsToShow.push_back(argv[i]);
-		}
-	}
+            statsToShow.push_back(argv[i]);
+        }
+    }
 
-	std::string path = argv[argc-1];
-	path = uReplaceChar(path, '~', UDirectory::homeDir());
+    std::string path = argv[argc-1];
+    path = uReplaceChar(path, '~', UDirectory::homeDir());
 
-	if(!UDirectory::exists(path) && UFile::getExtension(path).compare("db") == 0)
-	{
-		invertFigures = !invertFigures;
-	}
-	std::map<std::string, std::vector<std::pair<std::string, std::vector<LocStats> > > > localizationMultiStats; //<statsName, <Database<Session>> >
-	for(size_t i=0; i<statsToShow.size(); ++i)
-	{
-		std::string figureTitle = statsToShow[i];
-		if(!invertFigures)
-		{
+    if(!UDirectory::exists(path) && UFile::getExtension(path).compare("db") == 0)
+    {
+        invertFigures = !invertFigures;
+    }
+    std::map<std::string, std::vector<std::pair<std::string, std::vector<LocStats> > > > localizationMultiStats; //<statsName, <Database<Session>> >
+    for(size_t i=0; i<statsToShow.size(); ++i)
+    {
+        std::string figureTitle = statsToShow[i];
+        if(!invertFigures)
+        {
 #ifdef WITH_QT
-			printf("Plot %s\n", figureTitle.c_str());
-			UPlot * fig = new UPlot();
-			fig->resize(QSize(640,480));
-			fig->setWindowTitle(figureTitle.c_str());
-			if(useIds)
-			{
-				fig->setXLabel("Node ID");
-			}
-			else
-			{
-				fig->setXLabel("Time (s)");
-			}
-			figures.insert(std::make_pair(figureTitle, fig));
+            printf("Plot %s\n", figureTitle.c_str());
+            UPlot * fig = new UPlot();
+            fig->resize(QSize(640,480));
+            fig->setWindowTitle(figureTitle.c_str());
+            if(useIds)
+            {
+                fig->setXLabel("Node ID");
+            }
+            else
+            {
+                fig->setXLabel("Time (s)");
+            }
+            figures.insert(std::make_pair(figureTitle, fig));
 #endif
-		}
-		if(showLoc & 0b111111)
-		{
-			localizationMultiStats.insert(std::make_pair(figureTitle, std::vector<std::pair<std::string, std::vector<LocStats> > >()));
-		}
-	}
-	if(!invertFigures)
-	{
-		statsToShow.clear();
-	}
+        }
+        if(showLoc & 0b111111)
+        {
+            localizationMultiStats.insert(std::make_pair(figureTitle, std::vector<std::pair<std::string, std::vector<LocStats> > >()));
+        }
+    }
+    if(!invertFigures)
+    {
+        statsToShow.clear();
+    }
 
-	std::string fileName;
-	std::list<std::string> paths;
-	paths.push_back(path);
-	std::vector<std::map<std::string, std::vector<float> > > outputLatexStatistics;
-	std::map<std::string, std::vector<float> > outputLatexStatisticsMap;
-	bool odomRAMSet = false;
-	std::set<std::string> topDirs;
-	while(paths.size())
-	{
-		std::string currentPath = paths.front();
-		UDirectory currentDir(currentPath);
-		paths.pop_front();
-		bool currentPathIsDatabase = false;
-		if(!currentDir.isValid())
-		{
-			if(UFile::getExtension(currentPath).compare("db") == 0)
-			{
-				currentPathIsDatabase=true;
-				printf("Database: %s\n", currentPath.c_str());
-			}
-			else
-			{
-				continue;
-			}
-		}
-		std::list<std::string> subDirs;
-		if(!currentPathIsDatabase)
-		{
-			printf("Directory: %s\n", currentPath.c_str());
-			std::list<std::string> fileNames = currentDir.getFileNames();
-			if(topDirs.empty())
-			{
-				for(std::list<std::string>::iterator iter = fileNames.begin(); iter!=fileNames.end(); ++iter)
-				{
-					topDirs.insert(currentPath+"/"+*iter);
-				}
-			}
-			else
-			{
-				if(topDirs.find(currentPath) != topDirs.end())
-				{
-					if(outputLatexStatisticsMap.size())
-					{
-						outputLatexStatistics.push_back(outputLatexStatisticsMap);
-						outputLatexStatisticsMap.clear();
-					}
-				}
-			}
-		}
+    std::string fileName;
+    std::list<std::string> paths;
+    paths.push_back(path);
+    std::vector<std::map<std::string, std::vector<float> > > outputLatexStatistics;
+    std::map<std::string, std::vector<float> > outputLatexStatisticsMap;
+    bool odomRAMSet = false;
+    std::set<std::string> topDirs;
+    while(paths.size())
+    {
+        std::string currentPath = paths.front();
+        UDirectory currentDir(currentPath);
+        paths.pop_front();
+        bool currentPathIsDatabase = false;
+        if(!currentDir.isValid())
+        {
+            if(UFile::getExtension(currentPath).compare("db") == 0)
+            {
+                currentPathIsDatabase=true;
+                printf("Database: %s\n", currentPath.c_str());
+            }
+            else
+            {
+                continue;
+            }
+        }
+        std::list<std::string> subDirs;
+        if(!currentPathIsDatabase)
+        {
+            printf("Directory: %s\n", currentPath.c_str());
+            std::list<std::string> fileNames = currentDir.getFileNames();
+            if(topDirs.empty())
+            {
+                for(std::list<std::string>::iterator iter = fileNames.begin(); iter!=fileNames.end(); ++iter)
+                {
+                    topDirs.insert(currentPath+"/"+*iter);
+                }
+            }
+            else
+            {
+                if(topDirs.find(currentPath) != topDirs.end())
+                {
+                    if(outputLatexStatisticsMap.size())
+                    {
+                        outputLatexStatistics.push_back(outputLatexStatisticsMap);
+                        outputLatexStatisticsMap.clear();
+                    }
+                }
+            }
+        }
 
-		// For all databases in currentDir
-		while(currentPathIsDatabase || !(fileName = currentDir.getNextFileName()).empty())
-		{
-			int startIdPerDb = startId;
-			if(currentPathIsDatabase || UFile::getExtension(fileName).compare("db") == 0)
-			{
-				std::string filePath;
-				if(currentPathIsDatabase)
-				{
-					filePath = currentPath;
-					fileName = UFile::getName(currentPath);
-				}
-				else
-				{
-					filePath = currentPath + UDirectory::separator() + fileName;
-				}
+        // For all databases in currentDir
+        while(currentPathIsDatabase || !(fileName = currentDir.getNextFileName()).empty())
+        {
+            int startIdPerDb = startId;
+            if(currentPathIsDatabase || UFile::getExtension(fileName).compare("db") == 0)
+            {
+                std::string filePath;
+                if(currentPathIsDatabase)
+                {
+                    filePath = currentPath;
+                    fileName = UFile::getName(currentPath);
+                }
+                else
+                {
+                    filePath = currentPath + UDirectory::separator() + fileName;
+                }
 
-				DBDriver * driver = DBDriver::create();
-				ParametersMap params;
-				if(driver->openConnection(filePath))
-				{
-					ULogger::setLevel(ULogger::kError); // to suppress parameter warnings
-					params = driver->getLastParameters();
-					ULogger::setLevel(ULogger::kWarning);
-					std::set<int> ids;
-					driver->getAllNodeIds(ids, false, false, ignoreInterNodes);
-					std::map<int, std::pair<std::map<std::string, float>, double> > stats = driver->getAllStatistics();
-					std::map<int, Transform> odomPoses, gtPoses;
-					std::map<int, double> odomStamps;
-					std::vector<float> cameraTime;
-					cameraTime.reserve(ids.size());
-					std::vector<float> odomTime;
-					odomTime.reserve(ids.size());
-					std::vector<float> slamTime;
-					slamTime.reserve(ids.size());
-					float rmse = -1;
-					float maxRMSE = -1;
-					float maxOdomRAM = -1;
-					float maxMapRAM = -1;
+                DBDriver * driver = DBDriver::create();
+                ParametersMap params;
+                if(driver->openConnection(filePath))
+                {
+                    ULogger::setLevel(ULogger::kError); // to suppress parameter warnings
+                    params = driver->getLastParameters();
+                    ULogger::setLevel(ULogger::kWarning);
+                    std::set<int> ids;
+                    driver->getAllNodeIds(ids, false, false, ignoreInterNodes);
+                    std::map<int, std::pair<std::map<std::string, float>, double> > stats = driver->getAllStatistics();
+                    std::map<int, Transform> odomPoses, gtPoses;
+                    std::map<int, double> odomStamps;
+                    std::vector<float> cameraTime;
+                    cameraTime.reserve(ids.size());
+                    std::vector<float> odomTime;
+                    odomTime.reserve(ids.size());
+                    std::vector<float> slamTime;
+                    slamTime.reserve(ids.size());
+                    float rmse = -1;
+                    float maxRMSE = -1;
+                    float maxOdomRAM = -1;
+                    float maxMapRAM = -1;
 #ifdef WITH_QT
-					if(currentPathIsDatabase && showAvailableStats)
-					{
-						std::map<std::string, int> availableStats;
-						for(std::set<int>::iterator iter=ids.begin(); iter!=ids.end(); ++iter)
-						{
-							if(stats.find(*iter) != stats.end())
-							{
-								for(std::map<std::string, float>::iterator jter=stats.at(*iter).first.begin(); jter!=stats.at(*iter).first.end(); ++jter)
-								{
-									if(availableStats.find(jter->first) != availableStats.end())
-									{
-										++availableStats.at(jter->first);
-									}
-									else
-									{
-										availableStats.insert(std::make_pair(jter->first, 1));
-									}
-								}
-							}
-						}
-						printf("Showing available statistics in \"%s\":\n", filePath.c_str());
-						for(std::map<std::string, int>::iterator iter=availableStats.begin(); iter!=availableStats.end(); ++iter)
-						{
-							printf("%s (%d)\n", iter->first.c_str(), iter->second);
-						}
-						printf("\n");
-						exit(1);
-					}
+                    if(currentPathIsDatabase && showAvailableStats)
+                    {
+                        std::map<std::string, int> availableStats;
+                        for(std::set<int>::iterator iter=ids.begin(); iter!=ids.end(); ++iter)
+                        {
+                            if(stats.find(*iter) != stats.end())
+                            {
+                                for(std::map<std::string, float>::iterator jter=stats.at(*iter).first.begin(); jter!=stats.at(*iter).first.end(); ++jter)
+                                {
+                                    if(availableStats.find(jter->first) != availableStats.end())
+                                    {
+                                        ++availableStats.at(jter->first);
+                                    }
+                                    else
+                                    {
+                                        availableStats.insert(std::make_pair(jter->first, 1));
+                                    }
+                                }
+                            }
+                        }
+                        printf("Showing available statistics in \"%s\":\n", filePath.c_str());
+                        for(std::map<std::string, int>::iterator iter=availableStats.begin(); iter!=availableStats.end(); ++iter)
+                        {
+                            printf("%s (%d)\n", iter->first.c_str(), iter->second);
+                        }
+                        printf("\n");
+                        exit(1);
+                    }
 
-					std::map<std::string, UPlotCurve*> curves;
-					if(statsToShow.empty())
-					{
-						for(std::map<std::string, UPlot*>::iterator iter=figures.begin(); iter!=figures.end(); ++iter)
-						{
-							curves.insert(std::make_pair(iter->first, iter->second->addCurve(filePath.c_str())));
-							if(!localizationMultiStats.empty())
-								localizationMultiStats.at(iter->first).push_back(std::make_pair(fileName, std::vector<LocStats>()));
-						}
-					}
-					else
-					{
-						UPlot * fig = new UPlot();
-						fig->setWindowTitle(filePath.c_str());
-						if(useIds)
-						{
-							fig->setXLabel("Node ID");
-						}
-						else
-						{
-							fig->setXLabel("Time (s)");
-						}
-						if(!figures.insert(std::make_pair(filePath.c_str(), fig)).second)
-						{
-							delete fig;
-							printf("Figure %s already added!\n", filePath.c_str());
-						}
-						else
-						{
-							for(size_t i=0; i<statsToShow.size(); ++i)
-							{
-								curves.insert(std::make_pair(statsToShow[i], fig->addCurve(statsToShow[i].c_str())));
-								if(!localizationMultiStats.empty())
-									localizationMultiStats.at(statsToShow[i]).push_back(std::make_pair(fileName, std::vector<LocStats>()));
-							}
-						}
-					}
+                    std::map<std::string, UPlotCurve*> curves;
+                    if(statsToShow.empty())
+                    {
+                        for(std::map<std::string, UPlot*>::iterator iter=figures.begin(); iter!=figures.end(); ++iter)
+                        {
+                            curves.insert(std::make_pair(iter->first, iter->second->addCurve(filePath.c_str())));
+                            if(!localizationMultiStats.empty())
+                                localizationMultiStats.at(iter->first).push_back(std::make_pair(fileName, std::vector<LocStats>()));
+                        }
+                    }
+                    else
+                    {
+                        UPlot * fig = new UPlot();
+                        fig->setWindowTitle(filePath.c_str());
+                        if(useIds)
+                        {
+                            fig->setXLabel("Node ID");
+                        }
+                        else
+                        {
+                            fig->setXLabel("Time (s)");
+                        }
+                        if(!figures.insert(std::make_pair(filePath.c_str(), fig)).second)
+                        {
+                            delete fig;
+                            printf("Figure %s already added!\n", filePath.c_str());
+                        }
+                        else
+                        {
+                            for(size_t i=0; i<statsToShow.size(); ++i)
+                            {
+                                curves.insert(std::make_pair(statsToShow[i], fig->addCurve(statsToShow[i].c_str())));
+                                if(!localizationMultiStats.empty())
+                                    localizationMultiStats.at(statsToShow[i]).push_back(std::make_pair(fileName, std::vector<LocStats>()));
+                            }
+                        }
+                    }
 #else
-					for(size_t i=0; i<statsToShow.size(); ++i)
-					{
-						if(!localizationMultiStats.empty())
-							localizationMultiStats.at(statsToShow[i]).push_back(std::make_pair(fileName, std::vector<LocStats>()));
-					}
+                    for(size_t i=0; i<statsToShow.size(); ++i)
+                    {
+                        if(!localizationMultiStats.empty())
+                            localizationMultiStats.at(statsToShow[i]).push_back(std::make_pair(fileName, std::vector<LocStats>()));
+                    }
 #endif
 
-					// Find localization sessions and adjust startId
-					std::set<int> mappingSessionIds;
-					if(!localizationMultiStats.empty())
-					{
-						std::map<int, Transform> poses = driver->loadOptimizedPoses();
-						if(!poses.empty())
-						{
-							for(std::map<int, Transform>::iterator iter=poses.begin(); iter!=poses.end(); ++iter)
-							{
-								Transform p, gt;
-								GPS gps;
-								int m=-1, w=-1;
-								std::string l;
-								double s;
-								std::vector<float> v;
-								EnvSensors sensors;
-								if(driver->getNodeInfo(iter->first, p, m, w, l, s, gt, v, gps, sensors))
-								{
-									mappingSessionIds.insert(m);
-								}
-							}
+                    // Find localization sessions and adjust startId
+                    std::set<int> mappingSessionIds;
+                    if(!localizationMultiStats.empty())
+                    {
+                        std::map<int, Transform> poses = driver->loadOptimizedPoses();
+                        if(!poses.empty())
+                        {
+                            for(std::map<int, Transform>::iterator iter=poses.begin(); iter!=poses.end(); ++iter)
+                            {
+                                Transform p, gt;
+                                GPS gps;
+                                int m=-1, w=-1;
+                                std::string l;
+                                double s;
+                                std::vector<float> v;
+                                EnvSensors sensors;
+                                if(driver->getNodeInfo(iter->first, p, m, w, l, s, gt, v, gps, sensors))
+                                {
+                                    mappingSessionIds.insert(m);
+                                }
+                            }
 
-							if(startIdPerDb ==0)
-							{
-								startIdPerDb = poses.rbegin()->first+1;
-							}
-						}
-					}
+                            if(startIdPerDb ==0)
+                            {
+                                startIdPerDb = poses.rbegin()->first+1;
+                            }
+                        }
+                    }
 
-					std::map<std::string, std::vector<float> > localizationSessionStats;
-					double previousStamp = 0.0;
-					for(std::set<int>::iterator iter=ids.begin(); iter!=ids.end(); ++iter)
-					{
-						Transform p, gt;
-						GPS gps;
-						int m=-1, w=-1;
-						std::string l;
-						double s;
-						std::vector<float> v;
-						EnvSensors sensors;
-						if(driver->getNodeInfo(*iter, p, m, w, l, s, gt, v, gps, sensors))
-						{
-							odomPoses.insert(std::make_pair(*iter, p));
-							odomStamps.insert(std::make_pair(*iter, s));
-							if(!gt.isNull())
-							{
-								gtPoses.insert(std::make_pair(*iter, gt));
-							}
+                    std::map<std::string, std::vector<float> > localizationSessionStats;
+                    double previousStamp = 0.0;
+                    for(std::set<int>::iterator iter=ids.begin(); iter!=ids.end(); ++iter)
+                    {
+                        Transform p, gt;
+                        GPS gps;
+                        int m=-1, w=-1;
+                        std::string l;
+                        double s;
+                        std::vector<float> v;
+                        EnvSensors sensors;
+                        if(driver->getNodeInfo(*iter, p, m, w, l, s, gt, v, gps, sensors))
+                        {
+                            odomPoses.insert(std::make_pair(*iter, p));
+                            odomStamps.insert(std::make_pair(*iter, s));
+                            if(!gt.isNull())
+                            {
+                                gtPoses.insert(std::make_pair(*iter, gt));
+                            }
 
-							if(!localizationMultiStats.empty() && mappingSessionIds.find(m) != mappingSessionIds.end())
-							{
-								continue;
-							}
+                            if(!localizationMultiStats.empty() && mappingSessionIds.find(m) != mappingSessionIds.end())
+                            {
+                                continue;
+                            }
 
-							if(*iter >= startIdPerDb && uContains(stats, *iter))
-							{
-								const std::map<std::string, float> & stat = stats.at(*iter).first;
-								if(uContains(stat, Statistics::kGtTranslational_rmse()))
-								{
-									rmse = stat.at(Statistics::kGtTranslational_rmse());
-									if(maxRMSE==-1 || maxRMSE < rmse)
-									{
-										maxRMSE = rmse;
-									}
-								}
-								if(uContains(stat, std::string("Camera/TotalTime/ms")))
-								{
-									cameraTime.push_back(stat.at(std::string("Camera/TotalTime/ms")));
-								}
-								if(uContains(stat, std::string("Odometry/TotalTime/ms")))
-								{
-									odomTime.push_back(stat.at(std::string("Odometry/TotalTime/ms")));
-								}
-								else if(uContains(stat, std::string("Odometry/TimeEstimation/ms")))
-								{
-									odomTime.push_back(stat.at(std::string("Odometry/TimeEstimation/ms")));
-								}
+                            if(*iter >= startIdPerDb && uContains(stats, *iter))
+                            {
+                                const std::map<std::string, float> & stat = stats.at(*iter).first;
+                                if(uContains(stat, Statistics::kGtTranslational_rmse()))
+                                {
+                                    rmse = stat.at(Statistics::kGtTranslational_rmse());
+                                    if(maxRMSE==-1 || maxRMSE < rmse)
+                                    {
+                                        maxRMSE = rmse;
+                                    }
+                                }
+                                if(uContains(stat, std::string("Camera/TotalTime/ms")))
+                                {
+                                    cameraTime.push_back(stat.at(std::string("Camera/TotalTime/ms")));
+                                }
+                                if(uContains(stat, std::string("Odometry/TotalTime/ms")))
+                                {
+                                    odomTime.push_back(stat.at(std::string("Odometry/TotalTime/ms")));
+                                }
+                                else if(uContains(stat, std::string("Odometry/TimeEstimation/ms")))
+                                {
+                                    odomTime.push_back(stat.at(std::string("Odometry/TimeEstimation/ms")));
+                                }
 
-								if(uContains(stat, std::string("RtabmapROS/TotalTime/ms")))
-								{
-									if(w!=-1)
-									{
-										slamTime.push_back(stat.at("RtabmapROS/TotalTime/ms"));
-									}
-								}
-								else if(uContains(stat, Statistics::kTimingTotal()))
-								{
-									if(w!=-1)
-									{
-										slamTime.push_back(stat.at(Statistics::kTimingTotal()));
-									}
-								}
+                                if(uContains(stat, std::string("RtabmapROS/TotalTime/ms")))
+                                {
+                                    if(w!=-1)
+                                    {
+                                        slamTime.push_back(stat.at("RtabmapROS/TotalTime/ms"));
+                                    }
+                                }
+                                else if(uContains(stat, Statistics::kTimingTotal()))
+                                {
+                                    if(w!=-1)
+                                    {
+                                        slamTime.push_back(stat.at(Statistics::kTimingTotal()));
+                                    }
+                                }
 
-								if(uContains(stat, std::string(Statistics::kMemoryRAM_usage())))
-								{
-									float ram = stat.at(Statistics::kMemoryRAM_usage());
-									if(maxMapRAM==-1 || maxMapRAM < ram)
-									{
-										maxMapRAM = ram;
-									}
-								}
-								if(uContains(stat, std::string("Odometry/RAM_usage/MB")))
-								{
-									float ram = stat.at("Odometry/RAM_usage/MB");
-									if(maxOdomRAM==-1 || maxOdomRAM < ram)
-									{
-										maxOdomRAM = ram;
-									}
-								}
+                                if(uContains(stat, std::string(Statistics::kMemoryRAM_usage())))
+                                {
+                                    float ram = stat.at(Statistics::kMemoryRAM_usage());
+                                    if(maxMapRAM==-1 || maxMapRAM < ram)
+                                    {
+                                        maxMapRAM = ram;
+                                    }
+                                }
+                                if(uContains(stat, std::string("Odometry/RAM_usage/MB")))
+                                {
+                                    float ram = stat.at("Odometry/RAM_usage/MB");
+                                    if(maxOdomRAM==-1 || maxOdomRAM < ram)
+                                    {
+                                        maxOdomRAM = ram;
+                                    }
+                                }
 
 #ifdef WITH_QT
-								for(std::map<std::string, UPlotCurve*>::iterator jter=curves.begin(); jter!=curves.end(); ++jter)
-								{
+                                for(std::map<std::string, UPlotCurve*>::iterator jter=curves.begin(); jter!=curves.end(); ++jter)
+                                {
 #else
-								for(std::map<std::string, std::vector<std::pair<std::string, std::vector<LocStats> > > >::iterator jter=localizationMultiStats.begin();
-									jter!=localizationMultiStats.end();
-									++jter)
-								{
+                                for(std::map<std::string, std::vector<std::pair<std::string, std::vector<LocStats> > > >::iterator jter=localizationMultiStats.begin();
+                                    jter!=localizationMultiStats.end();
+                                    ++jter)
+                                {
 #endif
-									if(uContains(stat, jter->first))
-									{
-										double y = stat.at(jter->first);
+                                    if(uContains(stat, jter->first))
+                                    {
+                                        double y = stat.at(jter->first);
 #ifdef WITH_QT
-										double x = s;
-										if(useIds)
-										{
-											x = *iter;
-										}
-										jter->second->addValue(x,y);
+                                        double x = s;
+                                        if(useIds)
+                                        {
+                                            x = *iter;
+                                        }
+                                        jter->second->addValue(x,y);
 #endif
 
-										if(!localizationMultiStats.empty())
-										{
-											if(previousStamp > 0 && fabs(s - previousStamp) > locDelay && uContains(localizationSessionStats, jter->first))
-											{
-												// changed session
-												for(std::map<std::string, std::vector<float> >::iterator kter=localizationSessionStats.begin(); kter!=localizationSessionStats.end(); ++kter)
-												{
-													LocStats values = LocStats::from(localizationSessionStats.at(kter->first));
-													localizationMultiStats.at(kter->first).rbegin()->second.push_back(values);
-													localizationSessionStats.at(kter->first).clear();
-												}
+                                        if(!localizationMultiStats.empty())
+                                        {
+                                            if(previousStamp > 0 && fabs(s - previousStamp) > locDelay && uContains(localizationSessionStats, jter->first))
+                                            {
+                                                // changed session
+                                                for(std::map<std::string, std::vector<float> >::iterator kter=localizationSessionStats.begin(); kter!=localizationSessionStats.end(); ++kter)
+                                                {
+                                                    LocStats values = LocStats::from(localizationSessionStats.at(kter->first));
+                                                    localizationMultiStats.at(kter->first).rbegin()->second.push_back(values);
+                                                    localizationSessionStats.at(kter->first).clear();
+                                                }
 
-												previousStamp = s;
-											}
+                                                previousStamp = s;
+                                            }
 
-											if(!uContains(localizationSessionStats, jter->first))
-											{
-												localizationSessionStats.insert(std::make_pair(jter->first, std::vector<float>()));
-											}
-											localizationSessionStats.at(jter->first).push_back(y);
-										}
-									}
-								}
-								previousStamp = s;
-							}
-						}
-					}
+                                            if(!uContains(localizationSessionStats, jter->first))
+                                            {
+                                                localizationSessionStats.insert(std::make_pair(jter->first, std::vector<float>()));
+                                            }
+                                            localizationSessionStats.at(jter->first).push_back(y);
+                                        }
+                                    }
+                                }
+                                previousStamp = s;
+                            }
+                        }
+                    }
 
-					for(std::map<std::string, std::vector<std::pair<std::string, std::vector<LocStats> > > >::iterator jter=localizationMultiStats.begin();
-						jter!=localizationMultiStats.end();
-						++jter)
-					{
-						if(uContains(localizationSessionStats, jter->first) &&
-							!localizationSessionStats.at(jter->first).empty())
-						{
-							// changed session
-							LocStats values = LocStats::from(localizationSessionStats.at(jter->first));
-							localizationMultiStats.at(jter->first).rbegin()->second.push_back(values);
-						}
-					}
+                    for(std::map<std::string, std::vector<std::pair<std::string, std::vector<LocStats> > > >::iterator jter=localizationMultiStats.begin();
+                        jter!=localizationMultiStats.end();
+                        ++jter)
+                    {
+                        if(uContains(localizationSessionStats, jter->first) &&
+                            !localizationSessionStats.at(jter->first).empty())
+                        {
+                            // changed session
+                            LocStats values = LocStats::from(localizationSessionStats.at(jter->first));
+                            localizationMultiStats.at(jter->first).rbegin()->second.push_back(values);
+                        }
+                    }
 
-					std::multimap<int, Link> links;
-					std::multimap<int, Link> allLinks;
-					driver->getAllLinks(allLinks, true, true);
-					std::multimap<int, Link> loopClosureLinks;
-					for(std::multimap<int, Link>::iterator jter=allLinks.begin(); jter!=allLinks.end(); ++jter)
-					{
-						if(jter->second.from() == jter->second.to() || graph::findLink(links, jter->second.from(), jter->second.to(), true) == links.end())
-						{
-							links.insert(*jter);
-						}
-						if( jter->second.type() != Link::kNeighbor &&
-							jter->second.type() != Link::kNeighborMerged &&
-							graph::findLink(loopClosureLinks, jter->second.from(), jter->second.to()) == loopClosureLinks.end())
-						{
-							loopClosureLinks.insert(*jter);
-						}
-					}
+                    std::multimap<int, Link> links;
+                    std::multimap<int, Link> allLinks;
+                    driver->getAllLinks(allLinks, true, true);
+                    std::multimap<int, Link> loopClosureLinks;
+                    for(std::multimap<int, Link>::iterator jter=allLinks.begin(); jter!=allLinks.end(); ++jter)
+                    {
+                        if(jter->second.from() == jter->second.to() || graph::findLink(links, jter->second.from(), jter->second.to(), true) == links.end())
+                        {
+                            links.insert(*jter);
+                        }
+                        if( jter->second.type() != Link::kNeighbor &&
+                            jter->second.type() != Link::kNeighborMerged &&
+                            graph::findLink(loopClosureLinks, jter->second.from(), jter->second.to()) == loopClosureLinks.end())
+                        {
+                            loopClosureLinks.insert(*jter);
+                        }
+                    }
 
-					float bestScale = 1.0f;
-					float bestRMSE = -1;
-					float bestRMSEAng = -1;
-					float bestVoRMSE = -1;
-					Transform bestGtToMap = Transform::getIdentity();
-					float kitti_t_err = 0.0f;
-					float kitti_r_err = 0.0f;
-					float relative_t_err = 0.0f;
-					float relative_r_err = 0.0f;
-					float loop_t_err = 0.0f;
-					float loop_r_err = 0.0f;
+                    float bestScale = 1.0f;
+                    float bestRMSE = -1;
+                    float bestRMSEAng = -1;
+                    float bestVoRMSE = -1;
+                    Transform bestGtToMap = Transform::getIdentity();
+                    float kitti_t_err = 0.0f;
+                    float kitti_r_err = 0.0f;
+                    float relative_t_err = 0.0f;
+                    float relative_r_err = 0.0f;
+                    float loop_t_err = 0.0f;
+                    float loop_r_err = 0.0f;
 
-					if(ids.size())
-					{
-						std::map<int, Transform> posesOut;
-						std::multimap<int, Link> linksOut;
-						int firstId = *ids.begin();
-						rtabmap::Optimizer * optimizer = rtabmap::Optimizer::create(params);
-						bool useOdomGravity = Parameters::defaultMemUseOdomGravity();
-						Parameters::parse(params, Parameters::kMemUseOdomGravity(), useOdomGravity);
-						if(useOdomGravity)
-						{
-							for(std::map<int, Transform>::iterator iter=odomPoses.begin(); iter!=odomPoses.end(); ++iter)
-							{
-								links.insert(std::make_pair(iter->first, Link(iter->first, iter->first, Link::kGravity, iter->second)));
-							}
-						}
-						optimizer->getConnectedGraph(firstId, odomPoses, links, posesOut, linksOut);
+                    if(ids.size())
+                    {
+                        std::map<int, Transform> posesOut;
+                        std::multimap<int, Link> linksOut;
+                        int firstId = *ids.begin();
+                        rtabmap::Optimizer * optimizer = rtabmap::Optimizer::create(params);
+                        bool useOdomGravity = Parameters::defaultMemUseOdomGravity();
+                        Parameters::parse(params, Parameters::kMemUseOdomGravity(), useOdomGravity);
+                        if(useOdomGravity)
+                        {
+                            for(std::map<int, Transform>::iterator iter=odomPoses.begin(); iter!=odomPoses.end(); ++iter)
+                            {
+                                links.insert(std::make_pair(iter->first, Link(iter->first, iter->first, Link::kGravity, iter->second)));
+                            }
+                        }
+                        optimizer->getConnectedGraph(firstId, odomPoses, links, posesOut, linksOut);
 
-						std::map<int, Transform> poses = optimizer->optimize(firstId, posesOut, linksOut);
-						if(poses.empty())
-						{
-							// try incremental optimization
-							UWARN("Optimization failed! Try incremental optimization...");
-							poses = optimizer->optimizeIncremental(firstId, posesOut, linksOut);
-							if(poses.empty())
-							{
-								UERROR("Incremental optimization also failed! Only original RMSE will be shown.");
-								bestRMSE = rmse;
-							}
-							else
-							{
-								UWARN("Incremental optimization succeeded!");
-							}
-						}
+                        std::map<int, Transform> poses = optimizer->optimize(firstId, posesOut, linksOut);
+                        if(poses.empty())
+                        {
+                            // try incremental optimization
+                            UWARN("Optimization failed! Try incremental optimization...");
+                            poses = optimizer->optimizeIncremental(firstId, posesOut, linksOut);
+                            if(poses.empty())
+                            {
+                                UERROR("Incremental optimization also failed! Only original RMSE will be shown.");
+                                bestRMSE = rmse;
+                            }
+                            else
+                            {
+                                UWARN("Incremental optimization succeeded!");
+                            }
+                        }
 
-						if(poses.size())
-						{
-							std::map<int, Transform> groundTruth;
-							for(std::map<int, Transform>::const_iterator iter=poses.begin(); iter!=poses.end(); ++iter)
-							{
-								if(gtPoses.find(iter->first) != gtPoses.end())
-								{
-									groundTruth.insert(*gtPoses.find(iter->first));
-								}
-							}
+                        if(poses.size())
+                        {
+                            std::map<int, Transform> groundTruth;
+                            for(std::map<int, Transform>::const_iterator iter=poses.begin(); iter!=poses.end(); ++iter)
+                            {
+                                if(gtPoses.find(iter->first) != gtPoses.end())
+                                {
+                                    groundTruth.insert(*gtPoses.find(iter->first));
+                                }
+                            }
 
-							outputScaled = outputScaled && groundTruth.size();
-							for(float scale=outputScaled?0.900f:1.0f; scale<1.100f; scale+=0.001)
-							{
-								std::map<int, Transform> scaledPoses;
-								std::map<int, Transform> scaledOdomPoses;
+                            outputScaled = outputScaled && groundTruth.size();
+                            for(float scale=outputScaled?0.900f:1.0f; scale<1.100f; scale+=0.001)
+                            {
+                                std::map<int, Transform> scaledPoses;
+                                std::map<int, Transform> scaledOdomPoses;
 
-								for(std::map<int, Transform>::iterator iter=poses.begin(); iter!=poses.end(); ++iter)
-								{
-									Transform t = iter->second.clone();
-									t.x() *= scale;
-									t.y() *= scale;
-									t.z() *= scale;
-									scaledPoses.insert(std::make_pair(iter->first, t));
+                                for(std::map<int, Transform>::iterator iter=poses.begin(); iter!=poses.end(); ++iter)
+                                {
+                                    Transform t = iter->second.clone();
+                                    t.x() *= scale;
+                                    t.y() *= scale;
+                                    t.z() *= scale;
+                                    scaledPoses.insert(std::make_pair(iter->first, t));
 
-									UASSERT(posesOut.find(iter->first)!=posesOut.end());
-									t = posesOut.at(iter->first).clone();
-									t.x() *= scale;
-									t.y() *= scale;
-									t.z() *= scale;
-									scaledOdomPoses.insert(std::make_pair(iter->first, t));
-								}
-								// compute RMSE statistics
-								float translational_rmse = 0.0f;
-								float translational_mean = 0.0f;
-								float translational_median = 0.0f;
-								float translational_std = 0.0f;
-								float translational_min = 0.0f;
-								float translational_max = 0.0f;
-								float rotational_rmse = 0.0f;
-								float rotational_mean = 0.0f;
-								float rotational_median = 0.0f;
-								float rotational_std = 0.0f;
-								float rotational_min = 0.0f;
-								float rotational_max = 0.0f;
+                                    UASSERT(posesOut.find(iter->first)!=posesOut.end());
+                                    t = posesOut.at(iter->first).clone();
+                                    t.x() *= scale;
+                                    t.y() *= scale;
+                                    t.z() *= scale;
+                                    scaledOdomPoses.insert(std::make_pair(iter->first, t));
+                                }
+                                // compute RMSE statistics
+                                float translational_rmse = 0.0f;
+                                float translational_mean = 0.0f;
+                                float translational_median = 0.0f;
+                                float translational_std = 0.0f;
+                                float translational_min = 0.0f;
+                                float translational_max = 0.0f;
+                                float rotational_rmse = 0.0f;
+                                float rotational_mean = 0.0f;
+                                float rotational_median = 0.0f;
+                                float rotational_std = 0.0f;
+                                float rotational_min = 0.0f;
+                                float rotational_max = 0.0f;
 
-								graph::calcRMSE(
-										groundTruth,
-										scaledOdomPoses,
-										translational_rmse,
-										translational_mean,
-										translational_median,
-										translational_std,
-										translational_min,
-										translational_max,
-										rotational_rmse,
-										rotational_mean,
-										rotational_median,
-										rotational_std,
-										rotational_min,
-										rotational_max);
-								float translational_rmse_vo = translational_rmse;
+                                graph::calcRMSE(
+                                        groundTruth,
+                                        scaledOdomPoses,
+                                        translational_rmse,
+                                        translational_mean,
+                                        translational_median,
+                                        translational_std,
+                                        translational_min,
+                                        translational_max,
+                                        rotational_rmse,
+                                        rotational_mean,
+                                        rotational_median,
+                                        rotational_std,
+                                        rotational_min,
+                                        rotational_max);
+                                float translational_rmse_vo = translational_rmse;
 
-								Transform gtToMap = graph::calcRMSE(
-										groundTruth,
-										scaledPoses,
-										translational_rmse,
-										translational_mean,
-										translational_median,
-										translational_std,
-										translational_min,
-										translational_max,
-										rotational_rmse,
-										rotational_mean,
-										rotational_median,
-										rotational_std,
-										rotational_min,
-										rotational_max);
+                                Transform gtToMap = graph::calcRMSE(
+                                        groundTruth,
+                                        scaledPoses,
+                                        translational_rmse,
+                                        translational_mean,
+                                        translational_median,
+                                        translational_std,
+                                        translational_min,
+                                        translational_max,
+                                        rotational_rmse,
+                                        rotational_mean,
+                                        rotational_median,
+                                        rotational_std,
+                                        rotational_min,
+                                        rotational_max);
 
-								if(bestRMSE!=-1 && translational_rmse > bestRMSE)
-								{
-									break;
-								}
-								bestRMSE = translational_rmse;
-								bestVoRMSE = translational_rmse_vo;
-								bestRMSEAng = rotational_rmse;
-								bestScale = scale;
-								bestGtToMap = gtToMap;
-								if(!outputScaled)
-								{
-									// just did iteration without any scale, then exit
-									break;
-								}
-							}
+                                if(bestRMSE!=-1 && translational_rmse > bestRMSE)
+                                {
+                                    break;
+                                }
+                                bestRMSE = translational_rmse;
+                                bestVoRMSE = translational_rmse_vo;
+                                bestRMSEAng = rotational_rmse;
+                                bestScale = scale;
+                                bestGtToMap = gtToMap;
+                                if(!outputScaled)
+                                {
+                                    // just did iteration without any scale, then exit
+                                    break;
+                                }
+                            }
 
-							for(std::map<int, Transform>::iterator iter=poses.begin(); iter!=poses.end(); ++iter)
-							{
-								iter->second.x()*=bestScale;
-								iter->second.y()*=bestScale;
-								iter->second.z()*=bestScale;
-								iter->second = bestGtToMap * iter->second;
-							}
+                            for(std::map<int, Transform>::iterator iter=poses.begin(); iter!=poses.end(); ++iter)
+                            {
+                                iter->second.x()*=bestScale;
+                                iter->second.y()*=bestScale;
+                                iter->second.z()*=bestScale;
+                                iter->second = bestGtToMap * iter->second;
+                            }
 
-							if(outputRelativeError)
-							{
-								if(groundTruth.size() == poses.size())
-								{
-									// compute Motion statistics
-									graph::calcRelativeErrors(uValues(groundTruth), uValues(poses), relative_t_err, relative_r_err);
-								}
-								else
-								{
-									std::vector<Transform> gtPoses;
-									std::vector<Transform> rPoses;
-									for(std::map<int, Transform>::iterator iter=poses.begin(); iter!=poses.end(); ++iter)
-									{
-										if(groundTruth.find(iter->first) != groundTruth.end())
-										{
-											gtPoses.push_back(groundTruth.at(iter->first));
-											rPoses.push_back(poses.at(iter->first));
-										}
-									}
-									if(!gtPoses.empty())
-									{
-										graph::calcRelativeErrors(gtPoses, rPoses, relative_t_err, relative_r_err);
-									}
-								}
-							}
+                            if(outputRelativeError)
+                            {
+                                if(groundTruth.size() == poses.size())
+                                {
+                                    // compute Motion statistics
+                                    graph::calcRelativeErrors(uValues(groundTruth), uValues(poses), relative_t_err, relative_r_err);
+                                }
+                                else
+                                {
+                                    std::vector<Transform> gtPoses;
+                                    std::vector<Transform> rPoses;
+                                    for(std::map<int, Transform>::iterator iter=poses.begin(); iter!=poses.end(); ++iter)
+                                    {
+                                        if(groundTruth.find(iter->first) != groundTruth.end())
+                                        {
+                                            gtPoses.push_back(groundTruth.at(iter->first));
+                                            rPoses.push_back(poses.at(iter->first));
+                                        }
+                                    }
+                                    if(!gtPoses.empty())
+                                    {
+                                        graph::calcRelativeErrors(gtPoses, rPoses, relative_t_err, relative_r_err);
+                                    }
+                                }
+                            }
 
-							if(outputKittiError)
+    						if(outputKittiError)
 							{
 								if(groundTruth.size() == poses.size())
 								{
