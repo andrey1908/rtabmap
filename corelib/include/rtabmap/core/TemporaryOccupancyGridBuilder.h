@@ -43,10 +43,6 @@ public:
     void reset();
 
 private:
-    bool checkIfCachedMapCanBeUsed(const std::map<int, Transform>& updatedPoses);
-    void useCachedMap();
-    int tryToUseCachedMap(const std::map<int, Transform>& updatedPoses);
-
     TransformedLocalMap transformLocalMap(const LocalMap& localMap, const Transform& transform);
     void createOrResizeMap(const MapLimitsI& newMapLimits);
     void deployLastLocalMap();

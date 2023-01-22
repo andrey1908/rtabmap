@@ -47,11 +47,12 @@ public:
     void reset();
 
 private:
-    bool checkIfCachedMapCanBeUsed(const std::map<int, Transform>& updatedPoses);
+    bool checkIfCachedMapCanBeUsed(const std::map<int, Transform>& newPoses);
     void useCachedMap();
-    int tryToUseCachedMap(const std::map<int, Transform>& updatedPoses);
+    int tryToUseCachedMap(const std::map<int, Transform>& newPoses);
 
-    TransformedLocalMap transformLocalMap(const LocalMap& localMap, const Transform& transform);
+    TransformedLocalMap transformLocalMap(const LocalMap& localMap,
+        const Transform& transform);
     void createOrResizeMap(const MapLimitsI& newMapLimits);
     void deployLocalMap(int nodeId);
     void deployLocalMap(const Node& node);

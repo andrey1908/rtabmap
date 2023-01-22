@@ -81,22 +81,32 @@ void TemporaryOccupancyGridBuilder::updatePoses(
 	MEASURE_BLOCK_TIME(TemporaryOccupancyGridBuilder__updatePoses);
 	UASSERT(nodes_.size() == updatedPoses.size());
 	std::list<Transform> newPoses;
-	auto nodeIt = nodes_.begin();
-	for (const Transform& updatedPose : updatedPoses)
 	{
-		const Transform& fromUpdatedPose = nodeIt->localMap->fromUpdatedPose();
-		newPoses.emplace_back(updatedPose * fromUpdatedPose);
-		++nodeIt;
+		auto nodeIt = nodes_.begin();
+		auto updatedPoseIt = updatedPoses.begin();
+		while (updatedPoseIt != updatedPoses.end())
+		{
+			const Transform& fromUpdatedPose = nodeIt->localMap->fromUpdatedPose();
+			const Transform& updatedPose = *updatedPoseIt;
+			newPoses.emplace_back(updatedPose * fromUpdatedPose);
+			++nodeIt;
+			++updatedPoseIt;
+		}
 	}
 
 	clear();
 
 	MapLimitsI newMapLimits;
+	auto nodeIt = nodes_.begin();
 	auto newPoseIt = newPoses.begin();
-	for (Node& node : nodes_)
+	while (newPoseIt != newPoses.end())
 	{
-		node.transformedLocalMap = transformLocalMap(*node.localMap, *newPoseIt);
-		newMapLimits = MapLimitsI::unite(newMapLimits, node.transformedLocalMap->mapLimits);
+		Node& node = *nodeIt;
+		const Transform& newPose = *newPoseIt;
+		node.transformedLocalMap = transformLocalMap(*node.localMap, newPose);
+		newMapLimits =
+			MapLimitsI::unite(newMapLimits, node.transformedLocalMap->mapLimits);
+		++nodeIt;
 		++newPoseIt;
 	}
 	if (newMapLimits.valid())

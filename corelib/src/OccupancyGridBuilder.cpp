@@ -167,18 +167,20 @@ bool OccupancyGridBuilder::checkIfCachedMapCanBeUsed(
 	{
 		return false;
 	}
-	auto updatedPoseIt = newPoses.begin();
-	for (const auto& cachedPose : cachedPoses_)
+	auto newPoseIt = newPoses.begin();
+	auto cachedPoseIt = cachedPoses_.begin();
+	while (cachedPoseIt != cachedPoses_.end())
 	{
-		if (updatedPoseIt == newPoses.end())
+		if (newPoseIt == newPoses.end())
 		{
 			return false;
 		}
-		if (cachedPose != *updatedPoseIt)
+		if (*cachedPoseIt != *newPoseIt)
 		{
 			return false;
 		}
-		++updatedPoseIt;
+		++newPoseIt;
+		++cachedPoseIt;
 	}
 	return true;
 }
@@ -187,17 +189,19 @@ void OccupancyGridBuilder::useCachedMap()
 {
 	clear();
 	auto nodeIt = nodes_.begin();
-	for (const auto& cachedPose : cachedPoses_)
+	auto cachedPoseIt = cachedPoses_.begin();
+	while (cachedPoseIt != cachedPoses_.end())
 	{
 		UASSERT(nodeIt != nodes_.end());
-		while (nodeIt->first != cachedPose.first)
+		while (nodeIt->first != cachedPoseIt->first)
 		{
 			++nodeIt;
 			UASSERT(nodeIt != nodes_.end());
 		}
 		nodeIt->second.transformedLocalMap = TransformedLocalMap();
-		nodeIt->second.transformedLocalMap->pose = cachedPose.second;
+		nodeIt->second.transformedLocalMap->pose = cachedPoseIt->second;
 		++nodeIt;
+		++cachedPoseIt;
 	}
 	mapLimits_ = cachedMapLimits_;
 	map_ = cachedMap_;
@@ -231,11 +235,24 @@ void OccupancyGridBuilder::updatePoses(
 {
 	MEASURE_BLOCK_TIME(OccupancyGridBuilder__updatePoses);
 	std::map<int, Transform> newPoses;
-	for (const auto& [nodeId, updatedPose] : updatedPoses)
 	{
-		UASSERT(nodes_.count(nodeId));
-		const Transform& fromUpdatedPose = nodes_.at(nodeId).localMap->fromUpdatedPose();
-		newPoses[nodeId] = updatedPose * fromUpdatedPose;
+		auto nodeIt = nodes_.begin();
+		auto updatedPoseIt = updatedPoses.begin();
+		while (updatedPoseIt != updatedPoses.end())
+		{
+			UASSERT(nodeIt != nodes_.end());
+			while (nodeIt->first != updatedPoseIt->first)
+			{
+				++nodeIt;
+				UASSERT(nodeIt != nodes_.end());
+			}
+			int nodeId = nodeIt->first;
+			const Transform& fromUpdatedPose = nodeIt->second.localMap->fromUpdatedPose();
+			const Transform& updatedPose = updatedPoseIt->second;
+			newPoses[nodeId] = updatedPose * fromUpdatedPose;
+			++nodeIt;
+			++updatedPoseIt;
+		}
 	}
 
 	clear();
@@ -244,18 +261,19 @@ void OccupancyGridBuilder::updatePoses(
 	MapLimitsI newMapLimits = mapLimits_;
 	std::list<int> nodeIdsToDeploy;
 	auto nodeIt = nodes_.lower_bound(lastNodeIdFromCache + 1);
-	for(auto updatedPoseIt = newPoses.lower_bound(lastNodeIdFromCache + 1);
-		updatedPoseIt != newPoses.end(); ++updatedPoseIt)
+	auto newPoseIt = newPoses.lower_bound(lastNodeIdFromCache + 1);
+	while (newPoseIt != newPoses.end())
 	{
 		UASSERT(nodeIt != nodes_.end());
-		while (nodeIt->first != updatedPoseIt->first)
+		while (nodeIt->first != newPoseIt->first)
 		{
 			++nodeIt;
 			UASSERT(nodeIt != nodes_.end());
 		}
 		int nodeId = nodeIt->first;
 		Node& node = nodeIt->second;
-		node.transformedLocalMap = transformLocalMap(*node.localMap, updatedPoseIt->second);
+		const Transform& newPose = newPoseIt->second;
+		node.transformedLocalMap = transformLocalMap(*node.localMap, newPose);
 		newMapLimits = MapLimitsI::unite(newMapLimits, node.transformedLocalMap->mapLimits);
 		nodeIdsToDeploy.push_back(nodeId);
 
@@ -270,6 +288,7 @@ void OccupancyGridBuilder::updatePoses(
 			nodeIdsToDeploy.clear();
 		}
 
+		++newPoseIt;
 		++nodeIt;
 	}
 	if (newMapLimits.valid() && nodeIdsToDeploy.size())
