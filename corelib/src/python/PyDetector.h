@@ -21,15 +21,15 @@ namespace rtabmap
 class PyDetector : public Feature2D, public PythonInterface
 {
 public:
-	PyDetector(const ParametersMap & parameters = ParametersMap());
-	virtual ~PyDetector();
+    PyDetector(const ParametersMap & parameters = ParametersMap());
+    virtual ~PyDetector();
 
-	virtual void parseParameters(const ParametersMap & parameters);
-	virtual Feature2D::Type getType() const {return kFeaturePyDetector;}
+    virtual void parseParameters(const ParametersMap & parameters);
+    virtual Feature2D::Type getType() const {return kFeaturePyDetector;}
 
 private:
-	virtual std::vector<cv::KeyPoint> generateKeypointsImpl(const cv::Mat & image, const cv::Rect & roi, const cv::Mat & mask = cv::Mat());
-	virtual cv::Mat generateDescriptorsImpl(const cv::Mat & image, std::vector<cv::KeyPoint> & keypoints) const;
+    virtual std::vector<cv::KeyPoint> generateKeypointsImpl(const cv::Mat & image, const cv::Rect & roi, const cv::Mat & mask = cv::Mat());
+    virtual cv::Mat generateDescriptorsImpl(const cv::Mat & image, std::vector<cv::KeyPoint> & keypoints) const;
 
 private:
   PyObject * pModule_;

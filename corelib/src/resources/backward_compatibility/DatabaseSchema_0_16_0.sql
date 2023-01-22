@@ -14,12 +14,12 @@
 -- CREATE
 -- *******************************************************************
 CREATE TABLE Node (
-	id INTEGER NOT NULL,
-	map_id INTEGER NOT NULL,
-	weight INTEGER,
-	stamp FLOAT,
-	pose BLOB,                -- 3x4 float
-	ground_truth_pose BLOB,   -- 3x4 float
+    id INTEGER NOT NULL,
+    map_id INTEGER NOT NULL,
+    weight INTEGER,
+    stamp FLOAT,
+    pose BLOB,                -- 3x4 float
+    ground_truth_pose BLOB,   -- 3x4 float
 	velocity BLOB,            -- 6 float (vx,vy,vz,vroll,vpitch,vyaw) m/s and rad/s
 	label TEXT,
 	gps BLOB,                 -- 1x6 double: stamp, longitude (DD), latitude (DD), altitude (m), accuracy (m), bearing (North 0->360 deg clockwise)

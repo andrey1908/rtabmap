@@ -832,403 +832,403 @@ int main(int argc, char * argv[])
                                 }
                             }
 
-    						if(outputKittiError)
-							{
-								if(groundTruth.size() == poses.size())
-								{
-									// compute KITTI statistics
-									graph::calcKittiSequenceErrors(uValues(groundTruth), uValues(poses), kitti_t_err, kitti_r_err);
-								}
-								else
-								{
-									printf("Cannot compute KITTI statistics as optimized poses and ground truth don't have the same size (%d vs %d).\n",
-											(int)poses.size(), (int)groundTruth.size());
-								}
-							}
+                            if(outputKittiError)
+                            {
+                                if(groundTruth.size() == poses.size())
+                                {
+                                    // compute KITTI statistics
+                                    graph::calcKittiSequenceErrors(uValues(groundTruth), uValues(poses), kitti_t_err, kitti_r_err);
+                                }
+                                else
+                                {
+                                    printf("Cannot compute KITTI statistics as optimized poses and ground truth don't have the same size (%d vs %d).\n",
+                                            (int)poses.size(), (int)groundTruth.size());
+                                }
+                            }
 
-							if(outputPoses)
-							{
-								std::string dir = UDirectory::getDir(filePath);
-								std::string dbName = UFile::getName(filePath);
-								dbName = dbName.substr(0, dbName.size()-3); // remove db
-								std::string path = dir+UDirectory::separator()+dbName+"_slam.txt";
-								std::multimap<int, Link> dummyLinks;
-								std::map<int, double> stamps;
-								if(!outputKittiError)
-								{
-									for(std::map<int, Transform>::iterator iter=poses.begin(); iter!=poses.end(); ++iter)
-									{
-										UASSERT(odomStamps.find(iter->first) != odomStamps.end());
-										stamps.insert(*odomStamps.find(iter->first));
-									}
-								}
-								if(!graph::exportPoses(path, outputKittiError?2:10, poses, dummyLinks, stamps))
-								{
-									printf("Could not export the poses to \"%s\"!?!\n", path.c_str());
-								}
+                            if(outputPoses)
+                            {
+                                std::string dir = UDirectory::getDir(filePath);
+                                std::string dbName = UFile::getName(filePath);
+                                dbName = dbName.substr(0, dbName.size()-3); // remove db
+                                std::string path = dir+UDirectory::separator()+dbName+"_slam.txt";
+                                std::multimap<int, Link> dummyLinks;
+                                std::map<int, double> stamps;
+                                if(!outputKittiError)
+                                {
+                                    for(std::map<int, Transform>::iterator iter=poses.begin(); iter!=poses.end(); ++iter)
+                                    {
+                                        UASSERT(odomStamps.find(iter->first) != odomStamps.end());
+                                        stamps.insert(*odomStamps.find(iter->first));
+                                    }
+                                }
+                                if(!graph::exportPoses(path, outputKittiError?2:10, poses, dummyLinks, stamps))
+                                {
+                                    printf("Could not export the poses to \"%s\"!?!\n", path.c_str());
+                                }
 
-								//export odom
-								path = dir+UDirectory::separator()+dbName+"_odom.txt";
-								stamps.clear();
-								if(!outputKittiError)
-								{
-									for(std::map<int, Transform>::iterator iter=odomPoses.begin(); iter!=odomPoses.end(); ++iter)
-									{
-										UASSERT(odomStamps.find(iter->first) != odomStamps.end());
-										stamps.insert(*odomStamps.find(iter->first));
-									}
-								}
-								if(!graph::exportPoses(path, outputKittiError?2:10, odomPoses, dummyLinks, stamps))
-								{
-									printf("Could not export the ground truth to \"%s\"!?!\n", path.c_str());
-								}
+                                //export odom
+                                path = dir+UDirectory::separator()+dbName+"_odom.txt";
+                                stamps.clear();
+                                if(!outputKittiError)
+                                {
+                                    for(std::map<int, Transform>::iterator iter=odomPoses.begin(); iter!=odomPoses.end(); ++iter)
+                                    {
+                                        UASSERT(odomStamps.find(iter->first) != odomStamps.end());
+                                        stamps.insert(*odomStamps.find(iter->first));
+                                    }
+                                }
+                                if(!graph::exportPoses(path, outputKittiError?2:10, odomPoses, dummyLinks, stamps))
+                                {
+                                    printf("Could not export the ground truth to \"%s\"!?!\n", path.c_str());
+                                }
 
-								//export ground truth
-								if(groundTruth.size())
-								{
-									path = dir+UDirectory::separator()+dbName+"_gt.txt";
-									stamps.clear();
-									if(!outputKittiError)
-									{
-										for(std::map<int, Transform>::iterator iter=groundTruth.begin(); iter!=groundTruth.end(); ++iter)
-										{
-											UASSERT(odomStamps.find(iter->first) != odomStamps.end());
-											stamps.insert(*odomStamps.find(iter->first));
-										}
-									}
-									if(!graph::exportPoses(path, outputKittiError?2:10, groundTruth, dummyLinks, stamps))
-									{
-										printf("Could not export the ground truth to \"%s\"!?!\n", path.c_str());
-									}
-								}
-							}
+                                //export ground truth
+                                if(groundTruth.size())
+                                {
+                                    path = dir+UDirectory::separator()+dbName+"_gt.txt";
+                                    stamps.clear();
+                                    if(!outputKittiError)
+                                    {
+                                        for(std::map<int, Transform>::iterator iter=groundTruth.begin(); iter!=groundTruth.end(); ++iter)
+                                        {
+                                            UASSERT(odomStamps.find(iter->first) != odomStamps.end());
+                                            stamps.insert(*odomStamps.find(iter->first));
+                                        }
+                                    }
+                                    if(!graph::exportPoses(path, outputKittiError?2:10, groundTruth, dummyLinks, stamps))
+                                    {
+                                        printf("Could not export the ground truth to \"%s\"!?!\n", path.c_str());
+                                    }
+                                }
+                            }
 
-							if (outputReport)
-							{
-								bool fillHeader = false;
-								std::ifstream f("report.csv");
-    							if(!f.good())
-								{
-									fillHeader = true;
-								}
+                            if (outputReport)
+                            {
+                                bool fillHeader = false;
+                                std::ifstream f("report.csv");
+                                if(!f.good())
+                                {
+                                    fillHeader = true;
+                                }
 
-								std::ofstream myfile;
-								myfile.open("report.csv", std::fstream::in | std::fstream::out | std::fstream::app);
-								if(fillHeader)
-								{
-									myfile 	<< "Rosbag name"<<";"<<"error linear (m)"<<";"<<"error linear max (m)"<<";"<<"error linear odom (m)"<<";"
-											<<"error angular"<<";"
-											<<"Slam avg (hz)"<<";"<<"Slam max (hz)"<<";"
-											<<"Odom avg (hz)"<<";"<<"Odom max (hz)"<<std::endl;
-								}
+                                std::ofstream myfile;
+                                myfile.open("report.csv", std::fstream::in | std::fstream::out | std::fstream::app);
+                                if(fillHeader)
+                                {
+                                    myfile     << "Rosbag name"<<";"<<"error linear (m)"<<";"<<"error linear max (m)"<<";"<<"error linear odom (m)"<<";"
+                                            <<"error angular"<<";"
+                                            <<"Slam avg (hz)"<<";"<<"Slam max (hz)"<<";"
+                                            <<"Odom avg (hz)"<<";"<<"Odom max (hz)"<<std::endl;
+                                }
 
-								myfile 	<<fileName.c_str()<<";"
-										<<bestRMSE<< ";"
-										<<maxRMSE<<";"
-										<<bestVoRMSE<<";"
-										<<bestRMSEAng<<";"
-										<<(1/(uMean(slamTime)/1000.0))<<";"
-										<<(1/(uMax(slamTime)/1000.0))<<";"
-										<<(1/(uMean(odomTime)/1000.0))<<";"
-										<<(1/(uMax(odomTime)/1000.0))<<";"<<std::endl;
-								myfile.close();
-							}
+                                myfile     <<fileName.c_str()<<";"
+                                        <<bestRMSE<< ";"
+                                        <<maxRMSE<<";"
+                                        <<bestVoRMSE<<";"
+                                        <<bestRMSEAng<<";"
+                                        <<(1/(uMean(slamTime)/1000.0))<<";"
+                                        <<(1/(uMax(slamTime)/1000.0))<<";"
+                                        <<(1/(uMean(odomTime)/1000.0))<<";"
+                                        <<(1/(uMax(odomTime)/1000.0))<<";"<<std::endl;
+                                myfile.close();
+                            }
 
-							if(outputLoopAccuracy && !groundTruth.empty() && !linksOut.empty())
-							{
-								float sumDist = 0.0f;
-								float sumAngle = 0.0f;
-								int count = 0;
-								for(std::multimap<int, Link>::iterator iter=loopClosureLinks.begin(); iter!=loopClosureLinks.end(); ++iter)
-								{
-									if(	groundTruth.find(iter->second.from())!=groundTruth.end() &&
-										groundTruth.find(iter->second.to())!=groundTruth.end())
-									{
-										Transform gtLink = groundTruth.at(iter->second.from()).inverse()*groundTruth.at(iter->second.to());
-										const Transform & t = iter->second.transform();
-										Transform scaledLink(
-												t.r11(), t.r12(), t.r13(), t.x()*bestScale,
-												t.r21(), t.r22(), t.r23(), t.y()*bestScale,
-												t.r31(), t.r32(), t.r33(), t.z()*bestScale);
-										Transform diff = gtLink.inverse()*scaledLink;
-										sumDist += diff.getNorm();
-										sumAngle += diff.getAngle();
-										++count;
-									}
-								}
-								if(count>0)
-								{
-									loop_t_err = sumDist/float(count);
-									loop_r_err = sumAngle/float(count);
-									loop_r_err *= 180/CV_PI; // Rotation error (deg)
-								}
-							}
-						}
-					}
-					printf("   %s (%d, s=%.3f):\terror lin=%.3fm (max=%.3fm, odom=%.3fm) ang=%.1fdeg%s%s, %s: avg=%dms (max=%dms) loops=%d%s, odom: avg=%dms (max=%dms), camera: avg=%dms, %smap=%dMB\n",
-							fileName.c_str(),
-							(int)ids.size(),
-							bestScale,
-							bestRMSE,
-							maxRMSE,
-							bestVoRMSE,
-							bestRMSEAng,
-							!outputKittiError?"":uFormat(", KITTI: t_err=%.2f%% r_err=%.2f deg/100m", kitti_t_err, kitti_r_err*100).c_str(),
-							!outputRelativeError?"":uFormat(", Relative: t_err=%.3fm r_err=%.2f deg", relative_t_err, relative_r_err).c_str(),
-							!localizationMultiStats.empty()?"loc":"slam",
-							(int)uMean(slamTime), (int)uMax(slamTime),
-							(int)loopClosureLinks.size(),
-							!outputLoopAccuracy?"":uFormat(" (t_err=%.3fm r_err=%.2f deg)", loop_t_err, loop_r_err).c_str(),
-							(int)uMean(odomTime), (int)uMax(odomTime),
-							(int)uMean(cameraTime),
-							maxOdomRAM!=-1.0f?uFormat("RAM odom=%dMB ", (int)maxOdomRAM).c_str():"",
-							(int)maxMapRAM);
+                            if(outputLoopAccuracy && !groundTruth.empty() && !linksOut.empty())
+                            {
+                                float sumDist = 0.0f;
+                                float sumAngle = 0.0f;
+                                int count = 0;
+                                for(std::multimap<int, Link>::iterator iter=loopClosureLinks.begin(); iter!=loopClosureLinks.end(); ++iter)
+                                {
+                                    if(    groundTruth.find(iter->second.from())!=groundTruth.end() &&
+                                        groundTruth.find(iter->second.to())!=groundTruth.end())
+                                    {
+                                        Transform gtLink = groundTruth.at(iter->second.from()).inverse()*groundTruth.at(iter->second.to());
+                                        const Transform & t = iter->second.transform();
+                                        Transform scaledLink(
+                                                t.r11(), t.r12(), t.r13(), t.x()*bestScale,
+                                                t.r21(), t.r22(), t.r23(), t.y()*bestScale,
+                                                t.r31(), t.r32(), t.r33(), t.z()*bestScale);
+                                        Transform diff = gtLink.inverse()*scaledLink;
+                                        sumDist += diff.getNorm();
+                                        sumAngle += diff.getAngle();
+                                        ++count;
+                                    }
+                                }
+                                if(count>0)
+                                {
+                                    loop_t_err = sumDist/float(count);
+                                    loop_r_err = sumAngle/float(count);
+                                    loop_r_err *= 180/CV_PI; // Rotation error (deg)
+                                }
+                            }
+                        }
+                    }
+                    printf("   %s (%d, s=%.3f):\terror lin=%.3fm (max=%.3fm, odom=%.3fm) ang=%.1fdeg%s%s, %s: avg=%dms (max=%dms) loops=%d%s, odom: avg=%dms (max=%dms), camera: avg=%dms, %smap=%dMB\n",
+                            fileName.c_str(),
+                            (int)ids.size(),
+                            bestScale,
+                            bestRMSE,
+                            maxRMSE,
+                            bestVoRMSE,
+                            bestRMSEAng,
+                            !outputKittiError?"":uFormat(", KITTI: t_err=%.2f%% r_err=%.2f deg/100m", kitti_t_err, kitti_r_err*100).c_str(),
+                            !outputRelativeError?"":uFormat(", Relative: t_err=%.3fm r_err=%.2f deg", relative_t_err, relative_r_err).c_str(),
+                            !localizationMultiStats.empty()?"loc":"slam",
+                            (int)uMean(slamTime), (int)uMax(slamTime),
+                            (int)loopClosureLinks.size(),
+                            !outputLoopAccuracy?"":uFormat(" (t_err=%.3fm r_err=%.2f deg)", loop_t_err, loop_r_err).c_str(),
+                            (int)uMean(odomTime), (int)uMax(odomTime),
+                            (int)uMean(cameraTime),
+                            maxOdomRAM!=-1.0f?uFormat("RAM odom=%dMB ", (int)maxOdomRAM).c_str():"",
+                            (int)maxMapRAM);
 
-					if(outputLatex)
-					{
-						std::vector<float> stats;
-						stats.push_back(ids.size());
-						stats.push_back(bestRMSE);
-						stats.push_back(maxRMSE);
-						stats.push_back(bestRMSEAng);
-						stats.push_back(uMean(odomTime));
-						stats.push_back(uMean(slamTime));
-						stats.push_back(uMax(slamTime));
-						stats.push_back(maxOdomRAM);
-						stats.push_back(maxMapRAM);
-						outputLatexStatisticsMap.insert(std::make_pair(filePath, stats));
+                    if(outputLatex)
+                    {
+                        std::vector<float> stats;
+                        stats.push_back(ids.size());
+                        stats.push_back(bestRMSE);
+                        stats.push_back(maxRMSE);
+                        stats.push_back(bestRMSEAng);
+                        stats.push_back(uMean(odomTime));
+                        stats.push_back(uMean(slamTime));
+                        stats.push_back(uMax(slamTime));
+                        stats.push_back(maxOdomRAM);
+                        stats.push_back(maxMapRAM);
+                        outputLatexStatisticsMap.insert(std::make_pair(filePath, stats));
 
-						if(maxOdomRAM != -1.0f)
-						{
-							odomRAMSet = true;
-						}
-					}
-				}
-				driver->closeConnection();
-				delete driver;
-			}
-			else if(uSplit(fileName, '.').size() == 1)
-			{
-				//sub directory
-				subDirs.push_front(currentPath + UDirectory::separator() + fileName);
-			}
-			currentPathIsDatabase = false;
-		}
+                        if(maxOdomRAM != -1.0f)
+                        {
+                            odomRAMSet = true;
+                        }
+                    }
+                }
+                driver->closeConnection();
+                delete driver;
+            }
+            else if(uSplit(fileName, '.').size() == 1)
+            {
+                //sub directory
+                subDirs.push_front(currentPath + UDirectory::separator() + fileName);
+            }
+            currentPathIsDatabase = false;
+        }
 
-		if(!localizationMultiStats.empty())
-		{
-			printf("---Localization results---\n");
-			std::string prefix = "header={";
-			printf("%s", prefix.c_str());
-			for(std::vector<std::pair<std::string, std::vector<LocStats> > >::iterator iter=localizationMultiStats.begin()->second.begin();
-						iter!=localizationMultiStats.begin()->second.end();)
-			{
-				if(iter!=localizationMultiStats.begin()->second.begin())
-				{
-					printf("%s",  std::string(prefix.size(), ' ').c_str());
-				}
-				printf("%s", iter->first.c_str());
-				++iter;
-				if(iter!=localizationMultiStats.begin()->second.end())
-				{
-					printf(";\n");
-				}
-			}
-			printf("}\n");
-		}
+        if(!localizationMultiStats.empty())
+        {
+            printf("---Localization results---\n");
+            std::string prefix = "header={";
+            printf("%s", prefix.c_str());
+            for(std::vector<std::pair<std::string, std::vector<LocStats> > >::iterator iter=localizationMultiStats.begin()->second.begin();
+                        iter!=localizationMultiStats.begin()->second.end();)
+            {
+                if(iter!=localizationMultiStats.begin()->second.begin())
+                {
+                    printf("%s",  std::string(prefix.size(), ' ').c_str());
+                }
+                printf("%s", iter->first.c_str());
+                ++iter;
+                if(iter!=localizationMultiStats.begin()->second.end())
+                {
+                    printf(";\n");
+                }
+            }
+            printf("}\n");
+        }
 
-		for(std::map<std::string, std::vector<std::pair<std::string, std::vector<LocStats> > > >::iterator iter=localizationMultiStats.begin();
-			iter!=localizationMultiStats.end();
-			++iter)
-		{
-			printf("%s\n", iter->first.c_str());
-			for(int k=0; k<6; ++k)
-			{
-				if(showLoc & (0x1 << k))
-				{
-					std::string prefix = uFormat("  %s=[",
-							k==0?"min":
-							k==1?"max":
-							k==2?"mean":
-							k==3?"stddev":
-							k==4?"total":
-							"nonnull%");
-					printf("%s", prefix.c_str());
-					for(std::vector<std::pair<std::string, std::vector<LocStats> > >::iterator jter=iter->second.begin(); jter!=iter->second.end();)
-					{
-						if(jter!=iter->second.begin())
-						{
-							printf("%s", std::string(prefix.size(), ' ').c_str());
-						}
-						for(size_t j=0; j<jter->second.size(); ++j)
-						{
-							if(k<4)
-							{
-								printf("%f",
-										k==0?jter->second[j].min:
-										k==1?jter->second[j].max:
-										k==2?jter->second[j].mean:
-										jter->second[j].stddev);
-							}
-							else if(k==4)
-							{
-								printf("%d",jter->second[j].total);
-							}
-							else if(k==5)
-							{
-								printf("%.2f", (jter->second[j].nonNull*100));
-							}
-							if(j+1 < jter->second.size())
-							{
-								printf(" ");
-							}
-						}
-						++jter;
-						if(jter!=iter->second.end())
-						{
-							printf(";\n");
-						}
-					}
-					printf("]\n");
-				}
-			}
-			iter->second.clear();
-		}
+        for(std::map<std::string, std::vector<std::pair<std::string, std::vector<LocStats> > > >::iterator iter=localizationMultiStats.begin();
+            iter!=localizationMultiStats.end();
+            ++iter)
+        {
+            printf("%s\n", iter->first.c_str());
+            for(int k=0; k<6; ++k)
+            {
+                if(showLoc & (0x1 << k))
+                {
+                    std::string prefix = uFormat("  %s=[",
+                            k==0?"min":
+                            k==1?"max":
+                            k==2?"mean":
+                            k==3?"stddev":
+                            k==4?"total":
+                            "nonnull%");
+                    printf("%s", prefix.c_str());
+                    for(std::vector<std::pair<std::string, std::vector<LocStats> > >::iterator jter=iter->second.begin(); jter!=iter->second.end();)
+                    {
+                        if(jter!=iter->second.begin())
+                        {
+                            printf("%s", std::string(prefix.size(), ' ').c_str());
+                        }
+                        for(size_t j=0; j<jter->second.size(); ++j)
+                        {
+                            if(k<4)
+                            {
+                                printf("%f",
+                                        k==0?jter->second[j].min:
+                                        k==1?jter->second[j].max:
+                                        k==2?jter->second[j].mean:
+                                        jter->second[j].stddev);
+                            }
+                            else if(k==4)
+                            {
+                                printf("%d",jter->second[j].total);
+                            }
+                            else if(k==5)
+                            {
+                                printf("%.2f", (jter->second[j].nonNull*100));
+                            }
+                            if(j+1 < jter->second.size())
+                            {
+                                printf(" ");
+                            }
+                        }
+                        ++jter;
+                        if(jter!=iter->second.end())
+                        {
+                            printf(";\n");
+                        }
+                    }
+                    printf("]\n");
+                }
+            }
+            iter->second.clear();
+        }
 
-		for(std::list<std::string>::iterator iter=subDirs.begin(); iter!=subDirs.end(); ++iter)
-		{
-			paths.push_front(*iter);
-		}
+        for(std::list<std::string>::iterator iter=subDirs.begin(); iter!=subDirs.end(); ++iter)
+        {
+            paths.push_front(*iter);
+        }
 
-		if(outputLatexStatisticsMap.size() && paths.empty())
-		{
-			outputLatexStatistics.push_back(outputLatexStatisticsMap);
-			outputLatexStatisticsMap.clear();
-		}
-	}
+        if(outputLatexStatisticsMap.size() && paths.empty())
+        {
+            outputLatexStatistics.push_back(outputLatexStatisticsMap);
+            outputLatexStatisticsMap.clear();
+        }
+    }
 
-	if(outputLatex && outputLatexStatistics.size())
-	{
-		printf("\nLaTeX output:\n----------------\n");
-		printf("\\begin{table*}[!t]\n");
-		printf("\\caption{$t_{end}$ is the absolute translational RMSE value at the end "
-				"of the experiment as $ATE_{max}$ is the maximum during the experiment. "
-				"$r_{end}$ is rotational RMSE value at the end of the experiment. "
-				"$o_{avg}$ and $m_{avg}$ are the average computational time "
-				"for odometry (front-end) and map update (back-end). "
-				"$m_{avg}$ is the maximum computational time for map update. "
-				"$O_{end}$ and $M_{end}$ are the RAM usage at the end of the experiment "
-				"for odometry and map management respectively.}\n");
-		printf("\\label{}\n");
-		printf("\\centering\n");
-		if(odomRAMSet)
-		{
-			printf("\\begin{tabular}{l|c|c|c|c|c|c|c|c|c}\n");
-			printf("\\cline{2-10}\n");
-			printf(" & Size & $t_{end}$ & $t_{max}$ & $r_{end}$ & $o_{avg}$ & $m_{avg}$ & $m_{max}$ & $O_{end}$ & $M_{end}$  \\\\\n");
-			printf(" & (nodes) & (m) & (m) & (deg) & (ms) & (ms) & (ms) & (MB) & (MB) \\\\\n");
-		}
-		else
-		{
-			printf("\\begin{tabular}{l|c|c|c|c|c|c|c|c}\n");
-			printf("\\cline{2-9}\n");
-			printf(" & Size & $t_{end}$ & $t_{max}$ & $r_{end}$ & $o_{avg}$ & $m_{avg}$ & $m_{max}$ & $M_{end}$  \\\\\n");
-			printf(" & (nodes) & (m) & (m) & (deg) & (ms) & (ms) & (ms) & (MB)  \\\\\n");
-		}
+    if(outputLatex && outputLatexStatistics.size())
+    {
+        printf("\nLaTeX output:\n----------------\n");
+        printf("\\begin{table*}[!t]\n");
+        printf("\\caption{$t_{end}$ is the absolute translational RMSE value at the end "
+                "of the experiment as $ATE_{max}$ is the maximum during the experiment. "
+                "$r_{end}$ is rotational RMSE value at the end of the experiment. "
+                "$o_{avg}$ and $m_{avg}$ are the average computational time "
+                "for odometry (front-end) and map update (back-end). "
+                "$m_{avg}$ is the maximum computational time for map update. "
+                "$O_{end}$ and $M_{end}$ are the RAM usage at the end of the experiment "
+                "for odometry and map management respectively.}\n");
+        printf("\\label{}\n");
+        printf("\\centering\n");
+        if(odomRAMSet)
+        {
+            printf("\\begin{tabular}{l|c|c|c|c|c|c|c|c|c}\n");
+            printf("\\cline{2-10}\n");
+            printf(" & Size & $t_{end}$ & $t_{max}$ & $r_{end}$ & $o_{avg}$ & $m_{avg}$ & $m_{max}$ & $O_{end}$ & $M_{end}$  \\\\\n");
+            printf(" & (nodes) & (m) & (m) & (deg) & (ms) & (ms) & (ms) & (MB) & (MB) \\\\\n");
+        }
+        else
+        {
+            printf("\\begin{tabular}{l|c|c|c|c|c|c|c|c}\n");
+            printf("\\cline{2-9}\n");
+            printf(" & Size & $t_{end}$ & $t_{max}$ & $r_{end}$ & $o_{avg}$ & $m_{avg}$ & $m_{max}$ & $M_{end}$  \\\\\n");
+            printf(" & (nodes) & (m) & (m) & (deg) & (ms) & (ms) & (ms) & (MB)  \\\\\n");
+        }
 
-		printf("\\hline\n");
+        printf("\\hline\n");
 
-		for(unsigned int j=0; j<outputLatexStatistics.size(); ++j)
-		{
-			if(outputLatexStatistics[j].size())
-			{
-				std::vector<int> lowestIndex;
-				if(outputLatexStatistics[j].size() > 1)
-				{
-					std::vector<float> lowestValue(outputLatexStatistics[j].begin()->second.size(),-1);
-					lowestIndex = std::vector<int>(lowestValue.size(),0);
-					int index = 0;
-					for(std::map<std::string, std::vector<float> >::iterator iter=outputLatexStatistics[j].begin(); iter!=outputLatexStatistics[j].end(); ++iter)
-					{
-						UASSERT(lowestValue.size() == iter->second.size());
-						for(unsigned int i=0; i<iter->second.size(); ++i)
-						{
-							if(lowestValue[i] == -1 || (iter->second[i]>0.0f && lowestValue[i]>iter->second[i]))
-							{
-								lowestValue[i] = iter->second[i];
-								lowestIndex[i] = index;
-							}
-						}
-						++index;
-					}
-				}
+        for(unsigned int j=0; j<outputLatexStatistics.size(); ++j)
+        {
+            if(outputLatexStatistics[j].size())
+            {
+                std::vector<int> lowestIndex;
+                if(outputLatexStatistics[j].size() > 1)
+                {
+                    std::vector<float> lowestValue(outputLatexStatistics[j].begin()->second.size(),-1);
+                    lowestIndex = std::vector<int>(lowestValue.size(),0);
+                    int index = 0;
+                    for(std::map<std::string, std::vector<float> >::iterator iter=outputLatexStatistics[j].begin(); iter!=outputLatexStatistics[j].end(); ++iter)
+                    {
+                        UASSERT(lowestValue.size() == iter->second.size());
+                        for(unsigned int i=0; i<iter->second.size(); ++i)
+                        {
+                            if(lowestValue[i] == -1 || (iter->second[i]>0.0f && lowestValue[i]>iter->second[i]))
+                            {
+                                lowestValue[i] = iter->second[i];
+                                lowestIndex[i] = index;
+                            }
+                        }
+                        ++index;
+                    }
+                }
 
-				int index = 0;
-				for(std::map<std::string, std::vector<float> >::iterator iter=outputLatexStatistics[j].begin(); iter!=outputLatexStatistics[j].end(); ++iter)
-				{
-					UASSERT(iter->second.size() == 9);
-					printf("%s & ", uReplaceChar(iter->first.c_str(), '_', '-').c_str());
-					printf("%d & ", (int)iter->second[0]);
-					printf("%s%.3f%s & ", lowestIndex.size()&&lowestIndex[1]==index?"\\textbf{":"", iter->second[1], lowestIndex.size()&&lowestIndex[1]==index?"}":"");
-					printf("%s%.3f%s & ", lowestIndex.size()&&lowestIndex[2]==index?"\\textbf{":"", iter->second[2], lowestIndex.size()&&lowestIndex[2]==index?"}":"");
-					printf("%s%.2f%s & ", lowestIndex.size()&&lowestIndex[3]==index?"\\textbf{":"", iter->second[3], lowestIndex.size()&&lowestIndex[3]==index?"}":"");
-					printf("%s%d%s & ", lowestIndex.size()&&lowestIndex[4]==index?"\\textbf{":"", (int)iter->second[4], lowestIndex.size()&&lowestIndex[4]==index?"}":"");
-					printf("%s%d%s & ", lowestIndex.size()&&lowestIndex[5]==index?"\\textbf{":"", (int)iter->second[5], lowestIndex.size()&&lowestIndex[5]==index?"}":"");
-					printf("%s%d%s & ", lowestIndex.size()&&lowestIndex[6]==index?"\\textbf{":"", (int)iter->second[6], lowestIndex.size()&&lowestIndex[6]==index?"}":"");
-					if(odomRAMSet)
-					{
-						printf("%s%d%s & ", lowestIndex.size()&&lowestIndex[7]==index?"\\textbf{":"", (int)iter->second[7], lowestIndex.size()&&lowestIndex[7]==index?"}":"");
-					}
-					printf("%s%d%s ", lowestIndex.size()&&lowestIndex[8]==index?"\\textbf{":"", (int)iter->second[8], lowestIndex.size()&&lowestIndex[8]==index?"}":"");
-					printf("\\\\\n");
-					++index;
-				}
-				printf("\\hline\n");
-			}
-		}
+                int index = 0;
+                for(std::map<std::string, std::vector<float> >::iterator iter=outputLatexStatistics[j].begin(); iter!=outputLatexStatistics[j].end(); ++iter)
+                {
+                    UASSERT(iter->second.size() == 9);
+                    printf("%s & ", uReplaceChar(iter->first.c_str(), '_', '-').c_str());
+                    printf("%d & ", (int)iter->second[0]);
+                    printf("%s%.3f%s & ", lowestIndex.size()&&lowestIndex[1]==index?"\\textbf{":"", iter->second[1], lowestIndex.size()&&lowestIndex[1]==index?"}":"");
+                    printf("%s%.3f%s & ", lowestIndex.size()&&lowestIndex[2]==index?"\\textbf{":"", iter->second[2], lowestIndex.size()&&lowestIndex[2]==index?"}":"");
+                    printf("%s%.2f%s & ", lowestIndex.size()&&lowestIndex[3]==index?"\\textbf{":"", iter->second[3], lowestIndex.size()&&lowestIndex[3]==index?"}":"");
+                    printf("%s%d%s & ", lowestIndex.size()&&lowestIndex[4]==index?"\\textbf{":"", (int)iter->second[4], lowestIndex.size()&&lowestIndex[4]==index?"}":"");
+                    printf("%s%d%s & ", lowestIndex.size()&&lowestIndex[5]==index?"\\textbf{":"", (int)iter->second[5], lowestIndex.size()&&lowestIndex[5]==index?"}":"");
+                    printf("%s%d%s & ", lowestIndex.size()&&lowestIndex[6]==index?"\\textbf{":"", (int)iter->second[6], lowestIndex.size()&&lowestIndex[6]==index?"}":"");
+                    if(odomRAMSet)
+                    {
+                        printf("%s%d%s & ", lowestIndex.size()&&lowestIndex[7]==index?"\\textbf{":"", (int)iter->second[7], lowestIndex.size()&&lowestIndex[7]==index?"}":"");
+                    }
+                    printf("%s%d%s ", lowestIndex.size()&&lowestIndex[8]==index?"\\textbf{":"", (int)iter->second[8], lowestIndex.size()&&lowestIndex[8]==index?"}":"");
+                    printf("\\\\\n");
+                    ++index;
+                }
+                printf("\\hline\n");
+            }
+        }
 
 
-		printf("\\end{tabular}\n");
-		printf("\\end{table*}\n----------------\n");
-	}
+        printf("\\end{tabular}\n");
+        printf("\\end{table*}\n----------------\n");
+    }
 #ifdef WITH_QT
-	if(figures.size())
-	{
-		for(std::map<std::string, UPlot*>::iterator iter=figures.begin(); iter!=figures.end(); ++iter)
-		{
-			if(!useIds)
-			{
-				iter->second->frameData();
-			}
-			if(exportFigures)
-			{
-				QString data = iter->second->getAllCurveDataAsText();
-				if(!data.isEmpty())
-				{
-					QString filePath = QString(exportPrefix.c_str()) + (exportPrefix.empty()?"":"-") + iter->second->windowTitle().replace('/', "-") + ".txt";
-					QFile file(filePath);
-					if(file.open(QIODevice::Text | QIODevice::WriteOnly))
-					{
-						file.write(data.toUtf8());
-						file.close();
-						printf("Exported \"%s\".\n", filePath.toStdString().c_str());
-					}
-					else
-					{
-						printf("ERROR: could not open file \"%s\" for writing!\n", filePath.toStdString().c_str());
-					}
-				}
-			}
-			else
-			{
-				iter->second->show();
-			}
-		}
-		if(!exportFigures)
-		{
-			return app.exec();
-		}
-	}
+    if(figures.size())
+    {
+        for(std::map<std::string, UPlot*>::iterator iter=figures.begin(); iter!=figures.end(); ++iter)
+        {
+            if(!useIds)
+            {
+                iter->second->frameData();
+            }
+            if(exportFigures)
+            {
+                QString data = iter->second->getAllCurveDataAsText();
+                if(!data.isEmpty())
+                {
+                    QString filePath = QString(exportPrefix.c_str()) + (exportPrefix.empty()?"":"-") + iter->second->windowTitle().replace('/', "-") + ".txt";
+                    QFile file(filePath);
+                    if(file.open(QIODevice::Text | QIODevice::WriteOnly))
+                    {
+                        file.write(data.toUtf8());
+                        file.close();
+                        printf("Exported \"%s\".\n", filePath.toStdString().c_str());
+                    }
+                    else
+                    {
+                        printf("ERROR: could not open file \"%s\" for writing!\n", filePath.toStdString().c_str());
+                    }
+                }
+            }
+            else
+            {
+                iter->second->show();
+            }
+        }
+        if(!exportFigures)
+        {
+            return app.exec();
+        }
+    }
 #endif
-	return 0;
+    return 0;
 }

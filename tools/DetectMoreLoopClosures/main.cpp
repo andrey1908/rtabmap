@@ -47,192 +47,192 @@ using namespace rtabmap;
 
 void showUsage()
 {
-	printf("\nUsage:\n"
-			"rtabmap-detectMoreLoopClosures [options] database.db\n"
-			"Options:\n"
-			"    -r #          Cluster radius (default 1 m).\n"
-			"    -rx #         Cluster radius min (default 0 m).\n"
-			"    -a #          Cluster angle (default 30 deg).\n"
-			"    -i #          Iterations (default 1).\n"
-			"    --intra       Add only intra-session loop closures.\n"
-			"    --inter       Add only inter-session loop closures.\n"
-			"\n%s", Parameters::showUsage());
-	exit(1);
+    printf("\nUsage:\n"
+            "rtabmap-detectMoreLoopClosures [options] database.db\n"
+            "Options:\n"
+            "    -r #          Cluster radius (default 1 m).\n"
+            "    -rx #         Cluster radius min (default 0 m).\n"
+            "    -a #          Cluster angle (default 30 deg).\n"
+            "    -i #          Iterations (default 1).\n"
+            "    --intra       Add only intra-session loop closures.\n"
+            "    --inter       Add only inter-session loop closures.\n"
+            "\n%s", Parameters::showUsage());
+    exit(1);
 }
 
 // catch ctrl-c
 bool g_loopForever = true;
 void sighandler(int sig)
 {
-	printf("\nSignal %d caught...\n", sig);
-	g_loopForever = false;
+    printf("\nSignal %d caught...\n", sig);
+    g_loopForever = false;
 }
 
 class PrintProgressState : public ProgressState
 {
 public:
-	virtual bool callback(const std::string & msg) const
-	{
-		if(!msg.empty())
-			printf("%s \n", msg.c_str());
-		return g_loopForever;
-	}
+    virtual bool callback(const std::string & msg) const
+    {
+        if(!msg.empty())
+            printf("%s \n", msg.c_str());
+        return g_loopForever;
+    }
 };
 
 int main(int argc, char * argv[])
 {
-	signal(SIGABRT, &sighandler);
-	signal(SIGTERM, &sighandler);
-	signal(SIGINT, &sighandler);
+    signal(SIGABRT, &sighandler);
+    signal(SIGTERM, &sighandler);
+    signal(SIGINT, &sighandler);
 
-	ULogger::setType(ULogger::kTypeConsole);
-	ULogger::setLevel(ULogger::kError);
+    ULogger::setType(ULogger::kTypeConsole);
+    ULogger::setLevel(ULogger::kError);
 
-	if(argc < 2)
-	{
-		showUsage();
-	}
+    if(argc < 2)
+    {
+        showUsage();
+    }
 
-	float clusterRadiusMin = 0.0f;
-	float clusterRadiusMax = 1.0f;
-	float clusterAngle = CV_PI/6.0f;
-	int iterations = 1;
-	bool intraSession = false;
-	bool interSession = false;
-	for(int i=1; i<argc-1; ++i)
-	{
-		if(std::strcmp(argv[i], "--help") == 0)
-		{
-			showUsage();
-		}
-		else if(std::strcmp(argv[i], "--intra") == 0)
-		{
-			intraSession = true;
-			if(interSession)
-			{
-				showUsage();
-			}
-		}
-		else if(std::strcmp(argv[i], "--inter") == 0)
-		{
-			interSession = true;
-			if(intraSession)
-			{
-				showUsage();
-			}
-		}
-		else if(std::strcmp(argv[i], "-r") == 0)
-		{
-			++i;
-			if(i<argc-1)
-			{
-				clusterRadiusMax = uStr2Float(argv[i]);
-			}
-			else
-			{
-				showUsage();
-			}
-		}
-		else if(std::strcmp(argv[i], "-rx") == 0)
-		{
-			++i;
-			if(i<argc-1)
-			{
-				clusterRadiusMin = uStr2Float(argv[i]);
-			}
-			else
-			{
-				showUsage();
-			}
-		}
-		else if(std::strcmp(argv[i], "-a") == 0)
-		{
-			++i;
-			if(i<argc-1)
-			{
-				clusterAngle = uStr2Float(argv[i])*CV_PI/180.0f;
-			}
-			else
-			{
-				showUsage();
-			}
-		}
-		else if(std::strcmp(argv[i], "-i") == 0)
-		{
-			++i;
-			if(i<argc-1)
-			{
-				iterations = uStr2Int(argv[i]);
-			}
-			else
-			{
-				showUsage();
-			}
-		}
-	}
-	ParametersMap inputParams = Parameters::parseArguments(argc,  argv);
+    float clusterRadiusMin = 0.0f;
+    float clusterRadiusMax = 1.0f;
+    float clusterAngle = CV_PI/6.0f;
+    int iterations = 1;
+    bool intraSession = false;
+    bool interSession = false;
+    for(int i=1; i<argc-1; ++i)
+    {
+        if(std::strcmp(argv[i], "--help") == 0)
+        {
+            showUsage();
+        }
+        else if(std::strcmp(argv[i], "--intra") == 0)
+        {
+            intraSession = true;
+            if(interSession)
+            {
+                showUsage();
+            }
+        }
+        else if(std::strcmp(argv[i], "--inter") == 0)
+        {
+            interSession = true;
+            if(intraSession)
+            {
+                showUsage();
+            }
+        }
+        else if(std::strcmp(argv[i], "-r") == 0)
+        {
+            ++i;
+            if(i<argc-1)
+            {
+                clusterRadiusMax = uStr2Float(argv[i]);
+            }
+            else
+            {
+                showUsage();
+            }
+        }
+        else if(std::strcmp(argv[i], "-rx") == 0)
+        {
+            ++i;
+            if(i<argc-1)
+            {
+                clusterRadiusMin = uStr2Float(argv[i]);
+            }
+            else
+            {
+                showUsage();
+            }
+        }
+        else if(std::strcmp(argv[i], "-a") == 0)
+        {
+            ++i;
+            if(i<argc-1)
+            {
+                clusterAngle = uStr2Float(argv[i])*CV_PI/180.0f;
+            }
+            else
+            {
+                showUsage();
+            }
+        }
+        else if(std::strcmp(argv[i], "-i") == 0)
+        {
+            ++i;
+            if(i<argc-1)
+            {
+                iterations = uStr2Int(argv[i]);
+            }
+            else
+            {
+                showUsage();
+            }
+        }
+    }
+    ParametersMap inputParams = Parameters::parseArguments(argc,  argv);
 
-	std::string dbPath = argv[argc-1];
-	if(!UFile::exists(dbPath))
-	{
-		printf("Database %s doesn't exist!\n", dbPath.c_str());
-	}
+    std::string dbPath = argv[argc-1];
+    if(!UFile::exists(dbPath))
+    {
+        printf("Database %s doesn't exist!\n", dbPath.c_str());
+    }
 
-	printf("\nDatabase: %s\n", dbPath.c_str());
-	printf("Cluster radius min = %f m\n", clusterRadiusMin);
-	printf("Cluster radius max = %f m\n", clusterRadiusMax);
-	printf("Cluster angle = %f deg\n", clusterAngle*180.0f/CV_PI);
-	if(intraSession)
-	{
-		printf("Intra-session only\n");
-	}
-	else if(interSession)
-	{
-		printf("Inter-session only\n");
-	}
+    printf("\nDatabase: %s\n", dbPath.c_str());
+    printf("Cluster radius min = %f m\n", clusterRadiusMin);
+    printf("Cluster radius max = %f m\n", clusterRadiusMax);
+    printf("Cluster angle = %f deg\n", clusterAngle*180.0f/CV_PI);
+    if(intraSession)
+    {
+        printf("Intra-session only\n");
+    }
+    else if(interSession)
+    {
+        printf("Inter-session only\n");
+    }
 
-	if(!intraSession && !interSession)
-	{
-		intraSession = true;
-		interSession = true;
-	}
+    if(!intraSession && !interSession)
+    {
+        intraSession = true;
+        interSession = true;
+    }
 
-	// Get parameters
-	ParametersMap parameters;
-	DBDriver * driver = DBDriver::create();
-	if(driver->openConnection(dbPath))
-	{
-		parameters = driver->getLastParameters();
-		driver->closeConnection(false);
-	}
-	else
-	{
-		UERROR("Cannot open database %s!", dbPath.c_str());
-	}
-	delete driver;
+    // Get parameters
+    ParametersMap parameters;
+    DBDriver * driver = DBDriver::create();
+    if(driver->openConnection(dbPath))
+    {
+        parameters = driver->getLastParameters();
+        driver->closeConnection(false);
+    }
+    else
+    {
+        UERROR("Cannot open database %s!", dbPath.c_str());
+    }
+    delete driver;
 
-	// Get the global optimized map
-	Rtabmap rtabmap;
-	printf("Initialization...\n");
-	uInsert(parameters, inputParams);
-	rtabmap.init(parameters, dbPath);
+    // Get the global optimized map
+    Rtabmap rtabmap;
+    printf("Initialization...\n");
+    uInsert(parameters, inputParams);
+    rtabmap.init(parameters, dbPath);
 
-	PrintProgressState progress;
-	printf("Detecting...\n");
-	int detected = rtabmap.detectMoreLoopClosures(clusterRadiusMax, clusterAngle, iterations, intraSession, interSession, &progress, clusterRadiusMin);
-	if(detected < 0)
-	{
-		if(!g_loopForever)
-		{
-			printf("Detection interrupted. Loop closures found so far (if any) are not saved.\n");
-		}
-		else
-		{
-			printf("Loop closure detection failed!\n");
-		}
-	}
+    PrintProgressState progress;
+    printf("Detecting...\n");
+    int detected = rtabmap.detectMoreLoopClosures(clusterRadiusMax, clusterAngle, iterations, intraSession, interSession, &progress, clusterRadiusMin);
+    if(detected < 0)
+    {
+        if(!g_loopForever)
+        {
+            printf("Detection interrupted. Loop closures found so far (if any) are not saved.\n");
+        }
+        else
+        {
+            printf("Loop closure detection failed!\n");
+        }
+    }
 
-	rtabmap.close();
+    rtabmap.close();
 
-	return 0;
+    return 0;
 }

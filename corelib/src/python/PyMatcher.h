@@ -20,10 +20,10 @@ class PyMatcher : public PythonInterface
 {
 public:
   PyMatcher(const std::string & pythonMatcherPath,
-		  float matchThreshold = 0.2f,
-		  int iterations = 20,
-		  bool cuda = true,
-		  const std::string & model = "indoor");
+          float matchThreshold = 0.2f,
+          int iterations = 20,
+          bool cuda = true,
+          const std::string & model = "indoor");
   virtual ~PyMatcher();
 
   const std::string & path() const {return path_;}
@@ -33,11 +33,11 @@ public:
   const std::string & model() const {return model_;}
 
   std::vector<cv::DMatch> match(
-		  const cv::Mat & descriptorsQuery,
-		  const cv::Mat & descriptorsTrain,
-		  const std::vector<cv::KeyPoint> & keypointsQuery,
-		  const std::vector<cv::KeyPoint> & keypointsTrain,
-		  const cv::Size & imageSize);
+          const cv::Mat & descriptorsQuery,
+          const cv::Mat & descriptorsTrain,
+          const std::vector<cv::KeyPoint> & keypointsQuery,
+          const std::vector<cv::KeyPoint> & keypointsTrain,
+          const cv::Size & imageSize);
 
 private:
   PyObject * pModule_;
