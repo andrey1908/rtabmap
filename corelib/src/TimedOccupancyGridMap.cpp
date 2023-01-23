@@ -185,7 +185,7 @@ TimedOccupancyGridMap::getPose(
                 getPose(*trajectory, commonEndTime).first;
             if (prevTrajectoryEnd.has_value() && trajectoryEnd.has_value())
             {
-                Transform shift = prevTrajectoryEnd->inverse() * (*trajectoryEnd);
+                Transform shift = (*trajectoryEnd) * prevTrajectoryEnd->inverse();
                 Transform pose = shift * (*prevPose);
                 return std::make_pair(std::move(pose), true);
             }
