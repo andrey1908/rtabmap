@@ -88,7 +88,7 @@ void OccupancyGridMap::cacheCurrentMap()
 }
 
 void OccupancyGridMap::updatePoses(const std::map<int, Transform>& updatedPoses,
-        const std::list<Transform>& updatedTemporaryPoses,
+        const std::deque<Transform>& updatedTemporaryPoses,
         int lastNodeIdToIncludeInCachedMap /* -1 */)
 {
     occupancyGridBuilder_->updatePoses(updatedPoses, lastNodeIdToIncludeInCachedMap);

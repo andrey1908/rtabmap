@@ -97,7 +97,7 @@ void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories)
         UASSERT(nodeIt == nodesRef.end());
     }
 
-    std::list<Transform> updatedTemporaryPoses;
+    std::deque<Transform> updatedTemporaryPoses;
     {
         auto canExtrapolateIt = temporaryCanExtrapolate_.begin();
         const auto& nodesRef = temporaryNodes();

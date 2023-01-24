@@ -71,16 +71,16 @@ void TemporaryOccupancyGridBuilder::addLocalMap(
     deployLastLocalMap();
     if (nodes_.size() > maxTemporaryLocalMaps_)
     {
-        removeFirstLocalMap();
+        removeLocalMap();
     }
 }
 
 void TemporaryOccupancyGridBuilder::updatePoses(
-    const std::list<Transform>& updatedPoses)
+    const std::deque<Transform>& updatedPoses)
 {
     MEASURE_BLOCK_TIME(TemporaryOccupancyGridBuilder__updatePoses);
     UASSERT(nodes_.size() == updatedPoses.size());
-    std::list<Transform> newPoses;
+    std::deque<Transform> newPoses;
     {
         auto nodeIt = nodes_.begin();
         auto updatedPoseIt = updatedPoses.begin();
@@ -230,15 +230,12 @@ void TemporaryOccupancyGridBuilder::deployLocalMap(const Node& node)
     }
 }
 
-void TemporaryOccupancyGridBuilder::removeFirstLocalMap()
+void TemporaryOccupancyGridBuilder::removeLocalMap()
 {
-    removeLocalMap(nodes_.begin());
-}
-
-void TemporaryOccupancyGridBuilder::removeLocalMap(std::list<Node>::iterator nodeIt)
-{
-    UASSERT(nodeIt->transformedLocalMap.has_value());
-    const Eigen::Matrix2Xi& transformedPoints = nodeIt->transformedLocalMap->points;
+    UASSERT(nodes_.size());
+    const Node& node = nodes_.front();
+    UASSERT(node.transformedLocalMap.has_value());
+    const Eigen::Matrix2Xi& transformedPoints = node.transformedLocalMap->points;
     for (int i = 0; i < transformedPoints.cols(); i++)
     {
         int y = transformedPoints.coeff(1, i) - mapLimits_.minY();
@@ -249,7 +246,7 @@ void TemporaryOccupancyGridBuilder::removeLocalMap(std::list<Node>::iterator nod
         {
             continue;
         }
-        bool occupied = (i < nodeIt->localMap->numObstacles());
+        bool occupied = (i < node.localMap->numObstacles());
         if (occupied)
         {
             hitCounter_.coeffRef(y, x) -= 1;
@@ -272,7 +269,7 @@ void TemporaryOccupancyGridBuilder::removeLocalMap(std::list<Node>::iterator nod
             UASSERT(missCounter_.coeffRef(y, x) >= 0);
         }
     }
-    nodes_.erase(nodeIt);
+    nodes_.pop_front();
 
     MapLimitsI newMapLimits;
     for (const Node& node : nodes_)

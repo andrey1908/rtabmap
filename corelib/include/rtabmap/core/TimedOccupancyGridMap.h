@@ -197,7 +197,7 @@ public:
     int maxTemporaryLocalMaps() const
         { return occupancyGridMap_->maxTemporaryLocalMaps(); }
     const std::map<int, Node>& nodes() const { return occupancyGridMap_->nodes(); }
-    const std::list<Node>& temporaryNodes() const
+    const std::deque<Node>& temporaryNodes() const
         { return occupancyGridMap_->temporaryNodes(); }
     const std::map<int, const std::shared_ptr<const LocalMap>>&
         localMapsWithoutObstacleDilation() const
@@ -222,7 +222,7 @@ private:
     double guaranteedInterpolationTimeWindow_;
 
     std::map<int, bool> canExtrapolate_;
-    std::list<bool> temporaryCanExtrapolate_;
+    std::deque<bool> temporaryCanExtrapolate_;
     std::unique_ptr<OccupancyGridMap> occupancyGridMap_;
 
     Trajectories prevTrajectories_;

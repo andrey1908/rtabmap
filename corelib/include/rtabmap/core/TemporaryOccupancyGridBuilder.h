@@ -7,7 +7,7 @@
 #include <rtabmap/core/Color.h>
 #include <rtabmap/core/Node.h>
 
-#include <list>
+#include <deque>
 #include <map>
 #include <utility>
 #include <optional>
@@ -27,7 +27,7 @@ public:
 
     void addLocalMap(const Transform& pose, std::shared_ptr<const LocalMap> localMap);
 
-    void updatePoses(const std::list<Transform>& updatedPoses);
+    void updatePoses(const std::deque<Transform>& updatedPoses);
 
     OccupancyGrid getOccupancyGrid() const;
     OccupancyGrid getOccupancyGrid(const MapLimitsI& roi) const;
@@ -37,7 +37,7 @@ public:
     ColorGrid getColorGrid(const MapLimitsI& roi) const;
 
     int maxTemporaryLocalMaps() const { return maxTemporaryLocalMaps_; }
-    const std::list<Node>& nodes() const { return nodes_; }
+    const std::deque<Node>& nodes() const { return nodes_; }
     const MapLimitsI& mapLimits() const { return mapLimits_; }
 
     void reset();
@@ -47,8 +47,7 @@ private:
     void createOrResizeMap(const MapLimitsI& newMapLimits);
     void deployLastLocalMap();
     void deployLocalMap(const Node& node);
-    void removeFirstLocalMap();
-    void removeLocalMap(std::list<Node>::iterator nodeIt);
+    void removeLocalMap();
 
     void clear();
 
@@ -60,7 +59,7 @@ private:
     int updated_;
     int maxTemporaryLocalMaps_;
 
-    std::list<Node> nodes_;
+    std::deque<Node> nodes_;
     MapLimitsI mapLimits_;
     CounterType hitCounter_;
     CounterType missCounter_;

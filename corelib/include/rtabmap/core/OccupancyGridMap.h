@@ -32,7 +32,7 @@ public:
     void cacheCurrentMap();
 
     void updatePoses(const std::map<int, Transform>& updatedPoses,
-        const std::list<Transform>& updatedTemporaryPoses,
+        const std::deque<Transform>& updatedTemporaryPoses,
         int lastNodeIdToIncludeInCachedMap = -1);
 
     OccupancyGrid getOccupancyGrid() const;
@@ -44,7 +44,7 @@ public:
     int maxTemporaryLocalMaps() const
         { return temporaryOccupancyGridBuilder_->maxTemporaryLocalMaps(); }
     const std::map<int, Node>& nodes() const { return occupancyGridBuilder_->nodes(); }
-    const std::list<Node>& temporaryNodes() const
+    const std::deque<Node>& temporaryNodes() const
         { return temporaryOccupancyGridBuilder_->nodes(); }
     const std::map<int, const std::shared_ptr<const LocalMap>>&
         localMapsWithoutObstacleDilation() const { return localMapsWithoutObstacleDilation_; }
