@@ -122,15 +122,14 @@ void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories)
     }
     
     int lastNodeIdToIncludeInCachedMap = -1;
-    const Trajectory* latestTrajectory = trajectories.getLatestTrajectory();
-    if (latestTrajectory != nullptr)
+    if (trajectories.size())
     {
+        auto latestTrajectoryIt = std::prev(trajectories.end());
         const auto& nodesRef = nodes();
         for (const auto& [nodeId, node] : nodesRef)
         {
             const Time& time = node.localMap->time();
-            if (latestTrajectory->containsTime(time) ||
-                trajectories.findContinuedTrajectory(time) == latestTrajectory)
+            if (time >= latestTrajectoryIt->minTime())
             {
                 break;
             }
@@ -172,17 +171,19 @@ TimedOccupancyGridMap::getPose(
     }
     if (canExtrapolate && prevPose.has_value())
     {
-        const Trajectory* prevTrajectory =
+        auto prevTrajectoryIt =
             prevTrajectories_.findContinuedTrajectory(time);
-        const Trajectory* trajectory =
+        auto trajectoryIt =
             trajectories.findContinuedTrajectory(time);
-        if (prevTrajectory && trajectory)
+        if (prevTrajectoryIt != prevTrajectories_.end() &&
+            trajectoryIt != trajectories.end())
         {
-            Time commonEndTime = std::min(prevTrajectory->maxTime(), trajectory->maxTime());
+            Time commonEndTime =
+                std::min(prevTrajectoryIt->maxTime(), trajectoryIt->maxTime());
             std::optional<Transform> prevTrajectoryEnd =
-                getPose(*prevTrajectory, commonEndTime).first;
+                getPose(*prevTrajectoryIt, commonEndTime).first;
             std::optional<Transform> trajectoryEnd =
-                getPose(*trajectory, commonEndTime).first;
+                getPose(*trajectoryIt, commonEndTime).first;
             if (prevTrajectoryEnd.has_value() && trajectoryEnd.has_value())
             {
                 Transform shift = (*trajectoryEnd) * prevTrajectoryEnd->inverse();
