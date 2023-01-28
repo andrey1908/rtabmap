@@ -143,11 +143,11 @@ OccupancyGrid OccupancyGridMap::getProbOccupancyGrid() const
     UASSERT(mapLimits.valid() || temporaryMapLimits.valid());
     if (!mapLimits.valid())
     {
-        return temporaryOccupancyGridBuilder_->getOccupancyGrid();
+        return temporaryOccupancyGridBuilder_->getProbOccupancyGrid();
     }
     if (!temporaryMapLimits.valid())
     {
-        return occupancyGridBuilder_->getOccupancyGrid();
+        return occupancyGridBuilder_->getProbOccupancyGrid();
     }
 
     MapLimitsI combinedMapLimits =
