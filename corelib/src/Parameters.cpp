@@ -259,7 +259,6 @@ const std::map<std::string, std::pair<bool, std::string> > & Parameters::getRemo
 		removedParameters_.insert(std::make_pair("SPTorch/Threshold",   std::make_pair(true,  Parameters::kSuperPointThreshold())));
 		removedParameters_.insert(std::make_pair("SPTorch/NMS",         std::make_pair(true,  Parameters::kSuperPointNMS())));
 		removedParameters_.insert(std::make_pair("SPTorch/MinDistance", std::make_pair(true,  Parameters::kSuperPointNMSRadius())));
-		removedParameters_.insert(std::make_pair("SPTorch/Cuda",        std::make_pair(true,  Parameters::kSuperPointCuda())));
 
 		// 0.19.4
 		removedParameters_.insert(std::make_pair("RGBD/MaxLocalizationDistance", std::make_pair(true,  Parameters::kRGBDMaxLoopClosureDistance())));
