@@ -17,7 +17,7 @@ LocalMapBuilder::LocalMapBuilder(const ParametersMap& parameters) :
     maxObstacleHeight_(Parameters::defaultLocalMapMaxObstacleHeight()),
     minSemanticRange_(Parameters::defaultLocalMapMinSemanticRange()),
     maxSemanticRange_(Parameters::defaultLocalMapMaxSemanticRange()),
-    useRayTracing_(Parameters::defaultLocalMapUseRayTracing()),
+    enableRayTracing_(Parameters::defaultLocalMapEnableRayTracing()),
     sensorBlindRange2d_(Parameters::defaultLocalMapSensorBlindRange2d())
 {
     parseParameters(parameters);
@@ -32,7 +32,7 @@ void LocalMapBuilder::parseParameters(const ParametersMap& parameters)
     Parameters::parse(parameters, Parameters::kLocalMapMaxObstacleHeight(), maxObstacleHeight_);
     Parameters::parse(parameters, Parameters::kLocalMapMinSemanticRange(), minSemanticRange_);
     Parameters::parse(parameters, Parameters::kLocalMapMaxSemanticRange(), maxSemanticRange_);
-    Parameters::parse(parameters, Parameters::kLocalMapUseRayTracing(), useRayTracing_);
+    Parameters::parse(parameters, Parameters::kLocalMapEnableRayTracing(), enableRayTracing_);
     Parameters::parse(parameters, Parameters::kLocalMapSensorBlindRange2d(), sensorBlindRange2d_);
     UASSERT(minObstacleHeight_ < maxObstacleHeight_);
     UASSERT(maxSemanticRange_ == 0.0f || minSemanticRange_ < maxSemanticRange_);
@@ -44,7 +44,7 @@ void LocalMapBuilder::parseParameters(const ParametersMap& parameters)
     sensorBlindRange2dSqr_ = sensorBlindRange2d_ * sensorBlindRange2d_;
 
     semanticDilation_ = std::make_unique<SemanticDilation>(parameters);
-    if (useRayTracing_)
+    if (enableRayTracing_)
     {
         rayTracing_ = std::make_unique<RayTracing>(parameters);
     }
@@ -104,7 +104,7 @@ std::shared_ptr<LocalMap> LocalMapBuilder::createLocalMap(
     sensor.y() = transform.translation().y();
     LocalMap::ColoredGrid coloredGrid =
         coloredGridFromObstacles(obstacles, colors, sensor);
-    if (useRayTracing_)
+    if (enableRayTracing_)
     {
         traceRays(coloredGrid, sensor);
     }
@@ -252,7 +252,7 @@ LocalMap::ColoredGrid LocalMapBuilder::coloredGridFromObstacles(
         float y = points(1, i);
         limitsF.update(x, y);
     }
-    if (useRayTracing_ && rayTracing_->traceRaysIntoUnknownSpace())
+    if (enableRayTracing_ && rayTracing_->traceIntoUnknownSpace())
     {
         float range = rayTracing_->maxRayTracingRange();
         limitsF.update(sensor.x() - range, sensor.y() - range);

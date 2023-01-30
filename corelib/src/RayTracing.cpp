@@ -8,7 +8,7 @@ RayTracing::RayTracing(const ParametersMap& parameters) :
     cellSize_(Parameters::defaultGridCellSize()),
     maxVisibleRangeF_(Parameters::defaultRayTracingMaxVisibleRange()),
     maxRayTracingRangeF_(Parameters::defaultRayTracingMaxRayTracingRange()),
-    traceRaysIntoUnknownSpace_(Parameters::defaultRayTracingTraceRaysIntoUnknownSpace())
+    traceIntoUnknownSpace_(Parameters::defaultRayTracingTraceIntoUnknownSpace())
 {
     parseParameters(parameters);
 }
@@ -18,7 +18,7 @@ void RayTracing::parseParameters(const ParametersMap& parameters)
     Parameters::parse(parameters, Parameters::kGridCellSize(), cellSize_);
     Parameters::parse(parameters, Parameters::kRayTracingMaxVisibleRange(), maxVisibleRangeF_);
     Parameters::parse(parameters, Parameters::kRayTracingMaxRayTracingRange(), maxRayTracingRangeF_);
-    Parameters::parse(parameters, Parameters::kRayTracingTraceRaysIntoUnknownSpace(), traceRaysIntoUnknownSpace_);
+    Parameters::parse(parameters, Parameters::kRayTracingTraceIntoUnknownSpace(), traceIntoUnknownSpace_);
     UASSERT(maxVisibleRangeF_ >= maxRayTracingRangeF_);
 
     maxVisibleRange_ = std::lround(maxVisibleRangeF_ / cellSize_);
@@ -55,7 +55,7 @@ void RayTracing::traceRays(cv::Mat& grid, const Cell& origin,
             }
             i++;
         }
-        if (encounteredObstacle || traceRaysIntoUnknownSpace_)
+        if (encounteredObstacle || traceIntoUnknownSpace_)
         {
             for (const Cell& litCell : litCells_)
             {

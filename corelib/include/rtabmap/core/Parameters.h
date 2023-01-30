@@ -738,13 +738,13 @@ class RTABMAP_EXP Parameters
     RTABMAP_PARAM(LocalMap, MaxObstacleHeight,       float,  1.5,     "Maximum obstacles height.");
     RTABMAP_PARAM(LocalMap, MinSemanticRange,        float,  0.0,     "Minimum semantic range from camera.");
     RTABMAP_PARAM(LocalMap, MaxSemanticRange,        float,  0.0,     "Maximum semantic range from camera (0=inf).");
-    RTABMAP_PARAM(LocalMap, UseRayTracing,           bool,   false,   "Use ray tracing algorithm.");
+    RTABMAP_PARAM(LocalMap, EnableRayTracing,           bool,   false,   "Use ray tracing algorithm.");
     RTABMAP_PARAM(LocalMap, SensorBlindRange2d,      float,  0.0,     "Minimum range on surface at which sensor can see obstacles (0=disabled).");
     RTABMAP_PARAM(SemanticDilation, DilationSize,    int,    0,         "Image dilation in pixels (0=disabled).");
     RTABMAP_PARAM(ObstacleDilation, DilationSize,    float,  0.0,         "Obstacle dilation in meters (0.0=disabled).");
     RTABMAP_PARAM(RayTracing, MaxVisibleRange,            float,  100.0,   "Maximum visible range for ray tracing.");
     RTABMAP_PARAM(RayTracing, MaxRayTracingRange,         float,  10.0,    "Maximum ray tracing range.");
-    RTABMAP_PARAM(RayTracing, TraceRaysIntoUnknownSpace,  bool,   false,   "Trace rays even towards directions where there are no obstacles.");
+    RTABMAP_PARAM(RayTracing, TraceIntoUnknownSpace,  bool,   false,   "Trace rays even towards directions where there are no obstacles.");
 
 
 

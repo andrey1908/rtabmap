@@ -61,9 +61,9 @@ public:
     void traceRays(cv::Mat& grid, const Cell& origin,
         std::int8_t occupiedCellValue, std::int8_t emptyCellValue) const;
 
-    inline bool traceRaysIntoUnknownSpace() const
+    inline bool traceIntoUnknownSpace() const
     {
-        return traceRaysIntoUnknownSpace_;
+        return traceIntoUnknownSpace_;
     }
     inline float maxRayTracingRange() const
     {
@@ -84,7 +84,7 @@ private:
     int maxVisibleRange_;
     int maxRayTracingRange_;
     int maxRayTracingRangeSqr_;
-    bool traceRaysIntoUnknownSpace_;
+    bool traceIntoUnknownSpace_;
 
     std::vector<Ray> rays_;
 

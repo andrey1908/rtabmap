@@ -58,7 +58,7 @@ private:
     float minSemanticRangeSqr_;
     float maxSemanticRange_;
     float maxSemanticRangeSqr_;
-    bool useRayTracing_;
+    bool enableRayTracing_;
     float sensorBlindRange2d_;
     float sensorBlindRange2dSqr_;
 
