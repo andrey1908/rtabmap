@@ -271,11 +271,11 @@ RtabmapColorOcTree::StaticMemberInitializer RtabmapColorOcTree::RtabmapColorOcTr
 
 OctoMap::OctoMap(const ParametersMap & parameters) :
 		hasColor_(false),
-		fullUpdate_(Parameters::defaultGridGlobalFullUpdate()),
-		updateError_(Parameters::defaultGridGlobalUpdateError()),
+		fullUpdate_(Parameters::defaultGridFullUpdate()),
+		updateError_(Parameters::defaultGridUpdateError()),
 		rangeMax_(Parameters::defaultGridRangeMax()),
 		rayTracing_(Parameters::defaultGridRayTracing()),
-		emptyFloodFillDepth_(Parameters::defaultGridGlobalFloodFillDepth())
+		emptyFloodFillDepth_(Parameters::defaultGridFloodFillDepth())
 {
 	float cellSize = Parameters::defaultGridCellSize();
 	Parameters::parse(parameters, Parameters::kGridCellSize(), cellSize);
@@ -284,36 +284,36 @@ OctoMap::OctoMap(const ParametersMap & parameters) :
 	minValues_[0] = minValues_[1] = minValues_[2] = 0.0;
 	maxValues_[0] = maxValues_[1] = maxValues_[2] = 0.0;
 
-	float occupancyThr = Parameters::defaultGridGlobalOccupancyThr();
-	float probHit = Parameters::defaultGridGlobalProbHit();
-	float probMiss = Parameters::defaultGridGlobalProbMiss();
-	float clampingMin = Parameters::defaultGridGlobalProbClampingMin();
-	float clampingMax = Parameters::defaultGridGlobalProbClampingMax();
-	Parameters::parse(parameters, Parameters::kGridGlobalOccupancyThr(), occupancyThr);
-	Parameters::parse(parameters, Parameters::kGridGlobalProbHit(), probHit);
-	Parameters::parse(parameters, Parameters::kGridGlobalProbMiss(), probMiss);
-	Parameters::parse(parameters, Parameters::kGridGlobalProbClampingMin(), clampingMin);
-	Parameters::parse(parameters, Parameters::kGridGlobalProbClampingMax(), clampingMax);
+	float occupancyThr = Parameters::defaultGridOccupancyThr();
+	float probHit = Parameters::defaultGridProbHit();
+	float probMiss = Parameters::defaultGridProbMiss();
+	float clampingMin = Parameters::defaultGridProbClampingMin();
+	float clampingMax = Parameters::defaultGridProbClampingMax();
+	Parameters::parse(parameters, Parameters::kGridOccupancyThr(), occupancyThr);
+	Parameters::parse(parameters, Parameters::kGridProbHit(), probHit);
+	Parameters::parse(parameters, Parameters::kGridProbMiss(), probMiss);
+	Parameters::parse(parameters, Parameters::kGridProbClampingMin(), clampingMin);
+	Parameters::parse(parameters, Parameters::kGridProbClampingMax(), clampingMax);
 
 	octree_ = new RtabmapColorOcTree(cellSize);
 	if(occupancyThr <= 0.0f)
 	{
 		UWARN("Cannot set %s to null for OctoMap, using default value %f instead.",
-				Parameters::kGridGlobalOccupancyThr().c_str(),
-				Parameters::defaultGridGlobalOccupancyThr());
-		occupancyThr = Parameters::defaultGridGlobalOccupancyThr();
+				Parameters::kGridOccupancyThr().c_str(),
+				Parameters::defaultGridOccupancyThr());
+		occupancyThr = Parameters::defaultGridOccupancyThr();
 	}
 	octree_->setOccupancyThres(occupancyThr);
 	octree_->setProbHit(probHit);
 	octree_->setProbMiss(probMiss);
 	octree_->setClampingThresMin(clampingMin);
 	octree_->setClampingThresMax(clampingMax);
-	Parameters::parse(parameters, Parameters::kGridGlobalFullUpdate(), fullUpdate_);
+	Parameters::parse(parameters, Parameters::kGridFullUpdate(), fullUpdate_);
    
-	Parameters::parse(parameters, Parameters::kGridGlobalUpdateError(), updateError_);
+	Parameters::parse(parameters, Parameters::kGridUpdateError(), updateError_);
 	Parameters::parse(parameters, Parameters::kGridRangeMax(), rangeMax_);
 	Parameters::parse(parameters, Parameters::kGridRayTracing(), rayTracing_);
-	Parameters::parse(parameters, Parameters::kGridGlobalFloodFillDepth(), emptyFloodFillDepth_);
+	Parameters::parse(parameters, Parameters::kGridFloodFillDepth(), emptyFloodFillDepth_);
 	UASSERT(emptyFloodFillDepth_>=0 && emptyFloodFillDepth_<=16);
 
 	UDEBUG("fullUpdate_         =%s", fullUpdate_?"true":"false");

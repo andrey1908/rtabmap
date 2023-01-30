@@ -718,57 +718,14 @@ class RTABMAP_EXP Parameters
 #endif
 
     // Occupancy Grid
-    RTABMAP_PARAM(Grid, FromDepth,               bool,   true,    "Create occupancy grid from depth image(s), otherwise it is created from laser scan.");
-    RTABMAP_PARAM(Grid, DepthDecimation,         unsigned int,  4, uFormat("[%s=true] Decimation of the depth image before creating cloud.", kGridDepthDecimation().c_str()));
-    RTABMAP_PARAM(Grid, RangeMin,                float,  0.0,     "Minimum range from sensor.");
-    RTABMAP_PARAM(Grid, RangeMax,                float,  5.0,     "Maximum range from sensor. 0=inf.");
-    RTABMAP_PARAM_STR(Grid, DepthRoiRatios,      "0.0 0.0 0.0 0.0", uFormat("[%s=true] Region of interest ratios [left, right, top, bottom].", kGridFromDepth().c_str()));
-    RTABMAP_PARAM(Grid, FootprintLength,         float,  0.0,     "Footprint length used to filter points over the footprint of the robot.");
-    RTABMAP_PARAM(Grid, FootprintWidth,          float,  0.0,     "Footprint width used to filter points over the footprint of the robot. Footprint length should be set.");
-    RTABMAP_PARAM(Grid, FootprintHeight,         float,  0.0,     "Footprint height used to filter points over the footprint of the robot. Footprint length and width should be set.");
-    RTABMAP_PARAM(Grid, ScanDecimation,          int,    1,       uFormat("[%s=false] Decimation of the laser scan before creating cloud.", kGridFromDepth().c_str()));
-    RTABMAP_PARAM(Grid, PreVoxelFiltering,       bool,   true,    uFormat("Input cloud is downsampled by voxel filter (voxel size is \"%s\") before doing segmentation of obstacles and ground.", kGridCellSize().c_str()));
-    RTABMAP_PARAM(Grid, MapFrameProjection,      bool,   false,   "Projection in map frame. On a 3D terrain and a fixed local camera transform (the cloud is created relative to ground), you may want to disable this to do the projection in robot frame instead.");
-    RTABMAP_PARAM(Grid, NormalsSegmentation,     bool,   true,    "Segment ground from obstacles using point normals, otherwise a fast passthrough is used.");
-    RTABMAP_PARAM(Grid, MaxObstacleHeight,       float,  2.0,     "Maximum obstacles height.");
-    RTABMAP_PARAM(Grid, MinGroundHeight,         float,  0.0,     "Minimum ground height (0=disabled).");
-    RTABMAP_PARAM(Grid, MaxGroundHeight,         float,  0.0,     uFormat("Maximum ground height (0=disabled). Should be set if \"%s\" is false.", kGridNormalsSegmentation().c_str()));
-    RTABMAP_PARAM(Grid, MaxGroundAngle,          float,  45,      uFormat("[%s=true] Maximum angle (degrees) between point's normal to ground's normal to label it as ground. Points with higher angle difference are considered as obstacles.", kGridNormalsSegmentation().c_str()));
-    RTABMAP_PARAM(Grid, NormalK,                 int,    20,      uFormat("[%s=true] K neighbors to compute normals.", kGridNormalsSegmentation().c_str()));
-    RTABMAP_PARAM(Grid, ClusterRadius,           float,  0.1,     uFormat("[%s=true] Cluster maximum radius.", kGridNormalsSegmentation().c_str()));
-    RTABMAP_PARAM(Grid, MinClusterSize,          int,    10,      uFormat("[%s=true] Minimum cluster size to project the points.", kGridNormalsSegmentation().c_str()));
-    RTABMAP_PARAM(Grid, FlatObstacleDetected,    bool,   true,    uFormat("[%s=true] Flat obstacles detected.", kGridNormalsSegmentation().c_str()));
-    RTABMAP_PARAM(Grid, NoiseFilteringRadius,       float,   0.0,    "Noise filtering radius (0=disabled). Done after segmentation.");
-    RTABMAP_PARAM(Grid, NoiseFilteringMinNeighbors, int,     5,      "Noise filtering minimum neighbors.");
-    RTABMAP_PARAM(Grid, Scan2dUnknownSpaceFilled,   bool,    false,  uFormat("Unknown space filled. Only used with 2D laser scans. Use %s to set maximum range if laser scan max range is to set.", kGridRangeMax().c_str()));
-    RTABMAP_PARAM(Grid, RayTracing,                 bool,   true,    "Ray tracing is done for each occupied cell, filling unknown space between the sensor and occupied cells.");
-    RTABMAP_PARAM(Grid, SemanticDilation,           int,     0,      "Dilate semantic image in pixels (0=disabled).");
-    RTABMAP_PARAM(Grid, MinSemanticRange,           float,   0.0,    "Minimum range for semantic to be added to laser scan.");
-    RTABMAP_PARAM(Grid, MaxSemanticRange,           float,   0.0,    "Maximum range for semantic to be added to laser scan. 0=inf.");
-    RTABMAP_PARAM(Grid, TemporarilyOccupiedCellColor,  int,  -1,     "Color of temporarily occupied cells. (-1) - do not extract temporarily occupied cells.");
-    RTABMAP_PARAM(Grid, ShowTemporarilyOccupiedCells,  bool, true,   "Show temporarily occupied cells.");
-
-    RTABMAP_PARAM(GridGlobal, FootprintRadius,      float,  0.0,     "Footprint radius (m) used to clear all obstacles under the graph.");
-    RTABMAP_PARAM(GridGlobal, MaxNodes,             int,    0,       "Maximum nodes assembled in the map starting from the last node (0=unlimited).");
-    RTABMAP_PARAM(GridGlobal, AltitudeDelta,        float,  0,       "Assemble only nodes that have the same altitude of +-delta meters of the current pose (0=disabled). This is used to generate 2D occupancy grid based on the current altitude (e.g., multi-floor building).");
-    RTABMAP_PARAM(GridGlobal, ProbMiss,             float,  0.4,     "Probability of a miss (value between 0 and 0.5).");
-    RTABMAP_PARAM(GridGlobal, ProbHit,              float,  0.7,     "Probability of a hit (value between 0.5 and 1).");
-    RTABMAP_PARAM(GridGlobal, ProbClampingMin,      float,  0.1192,  "Probability clamping minimum (value between 0 and 1).");
-    RTABMAP_PARAM(GridGlobal, ProbClampingMax,      float,  0.971,   "Probability clamping maximum (value between 0 and 1).");
-    RTABMAP_PARAM(GridGlobal, TemporaryProbMiss,    float,  0.4,     "Probability of a miss for temporary map (value between 0 and 0.5).");
-    RTABMAP_PARAM(GridGlobal, TemporaryProbHit,     float,  0.7,     "Probability of a hit for temporary map (value between 0.5 and 1).");
-    RTABMAP_PARAM(GridGlobal, FloodFillDepth,       unsigned int, 0, "Flood fill filter (0=disabled), used to remove empty cells outside the map. The flood fill is done at the specified depth (between 1 and 16) of the OctoMap.");
-
-
-
     RTABMAP_PARAM(Grid, CellSize,                float,  0.10,    "Resolution of the occupancy grid.");
-    RTABMAP_PARAM(GridGlobal, MissProb,          float,  0.4,     "Probability of a miss (value between 0 and 0.5).");
-    RTABMAP_PARAM(GridGlobal, HitProb,           float,  0.7,     "Probability of a hit (value between 0.5 and 1).");
-    RTABMAP_PARAM(GridGlobal, MinClampingProb,   float,  0.1192,  "Probability clamping minimum (value between 0 and 1).");
-    RTABMAP_PARAM(GridGlobal, MaxClampingProb,   float,  0.971,   "Probability clamping maximum (value between 0 and 1).");
-    RTABMAP_PARAM(GridGlobal, OccupancyThr,      float,  0.5,     "Occupancy threshold (value between 0 and 1).");
-    RTABMAP_PARAM(GridGlobal, TemporarilyOccupiedCellColor,  int,  -1,     "Color of temporarily occupied cells. They are not used to update the map.");
-    RTABMAP_PARAM(GridGlobal, ShowTemporarilyOccupiedCells,  bool, true,   "Show temporarily occupied cells.");
+    RTABMAP_PARAM(Grid, MissProb,          float,  0.4,     "Probability of a miss (value between 0 and 0.5).");
+    RTABMAP_PARAM(Grid, HitProb,           float,  0.7,     "Probability of a hit (value between 0.5 and 1).");
+    RTABMAP_PARAM(Grid, MinClampingProb,   float,  0.1192,  "Probability clamping minimum (value between 0 and 1).");
+    RTABMAP_PARAM(Grid, MaxClampingProb,   float,  0.971,   "Probability clamping maximum (value between 0 and 1).");
+    RTABMAP_PARAM(Grid, OccupancyThr,      float,  0.5,     "Occupancy threshold (value between 0 and 1).");
+    RTABMAP_PARAM(Grid, TemporarilyOccupiedCellColor,  int,  -1,     "Color of temporarily occupied cells. They are not used to update the map.");
+    RTABMAP_PARAM(Grid, ShowTemporarilyOccupiedCells,  bool, true,   "Show temporarily occupied cells.");
     RTABMAP_PARAM(Grid, TemporaryMissProb,          float,  0.4,     "Probability of a miss (value between 0 and 0.5).");
     RTABMAP_PARAM(Grid, TemporaryHitProb,           float,  0.7,     "Probability of a hit (value between 0.5 and 1).");
     RTABMAP_PARAM(Grid, TemporaryOccupancyThr,      float,  0.5,     "Occupancy threshold (value between 0 and 1).");

@@ -272,15 +272,7 @@ const std::map<std::string, std::pair<bool, std::string> > & Parameters::getRemo
 		removedParameters_.insert(std::make_pair("Aruco/CornerRefinementMethod", std::make_pair(true,  Parameters::kMarkerCornerRefinementMethod())));
 
 		// 0.17.5
-		removedParameters_.insert(std::make_pair("Grid/OctoMapOccupancyThr",     std::make_pair(true,  Parameters::kGridGlobalOccupancyThr())));
-
-		// 0.17.0
-		removedParameters_.insert(std::make_pair("Grid/Scan2dMaxFilledRange",     std::make_pair(false,  Parameters::kGridRangeMax())));
-
-		// 0.16.0
-		removedParameters_.insert(std::make_pair("Grid/ProjRayTracing",           std::make_pair(true,  Parameters::kGridRayTracing())));
-		removedParameters_.insert(std::make_pair("Grid/DepthMin",                 std::make_pair(true,  Parameters::kGridRangeMin())));
-		removedParameters_.insert(std::make_pair("Grid/DepthMax",                 std::make_pair(true,  Parameters::kGridRangeMax())));
+		removedParameters_.insert(std::make_pair("Grid/OctoMapOccupancyThr",     std::make_pair(true,  Parameters::kGridOccupancyThr())));
 
 		// 0.15.1
 		removedParameters_.insert(std::make_pair("Reg/VarianceFromInliersCount",  std::make_pair(false, "")));
@@ -296,9 +288,6 @@ const std::map<std::string, std::pair<bool, std::string> > & Parameters::getRemo
 		// 0.11.12
 		removedParameters_.insert(std::make_pair("Optimizer/Slam2D",              std::make_pair(true,  Parameters::kRegForce3DoF())));
 		removedParameters_.insert(std::make_pair("OdomF2M/FixedMapPath",          std::make_pair(false,  "")));
-
-		// 0.11.10 typos
-		removedParameters_.insert(std::make_pair("Grid/FlatObstaclesDetected",    std::make_pair(true,  Parameters::kGridFlatObstacleDetected())));
 
 		// 0.11.8
 		removedParameters_.insert(std::make_pair("Reg/Force2D",                   std::make_pair(true,  Parameters::kRegForce3DoF())));

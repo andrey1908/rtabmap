@@ -7,13 +7,13 @@ namespace rtabmap {
 
 OccupancyGridBuilder::OccupancyGridBuilder(const ParametersMap& parameters) :
     cellSize_(Parameters::defaultGridCellSize()),
-    missProb_(Parameters::defaultGridGlobalMissProb()),
-    hitProb_(Parameters::defaultGridGlobalHitProb()),
-    minClampingProb_(Parameters::defaultGridGlobalMinClampingProb()),
-    maxClampingProb_(Parameters::defaultGridGlobalMaxClampingProb()),
-    occupancyProbThr_(Parameters::defaultGridGlobalOccupancyThr()),
-    temporarilyOccupiedCellColorRgb_(Parameters::defaultGridGlobalTemporarilyOccupiedCellColor()),
-    showTemporarilyOccupiedCells_(Parameters::defaultGridGlobalShowTemporarilyOccupiedCells())
+    missProb_(Parameters::defaultGridMissProb()),
+    hitProb_(Parameters::defaultGridHitProb()),
+    minClampingProb_(Parameters::defaultGridMinClampingProb()),
+    maxClampingProb_(Parameters::defaultGridMaxClampingProb()),
+    occupancyProbThr_(Parameters::defaultGridOccupancyThr()),
+    temporarilyOccupiedCellColorRgb_(Parameters::defaultGridTemporarilyOccupiedCellColor()),
+    showTemporarilyOccupiedCells_(Parameters::defaultGridShowTemporarilyOccupiedCells())
 {
     parseParameters(parameters);
 }
@@ -21,13 +21,13 @@ OccupancyGridBuilder::OccupancyGridBuilder(const ParametersMap& parameters) :
 void OccupancyGridBuilder::parseParameters(const ParametersMap & parameters)
 {
     Parameters::parse(parameters, Parameters::kGridCellSize(), cellSize_);
-    Parameters::parse(parameters, Parameters::kGridGlobalMissProb(), missProb_);
-    Parameters::parse(parameters, Parameters::kGridGlobalHitProb(), hitProb_);
-    Parameters::parse(parameters, Parameters::kGridGlobalMinClampingProb(), minClampingProb_);
-    Parameters::parse(parameters, Parameters::kGridGlobalMaxClampingProb(), maxClampingProb_);
-    Parameters::parse(parameters, Parameters::kGridGlobalOccupancyThr(), occupancyProbThr_);
-    Parameters::parse(parameters, Parameters::kGridGlobalTemporarilyOccupiedCellColor(), temporarilyOccupiedCellColorRgb_);
-    Parameters::parse(parameters, Parameters::kGridGlobalShowTemporarilyOccupiedCells(), showTemporarilyOccupiedCells_);
+    Parameters::parse(parameters, Parameters::kGridMissProb(), missProb_);
+    Parameters::parse(parameters, Parameters::kGridHitProb(), hitProb_);
+    Parameters::parse(parameters, Parameters::kGridMinClampingProb(), minClampingProb_);
+    Parameters::parse(parameters, Parameters::kGridMaxClampingProb(), maxClampingProb_);
+    Parameters::parse(parameters, Parameters::kGridOccupancyThr(), occupancyProbThr_);
+    Parameters::parse(parameters, Parameters::kGridTemporarilyOccupiedCellColor(), temporarilyOccupiedCellColorRgb_);
+    Parameters::parse(parameters, Parameters::kGridShowTemporarilyOccupiedCells(), showTemporarilyOccupiedCells_);
     UASSERT(missProb_ > 0.0f && missProb_ <= 0.5f);
     UASSERT(hitProb_ >= 0.5f && hitProb_ < 1.0f);
     UASSERT(minClampingProb_ > 0.0f && minClampingProb_ < 1.0f);
