@@ -53,8 +53,7 @@ public:
     using TimedPosesSet = std::set<TimedPose, TimedPose::CompareId>;
     using const_iterator = TimedPosesSet::const_iterator;
     using Bounds = std::pair<
-        std::set<TimedPose>::const_iterator,
-        std::set<TimedPose>::const_iterator>;
+        TimedPosesSet::const_iterator, TimedPosesSet::const_iterator>;
 
 public:
     void addPose(const Time& time, const Transform& pose)
@@ -84,7 +83,6 @@ public:
     }
     Bounds getBounds(const Time& time) const
     {
-        UASSERT(trajectory_.size());
         if (!containsTime(time))
         {
             return std::make_pair(trajectory_.cend(), trajectory_.cend());
