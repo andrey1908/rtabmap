@@ -1,33 +1,24 @@
 #include <rtabmap/core/OccupancyGridBuilder.h>
-#include <rtabmap/utilite/ULogger.h>
 
 #include "time_measurer/time_measurer.h"
 
 namespace rtabmap {
 
-OccupancyGridBuilder::OccupancyGridBuilder(const ParametersMap& parameters) :
-    cellSize_(Parameters::defaultGridCellSize()),
-    missProb_(Parameters::defaultGridMissProb()),
-    hitProb_(Parameters::defaultGridHitProb()),
-    minClampingProb_(Parameters::defaultGridMinClampingProb()),
-    maxClampingProb_(Parameters::defaultGridMaxClampingProb()),
-    occupancyProbThr_(Parameters::defaultGridOccupancyThr()),
-    temporarilyOccupiedCellColorRgb_(Parameters::defaultGridTemporarilyOccupiedCellColor()),
-    showTemporarilyOccupiedCells_(Parameters::defaultGridShowTemporarilyOccupiedCells())
+OccupancyGridBuilder::OccupancyGridBuilder(const Parameters& parameters)
 {
     parseParameters(parameters);
 }
 
-void OccupancyGridBuilder::parseParameters(const ParametersMap & parameters)
+void OccupancyGridBuilder::parseParameters(const Parameters& parameters)
 {
-    Parameters::parse(parameters, Parameters::kGridCellSize(), cellSize_);
-    Parameters::parse(parameters, Parameters::kGridMissProb(), missProb_);
-    Parameters::parse(parameters, Parameters::kGridHitProb(), hitProb_);
-    Parameters::parse(parameters, Parameters::kGridMinClampingProb(), minClampingProb_);
-    Parameters::parse(parameters, Parameters::kGridMaxClampingProb(), maxClampingProb_);
-    Parameters::parse(parameters, Parameters::kGridOccupancyThr(), occupancyProbThr_);
-    Parameters::parse(parameters, Parameters::kGridTemporarilyOccupiedCellColor(), temporarilyOccupiedCellColorRgb_);
-    Parameters::parse(parameters, Parameters::kGridShowTemporarilyOccupiedCells(), showTemporarilyOccupiedCells_);
+    cellSize_ = parameters.cellSize;
+    missProb_ = parameters.missProb;
+    hitProb_ = parameters.hitProb;
+    minClampingProb_ = parameters.minClampingProb;
+    maxClampingProb_ = parameters.maxClampingProb;
+    occupancyProbThr_ = parameters.occupancyProbThr;
+    temporarilyOccupiedCellColorRgb_ = parameters.temporarilyOccupiedCellColorRgb;
+    showTemporarilyOccupiedCells_ = parameters.showTemporarilyOccupiedCells;
     UASSERT(missProb_ > 0.0f && missProb_ <= 0.5f);
     UASSERT(hitProb_ >= 0.5f && hitProb_ < 1.0f);
     UASSERT(minClampingProb_ > 0.0f && minClampingProb_ < 1.0f);

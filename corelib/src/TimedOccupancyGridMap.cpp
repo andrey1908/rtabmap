@@ -7,24 +7,18 @@
 
 namespace rtabmap {
 
-TimedOccupancyGridMap::TimedOccupancyGridMap(
-    const ParametersMap& parameters /* ParametersMap() */) :
-    maxInterpolationTimeError_(Parameters::defaultTimedGridMaxInterpolationTimeError()),
-    guaranteedInterpolationTimeWindow_(
-        Parameters::defaultTimedGridGuaranteedInterpolationTimeWindow())
+TimedOccupancyGridMap::TimedOccupancyGridMap(const Parameters& parameters)
 {
     parseParameters(parameters);
 }
 
-void TimedOccupancyGridMap::parseParameters(const ParametersMap& parameters)
+void TimedOccupancyGridMap::parseParameters(const Parameters& parameters)
 {
-    Parameters::parse(parameters, Parameters::kTimedGridMaxInterpolationTimeError(),
-        maxInterpolationTimeError_);
-    Parameters::parse(
-        parameters, Parameters::kTimedGridGuaranteedInterpolationTimeWindow(),
-        guaranteedInterpolationTimeWindow_);
+    maxInterpolationTimeError_ = parameters.maxInterpolationTimeError;
+    guaranteedInterpolationTimeWindow_ = parameters.guaranteedInterpolationTimeWindow;
 
-    occupancyGridMap_ = std::make_unique<OccupancyGridMap>(parameters);
+    occupancyGridMap_ =
+        std::make_unique<OccupancyGridMap>(parameters.occupancyGridMapParameters);
 }
 
 std::shared_ptr<LocalMap> TimedOccupancyGridMap::createLocalMap(

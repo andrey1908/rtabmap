@@ -1,27 +1,21 @@
 #include <rtabmap/core/TemporaryOccupancyGridBuilder.h>
-#include <rtabmap/utilite/ULogger.h>
 
 #include "time_measurer/time_measurer.h"
 
 namespace rtabmap {
 
-TemporaryOccupancyGridBuilder::TemporaryOccupancyGridBuilder(const ParametersMap& parameters) :
-    cellSize_(Parameters::defaultGridCellSize()),
-    temporaryMissProb_(Parameters::defaultGridTemporaryMissProb()),
-    temporaryHitProb_(Parameters::defaultGridTemporaryHitProb()),
-    temporaryOccupancyProbThr_(Parameters::defaultGridTemporaryOccupancyThr()),
-    maxTemporaryLocalMaps_(Parameters::defaultGridMaxTemporaryLocalMaps())
+TemporaryOccupancyGridBuilder::TemporaryOccupancyGridBuilder(const Parameters& parameters)
 {
     parseParameters(parameters);
 }
 
-void TemporaryOccupancyGridBuilder::parseParameters(const ParametersMap & parameters)
+void TemporaryOccupancyGridBuilder::parseParameters(const Parameters& parameters)
 {
-    Parameters::parse(parameters, Parameters::kGridCellSize(), cellSize_);
-    Parameters::parse(parameters, Parameters::kGridTemporaryMissProb(), temporaryMissProb_);
-    Parameters::parse(parameters, Parameters::kGridTemporaryHitProb(), temporaryHitProb_);
-    Parameters::parse(parameters, Parameters::kGridTemporaryOccupancyThr(), temporaryOccupancyProbThr_);
-    Parameters::parse(parameters, Parameters::kGridMaxTemporaryLocalMaps(), maxTemporaryLocalMaps_);
+    cellSize_ = parameters.cellSize;
+    temporaryMissProb_ = parameters.temporaryMissProb;
+    temporaryHitProb_ = parameters.temporaryHitProb;
+    temporaryOccupancyProbThr_ = parameters.temporaryOccupancyProbThr;
+    maxTemporaryLocalMaps_ = parameters.maxTemporaryLocalMaps;
     UASSERT(temporaryMissProb_ > 0.0f && temporaryMissProb_ <= 0.5f);
     UASSERT(temporaryHitProb_ >= 0.5f && temporaryHitProb_ < 1.0f);
     UASSERT(temporaryOccupancyProbThr_ > 0.0f && temporaryOccupancyProbThr_ < 1.0f);

@@ -28,7 +28,7 @@ public:
         float cellSize = 0.0f;
         MapLimitsI limits;
         cv::Mat grid;  // CV_8S
-        cv::Mat colors;  // cv_32S
+        cv::Mat colors;  // CV_32S
 
         static constexpr std::int8_t unknownCellValue = -1;
         static constexpr std::int8_t emptyCellValue = 0;

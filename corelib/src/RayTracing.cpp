@@ -1,29 +1,24 @@
 #include <rtabmap/core/RayTracing.h>
-#include <rtabmap/utilite/ULogger.h>
 #include "time_measurer/time_measurer.h"
 
 namespace rtabmap {
 
-RayTracing::RayTracing(const ParametersMap& parameters) :
-    cellSize_(Parameters::defaultGridCellSize()),
-    maxVisibleRangeF_(Parameters::defaultRayTracingMaxVisibleRange()),
-    maxRayTracingRangeF_(Parameters::defaultRayTracingMaxRayTracingRange()),
-    traceIntoUnknownSpace_(Parameters::defaultRayTracingTraceIntoUnknownSpace())
+RayTracing::RayTracing(const Parameters& parameters)
 {
     parseParameters(parameters);
 }
 
-void RayTracing::parseParameters(const ParametersMap& parameters)
+void RayTracing::parseParameters(const Parameters& parameters)
 {
-    Parameters::parse(parameters, Parameters::kGridCellSize(), cellSize_);
-    Parameters::parse(parameters, Parameters::kRayTracingMaxVisibleRange(), maxVisibleRangeF_);
-    Parameters::parse(parameters, Parameters::kRayTracingMaxRayTracingRange(), maxRayTracingRangeF_);
-    Parameters::parse(parameters, Parameters::kRayTracingTraceIntoUnknownSpace(), traceIntoUnknownSpace_);
-    UASSERT(maxVisibleRangeF_ >= maxRayTracingRangeF_);
+    cellSize_ = parameters.cellSize;
+    maxVisibleRangeF_ = parameters.maxVisibleRange;
+    maxTracingRangeF_ = parameters.maxTracingRange;
+    traceIntoUnknownSpace_ = parameters.traceIntoUnknownSpace;
+    UASSERT(maxVisibleRangeF_ >= maxTracingRangeF_);
 
     maxVisibleRange_ = std::lround(maxVisibleRangeF_ / cellSize_);
-    maxRayTracingRange_ = std::lround(maxRayTracingRangeF_ / cellSize_);
-    maxRayTracingRangeSqr_ = maxRayTracingRange_ * maxRayTracingRange_;
+    maxTracingRange_ = std::lround(maxTracingRangeF_ / cellSize_);
+    maxTracingRangeSqr_ = maxTracingRange_ * maxTracingRange_;
     computeRays();
 }
 
@@ -160,8 +155,8 @@ std::list<RayTracing::Cell> RayTracing::bresenhamLine(const Cell& start, const C
 void RayTracing::computeRays()
 {
     rays_.clear();
-    std::list<Cell> circle = bresenhamCircle(0, 0, maxRayTracingRange_);
-    double scale = 1.0 * maxVisibleRange_ / maxRayTracingRange_;
+    std::list<Cell> circle = bresenhamCircle(0, 0, maxTracingRange_);
+    double scale = 1.0 * maxVisibleRange_ / maxTracingRange_;
     for (const Cell& cell : circle)
     {
         Cell cellForRayTracing = cell * scale;
@@ -172,7 +167,7 @@ void RayTracing::computeRays()
         for (const Cell& cell : line)
         {
             rays_.back().cells.emplace_back(cell);
-            if (cell.rangeSqr() > maxRayTracingRangeSqr_ && lightRayLength == -1)
+            if (cell.rangeSqr() > maxTracingRangeSqr_ && lightRayLength == -1)
             {
                 lightRayLength = i;
             }

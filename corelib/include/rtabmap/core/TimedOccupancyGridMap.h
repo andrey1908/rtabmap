@@ -1,10 +1,12 @@
 #pragma once
 
+#include <rtabmap/utilite/ULogger.h>
 #include <rtabmap/core/Time.h>
 #include <rtabmap/core/Transform.h>
 #include <rtabmap/core/Trajectory.h>
 #include <rtabmap/core/OccupancyGridMap.h>
-#include <rtabmap/utilite/ULogger.h>
+
+#include <yaml-cpp/yaml.h>
 
 #include <vector>
 #include <set>
@@ -18,8 +20,40 @@ namespace rtabmap {
 class TimedOccupancyGridMap
 {
 public:
-    TimedOccupancyGridMap(const ParametersMap& parameters = ParametersMap());
-    void parseParameters(const ParametersMap& parameters);
+    struct Parameters
+    {
+        float maxInterpolationTimeError = 0.06f;
+        float guaranteedInterpolationTimeWindow = 1.0f;
+
+        OccupancyGridMap::Parameters occupancyGridMapParameters;
+
+        static Parameters createParameters(const YAML::Node& node)
+        {
+            UASSERT(node.IsMap());
+            Parameters parameters;
+            if (node["MaxInterpolationTimeError"])
+            {
+                parameters.maxInterpolationTimeError =
+                    node["MaxInterpolationTimeError"].as<float>();
+            }
+            if (node["GuaranteedInterpolationTimeWindow"])
+            {
+                parameters.guaranteedInterpolationTimeWindow =
+                    node["GuaranteedInterpolationTimeWindow"].as<float>();
+            }
+            if (node["OccupancyGridMap"])
+            {
+                parameters.occupancyGridMapParameters =
+                    OccupancyGridMap::Parameters::createParameters(
+                        node["OccupancyGridMap"]);
+            }
+            return parameters;
+        }
+    };
+
+public:
+    TimedOccupancyGridMap(const Parameters& parameters);
+    void parseParameters(const Parameters& parameters);
 
     std::shared_ptr<LocalMap> createLocalMap(const Signature& signature, const Time& time,
         const Transform& fromUpdatedPose = Transform::getIdentity()) const;

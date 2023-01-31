@@ -1,6 +1,8 @@
 #pragma once
 
-#include <rtabmap/core/Parameters.h>
+#include <rtabmap/utilite/ULogger.h>
+
+#include <yaml-cpp/yaml.h>
 
 #include <opencv2/opencv.hpp>
 #include <vector>
@@ -13,6 +15,38 @@ namespace rtabmap {
 class RayTracing
 {
 public:
+    struct Parameters
+    {
+        float cellSize = 0.1f;
+        float maxVisibleRange = 100.0f;
+        float maxTracingRange = 10.0f;
+        bool traceIntoUnknownSpace = false;
+
+        static Parameters createParameters(const YAML::Node& node)
+        {
+            UASSERT(node.IsMap());
+            Parameters parameters;
+            if (node["CellSize"])
+            {
+                parameters.cellSize = node["CellSize"].as<float>();
+            }
+            if (node["MaxVisibleRange"])
+            {
+                parameters.maxVisibleRange = node["MaxVisibleRange"].as<float>();
+            }
+            if (node["MaxTracingRange"])
+            {
+                parameters.maxTracingRange = node["MaxTracingRange"].as<float>();
+            }
+            if (node["TraceIntoUnknownSpace"])
+            {
+                parameters.traceIntoUnknownSpace =
+                    node["TraceIntoUnknownSpace"].as<bool>();
+            }
+            return parameters;
+        }
+    };
+
     struct Cell
     {
         Cell operator*(const int i) const
@@ -55,19 +89,19 @@ private:
     };
 
 public:
-    RayTracing(const ParametersMap& parameters = ParametersMap());
-    void parseParameters(const ParametersMap& parameters);
+    RayTracing(const Parameters& parameters);
+    void parseParameters(const Parameters& parameters);
 
     void traceRays(cv::Mat& grid, const Cell& origin,
         std::int8_t occupiedCellValue, std::int8_t emptyCellValue) const;
 
-    inline bool traceIntoUnknownSpace() const
+    bool traceIntoUnknownSpace() const
     {
         return traceIntoUnknownSpace_;
     }
-    inline float maxRayTracingRange() const
+    float maxTracingRange() const
     {
-        return maxRayTracingRangeF_;
+        return maxTracingRangeF_;
     }
 
 private:
@@ -79,11 +113,11 @@ private:
 private:
     float cellSize_;
     float maxVisibleRangeF_;
-    float maxRayTracingRangeF_;
+    float maxTracingRangeF_;
 
     int maxVisibleRange_;
-    int maxRayTracingRange_;
-    int maxRayTracingRangeSqr_;
+    int maxTracingRange_;
+    int maxTracingRangeSqr_;
     bool traceIntoUnknownSpace_;
 
     std::vector<Ray> rays_;

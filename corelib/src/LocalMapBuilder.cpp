@@ -1,6 +1,4 @@
 #include <rtabmap/core/LocalMapBuilder.h>
-#include <rtabmap/utilite/ULogger.h>
-
 #include <limits>
 
 #include "time_measurer/time_measurer.h"
@@ -9,31 +7,22 @@ namespace rtabmap {
 
 const cv::Vec3b LocalMapBuilder::semanticBackgroundColor(0, 0, 0);
 
-LocalMapBuilder::LocalMapBuilder(const ParametersMap& parameters) :
-    cellSize_(Parameters::defaultGridCellSize()),
-    maxVisibleRange_(Parameters::defaultLocalMapMaxVisibleRange()),
-    maxRange2d_(Parameters::defaultLocalMapMaxRange2d()),
-    minObstacleHeight_(Parameters::defaultLocalMapMinObstacleHeight()),
-    maxObstacleHeight_(Parameters::defaultLocalMapMaxObstacleHeight()),
-    minSemanticRange_(Parameters::defaultLocalMapMinSemanticRange()),
-    maxSemanticRange_(Parameters::defaultLocalMapMaxSemanticRange()),
-    enableRayTracing_(Parameters::defaultLocalMapEnableRayTracing()),
-    sensorBlindRange2d_(Parameters::defaultLocalMapSensorBlindRange2d())
+LocalMapBuilder::LocalMapBuilder(const Parameters& parameters)
 {
     parseParameters(parameters);
 }
 
-void LocalMapBuilder::parseParameters(const ParametersMap& parameters)
+void LocalMapBuilder::parseParameters(const Parameters& parameters)
 {
-    Parameters::parse(parameters, Parameters::kGridCellSize(), cellSize_);
-    Parameters::parse(parameters, Parameters::kLocalMapMaxVisibleRange(), maxVisibleRange_);
-    Parameters::parse(parameters, Parameters::kLocalMapMaxRange2d(), maxRange2d_);
-    Parameters::parse(parameters, Parameters::kLocalMapMinObstacleHeight(), minObstacleHeight_);
-    Parameters::parse(parameters, Parameters::kLocalMapMaxObstacleHeight(), maxObstacleHeight_);
-    Parameters::parse(parameters, Parameters::kLocalMapMinSemanticRange(), minSemanticRange_);
-    Parameters::parse(parameters, Parameters::kLocalMapMaxSemanticRange(), maxSemanticRange_);
-    Parameters::parse(parameters, Parameters::kLocalMapEnableRayTracing(), enableRayTracing_);
-    Parameters::parse(parameters, Parameters::kLocalMapSensorBlindRange2d(), sensorBlindRange2d_);
+    cellSize_ = parameters.cellSize;
+    maxVisibleRange_ = parameters.maxVisibleRange;
+    maxRange2d_ = parameters.maxRange2d;
+    minObstacleHeight_ = parameters.minObstacleHeight;
+    maxObstacleHeight_ = parameters.maxObstacleHeight;
+    minSemanticRange_ = parameters.minSemanticRange;
+    maxSemanticRange_ = parameters.maxSemanticRange;
+    enableRayTracing_ = parameters.enableRayTracing;
+    sensorBlindRange2d_ = parameters.sensorBlindRange2d;
     UASSERT(minObstacleHeight_ < maxObstacleHeight_);
     UASSERT(maxSemanticRange_ == 0.0f || minSemanticRange_ < maxSemanticRange_);
 
@@ -43,10 +32,13 @@ void LocalMapBuilder::parseParameters(const ParametersMap& parameters)
     maxSemanticRangeSqr_ = maxSemanticRange_ * maxSemanticRange_;
     sensorBlindRange2dSqr_ = sensorBlindRange2d_ * sensorBlindRange2d_;
 
-    semanticDilation_ = std::make_unique<SemanticDilation>(parameters);
+    semanticDilation_ =
+        std::make_unique<SemanticDilation>(parameters.semanticDilationParameters);
     if (enableRayTracing_)
     {
-        rayTracing_ = std::make_unique<RayTracing>(parameters);
+        RayTracing::Parameters rayTracingParameters = parameters.rayTracingParameters;
+        rayTracingParameters.cellSize = parameters.cellSize;
+        rayTracing_ = std::make_unique<RayTracing>(rayTracingParameters);
     }
     else
     {
@@ -254,7 +246,7 @@ LocalMap::ColoredGrid LocalMapBuilder::coloredGridFromObstacles(
     }
     if (enableRayTracing_ && rayTracing_->traceIntoUnknownSpace())
     {
-        float range = rayTracing_->maxRayTracingRange();
+        float range = rayTracing_->maxTracingRange();
         limitsF.update(sensor.x() - range, sensor.y() - range);
         limitsF.update(sensor.x() + range, sensor.y() + range);
     }

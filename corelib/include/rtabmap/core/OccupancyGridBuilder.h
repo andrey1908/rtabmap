@@ -1,11 +1,13 @@
 #pragma once
 
-#include <rtabmap/core/Parameters.h>
+#include <rtabmap/utilite/ULogger.h>
 #include <rtabmap/core/LocalMapBuilder.h>
 #include <rtabmap/core/Grid.h>
 #include <rtabmap/core/MapLimits.h>
 #include <rtabmap/core/Color.h>
 #include <rtabmap/core/Node.h>
+
+#include <yaml-cpp/yaml.h>
 
 #include <list>
 #include <map>
@@ -17,13 +19,67 @@ namespace rtabmap {
 
 class OccupancyGridBuilder
 {
+public:
+    struct Parameters
+    {
+        float cellSize = 0.1f;
+        float missProb = 0.4f;
+        float hitProb = 0.7f;
+        float minClampingProb = 0.1192f;
+        float maxClampingProb = 0.971f;
+        float occupancyProbThr = 0.5f;
+        int temporarilyOccupiedCellColorRgb = -1;
+        bool showTemporarilyOccupiedCells = true;
+
+        static Parameters createParameters(const YAML::Node& node)
+        {
+            UASSERT(node.IsMap());
+            Parameters parameters;
+            if (node["CellSize"])
+            {
+                parameters.cellSize = node["CellSize"].as<float>();
+            }
+            if (node["MissProb"])
+            {
+                parameters.missProb = node["MissProb"].as<float>();
+            }
+            if (node["HitProb"])
+            {
+                parameters.hitProb = node["HitProb"].as<float>();
+            }
+            if (node["MinClampingProb"])
+            {
+                parameters.minClampingProb = node["MinClampingProb"].as<float>();
+            }
+            if (node["MaxClampingProb"])
+            {
+                parameters.maxClampingProb = node["MaxClampingProb"].as<float>();
+            }
+            if (node["OccupancyProbThr"])
+            {
+                parameters.occupancyProbThr = node["OccupancyProbThr"].as<float>();
+            }
+            if (node["TemporarilyOccupiedCellColorRgb"])
+            {
+                parameters.temporarilyOccupiedCellColorRgb =
+                    node["TemporarilyOccupiedCellColorRgb"].as<int>();
+            }
+            if (node["ShowTemporarilyOccupiedCells"])
+            {
+                parameters.showTemporarilyOccupiedCells =
+                    node["ShowTemporarilyOccupiedCells"].as<bool>();
+            }
+            return parameters;
+        }
+    };
+
 private:
     using MapType = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
     using ColorsType = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 public:
-    OccupancyGridBuilder(const ParametersMap& parameters = ParametersMap());
-    void parseParameters(const ParametersMap& parameters);
+    OccupancyGridBuilder(const Parameters& parameters);
+    void parseParameters(const Parameters& parameters);
 
     void addLocalMap(int nodeId, std::shared_ptr<const LocalMap> localMap);
     void addLocalMap(int nodeId, const Transform& pose,

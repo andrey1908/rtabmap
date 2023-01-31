@@ -1,11 +1,13 @@
 #pragma once
 
-#include <rtabmap/core/Parameters.h>
+#include <rtabmap/utilite/ULogger.h>
 #include <rtabmap/core/LocalMapBuilder.h>
 #include <rtabmap/core/Grid.h>
 #include <rtabmap/core/MapLimits.h>
 #include <rtabmap/core/Color.h>
 #include <rtabmap/core/Node.h>
+
+#include <yaml-cpp/yaml.h>
 
 #include <deque>
 #include <map>
@@ -17,13 +19,52 @@ namespace rtabmap {
 
 class TemporaryOccupancyGridBuilder
 {
+public:
+    struct Parameters
+    {
+        float cellSize = 0.1f;
+        float temporaryMissProb = 0.4f;
+        float temporaryHitProb = 0.7f;
+        float temporaryOccupancyProbThr = 0.5f;
+        int maxTemporaryLocalMaps = 1;
+
+        static Parameters createParameters(const YAML::Node& node)
+        {
+            UASSERT(node.IsMap());
+            Parameters parameters;
+            if (node["CellSize"])
+            {
+                parameters.cellSize = node["CellSize"].as<float>();
+            }
+            if (node["TemporaryMissProb"])
+            {
+                parameters.temporaryMissProb = node["TemporaryMissProb"].as<float>();
+            }
+            if (node["TemporaryHitProb"])
+            {
+                parameters.temporaryHitProb = node["TemporaryHitProb"].as<float>();
+            }
+            if (node["TemporaryOccupancyProbThr"])
+            {
+                parameters.temporaryOccupancyProbThr =
+                    node["TemporaryOccupancyProbThr"].as<float>();
+            }
+            if (node["MaxTemporaryLocalMaps"])
+            {
+                parameters.maxTemporaryLocalMaps =
+                    node["MaxTemporaryLocalMaps"].as<int>();
+            }
+            return parameters;
+        }
+    };
+
 private:
     using CounterType = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
     using ColorsType = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 public:
-    TemporaryOccupancyGridBuilder(const ParametersMap& parameters = ParametersMap());
-    void parseParameters(const ParametersMap& parameters);
+    TemporaryOccupancyGridBuilder(const Parameters& parameters);
+    void parseParameters(const Parameters& parameters);
 
     void addLocalMap(const Transform& pose, std::shared_ptr<const LocalMap> localMap);
 

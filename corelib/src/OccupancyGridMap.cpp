@@ -1,25 +1,42 @@
 #include <rtabmap/core/OccupancyGridMap.h>
-#include <rtabmap/utilite/ULogger.h>
 
 #include "time_measurer/time_measurer.h"
 
 namespace rtabmap {
 
-OccupancyGridMap::OccupancyGridMap(const ParametersMap& parameters) :
-    cellSize_(Parameters::defaultGridCellSize())
+OccupancyGridMap::OccupancyGridMap(const Parameters& parameters)
 {
     parseParameters(parameters);
 }
 
-void OccupancyGridMap::parseParameters(const ParametersMap& parameters)
+void OccupancyGridMap::parseParameters(const Parameters& parameters)
 {
-    Parameters::parse(parameters, Parameters::kGridCellSize(), cellSize_);
+    cellSize_ = parameters.cellSize;
 
-    localMapBuilder_ = std::make_unique<LocalMapBuilder>(parameters);
-    obstacleDilation_ = std::make_unique<ObstacleDilation>(parameters);
-    occupancyGridBuilder_ = std::make_unique<OccupancyGridBuilder>(parameters);
+    LocalMapBuilder::Parameters localMapBuilderParameters =
+        parameters.localMapBuilderParameters;
+    localMapBuilderParameters.cellSize = parameters.cellSize;
+    localMapBuilder_ =
+        std::make_unique<LocalMapBuilder>(localMapBuilderParameters);
+
+    ObstacleDilation::Parameters obstacleDilationParameters =
+        parameters.obstacleDilationParameters;
+    obstacleDilationParameters.cellSize = parameters.cellSize;
+    obstacleDilation_ =
+        std::make_unique<ObstacleDilation>(obstacleDilationParameters);
+
+    OccupancyGridBuilder::Parameters occupancyGridBuilderParameters =
+        parameters.occupancyGridBuilderParameters;
+    occupancyGridBuilderParameters.cellSize = parameters.cellSize;
+    occupancyGridBuilder_ =
+        std::make_unique<OccupancyGridBuilder>(occupancyGridBuilderParameters);
+
+    TemporaryOccupancyGridBuilder::Parameters temporaryOccupancyGridBuilderParameters =
+        parameters.temporaryOccupancyGridBuilderParameters;
+    temporaryOccupancyGridBuilderParameters.cellSize = parameters.cellSize;
     temporaryOccupancyGridBuilder_ =
-        std::make_unique<TemporaryOccupancyGridBuilder>(parameters);
+        std::make_unique<TemporaryOccupancyGridBuilder>(
+            temporaryOccupancyGridBuilderParameters);
 }
 
 std::shared_ptr<LocalMap> OccupancyGridMap::createLocalMap(

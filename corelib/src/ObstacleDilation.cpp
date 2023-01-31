@@ -1,29 +1,25 @@
 #include <rtabmap/core/ObstacleDilation.h>
-#include <rtabmap/utilite/ULogger.h>
-
 #include <limits>
 
 #include "time_measurer/time_measurer.h"
 
 namespace rtabmap {
 
-ObstacleDilation::ObstacleDilation(const ParametersMap& parameters) :
-    cellSize_(Parameters::defaultGridCellSize()),
-    dilationSizeMeters_(Parameters::defaultObstacleDilationDilationSize())
+ObstacleDilation::ObstacleDilation(const Parameters& parameters)
 {
     parseParameters(parameters);
 }
 
-void ObstacleDilation::parseParameters(const ParametersMap& parameters)
+void ObstacleDilation::parseParameters(const Parameters& parameters)
 {
-    Parameters::parse(parameters, Parameters::kGridCellSize(), cellSize_);
-    Parameters::parse(parameters, Parameters::kObstacleDilationDilationSize(),
-        dilationSizeMeters_);
-    UASSERT(dilationSizeMeters_ >= 0.0f);
+    cellSize_ = parameters.cellSize;
+    dilationSizeF_ = parameters.dilationSize;
+    UASSERT(dilationSizeF_ >= 0.0f);
 
-    dilationSize_ = std::ceil(dilationSizeMeters_ / cellSize_);
-
-    semanticDilation_ = std::make_unique<SemanticDilation>(dilationSize_);
+    dilationSize_ = std::ceil(dilationSizeF_ / cellSize_);
+    SemanticDilation::Parameters semanticDilationParameters;
+    semanticDilationParameters.dilationSize = dilationSize_;
+    semanticDilation_ = std::make_unique<SemanticDilation>(semanticDilationParameters);
 }
 
 std::shared_ptr<LocalMap> ObstacleDilation::dilate(

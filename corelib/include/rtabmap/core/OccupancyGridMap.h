@@ -1,11 +1,13 @@
 #pragma once
 
-#include <rtabmap/core/Parameters.h>
+#include <rtabmap/utilite/ULogger.h>
 #include <rtabmap/core/Signature.h>
 #include <rtabmap/core/LocalMapBuilder.h>
 #include <rtabmap/core/OccupancyGridBuilder.h>
 #include <rtabmap/core/TemporaryOccupancyGridBuilder.h>
 #include <rtabmap/core/ObstacleDilation.h>
+
+#include <yaml-cpp/yaml.h>
 
 #include <memory>
 #include <optional>
@@ -16,8 +18,54 @@ namespace rtabmap {
 class OccupancyGridMap
 {
 public:
-    OccupancyGridMap(const ParametersMap& parameters = ParametersMap());
-    void parseParameters(const ParametersMap& parameters);
+    struct Parameters
+    {
+        float cellSize = 0.1f;
+        LocalMapBuilder::Parameters localMapBuilderParameters;
+        ObstacleDilation::Parameters obstacleDilationParameters;
+        OccupancyGridBuilder::Parameters occupancyGridBuilderParameters;
+        TemporaryOccupancyGridBuilder::Parameters
+            temporaryOccupancyGridBuilderParameters;
+
+        static Parameters createParameters(const YAML::Node& node)
+        {
+            UASSERT(node.IsMap());
+            Parameters parameters;
+            if (node["CellSize"])
+            {
+                parameters.cellSize = node["CellSize"].as<float>();
+            }
+            if (node["LocalMapBuilder"])
+            {
+                parameters.localMapBuilderParameters =
+                    LocalMapBuilder::Parameters::createParameters(
+                        node["LocalMapBuilder"]);
+            }
+            if (node["ObstacleDilation"])
+            {
+                parameters.obstacleDilationParameters =
+                    ObstacleDilation::Parameters::createParameters(
+                        node["ObstacleDilation"]);
+            }
+            if (node["OccupancyGridBuilder"])
+            {
+                parameters.occupancyGridBuilderParameters =
+                    OccupancyGridBuilder::Parameters::createParameters(
+                        node["OccupancyGridBuilder"]);
+            }
+            if (node["TemporaryOccupancyGridBuilder"])
+            {
+                parameters.temporaryOccupancyGridBuilderParameters =
+                    TemporaryOccupancyGridBuilder::Parameters::createParameters(
+                        node["TemporaryOccupancyGridBuilder"]);
+            }
+            return parameters;
+        }
+    };
+
+public:
+    OccupancyGridMap(const Parameters& parameters);
+    void parseParameters(const Parameters& parameters);
 
     std::shared_ptr<LocalMap> createLocalMap(const Signature& signature,
         const Transform& fromUpdatedPose = Transform::getIdentity()) const;

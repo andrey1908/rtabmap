@@ -1,32 +1,18 @@
 #include <rtabmap/core/SemanticDilation.h>
-#include <rtabmap/utilite/ULogger.h>
-
 #include <limits>
 
 #include "time_measurer/time_measurer.h"
 
 namespace rtabmap {
 
-SemanticDilation::SemanticDilation(const ParametersMap& parameters) :
-    dilationSize_(Parameters::defaultSemanticDilationDilationSize())
+SemanticDilation::SemanticDilation(const Parameters& parameters)
 {
     parseParameters(parameters);
 }
 
-SemanticDilation::SemanticDilation(int dilationSize)
+void SemanticDilation::parseParameters(const Parameters& parameters)
 {
-    parseParameters(dilationSize);
-}
-
-void SemanticDilation::parseParameters(const ParametersMap& parameters)
-{
-    Parameters::parse(parameters, Parameters::kSemanticDilationDilationSize(), dilationSize_);
-    initialize();
-}
-
-void SemanticDilation::parseParameters(int dilationSize)
-{
-    dilationSize_ = dilationSize;
+    dilationSize_ = parameters.dilationSize;
     initialize();
 }
 

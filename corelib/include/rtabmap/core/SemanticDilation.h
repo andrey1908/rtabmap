@@ -1,6 +1,8 @@
 #pragma once
 
-#include <rtabmap/core/Parameters.h>
+#include <rtabmap/utilite/ULogger.h>
+
+#include <yaml-cpp/yaml.h>
 
 #include <opencv2/opencv.hpp>
 #include <vector>
@@ -10,6 +12,23 @@ namespace rtabmap {
 
 class SemanticDilation
 {
+public:
+    struct Parameters
+    {
+        int dilationSize = 0;
+
+        static Parameters createParameters(const YAML::Node& node)
+        {
+            UASSERT(node.IsMap());
+            Parameters parameters;
+            if (node["DilationSize"])
+            {
+                parameters.dilationSize = node["DilationSize"].as<int>();
+            }
+            return parameters;
+        }
+    };
+
 private:
     struct PixelCoords {
         bool inFrame(int h, int w) const {
@@ -20,10 +39,8 @@ private:
     };
 
 public:
-    SemanticDilation(const ParametersMap& parameters = ParametersMap());
-    SemanticDilation(int dilationSize);
-    void parseParameters(const ParametersMap& parameters);
-    void parseParameters(int dilationSize);
+    SemanticDilation(const Parameters& parameters);
+    void parseParameters(const Parameters& parameters);
 
     template <typename T, size_t size>
     cv::Mat dilate(const cv::Mat& image, const T (&backgroundColors)[size],

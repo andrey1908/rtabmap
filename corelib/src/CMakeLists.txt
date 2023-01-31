@@ -3,17 +3,11 @@ ADD_SUBDIRECTORY( rtabmap/proto )
 SET(SRC_FILES
 	CameraModel.cpp
 
-	Parameters.cpp
 	Signature.cpp
 	Transform.cpp
 
-	util2d.cpp
-
 	util3d.cpp
-	util3d_filtering.cpp
-	util3d_mapping.cpp
 	util3d_transforms.cpp
-	util3d_surface.cpp
 
 	SensorData.cpp
 	LaserScan.cpp
@@ -21,10 +15,7 @@ SET(SRC_FILES
 
 	GeodeticCoords.cpp
 
-	StereoDense.cpp
 	StereoCameraModel.cpp
-	stereo/StereoBM.cpp
-	stereo/StereoSGBM.cpp
 
 	OccupancyGridMap.cpp
 	TimedOccupancyGridMap.cpp
@@ -59,6 +50,7 @@ SET(INCLUDE_DIRS
 	${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_BINARY_DIR}
 	${OpenCV_INCLUDE_DIRS}
+	${YAML_INCLUDE_DIRS}
 	${PCL_INCLUDE_DIRS}
 	${ZLIB_INCLUDE_DIRS}
 	${time_measurer_INCLUDE_DIRS}
@@ -67,6 +59,7 @@ SET(INCLUDE_DIRS
 
 SET(LIBRARIES
 	${OpenCV_LIBS}
+	${YAML_CPP_LIBRARIES}
 	${PCL_LIBRARIES}
 	${ZLIB_LIBRARIES}
 	${time_measurer_LIBRARIES}
