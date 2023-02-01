@@ -9,6 +9,7 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include <vector>
 #include <memory>
 #include <optional>
 #include <climits>
@@ -22,7 +23,7 @@ public:
     {
         float cellSize = 0.1f;
         LocalMapBuilder::Parameters localMapBuilderParameters;
-        ObstacleDilation::Parameters obstacleDilationParameters;
+        std::vector<ObstacleDilation::Parameters> obstacleDilationsParameters;
         OccupancyGridBuilder::Parameters occupancyGridBuilderParameters;
         TemporaryOccupancyGridBuilder::Parameters
             temporaryOccupancyGridBuilderParameters;
@@ -43,9 +44,30 @@ public:
             }
             if (node["ObstacleDilation"])
             {
-                parameters.obstacleDilationParameters =
-                    ObstacleDilation::Parameters::createParameters(
-                        node["ObstacleDilation"]);
+                UASSERT(node["ObstacleDilation"].IsMap() ||
+                    node["ObstacleDilation"].IsSequence());
+                if (node["ObstacleDilation"].IsMap())
+                {
+                    parameters.obstacleDilationsParameters.push_back(
+                        ObstacleDilation::Parameters::createParameters(
+                            node["ObstacleDilation"]));
+                }
+                if (node["ObstacleDilation"].IsSequence())
+                {
+                    for (const YAML::Node& obstacleDilationNode : node["ObstacleDilation"])
+                    {
+                        parameters.obstacleDilationsParameters.push_back(
+                            ObstacleDilation::Parameters::createParameters(
+                                obstacleDilationNode));
+                    }
+                }
+            }
+            else
+            {
+                ObstacleDilation::Parameters obstacleDilationParameters;
+                obstacleDilationParameters.dilationSize = 0.0f;
+                parameters.obstacleDilationsParameters.push_back(
+                    obstacleDilationParameters);
             }
             if (node["OccupancyGridBuilder"])
             {
@@ -77,27 +99,26 @@ public:
     void addTemporaryLocalMap(const Transform& pose,
         std::shared_ptr<const LocalMap> localMap);
 
-    void cacheCurrentMap();
-
     void updatePoses(const std::map<int, Transform>& updatedPoses,
         const std::deque<Transform>& updatedTemporaryPoses,
         int lastNodeIdToIncludeInCachedMap = -1);
 
-    OccupancyGrid getOccupancyGrid() const;
-    OccupancyGrid getProbOccupancyGrid() const;
-    ColorGrid getColorGrid() const;
+    OccupancyGrid getOccupancyGrid(int index) const;
+    OccupancyGrid getProbOccupancyGrid(int index) const;
+    ColorGrid getColorGrid(int index) const;
 
     float cellSize() const { return cellSize_; }
-    std::pair<float, float> getGridOrigin() const;
-    int maxTemporaryLocalMaps() const
-        { return temporaryOccupancyGridBuilder_->maxTemporaryLocalMaps(); }
-    const std::map<int, Node>& nodes() const { return occupancyGridBuilder_->nodes(); }
-    const std::deque<Node>& temporaryNodes() const
-        { return temporaryOccupancyGridBuilder_->nodes(); }
+    std::pair<float, float> getGridOrigin(int index) const;
+    int maxTemporaryLocalMaps(int index) const
+        { return temporaryOccupancyGridBuilders_[index]->maxTemporaryLocalMaps(); }
+    const std::map<int, Node>& nodes(int index) const { return occupancyGridBuilders_[index]->nodes(); }
+    const std::deque<Node>& temporaryNodes(int index) const
+        { return temporaryOccupancyGridBuilders_[index]->nodes(); }
     const std::map<int, const std::shared_ptr<const LocalMap>>&
         localMapsWithoutObstacleDilation() const { return localMapsWithoutObstacleDilation_; }
     const cv::Mat& lastDilatedSemantic() const
         { return localMapBuilder_->lastDilatedSemantic(); }
+    int numBuilders() const { return numBuilders_; }
 
     void reset();
 
@@ -105,9 +126,12 @@ private:
     float cellSize_;
 
     std::unique_ptr<LocalMapBuilder> localMapBuilder_;
-    std::unique_ptr<ObstacleDilation> obstacleDilation_;
-    std::unique_ptr<OccupancyGridBuilder> occupancyGridBuilder_;
-    std::unique_ptr<TemporaryOccupancyGridBuilder> temporaryOccupancyGridBuilder_;
+
+    int numBuilders_;
+    std::vector<std::unique_ptr<ObstacleDilation>> obstacleDilations_;
+    std::vector<std::unique_ptr<OccupancyGridBuilder>> occupancyGridBuilders_;
+    std::vector<std::unique_ptr<TemporaryOccupancyGridBuilder>>
+        temporaryOccupancyGridBuilders_;
 
     std::map<int, const std::shared_ptr<const LocalMap>> localMapsWithoutObstacleDilation_;
 };

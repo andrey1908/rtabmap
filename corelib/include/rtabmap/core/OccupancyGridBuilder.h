@@ -85,8 +85,6 @@ public:
     void addLocalMap(int nodeId, const Transform& pose,
         std::shared_ptr<const LocalMap> localMap);
 
-    void cacheCurrentMap();
-
     void updatePoses(const std::map<int, Transform>& updatedPoses,
         int lastNodeIdToIncludeInMapCache = -1);
 
@@ -103,6 +101,7 @@ public:
     void reset();
 
 private:
+    void cacheCurrentMap();
     bool checkIfCachedMapCanBeUsed(const std::map<int, Transform>& newPoses);
     void useCachedMap();
     int tryToUseCachedMap(const std::map<int, Transform>& newPoses);

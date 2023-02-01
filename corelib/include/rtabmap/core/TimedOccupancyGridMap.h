@@ -65,30 +65,29 @@ public:
     void addTemporaryLocalMap(const Transform& pose,
         std::shared_ptr<const LocalMap> localMap);
 
-    void cacheCurrentMap() { occupancyGridMap_->cacheCurrentMap(); }
-
     void updatePoses(const Trajectories& trajectories);
 
-    OccupancyGrid getOccupancyGrid() const
-        { return occupancyGridMap_->getOccupancyGrid(); }
-    OccupancyGrid getProbOccupancyGrid() const
-        { return occupancyGridMap_->getProbOccupancyGrid(); }
-    ColorGrid getColorGrid() const
-        { return occupancyGridMap_->getColorGrid(); }
+    OccupancyGrid getOccupancyGrid(int index) const
+        { return occupancyGridMap_->getOccupancyGrid(index); }
+    OccupancyGrid getProbOccupancyGrid(int index) const
+        { return occupancyGridMap_->getProbOccupancyGrid(index); }
+    ColorGrid getColorGrid(int index) const
+        { return occupancyGridMap_->getColorGrid(index); }
 
     float cellSize() const { return occupancyGridMap_->cellSize(); }
-    std::pair<float, float> getGridOrigin() const
-        { return occupancyGridMap_->getGridOrigin(); }
-    int maxTemporaryLocalMaps() const
-        { return occupancyGridMap_->maxTemporaryLocalMaps(); }
-    const std::map<int, Node>& nodes() const { return occupancyGridMap_->nodes(); }
-    const std::deque<Node>& temporaryNodes() const
-        { return occupancyGridMap_->temporaryNodes(); }
+    std::pair<float, float> getGridOrigin(int index) const
+        { return occupancyGridMap_->getGridOrigin(index); }
+    int maxTemporaryLocalMaps(int index) const
+        { return occupancyGridMap_->maxTemporaryLocalMaps(index); }
+    const std::map<int, Node>& nodes(int index) const { return occupancyGridMap_->nodes(index); }
+    const std::deque<Node>& temporaryNodes(int index) const
+        { return occupancyGridMap_->temporaryNodes(index); }
     const std::map<int, const std::shared_ptr<const LocalMap>>&
         localMapsWithoutObstacleDilation() const
             { return occupancyGridMap_->localMapsWithoutObstacleDilation(); }
     const cv::Mat& lastDilatedSemantic() const
         { return occupancyGridMap_->lastDilatedSemantic(); }
+    int numBuilders() const { return occupancyGridMap_->numBuilders(); };
 
     void reset();
 

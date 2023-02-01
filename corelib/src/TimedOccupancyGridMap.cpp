@@ -51,7 +51,7 @@ void TimedOccupancyGridMap::addTemporaryLocalMap(const Transform& pose,
     std::shared_ptr<const LocalMap> localMap)
 {
     temporaryCanExtrapolate_.push_back(true);
-    if ((int)temporaryCanExtrapolate_.size() > maxTemporaryLocalMaps())
+    if ((int)temporaryCanExtrapolate_.size() > maxTemporaryLocalMaps(0))
     {
         temporaryCanExtrapolate_.pop_front();
     }
@@ -63,7 +63,7 @@ void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories)
     std::map<int, Transform> updatedPoses;
     {
         auto canExtrapolateIt = canExtrapolate_.begin();
-        const auto& nodesRef = nodes();
+        const auto& nodesRef = nodes(0);
         auto nodeIt = nodesRef.begin();
         while (canExtrapolateIt != canExtrapolate_.end())
         {
@@ -94,7 +94,7 @@ void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories)
     std::deque<Transform> updatedTemporaryPoses;
     {
         auto canExtrapolateIt = temporaryCanExtrapolate_.begin();
-        const auto& nodesRef = temporaryNodes();
+        const auto& nodesRef = temporaryNodes(0);
         auto nodeIt = nodesRef.begin();
         while (canExtrapolateIt != temporaryCanExtrapolate_.end())
         {
@@ -119,7 +119,7 @@ void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories)
     if (trajectories.size())
     {
         auto latestTrajectoryIt = std::prev(trajectories.end());
-        const auto& nodesRef = nodes();
+        const auto& nodesRef = nodes(0);
         for (const auto& [nodeId, node] : nodesRef)
         {
             const Time& time = node.localMap->time();
@@ -193,7 +193,7 @@ std::pair<std::optional<Transform>, bool /* if trajectory contains time */>
 TimedOccupancyGridMap::getPose(
     const Trajectory& trajectory, const Time& time)
 {
-    const auto& bounds = trajectory.getBounds(time);
+    const Trajectory::Bounds& bounds = trajectory.getBounds(time);
     if (bounds.first == trajectory.end())
     {
         return std::make_pair(std::nullopt, false);
@@ -236,7 +236,7 @@ void TimedOccupancyGridMap::save(const std::string& file)
 
     const auto& localMapsRef = localMapsWithoutObstacleDilation();
     auto localMapIt = localMapsRef.begin();
-    const auto& nodesRef = nodes();
+    const auto& nodesRef = nodes(0);
     auto nodeIt = nodesRef.begin();
     while (localMapIt != localMapsRef.end())
     {
