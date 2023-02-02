@@ -44,7 +44,7 @@ public:
 
     template <typename T, size_t size>
     cv::Mat dilate(const cv::Mat& image, const T (&backgroundColors)[size],
-        bool inverseBackground = false) const;
+        bool dilateBackground = false) const;
 
     inline int dilationSize() const
     {

@@ -29,7 +29,7 @@ std::shared_ptr<LocalMap> ObstacleDilation::dilate(
     LocalMap::ColoredGrid coloredGrid = localMap.toColoredGrid();
     coloredGrid.grid = semanticDilation_->dilate(coloredGrid.grid,
         {LocalMap::ColoredGrid::occupiedCellValue} /* backgroundColors */,
-        true /* inverseBackground */);
+        true /* dilateBackground */);
 
     auto dilatedLocalMap = std::make_shared<LocalMap>(
         coloredGrid, 0.0f, localMap.pointsDuplicated(),
