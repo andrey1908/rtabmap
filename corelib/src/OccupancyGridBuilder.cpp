@@ -254,9 +254,9 @@ void OccupancyGridBuilder::updatePoses(
     int lastNodeIdFromCache = tryToUseCachedMap(newPoses);
 
     MapLimitsI newMapLimits = mapLimits_;
-    std::list<int> nodeIdsToDeploy;
-    auto nodeIt = nodes_.lower_bound(lastNodeIdFromCache + 1);
-    auto newPoseIt = newPoses.lower_bound(lastNodeIdFromCache + 1);
+    std::vector<int> nodeIdsToDeploy;
+    auto nodeIt = nodes_.upper_bound(lastNodeIdFromCache);
+    auto newPoseIt = newPoses.upper_bound(lastNodeIdFromCache);
     while (newPoseIt != newPoses.end())
     {
         UASSERT(nodeIt != nodes_.end());

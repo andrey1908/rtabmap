@@ -145,13 +145,13 @@ private:
     MapLimitsI mapLimits_;
     MapType map_;
     ColorsType colors_;
-    std::list<std::pair<int, int>> temporarilyOccupiedCells_;
+    std::vector<std::pair<int, int>> temporarilyOccupiedCells_;
 
     std::map<int, Transform> cachedPoses_;
     MapLimitsI cachedMapLimits_;
     MapType cachedMap_;
     ColorsType cachedColors_;
-    std::list<std::pair<int, int>> cachedTemporarilyOccupiedCells_;
+    std::vector<std::pair<int, int>> cachedTemporarilyOccupiedCells_;
 
     // value 0 = unknown
     // value 1 = prob 0.0
