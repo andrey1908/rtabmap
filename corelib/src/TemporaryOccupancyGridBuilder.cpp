@@ -198,7 +198,7 @@ void TemporaryOccupancyGridBuilder::deployLocalMap(const Node& node)
         {
             continue;
         }
-        bool occupied = (i < node.localMap->numObstacles());
+        bool occupied = node.localMap->isObstacle(i);
         if (occupied)
         {
             hitCounter_.coeffRef(y, x) += 1;
@@ -240,7 +240,7 @@ void TemporaryOccupancyGridBuilder::removeLocalMap()
         {
             continue;
         }
-        bool occupied = (i < node.localMap->numObstacles());
+        bool occupied = node.localMap->isObstacle(i);
         if (occupied)
         {
             hitCounter_.coeffRef(y, x) -= 1;

@@ -373,7 +373,7 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
         {
             continue;
         }
-        bool occupied = (i < node.localMap->numObstacles());
+        bool occupied = node.localMap->isObstacle(i);
         if (occupied)
         {
             if (temporarilyOccupiedCellColor_ != Color::missingColor)
