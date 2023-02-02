@@ -5,8 +5,22 @@
 
 namespace rtabmap {
 
+LocalMap::LocalMap() :
+	numObstacles_(0),
+	numEmpty_(0),
+	sensorBlindRange2dSqr_(0.0f),
+	toSensor_(Transform::getIdentity()),
+	fromUpdatedPose_(Transform::getIdentity()),
+	time_(0, 0) {}
+
 LocalMap::LocalMap(const ColoredGrid& coloredGrid,
-	float maxRange2dSqr, bool duplicatePoints)
+		float maxRange2dSqr, bool duplicatePoints) :
+	numObstacles_(0),
+	numEmpty_(0),
+	sensorBlindRange2dSqr_(0.0f),
+	toSensor_(Transform::getIdentity()),
+	fromUpdatedPose_(Transform::getIdentity()),
+	time_(0, 0)
 {
 	fromColoredGrid(coloredGrid, maxRange2dSqr, duplicatePoints);
 }
@@ -73,7 +87,7 @@ void LocalMap::fromColoredGrid(const ColoredGrid& coloredGrid,
     for (int i = 0; i < numPoints; i++)
     {
         int y, x;
-        if (i < occupiedCells.size())
+        if (i < (int)occupiedCells.size())
         {
             const std::pair<int, int>& occupiedCell = occupiedCells[i];
 			y = occupiedCell.first;

@@ -36,7 +36,7 @@ public:
     };
 
 public:
-    LocalMap() = default;
+    LocalMap();
     LocalMap(const ColoredGrid& coloredGrid,
         float maxRange2dSqr, bool duplicatePoints);
     ~LocalMap() = default;

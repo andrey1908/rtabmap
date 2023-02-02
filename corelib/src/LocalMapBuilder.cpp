@@ -107,7 +107,6 @@ std::shared_ptr<LocalMap> LocalMapBuilder::createLocalMap(
     localMap->setSensorBlindRange2dSqr(sensorBlindRange2dSqr_);
     UASSERT(!signature.sensorData().laserScan().localTransform().isNull());
     localMap->setToSensor(signature.sensorData().laserScan().localTransform());
-    localMap->setFromUpdatedPose(Transform::getIdentity());
     return localMap;
 }
 
