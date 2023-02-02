@@ -32,11 +32,8 @@ std::shared_ptr<LocalMap> ObstacleDilation::dilate(
         true /* inverseBackground */);
 
     auto dilatedLocalMap = std::make_shared<LocalMap>(
-        coloredGrid, 0.0f, localMap.pointsDuplicated());
-    dilatedLocalMap->setSensorBlindRange2dSqr(localMap.sensorBlindRange2dSqr());
-    dilatedLocalMap->setToSensor(localMap.toSensor());
-    dilatedLocalMap->setFromUpdatedPose(localMap.fromUpdatedPose());
-    dilatedLocalMap->setTime(localMap.time());
+        coloredGrid, 0.0f, localMap.pointsDuplicated(),
+        localMap.properties());
     return dilatedLocalMap;
 }
 
