@@ -42,7 +42,7 @@
 
 inline void uSleep(unsigned int ms)
 {
-	Sleep(ms);
+    Sleep(ms);
 }
 
 #ifdef _CRT_
@@ -329,14 +329,14 @@ class UTILITE_EXP UThreadC<void>
       const bool          & CancelAsync     = false    // UNUSED
     ) const
     {
-    	*H = InvalidHandle;
-    	int id;
-    	*H = CREATE_THREAD2(StackSize,ThreadMainHandler,this, (LPDWORD)&id);
-    	ThreadId = (unsigned long)id;
+        *H = InvalidHandle;
+        int id;
+        *H = CREATE_THREAD2(StackSize,ThreadMainHandler,this, (LPDWORD)&id);
+        ThreadId = (unsigned long)id;
 
       if ( *H == CREATE_THREAD_FAILED )
       {
-    	  *H = InvalidHandle;
+          *H = InvalidHandle;
         return (int)CREATE_THREAD_ERROR;
       }
 

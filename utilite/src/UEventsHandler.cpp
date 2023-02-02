@@ -22,15 +22,15 @@
 
 UEventsHandler::~UEventsHandler()
 {
-	unregisterFromEventsManager();
+    unregisterFromEventsManager();
 }
 
 
 void UEventsHandler::registerToEventsManager()
 {
-	UEventsManager::addHandler(this);
+    UEventsManager::addHandler(this);
 }
 void UEventsHandler::unregisterFromEventsManager()
 {
-	UEventsManager::removeHandler(this);
+    UEventsManager::removeHandler(this);
 }

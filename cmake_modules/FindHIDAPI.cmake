@@ -204,7 +204,7 @@ if(HIDAPI_FOUND)
         add_library(HIDAPI::hidapi UNKNOWN IMPORTED)
         set_target_properties(
             HIDAPI::hidapi 
-	    PROPERTIES 
+        PROPERTIES 
             IMPORTED_LINK_INTERFACE_LANGUAGES "C"
             IMPORTED_LOCATION ${HIDAPI_LIBRARY})
         set_property(

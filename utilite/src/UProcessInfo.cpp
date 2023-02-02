@@ -37,42 +37,42 @@ UProcessInfo::~UProcessInfo() {}
 // return in bytes
 long int UProcessInfo::getMemoryUsage()
 {
-	long int memoryUsage = -1;
+    long int memoryUsage = -1;
 
 #ifdef _WIN32
-		HANDLE hProc = GetCurrentProcess();
-		PROCESS_MEMORY_COUNTERS info;
-		BOOL okay = GetProcessMemoryInfo(hProc, &info, sizeof(info));
-		if(okay)
-		{
-			memoryUsage = info.WorkingSetSize;
-		}
+        HANDLE hProc = GetCurrentProcess();
+        PROCESS_MEMORY_COUNTERS info;
+        BOOL okay = GetProcessMemoryInfo(hProc, &info, sizeof(info));
+        if(okay)
+        {
+            memoryUsage = info.WorkingSetSize;
+        }
 #elif __APPLE__
-		rusage u;
-		if(getrusage(RUSAGE_SELF, &u) == 0)
-		{
-			memoryUsage = u.ru_maxrss;
-		}
+        rusage u;
+        if(getrusage(RUSAGE_SELF, &u) == 0)
+        {
+            memoryUsage = u.ru_maxrss;
+        }
 #else
-		std::fstream file("/proc/self/status", std::fstream::in);
-		if(file.is_open())
-		{
-			std::string bytes;
-			while(std::getline(file, bytes))
-			{
-				if(bytes.find("VmRSS") != bytes.npos)
-				{
-					std::list<std::string> strs = uSplit(bytes, ' ');
-					if(strs.size()>1)
-					{
-						memoryUsage = atol(uValueAt(strs,1).c_str()) * 1024;
-					}
-					break;
-				}
-			}
-			file.close();
-		}
+        std::fstream file("/proc/self/status", std::fstream::in);
+        if(file.is_open())
+        {
+            std::string bytes;
+            while(std::getline(file, bytes))
+            {
+                if(bytes.find("VmRSS") != bytes.npos)
+                {
+                    std::list<std::string> strs = uSplit(bytes, ' ');
+                    if(strs.size()>1)
+                    {
+                        memoryUsage = atol(uValueAt(strs,1).c_str()) * 1024;
+                    }
+                    break;
+                }
+            }
+            file.close();
+        }
 #endif
 
-	return memoryUsage;
+    return memoryUsage;
 }

@@ -45,17 +45,17 @@
 template<class K, class V>
 inline std::list<K> uUniqueKeys(const std::multimap<K, V> & mm)
 {
-	std::list<K> l;
-	typename std::list<K>::reverse_iterator lastValue;
-	for(typename std::multimap<K, V>::const_iterator iter = mm.begin(); iter!=mm.end(); ++iter)
-	{
-		if(iter == mm.begin() || (iter != mm.begin() && *lastValue != iter->first))
-		{
-			l.push_back(iter->first);
-			lastValue = l.rbegin();
-		}
-	}
-	return l;
+    std::list<K> l;
+    typename std::list<K>::reverse_iterator lastValue;
+    for(typename std::multimap<K, V>::const_iterator iter = mm.begin(); iter!=mm.end(); ++iter)
+    {
+        if(iter == mm.begin() || (iter != mm.begin() && *lastValue != iter->first))
+        {
+            l.push_back(iter->first);
+            lastValue = l.rbegin();
+        }
+    }
+    return l;
 }
 
 /**
@@ -66,13 +66,13 @@ inline std::list<K> uUniqueKeys(const std::multimap<K, V> & mm)
 template<class K, class V>
 inline std::vector<K> uKeys(const std::multimap<K, V> & mm)
 {
-	std::vector<K> v(mm.size());
-	int i=0;
-	for(typename std::multimap<K, V>::const_iterator iter = mm.begin(); iter!=mm.end(); ++iter)
-	{
-		v[i++] = iter->first;
-	}
-	return v;
+    std::vector<K> v(mm.size());
+    int i=0;
+    for(typename std::multimap<K, V>::const_iterator iter = mm.begin(); iter!=mm.end(); ++iter)
+    {
+        v[i++] = iter->first;
+    }
+    return v;
 }
 
 /**
@@ -83,12 +83,12 @@ inline std::vector<K> uKeys(const std::multimap<K, V> & mm)
 template<class K, class V>
 inline std::list<K> uKeysList(const std::multimap<K, V> & mm)
 {
-	std::list<K> l;
-	for(typename std::multimap<K, V>::const_iterator iter = mm.begin(); iter!=mm.end(); ++iter)
-	{
-		l.push_back(iter->first);
-	}
-	return l;
+    std::list<K> l;
+    for(typename std::multimap<K, V>::const_iterator iter = mm.begin(); iter!=mm.end(); ++iter)
+    {
+        l.push_back(iter->first);
+    }
+    return l;
 }
 
 /**
@@ -99,13 +99,13 @@ inline std::list<K> uKeysList(const std::multimap<K, V> & mm)
 template<class K, class V>
 inline std::vector<V> uValues(const std::multimap<K, V> & mm)
 {
-	std::vector<V> v(mm.size());
-	int i=0;
-	for(typename std::multimap<K, V>::const_iterator iter = mm.begin(); iter!=mm.end(); ++iter)
-	{
-		v[i++] = iter->second;
-	}
-	return v;
+    std::vector<V> v(mm.size());
+    int i=0;
+    for(typename std::multimap<K, V>::const_iterator iter = mm.begin(); iter!=mm.end(); ++iter)
+    {
+        v[i++] = iter->second;
+    }
+    return v;
 }
 
 /**
@@ -116,12 +116,12 @@ inline std::vector<V> uValues(const std::multimap<K, V> & mm)
 template<class K, class V>
 inline std::list<V> uValuesList(const std::multimap<K, V> & mm)
 {
-	std::list<V> l;
-	for(typename std::multimap<K, V>::const_iterator iter = mm.begin(); iter!=mm.end(); ++iter)
-	{
-		l.push_back(iter->second);
-	}
-	return l;
+    std::list<V> l;
+    for(typename std::multimap<K, V>::const_iterator iter = mm.begin(); iter!=mm.end(); ++iter)
+    {
+        l.push_back(iter->second);
+    }
+    return l;
 }
 
 /**
@@ -133,14 +133,14 @@ inline std::list<V> uValuesList(const std::multimap<K, V> & mm)
 template<class K, class V>
 inline std::list<V> uValues(const std::multimap<K, V> & mm, const K & key)
 {
-	std::list<V> l;
-	std::pair<typename std::multimap<K, V>::const_iterator, typename std::multimap<K, V>::const_iterator> range;
-	range = mm.equal_range(key);
-	for(typename std::multimap<K, V>::const_iterator iter = range.first; iter!=range.second; ++iter)
-	{
-		l.push_back(iter->second);
-	}
-	return l;
+    std::list<V> l;
+    std::pair<typename std::multimap<K, V>::const_iterator, typename std::multimap<K, V>::const_iterator> range;
+    range = mm.equal_range(key);
+    for(typename std::multimap<K, V>::const_iterator iter = range.first; iter!=range.second; ++iter)
+    {
+        l.push_back(iter->second);
+    }
+    return l;
 }
 
 /**
@@ -151,14 +151,14 @@ inline std::list<V> uValues(const std::multimap<K, V> & mm, const K & key)
 template<class K, class V>
 inline std::vector<K> uKeys(const std::map<K, V> & m)
 {
-	std::vector<K> v(m.size());
-	int i=0;
-	for(typename std::map<K, V>::const_iterator iter = m.begin(); iter!=m.end(); ++iter)
-	{
-		v[i] = iter->first;
-		++i;
-	}
-	return v;
+    std::vector<K> v(m.size());
+    int i=0;
+    for(typename std::map<K, V>::const_iterator iter = m.begin(); iter!=m.end(); ++iter)
+    {
+        v[i] = iter->first;
+        ++i;
+    }
+    return v;
 }
 
 /**
@@ -169,12 +169,12 @@ inline std::vector<K> uKeys(const std::map<K, V> & m)
 template<class K, class V>
 inline std::list<K> uKeysList(const std::map<K, V> & m)
 {
-	std::list<K> l;
-	for(typename std::map<K, V>::const_iterator iter = m.begin(); iter!=m.end(); ++iter)
-	{
-		l.push_back(iter->first);
-	}
-	return l;
+    std::list<K> l;
+    for(typename std::map<K, V>::const_iterator iter = m.begin(); iter!=m.end(); ++iter)
+    {
+        l.push_back(iter->first);
+    }
+    return l;
 }
 
 /**
@@ -185,14 +185,14 @@ inline std::list<K> uKeysList(const std::map<K, V> & m)
 template<class K, class V>
 inline std::set<K> uKeysSet(const std::map<K, V> & m)
 {
-	std::set<K> s;
-	int i=0;
-	for(typename std::map<K, V>::const_iterator iter = m.begin(); iter!=m.end(); ++iter)
-	{
-		s.insert(s.end(), iter->first);
-		++i;
-	}
-	return s;
+    std::set<K> s;
+    int i=0;
+    for(typename std::map<K, V>::const_iterator iter = m.begin(); iter!=m.end(); ++iter)
+    {
+        s.insert(s.end(), iter->first);
+        ++i;
+    }
+    return s;
 }
 
 /**
@@ -203,14 +203,14 @@ inline std::set<K> uKeysSet(const std::map<K, V> & m)
 template<class K, class V>
 inline std::vector<V> uValues(const std::map<K, V> & m)
 {
-	std::vector<V> v(m.size());
-	int i=0;
-	for(typename std::map<K, V>::const_iterator iter = m.begin(); iter!=m.end(); ++iter)
-	{
-		v[i] = iter->second;
-		++i;
-	}
-	return v;
+    std::vector<V> v(m.size());
+    int i=0;
+    for(typename std::map<K, V>::const_iterator iter = m.begin(); iter!=m.end(); ++iter)
+    {
+        v[i] = iter->second;
+        ++i;
+    }
+    return v;
 }
 
 /**
@@ -221,12 +221,12 @@ inline std::vector<V> uValues(const std::map<K, V> & m)
 template<class K, class V>
 inline std::list<V> uValuesList(const std::map<K, V> & m)
 {
-	std::list<V> l;
-	for(typename std::map<K, V>::const_iterator iter = m.begin(); iter!=m.end(); ++iter)
-	{
-		l.push_back(iter->second);
-	}
-	return l;
+    std::list<V> l;
+    for(typename std::map<K, V>::const_iterator iter = m.begin(); iter!=m.end(); ++iter)
+    {
+        l.push_back(iter->second);
+    }
+    return l;
 }
 
 /**
@@ -239,13 +239,13 @@ inline std::list<V> uValuesList(const std::map<K, V> & m)
 template<class K, class V>
 inline V uValue(const std::map<K, V> & m, const K & key, const V & defaultValue = V())
 {
-	V v = defaultValue;
-	typename std::map<K, V>::const_iterator i = m.find(key);
-	if(i != m.end())
-	{
-		v = i->second;
-	}
-	return v;
+    V v = defaultValue;
+    typename std::map<K, V>::const_iterator i = m.find(key);
+    if(i != m.end())
+    {
+        v = i->second;
+    }
+    return v;
 }
 
 /**
@@ -259,18 +259,18 @@ inline V uValue(const std::map<K, V> & m, const K & key, const V & defaultValue 
 template<class K, class V>
 inline V uTake(std::map<K, V> & m, const K & key, const V & defaultValue = V())
 {
-	V v;
-	typename std::map<K, V>::iterator i = m.find(key);
-	if(i != m.end())
-	{
-		v = i->second;
-		m.erase(i);
-	}
-	else
-	{
-		v = defaultValue;
-	}
-	return v;
+    V v;
+    typename std::map<K, V>::iterator i = m.find(key);
+    if(i != m.end())
+    {
+        v = i->second;
+        m.erase(i);
+    }
+    else
+    {
+        v = defaultValue;
+    }
+    return v;
 }
 
 /**
@@ -283,12 +283,12 @@ inline V uTake(std::map<K, V> & m, const K & key, const V & defaultValue = V())
 template<class V>
 inline typename std::list<V>::iterator uIteratorAt(std::list<V> & list, const unsigned int & pos)
 {
-	typename std::list<V>::iterator iter = list.begin();
-	for(unsigned int i = 0; i<pos && iter != list.end(); ++i )
-	{
-		++iter;
-	}
-	return iter;
+    typename std::list<V>::iterator iter = list.begin();
+    for(unsigned int i = 0; i<pos && iter != list.end(); ++i )
+    {
+        ++iter;
+    }
+    return iter;
 }
 
 /**
@@ -301,12 +301,12 @@ inline typename std::list<V>::iterator uIteratorAt(std::list<V> & list, const un
 template<class V>
 inline typename std::list<V>::const_iterator uIteratorAt(const std::list<V> & list, const unsigned int & pos)
 {
-	typename std::list<V>::const_iterator iter = list.begin();
-	for(unsigned int i = 0; i<pos && iter != list.end(); ++i )
-	{
-		++iter;
-	}
-	return iter;
+    typename std::list<V>::const_iterator iter = list.begin();
+    for(unsigned int i = 0; i<pos && iter != list.end(); ++i )
+    {
+        ++iter;
+    }
+    return iter;
 }
 
 /**
@@ -319,12 +319,12 @@ inline typename std::list<V>::const_iterator uIteratorAt(const std::list<V> & li
 template<class V>
 inline typename std::set<V>::iterator uIteratorAt(std::set<V> & set, const unsigned int & pos)
 {
-	typename std::set<V>::iterator iter = set.begin();
-	for(unsigned int i = 0; i<pos && iter != set.end(); ++i )
-	{
-		++iter;
-	}
-	return iter;
+    typename std::set<V>::iterator iter = set.begin();
+    for(unsigned int i = 0; i<pos && iter != set.end(); ++i )
+    {
+        ++iter;
+    }
+    return iter;
 }
 
 /**
@@ -337,12 +337,12 @@ inline typename std::set<V>::iterator uIteratorAt(std::set<V> & set, const unsig
 template<class V>
 inline typename std::set<V>::const_iterator uIteratorAt(const std::set<V> & set, const unsigned int & pos)
 {
-	typename std::set<V>::const_iterator iter = set.begin();
-	for(unsigned int i = 0; i<pos && iter != set.end(); ++i )
-	{
-		++iter;
-	}
-	return iter;
+    typename std::set<V>::const_iterator iter = set.begin();
+    for(unsigned int i = 0; i<pos && iter != set.end(); ++i )
+    {
+        ++iter;
+    }
+    return iter;
 }
 
 /**
@@ -355,7 +355,7 @@ inline typename std::set<V>::const_iterator uIteratorAt(const std::set<V> & set,
 template<class V>
 inline typename std::vector<V>::iterator uIteratorAt(std::vector<V> & v, const unsigned int & pos)
 {
-	return v.begin() + pos;
+    return v.begin() + pos;
 }
 
 /**
@@ -368,7 +368,7 @@ inline typename std::vector<V>::iterator uIteratorAt(std::vector<V> & v, const u
 template<class V>
 inline typename std::vector<V>::const_iterator uIteratorAt(const std::vector<V> & v, const unsigned int & pos)
 {
-	return v.begin() + pos;
+    return v.begin() + pos;
 }
 
 /**
@@ -381,8 +381,8 @@ inline typename std::vector<V>::const_iterator uIteratorAt(const std::vector<V> 
 template<class V>
 inline V & uValueAt(std::list<V> & list, const unsigned int & pos)
 {
-	typename std::list<V>::iterator iter = uIteratorAt(list, pos);
-	return *iter;
+    typename std::list<V>::iterator iter = uIteratorAt(list, pos);
+    return *iter;
 }
 
 /**
@@ -395,8 +395,8 @@ inline V & uValueAt(std::list<V> & list, const unsigned int & pos)
 template<class V>
 inline const V & uValueAt(const std::list<V> & list, const unsigned int & pos)
 {
-	typename std::list<V>::const_iterator iter = uIteratorAt(list, pos);
-	return *iter;
+    typename std::list<V>::const_iterator iter = uIteratorAt(list, pos);
+    return *iter;
 }
 
 /**
@@ -408,7 +408,7 @@ inline const V & uValueAt(const std::list<V> & list, const unsigned int & pos)
 template<class V>
 inline bool uContains(const std::list<V> & list, const V & value)
 {
-	return std::find(list.begin(), list.end(), value) != list.end();
+    return std::find(list.begin(), list.end(), value) != list.end();
 }
 
 /**
@@ -420,7 +420,7 @@ inline bool uContains(const std::list<V> & list, const V & value)
 template<class K, class V>
 inline bool uContains(const std::map<K, V> & map, const K & key)
 {
-	return map.find(key) != map.end();
+    return map.find(key) != map.end();
 }
 
 /**
@@ -432,7 +432,7 @@ inline bool uContains(const std::map<K, V> & map, const K & key)
 template<class K, class V>
 inline bool uContains(const std::multimap<K, V> & map, const K & key)
 {
-	return map.find(key) != map.end();
+    return map.find(key) != map.end();
 }
 
 /**
@@ -442,11 +442,11 @@ inline bool uContains(const std::multimap<K, V> & map, const K & key)
 template<class K, class V>
 inline void uInsert(std::map<K, V> & map, const std::pair<K, V> & pair)
 {
-	std::pair<typename std::map<K, V>::iterator, bool> inserted = map.insert(pair);
-	if(inserted.second == false)
-	{
-		inserted.first->second = pair.second;
-	}
+    std::pair<typename std::map<K, V>::iterator, bool> inserted = map.insert(pair);
+    if(inserted.second == false)
+    {
+        inserted.first->second = pair.second;
+    }
 }
 
 /**
@@ -456,14 +456,14 @@ inline void uInsert(std::map<K, V> & map, const std::pair<K, V> & pair)
 template<class K, class V>
 inline void uInsert(std::map<K, V> & map, const std::map<K, V> & items)
 {
-	for(typename std::map<K, V>::const_iterator iter=items.begin(); iter!=items.end(); ++iter)
-	{
-		std::pair<typename std::map<K, V>::iterator, bool> inserted = map.insert(*iter);
-		if(inserted.second == false)
-		{
-			inserted.first->second = iter->second;
-		}
-	}
+    for(typename std::map<K, V>::const_iterator iter=items.begin(); iter!=items.end(); ++iter)
+    {
+        std::pair<typename std::map<K, V>::iterator, bool> inserted = map.insert(*iter);
+        if(inserted.second == false)
+        {
+            inserted.first->second = iter->second;
+        }
+    }
 }
 
 /**
@@ -474,7 +474,7 @@ inline void uInsert(std::map<K, V> & map, const std::map<K, V> & items)
 template<class V>
 inline std::vector<V> uListToVector(const std::list<V> & list)
 {
-	return std::vector<V>(list.begin(), list.end());
+    return std::vector<V>(list.begin(), list.end());
 }
 
 /**
@@ -485,7 +485,7 @@ inline std::vector<V> uListToVector(const std::list<V> & list)
 template<class V>
 inline std::list<V> uVectorToList(const std::vector<V> & v)
 {
-	return std::list<V>(v.begin(), v.end());
+    return std::list<V>(v.begin(), v.end());
 }
 
 /**
@@ -495,7 +495,7 @@ inline std::list<V> uVectorToList(const std::vector<V> & v)
 template<class K, class V>
 inline std::map<K, V> uMultimapToMap(const std::multimap<K, V> & m)
 {
-	return std::map<K, V>(m.begin(), m.end());
+    return std::map<K, V>(m.begin(), m.end());
 }
 
 /**
@@ -504,17 +504,17 @@ inline std::map<K, V> uMultimapToMap(const std::multimap<K, V> & m)
 template<class K, class V>
 inline std::map<K, V> uMultimapToMapUnique(const std::multimap<K, V> & m)
 {
-	std::map<K, V> mapOut;
-	std::list<K> uniqueKeys = uUniqueKeys(m);
-	for(typename std::list<K>::const_iterator iter = uniqueKeys.begin(); iter!=uniqueKeys.end(); ++iter)
-	{
-		if(m.count(*iter) == 1)
-		{
-			typename std::multimap<K, V>::const_iterator jter=m.find(*iter);
-			mapOut.insert(mapOut.end(), std::pair<K,V>(jter->first, jter->second));
-		}
-	}
-	return mapOut;
+    std::map<K, V> mapOut;
+    std::list<K> uniqueKeys = uUniqueKeys(m);
+    for(typename std::list<K>::const_iterator iter = uniqueKeys.begin(); iter!=uniqueKeys.end(); ++iter)
+    {
+        if(m.count(*iter) == 1)
+        {
+            typename std::multimap<K, V>::const_iterator jter=m.find(*iter);
+            mapOut.insert(mapOut.end(), std::pair<K,V>(jter->first, jter->second));
+        }
+    }
+    return mapOut;
 }
 
 /**
@@ -525,7 +525,7 @@ inline std::map<K, V> uMultimapToMapUnique(const std::multimap<K, V> & m)
 template<class V>
 inline void uAppend(std::list<V> & list, const std::list<V> & newItems)
 {
-	list.insert(list.end(), newItems.begin(), newItems.end());
+    list.insert(list.end(), newItems.begin(), newItems.end());
 }
 
 /**
@@ -538,25 +538,25 @@ inline void uAppend(std::list<V> & list, const std::list<V> & newItems)
 template<class V>
 inline int uIndexOf(const std::vector<V> & list, const V & value)
 {
-	int index=-1;
-	int i=0;
-	for(typename std::vector<V>::const_iterator iter = list.begin(); iter!=list.end(); ++iter)
-	{
-		if(*iter == value)
-		{
-			index = i;
-			break;
-		}
-		++i;
-	}
-	return index;
+    int index=-1;
+    int i=0;
+    for(typename std::vector<V>::const_iterator iter = list.begin(); iter!=list.end(); ++iter)
+    {
+        if(*iter == value)
+        {
+            index = i;
+            break;
+        }
+        ++i;
+    }
+    return index;
 }
 
 /**
  * Split a string into multiple string around the specified separator.
  * Example:
  * @code
- * 		std::list<std::string> v = split("Hello the world!", ' ');
+ *         std::list<std::string> v = split("Hello the world!", ' ');
  * @endcode
  * The list v will contain {"Hello", "the", "world!"}
  * @param str the string
@@ -565,25 +565,25 @@ inline int uIndexOf(const std::vector<V> & list, const V & value)
  */
 inline std::list<std::string> uSplit(const std::string & str, char separator = ' ')
 {
-	std::list<std::string> v;
-	std::string buf;
-	for(unsigned int i=0; i<str.size(); ++i)
-	{
-		if(str[i] != separator)
-		{
-			buf += str[i];
-		}
-		else if(buf.size())
-		{
-			v.push_back(buf);
-			buf = "";
-		}
-	}
-	if(buf.size())
-	{
-		v.push_back(buf);
-	}
-	return v;
+    std::list<std::string> v;
+    std::string buf;
+    for(unsigned int i=0; i<str.size(); ++i)
+    {
+        if(str[i] != separator)
+        {
+            buf += str[i];
+        }
+        else if(buf.size())
+        {
+            v.push_back(buf);
+            buf = "";
+        }
+    }
+    if(buf.size())
+    {
+        v.push_back(buf);
+    }
+    return v;
 }
 
 /**
@@ -593,7 +593,7 @@ inline std::list<std::string> uSplit(const std::string & str, char separator = '
  *      std::list<std::string> v;
  *      v.push_back("Hello");
  *      v.push_back("world!");
- * 	    std::string joined = split(v, " ");
+ *         std::string joined = split(v, " ");
  * @endcode
  * The output string is "Hello world!"
  * @param strings a list of strings
@@ -602,16 +602,16 @@ inline std::list<std::string> uSplit(const std::string & str, char separator = '
  */
 inline std::string uJoin(const std::list<std::string> & strings, const std::string & separator = "")
 {
-	std::string out;
-	for(std::list<std::string>::const_iterator iter = strings.begin(); iter!=strings.end(); ++iter)
-	{
-		if(iter!=strings.begin() && !separator.empty())
-		{
-			out += separator;
-		}
-		out+=*iter;
-	}
-	return out;
+    std::string out;
+    for(std::list<std::string>::const_iterator iter = strings.begin(); iter!=strings.end(); ++iter)
+    {
+        if(iter!=strings.begin() && !separator.empty())
+        {
+            out += separator;
+        }
+        out+=*iter;
+    }
+    return out;
 }
 
 /**
@@ -621,7 +621,7 @@ inline std::string uJoin(const std::list<std::string> & strings, const std::stri
  */
 inline bool uIsDigit(const char c)
 {
-	return c >= '0' && c <= '9';
+    return c >= '0' && c <= '9';
 }
 
 /**
@@ -631,12 +631,12 @@ inline bool uIsDigit(const char c)
  */
 inline bool uIsInteger(const std::string & str, bool checkForSign = true)
 {
-	bool isInteger = str.size()!=0;
-	for(unsigned int i=0; i<str.size() && isInteger; ++i)
-	{
-		isInteger = (checkForSign && i==0 && str[i]=='-') || uIsDigit(str[i]);
-	}
-	return isInteger;
+    bool isInteger = str.size()!=0;
+    for(unsigned int i=0; i<str.size() && isInteger; ++i)
+    {
+        isInteger = (checkForSign && i==0 && str[i]=='-') || uIsDigit(str[i]);
+    }
+    return isInteger;
 }
 
 /**
@@ -646,16 +646,16 @@ inline bool uIsInteger(const std::string & str, bool checkForSign = true)
  */
 inline bool uIsNumber(const std::string & str)
 {
-	std::list<std::string> list = uSplit(str, '.');
-	if(list.size() == 1)
-	{
-		return uIsInteger(str);
-	}
-	else if(list.size() == 2)
-	{
-		return uIsInteger(list.front()) && uIsInteger(list.back(), false);
-	}
-	return false;
+    std::list<std::string> list = uSplit(str, '.');
+    if(list.size() == 1)
+    {
+        return uIsInteger(str);
+    }
+    else if(list.size() == 2)
+    {
+        return uIsInteger(list.front()) && uIsInteger(list.back(), false);
+    }
+    return false;
 }
 
 
@@ -663,7 +663,7 @@ inline bool uIsNumber(const std::string & str)
  * Split a string into number and character strings.
  * Example:
  * @code
- * 		std::list<std::string> v = uSplit("Hello 03 my 65 world!");
+ *         std::list<std::string> v = uSplit("Hello 03 my 65 world!");
  * @endcode
  * The list v will contain {"Hello ", "03", " my ", "65", " world!"}
  * @param str the string
@@ -671,46 +671,46 @@ inline bool uIsNumber(const std::string & str)
  */
 inline std::list<std::string> uSplitNumChar(const std::string & str)
 {
-	std::list<std::string> list;
-	std::string buf;
-	bool num = false;
-	for(unsigned int i=0; i<str.size(); ++i)
-	{
-		if(uIsDigit(str[i]))
-		{
-			if(!num && buf.size())
-			{
-				list.push_back(buf);
-				buf.clear();
-			}
-			buf += str[i];
-			num = true;
-		}
-		else
-		{
-			if(num)
-			{
-				list.push_back(buf);
-				buf.clear();
-			}
-			buf += str[i];
-			num = false;
-		}
-	}
-	if(buf.size())
-	{
-		list.push_back(buf);
-	}
-	return list;
+    std::list<std::string> list;
+    std::string buf;
+    bool num = false;
+    for(unsigned int i=0; i<str.size(); ++i)
+    {
+        if(uIsDigit(str[i]))
+        {
+            if(!num && buf.size())
+            {
+                list.push_back(buf);
+                buf.clear();
+            }
+            buf += str[i];
+            num = true;
+        }
+        else
+        {
+            if(num)
+            {
+                list.push_back(buf);
+                buf.clear();
+            }
+            buf += str[i];
+            num = false;
+        }
+    }
+    if(buf.size())
+    {
+        list.push_back(buf);
+    }
+    return list;
 }
 
 /**
  * Compare two alphanumeric strings. Useful to sort filenames (human-like sorting).
  * Example:
  * @code
- * 	std::string a = "Image9.jpg";
- * 	std::string b = "Image10.jpg";
- * 	int r = uStrNumCmp(a, b); // r returns -1 (a is smaller than b). In contrast, std::strcmp(a, b) would return 1.
+ *     std::string a = "Image9.jpg";
+ *     std::string b = "Image10.jpg";
+ *     int r = uStrNumCmp(a, b); // r returns -1 (a is smaller than b). In contrast, std::strcmp(a, b) would return 1.
  * @endcode
  * @param a the first string
  * @param b the second string
@@ -718,67 +718,67 @@ inline std::list<std::string> uSplitNumChar(const std::string & str)
  */
 inline int uStrNumCmp(const std::string & a, const std::string & b)
 {
-	std::vector<std::string> listA;
-	std::vector<std::string> listB;
+    std::vector<std::string> listA;
+    std::vector<std::string> listB;
 
-	listA = uListToVector(uSplitNumChar(a));
-	listB = uListToVector(uSplitNumChar(b));
+    listA = uListToVector(uSplitNumChar(a));
+    listB = uListToVector(uSplitNumChar(b));
 
-	unsigned int i;
-	int result = 0;
-	for(i=0; i<listA.size() && i<listB.size(); ++i)
-	{
-		if(uIsDigit(listA[i].at(0)) && uIsDigit(listB[i].at(0)))
-		{
-			//padding if zeros at the beginning
-			if(listA[i].at(0) == '0' && listB[i].size() < listA[i].size())
-			{
-				while(listB[i].size() < listA[i].size())
-				{
-					listB[i] += '0';
-				}
-			}
-			else if(listB[i].at(0) == '0' && listA[i].size() < listB[i].size())
-			{
-				while(listA[i].size() < listB[i].size())
-				{
-					listA[i] += '0';
-				}
-			}
+    unsigned int i;
+    int result = 0;
+    for(i=0; i<listA.size() && i<listB.size(); ++i)
+    {
+        if(uIsDigit(listA[i].at(0)) && uIsDigit(listB[i].at(0)))
+        {
+            //padding if zeros at the beginning
+            if(listA[i].at(0) == '0' && listB[i].size() < listA[i].size())
+            {
+                while(listB[i].size() < listA[i].size())
+                {
+                    listB[i] += '0';
+                }
+            }
+            else if(listB[i].at(0) == '0' && listA[i].size() < listB[i].size())
+            {
+                while(listA[i].size() < listB[i].size())
+                {
+                    listA[i] += '0';
+                }
+            }
 
-			if(listB[i].size() < listA[i].size())
-			{
-				result = 1;
-			}
-			else if(listB[i].size() > listA[i].size())
-			{
-				result = -1;
-			}
-			else
-			{
-				result = listA[i].compare(listB[i]);
-			}
-		}
-		else if(uIsDigit(listA[i].at(0)))
-		{
-			result = -1;
-		}
-		else if(uIsDigit(listB[i].at(0)))
-		{
-			result = 1;
-		}
-		else
-		{
-			result = listA[i].compare(listB[i]);
-		}
+            if(listB[i].size() < listA[i].size())
+            {
+                result = 1;
+            }
+            else if(listB[i].size() > listA[i].size())
+            {
+                result = -1;
+            }
+            else
+            {
+                result = listA[i].compare(listB[i]);
+            }
+        }
+        else if(uIsDigit(listA[i].at(0)))
+        {
+            result = -1;
+        }
+        else if(uIsDigit(listB[i].at(0)))
+        {
+            result = 1;
+        }
+        else
+        {
+            result = listA[i].compare(listB[i]);
+        }
 
-		if(result != 0)
-		{
-			break;
-		}
-	}
+        if(result != 0)
+        {
+            break;
+        }
+    }
 
-	return result;
+    return result;
 }
 
 /**
@@ -786,29 +786,29 @@ inline int uStrNumCmp(const std::string & a, const std::string & b)
  */
 inline bool uStrContains(const std::string & string, const std::string & substring)
 {
-	return string.find(substring) != std::string::npos;
+    return string.find(substring) != std::string::npos;
 }
 
 inline int uCompareVersion(const std::string & version, int major, int minor=-1, int patch=-1)
 {
-	std::vector<std::string> v = uListToVector(uSplit(version, '.'));
-	if(v.size() == 3)
-	{
-		int vMajor = atoi(v[0].c_str());
-		int vMinor = atoi(v[1].c_str());
-		int vPatch = atoi(v[2].c_str());
-		if(vMajor > major ||
-		(vMajor == major && minor!=-1 && vMinor > minor) ||
-		(vMajor == major && minor!=-1 && vMinor == minor && patch!=-1 && vPatch > patch))
-		{
-			return 1;
-		}
-		else if(vMajor == major && (minor == -1 || (vMinor == minor && (patch == -1 || vPatch == patch))))
-		{
-			return 0;
-		}
-	}
-	return -1;
+    std::vector<std::string> v = uListToVector(uSplit(version, '.'));
+    if(v.size() == 3)
+    {
+        int vMajor = atoi(v[0].c_str());
+        int vMinor = atoi(v[1].c_str());
+        int vPatch = atoi(v[2].c_str());
+        if(vMajor > major ||
+        (vMajor == major && minor!=-1 && vMinor > minor) ||
+        (vMajor == major && minor!=-1 && vMinor == minor && patch!=-1 && vPatch > patch))
+        {
+            return 1;
+        }
+        else if(vMajor == major && (minor == -1 || (vMinor == minor && (patch == -1 || vPatch == patch))))
+        {
+            return 0;
+        }
+    }
+    return -1;
 }
 
 #endif /* USTL_H */

@@ -22,11 +22,11 @@
  */
 inline void uSleep(unsigned int ms)
 {
-	struct timespec req;
-	struct timespec rem;
-	req.tv_sec = ms / 1000;
-	req.tv_nsec = (ms - req.tv_sec * 1000) * 1000 * 1000;
-	nanosleep (&req, &rem);
+    struct timespec req;
+    struct timespec rem;
+    req.tv_sec = ms / 1000;
+    req.tv_nsec = (ms - req.tv_sec * 1000) * 1000 * 1000;
+    nanosleep (&req, &rem);
 }
 
 /**
@@ -34,11 +34,11 @@ inline void uSleep(unsigned int ms)
  */
 inline void uSleepMicro(unsigned int us)
 {
-	struct timespec req;
-	struct timespec rem;
-	req.tv_sec = us / 1000000;
-	req.tv_nsec = (us - req.tv_sec * 1000000) * 1000;
-	nanosleep (&req, &rem);
+    struct timespec req;
+    struct timespec rem;
+    req.tv_sec = us / 1000000;
+    req.tv_nsec = (us - req.tv_sec * 1000000) * 1000;
+    nanosleep (&req, &rem);
 }
 
 /**
@@ -46,11 +46,11 @@ inline void uSleepMicro(unsigned int us)
  */
 inline void uSleepNano(unsigned int ns)
 {
-	struct timespec req;
-	struct timespec rem;
-	req.tv_sec = ns / 1000000000;
-	req.tv_nsec = (ns - req.tv_sec * 1000000000);
-	nanosleep (&req, &rem);
+    struct timespec req;
+    struct timespec rem;
+    req.tv_sec = ns / 1000000000;
+    req.tv_nsec = (ns - req.tv_sec * 1000000000);
+    nanosleep (&req, &rem);
 }
 
 
@@ -124,8 +124,8 @@ class UThreadC
       if(H) *H = h;
       if ( !R ) S_Create().acquire();
 
-	  M_Create().unlock();
-	  return R;
+      M_Create().unlock();
+      return R;
     }
 
     int Create(
@@ -157,8 +157,8 @@ class UThreadC
       if(H) *H = h;
       if ( !R ) S_Create().acquire();
 
-	  M_Create().unlock();
-	  return R;
+      M_Create().unlock();
+      return R;
     }
 
     static int Join( Handle H )
@@ -281,8 +281,8 @@ class UThreadC<void>
       if(H) *H = h;
       if ( !R ) S_Create().acquire();
 
-	  M_Create().unlock();
-	  return R;
+      M_Create().unlock();
+      return R;
     }
 
     int Create(
@@ -313,8 +313,8 @@ class UThreadC<void>
       if(H) *H = h;
       if ( !R ) S_Create().acquire();
 
-	  M_Create().unlock();
-	  return R;
+      M_Create().unlock();
+      return R;
     }
 
     int Create(
@@ -398,12 +398,12 @@ class UThreadC<void>
 
     struct Instance
     {
-		Instance( UThreadC<void> *const &O, const UThreadC<void>::Handler &pH = 0, const bool &CE=false, const bool &CA=false )
+        Instance( UThreadC<void> *const &O, const UThreadC<void>::Handler &pH = 0, const bool &CE=false, const bool &CA=false )
         : pFN(pH), Owner(O), Flags(0) { if ( CE ) Flags|=1; if ( CA ) Flags|=2; }
 
-		UThreadC<void>::Handler             pFN;
-		UThreadC<void>                *     Owner;
-		unsigned char                     Flags;
+        UThreadC<void>::Handler             pFN;
+        UThreadC<void>                *     Owner;
+        unsigned char                     Flags;
 
     };
 };

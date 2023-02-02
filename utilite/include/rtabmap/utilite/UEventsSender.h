@@ -15,16 +15,16 @@ class UEvent;
 class UTILITE_EXP UEventsSender
 {
 public:
-	UEventsSender(){}
-	virtual ~UEventsSender();
+    UEventsSender(){}
+    virtual ~UEventsSender();
 
 protected:
 
-	/**
-	 * For convenience to post an event. This is the same than calling UEventsManager::post()
-	 * with the sender reference.
-	 */
-	void post(UEvent * event, bool async = true) const;
+    /**
+     * For convenience to post an event. This is the same than calling UEventsManager::post()
+     * with the sender reference.
+     */
+    void post(UEvent * event, bool async = true) const;
 };
 
 

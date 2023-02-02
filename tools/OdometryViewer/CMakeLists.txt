@@ -1,8 +1,8 @@
 
 SET(INCLUDE_DIRS
-	${PROJECT_SOURCE_DIR}/corelib/include
-	${PROJECT_SOURCE_DIR}/utilite/include
-	${PROJECT_SOURCE_DIR}/guilib/include
+    ${PROJECT_SOURCE_DIR}/corelib/include
+    ${PROJECT_SOURCE_DIR}/utilite/include
+    ${PROJECT_SOURCE_DIR}/guilib/include
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${OpenCV_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
@@ -14,8 +14,8 @@ ENDIF(QT4_FOUND)
 
 SET(LIBRARIES
     ${OpenCV_LIBRARIES} 
-	${PCL_LIBRARIES} 
-	${QT_LIBRARIES} 
+    ${PCL_LIBRARIES} 
+    ${QT_LIBRARIES} 
 )
 
 SET(SRC_FILES
@@ -26,18 +26,18 @@ add_definitions(${PCL_DEFINITIONS})
 
 # Hack as CameraRealsense2.h needs realsense2 include dir
 IF(realsense2_FOUND)
-	SET(INCLUDE_DIRS
-		${INCLUDE_DIRS}
-		${realsense2_INCLUDE_DIRS}
-	)
+    SET(INCLUDE_DIRS
+        ${INCLUDE_DIRS}
+        ${realsense2_INCLUDE_DIRS}
+    )
 ENDIF(realsense2_FOUND)
 
 # Hack as CameraK4A.h needs k4a include dir
 IF(k4a_FOUND)
-	SET(INCLUDE_DIRS
-		${INCLUDE_DIRS}
-		${k4a_INCLUDE_DIRS}
-	)
+    SET(INCLUDE_DIRS
+        ${INCLUDE_DIRS}
+        ${k4a_INCLUDE_DIRS}
+    )
 ENDIF(k4a_FOUND)
 
 INCLUDE_DIRECTORIES(${INCLUDE_DIRS})
@@ -53,6 +53,6 @@ SET_TARGET_PROPERTIES( odometryViewer
   PROPERTIES OUTPUT_NAME ${PROJECT_PREFIX}-odometryViewer)
   
 INSTALL(TARGETS odometryViewer
-		RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT runtime
-		BUNDLE DESTINATION "${CMAKE_BUNDLE_LOCATION}" COMPONENT runtime)
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT runtime
+        BUNDLE DESTINATION "${CMAKE_BUNDLE_LOCATION}" COMPONENT runtime)
 

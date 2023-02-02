@@ -52,13 +52,13 @@
 
 #define ULOGGER_DEBUG(...)   ULOGGER_LOG(ULogger::kDebug,   __VA_ARGS__)
 #define ULOGGER_INFO(...)    ULOGGER_LOG(ULogger::kInfo,    __VA_ARGS__)
-#define ULOGGER_WARN(...) 	 ULOGGER_LOG(ULogger::kWarning, __VA_ARGS__)
+#define ULOGGER_WARN(...)      ULOGGER_LOG(ULogger::kWarning, __VA_ARGS__)
 #define ULOGGER_ERROR(...)   ULOGGER_LOG(ULogger::kError,   __VA_ARGS__)
 #define ULOGGER_FATAL(...)   ULOGGER_LOG(ULogger::kFatal,   __VA_ARGS__) // Throw UException
 
 #define UDEBUG(...)   ULOGGER_DEBUG(__VA_ARGS__)
 #define UINFO(...)    ULOGGER_INFO(__VA_ARGS__)
-#define UWARN(...) 	  ULOGGER_WARN(__VA_ARGS__)
+#define UWARN(...)       ULOGGER_WARN(__VA_ARGS__)
 #define UERROR(...)   ULOGGER_ERROR(__VA_ARGS__)
 #define UFATAL(...)   ULOGGER_FATAL(__VA_ARGS__) // Throw UException
 
@@ -121,26 +121,26 @@
 class ULogEvent : public UEvent
 {
 public:
-	/**
-	 * ULogEvent constructor. Note that to retrieve the message level, use UEvent::getCode().
-	 * @param msg the message already formatted to a full string.
-	 * @param level the severity of the message, @see ULogger::Level.
-	 */
-	ULogEvent(const std::string & msg, int level) :
-		UEvent(level),
-		msg_(msg)
-	{}
-	virtual ~ULogEvent() {}
-	/**
-	 * Get the message from the event.
-	 */
-	const std::string & getMsg() const {return msg_;}
-	/**
-	 * @return string "ULogEvent"
-	 */
-	virtual std::string getClassName() const {return "ULogEvent";}
+    /**
+     * ULogEvent constructor. Note that to retrieve the message level, use UEvent::getCode().
+     * @param msg the message already formatted to a full string.
+     * @param level the severity of the message, @see ULogger::Level.
+     */
+    ULogEvent(const std::string & msg, int level) :
+        UEvent(level),
+        msg_(msg)
+    {}
+    virtual ~ULogEvent() {}
+    /**
+     * Get the message from the event.
+     */
+    const std::string & getMsg() const {return msg_;}
+    /**
+     * @return string "ULogEvent"
+     */
+    virtual std::string getClassName() const {return "ULogEvent";}
 private:
-	std::string msg_;
+    std::string msg_;
 };
 
 /**
@@ -275,44 +275,44 @@ public:
 
     /**
      * Print level: default true.
-	 * @param printLevel true to print level, otherwise set to false.
-	 */
+     * @param printLevel true to print level, otherwise set to false.
+     */
     static void setPrintLevel(bool printLevel) {printLevel_ = printLevel;}
     static bool isPrintLevel() {return printLevel_;}
 
     /**
      * Print end of line: default true.
-	 * @param printLevel true to print end of line, otherwise set to false.
-	 */
+     * @param printLevel true to print end of line, otherwise set to false.
+     */
     static void setPrintEndline(bool printEndline) {printEndline_ = printEndline;}
     static bool isPrintEndLine() {return printEndline_;}
 
     /**
-	 * Print text with color: default true.
-	 * Dark green for Debug, white for Info, yellow for Warning, red for Error and Fatal.
-	 * @param printColored true to print text with color, otherwise set to false.
-	 */
-	static void setPrintColored(bool printColored) {printColored_ = printColored;}
-	static bool isPrintColored() {return printColored_;}
+     * Print text with color: default true.
+     * Dark green for Debug, white for Info, yellow for Warning, red for Error and Fatal.
+     * @param printColored true to print text with color, otherwise set to false.
+     */
+    static void setPrintColored(bool printColored) {printColored_ = printColored;}
+    static bool isPrintColored() {return printColored_;}
 
     /**
      * Print where is this message in source code: default true.
-	 * @param printWhere true to print where, otherwise set to false.
-	 */
+     * @param printWhere true to print where, otherwise set to false.
+     */
     static void setPrintWhere(bool printWhere) {printWhere_ = printWhere;}
     static bool isPrintWhere() {return printWhere_;}
 
     /**
-	 * Print thread ID: default false.
-	 * @param printThreadId true to print where, otherwise set to false.
-	 */
-	static void setPrintThreadId(bool printThreadId) {printThreadID_ = printThreadId;}
-	static bool isPrintThreadId() {return printThreadID_;}
+     * Print thread ID: default false.
+     * @param printThreadId true to print where, otherwise set to false.
+     */
+    static void setPrintThreadId(bool printThreadId) {printThreadID_ = printThreadId;}
+    static bool isPrintThreadId() {return printThreadID_;}
 
     /**
      * Print the full path: default true. ULogger::setPrintWhere() must be true to have path printed.
-	 * @param printWhereFullPath true to print the full path, otherwise set to false.
-	 */
+     * @param printWhereFullPath true to print the full path, otherwise set to false.
+     */
     static void setPrintWhereFullPath(bool printWhereFullPath) {printWhereFullPath_ = printWhereFullPath;}
     static bool isPrintWhereFullPath() {return printWhereFullPath_;}
 
@@ -320,8 +320,8 @@ public:
      * Set is the logger buffers messages, default false. When true, the messages are
      * buffered until the application is closed or ULogger::flush() is called.
      * @see ULogger::flush()
-	 * @param buffered true to buffer messages, otherwise set to false.
-	 */
+     * @param buffered true to buffer messages, otherwise set to false.
+     */
     static void setBuffered(bool buffered);
     static bool isBuffered() {return buffered_;}
 
@@ -339,29 +339,29 @@ public:
     static void setLevel(ULogger::Level level) {level_ = level;}
     static ULogger::Level level() {return level_;}
 
-	/**
-	 * An ULogEvent is sent on each message logged at the specified level.
-	 * Note : On message with level >= exitLevel, the event is sent synchronously (see UEventsManager::post()).
-	 * @see ULogEvent
-	 * @see setExitLevel()
-	 */
-	static void setEventLevel(ULogger::Level eventSentLevel) {eventLevel_ = eventSentLevel;}
-	static ULogger::Level eventLevel() {return eventLevel_;}
+    /**
+     * An ULogEvent is sent on each message logged at the specified level.
+     * Note : On message with level >= exitLevel, the event is sent synchronously (see UEventsManager::post()).
+     * @see ULogEvent
+     * @see setExitLevel()
+     */
+    static void setEventLevel(ULogger::Level eventSentLevel) {eventLevel_ = eventSentLevel;}
+    static ULogger::Level eventLevel() {return eventLevel_;}
 
-	/**
-	 * If not empty, only show log messages from threads included in this list.
-	 */
-	static void setTreadIdFilter(const std::set<unsigned long> & ids) {threadIdFilter_ = ids;}
-	static void setTreadIdFilter(const std::vector<std::string> & ids);
-	static const std::set<unsigned long> & getTreadIdFilter() {return threadIdFilter_;}
+    /**
+     * If not empty, only show log messages from threads included in this list.
+     */
+    static void setTreadIdFilter(const std::set<unsigned long> & ids) {threadIdFilter_ = ids;}
+    static void setTreadIdFilter(const std::vector<std::string> & ids);
+    static const std::set<unsigned long> & getTreadIdFilter() {return threadIdFilter_;}
 
-	/**
-	 * Threads can register to this list. If name is empty, it will
-	 * clear the thread in the list. Should be called from the thread itself.
-	 */
-	static void registerCurrentThread(const std::string & name);
-	static void unregisterCurrentThread();
-	static std::map<std::string, unsigned long> getRegisteredThreads();
+    /**
+     * Threads can register to this list. If name is empty, it will
+     * clear the thread in the list. Should be called from the thread itself.
+     */
+    static void registerCurrentThread(const std::string & name);
+    static void unregisterCurrentThread();
+    static std::map<std::string, unsigned long> getRegisteredThreads();
 
     /**
      * Reset to default parameters.
@@ -369,10 +369,10 @@ public:
     static void reset();
 
     /**
-	 * Flush buffered messages.
-	 * @see setBuffered()
-	 */
-	static void flush();
+     * Flush buffered messages.
+     * @see setBuffered()
+     */
+    static void flush();
 
     /**
      * Write a message directly to logger without level handling.
@@ -392,11 +392,11 @@ public:
      * @param ... the variable arguments
      */
     static void write(ULogger::Level level,
-    		const char * file,
-    		int line,
-    		const char *function,
-    		const char* msg,
-    		...);
+            const char * file,
+            int line,
+            const char *function,
+            const char* msg,
+            ...);
 
     /**
      * Get the time in the format "2008-7-13 12:23:44".
@@ -432,9 +432,9 @@ protected:
     virtual ~ULogger();
 
     /*
-	 * Flush buffered messages
-	 */
-	void _flush();
+     * Flush buffered messages
+     */
+    void _flush();
 
     /*
      * A Destroyer is used to remove a dynamicaly created 
@@ -505,37 +505,37 @@ private:
     static bool printEndline_;
 
     /*
-	 * If the logger prints text with color.
-	 * Default is true.
-	 */
+     * If the logger prints text with color.
+     * Default is true.
+     */
     static bool printColored_;
 
     /*
-	 * If the logger prints where the message is logged (fileName::function():line).
-	 * Default is true.
-	 */
+     * If the logger prints where the message is logged (fileName::function():line).
+     * Default is true.
+     */
     static bool printWhere_;
 
     /*
-	 * If the logger prints the full path of the source file
-	 * where the message is written. Only works when
-	 * "printWhere_" is true.
-	 * Default is false.
-	 */
+     * If the logger prints the full path of the source file
+     * where the message is written. Only works when
+     * "printWhere_" is true.
+     * Default is false.
+     */
     static bool printWhereFullPath_;
 
     /*
-	 * If the logger prints the thread ID.
-	 * Default is false.
-	 */
+     * If the logger prints the thread ID.
+     * Default is false.
+     */
     static bool printThreadID_;
 
     /*
-	 * If the logger limit the size of the "where" path to
-	 * characters. If the path is over 8 characters, a "~"
-	 * is added. Only works when "printWhereFullPath_" is false.
-	 * Default is false.
-	 */
+     * If the logger limit the size of the "where" path to
+     * characters. If the path is over 8 characters, a "~"
+     * is added. Only works when "printWhereFullPath_" is false.
+     * Default is false.
+     */
     static bool limitWhereLength_;
 
     /*
@@ -544,14 +544,14 @@ private:
     static Type type_;
 
     /*
-	 * The severity of the log.
-	 */
+     * The severity of the log.
+     */
     static Level level_;
 
     /*
-	 * The severity at which the message is also sent in a ULogEvent.
-	 */
-	static Level eventLevel_;
+     * The severity at which the message is also sent in a ULogEvent.
+     */
+    static Level eventLevel_;
 
     static const char * levelName_[5];
 
@@ -561,15 +561,15 @@ private:
     static UMutex loggerMutex_;
 
     /*
-	 * If the logger prints messages only when ULogger::flush() is called.
-	 * Default is false.
-	 */
-	static bool buffered_;
+     * If the logger prints messages only when ULogger::flush() is called.
+     * Default is false.
+     */
+    static bool buffered_;
 
-	static std::string bufferedMsgs_;
+    static std::string bufferedMsgs_;
 
-	static std::set<unsigned long> threadIdFilter_;
-	static std::map<std::string, unsigned long> registeredThreads_;
+    static std::set<unsigned long> threadIdFilter_;
+    static std::map<std::string, unsigned long> registeredThreads_;
 };
 
 #endif // ULOGGER_H

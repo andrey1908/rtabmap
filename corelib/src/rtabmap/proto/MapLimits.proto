@@ -4,7 +4,7 @@ package rtabmap.proto;
 
 message MapLimitsI
 {
-	int32 min_x = 1;
+    int32 min_x = 1;
     int32 min_y = 2;
     int32 max_x = 3;
     int32 max_y = 4;

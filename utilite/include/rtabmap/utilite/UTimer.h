@@ -69,18 +69,18 @@ public:
     /** 
      * This method is used to get the elapsed time
      * between now and the start(). If timer is stopped, the interval time
-	 * between stop() and the start() is returned.
+     * between stop() and the start() is returned.
      * @return double the interval in seconds.
      */
     double elapsed() {return getElapsedTime();}
     double getElapsedTime();
 
     /**
-	 * This method is used to get the interval time
-	 * between stop() and the start().
-	 * @return double the interval in seconds.
-	 * @deprecated use elapsed() instead.
-	 */
+     * This method is used to get the interval time
+     * between stop() and the start().
+     * @return double the interval in seconds.
+     * @deprecated use elapsed() instead.
+     */
     UTILITE_DEPRECATED(double getInterval());
 
     /** 

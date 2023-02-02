@@ -51,27 +51,27 @@
  * class SimpleThread : public UThread
  * {
  * public:
- * 	SimpleThread() {}
- * 	virtual ~SimpleThread() {
- * 		// The calling thread will wait until this thread has finished.
- * 		this->join(true);
- *	}
+ *     SimpleThread() {}
+ *     virtual ~SimpleThread() {
+ *         // The calling thread will wait until this thread has finished.
+ *         this->join(true);
+ *    }
  *
  * protected:
- * 	virtual void mainLoop() {
- * 		// Do some works...
+ *     virtual void mainLoop() {
+ *         // Do some works...
  *
- * 		// This will stop the thread, otherwise the mainLoop() is recalled.
- *		this->kill();
- * 	}
+ *         // This will stop the thread, otherwise the mainLoop() is recalled.
+ *        this->kill();
+ *     }
  * };
  *
  * int main(int argc, char * argv[])
  * {
- *	SimpleThread t;
- *	t.start();
- *	t.join(); // Wait until the thread has finished.
- * 	return 0;
+ *    SimpleThread t;
+ *    t.start();
+ *    t.join(); // Wait until the thread has finished.
+ *     return 0;
  * }
  * @endcode
  *
@@ -119,20 +119,20 @@ public:
     void start();
 
     /**
-	 * Kill the thread.
-	 * This functions does nothing if the thread is not started or is killed.
-	 *
-	 * Note : not a blocking call
-	 */
-	void kill();
+     * Kill the thread.
+     * This functions does nothing if the thread is not started or is killed.
+     *
+     * Note : not a blocking call
+     */
+    void kill();
 
-	/**
-	 * The caller thread will wait until the thread has finished.
-	 *
-	 * Note : blocking call
-	 * @param killFirst if you want kill() to be called before joining (default false), otherwise not.
-	 */
-	void join(bool killFirst = false);
+    /**
+     * The caller thread will wait until the thread has finished.
+     *
+     * Note : blocking call
+     * @param killFirst if you want kill() to be called before joining (default false), otherwise not.
+     */
+    void join(bool killFirst = false);
 
     /**
      * Set the thread priority.
@@ -141,31 +141,31 @@ public:
     void setPriority(Priority priority);
 
     /**
-	 * Set the thread affinity. This is applied during start of the thread.
-	 *
-	 * MAC OS X : http://developer.apple.com/library/mac/#releasenotes/Performance/RN-AffinityAPI/_index.html.
-	 * @param cpu the cpu id (start at 1), 0 means no affinity (default).
-	 */
-	void setAffinity(int cpu = 0);
+     * Set the thread affinity. This is applied during start of the thread.
+     *
+     * MAC OS X : http://developer.apple.com/library/mac/#releasenotes/Performance/RN-AffinityAPI/_index.html.
+     * @param cpu the cpu id (start at 1), 0 means no affinity (default).
+     */
+    void setAffinity(int cpu = 0);
 
-	/**
-	 * @return if the state of the thread is kSCreating (after start() is called but before entering the mainLoop()).
-	 */
+    /**
+     * @return if the state of the thread is kSCreating (after start() is called but before entering the mainLoop()).
+     */
     bool isCreating() const;
 
     /**
-	 * @return if the state of the thread is kSRunning (it is executing the mainLoop()) or kSCreating.
-	 */
+     * @return if the state of the thread is kSRunning (it is executing the mainLoop()) or kSCreating.
+     */
     bool isRunning() const;
 
     /**
-	 * @return if the state of the thread is kSIdle (before start() is called and after the thread is totally killed (or after join(true))).
-	 */
+     * @return if the state of the thread is kSIdle (before start() is called and after the thread is totally killed (or after join(true))).
+     */
     bool isIdle() const;
 
     /**
-	 * @return if the state of the thread is kSKilled (after kill() is called and before the thread is totally killed).
-	 */
+     * @return if the state of the thread is kSKilled (after kill() is called and before the thread is totally killed).
+     */
     bool isKilled() const;
 
     Handle getThreadHandle() const {return handle_;}
@@ -174,41 +174,41 @@ public:
 protected:
 
 private:
-	/**
-	 * Virtual method mainLoopBegin().
-	 * User can implement this function to add a behavior
-	 * before the main loop is started. It is
-	 * called once (before entering mainLoop()).
-	 */
-	virtual void mainLoopBegin() {}
+    /**
+     * Virtual method mainLoopBegin().
+     * User can implement this function to add a behavior
+     * before the main loop is started. It is
+     * called once (before entering mainLoop()).
+     */
+    virtual void mainLoopBegin() {}
 
-	/**
-	 * Pure virtual method mainLoop().
-	 * The inner loop of the thread. This method is called repetitively
-	 * until the thread is killed. Note that if kill() is called in mainLoopBegin(),
-	 * mainLoop() is not called, terminating immediately the thread.
-	 *
-	 * @see mainLoop()
-	 * @see kill()
-	 */
-	virtual void mainLoop() = 0;
+    /**
+     * Pure virtual method mainLoop().
+     * The inner loop of the thread. This method is called repetitively
+     * until the thread is killed. Note that if kill() is called in mainLoopBegin(),
+     * mainLoop() is not called, terminating immediately the thread.
+     *
+     * @see mainLoop()
+     * @see kill()
+     */
+    virtual void mainLoop() = 0;
 
-	/**
-	 * Virtual method mainLoopKill().
-	 * User can implement this function to add a behavior
-	 * before the thread is killed. When this
-	 * function is called, the state of the thread is set to kSKilled. It is useful to
-	 * wake up a sleeping thread to finish his loop and to avoid a deadlock.
-	 */
-	virtual void mainLoopKill() {}
+    /**
+     * Virtual method mainLoopKill().
+     * User can implement this function to add a behavior
+     * before the thread is killed. When this
+     * function is called, the state of the thread is set to kSKilled. It is useful to
+     * wake up a sleeping thread to finish his loop and to avoid a deadlock.
+     */
+    virtual void mainLoopKill() {}
 
-	/**
-	 * Virtual method mainLoopEnd().
-	 * User can implement this function to add a behavior
-	 * after the thread is killed (after exiting the mainLoop(), work is
-	 * still done in the thread before exiting).
-	 */
-	virtual void mainLoopEnd() {}
+    /**
+     * Virtual method mainLoopEnd().
+     * User can implement this function to add a behavior
+     * after the thread is killed (after exiting the mainLoop(), work is
+     * still done in the thread before exiting).
+     */
+    virtual void mainLoopEnd() {}
 
     /*
      * Inherited method ThreadMain() from Thread.
@@ -217,16 +217,16 @@ private:
     void ThreadMain();
 
     /*
-	 * Apply thread priority. This is called when starting the thread.
-	 * *@todo : Support pthread
-	 */
-	void applyPriority();
+     * Apply thread priority. This is called when starting the thread.
+     * *@todo : Support pthread
+     */
+    void applyPriority();
 
-	/*
-	 * Apply cpu affinity. This is called when starting the thread.
-	 * *@todo : Support Windows
-	 */
-	void applyAffinity();
+    /*
+     * Apply cpu affinity. This is called when starting the thread.
+     * *@todo : Support Windows
+     */
+    void applyAffinity();
 
     /*
      * Inherited method Create() from Thread.
@@ -244,27 +244,27 @@ private:
 
     //Methods from UThread<void> class hided
     static int Join( Handle H )
-	  { return UThreadC<void>::Join(H); }
+      { return UThreadC<void>::Join(H); }
 #ifndef ANDROID
-	static int Kill( Handle H )
-	  { return UThreadC<void>::Kill(H); }
+    static int Kill( Handle H )
+      { return UThreadC<void>::Kill(H); }
 #endif
-	static int Detach( Handle H )
-	  { return UThreadC<void>::Detach(H); }
+    static int Detach( Handle H )
+      { return UThreadC<void>::Detach(H); }
 
 private:
-	void operator=(UThread &) {}
-	UThread( const UThread &) : state_(kSIdle) {}
+    void operator=(UThread &) {}
+    UThread( const UThread &) : state_(kSIdle) {}
 
 private:
     enum State{kSIdle, kSCreating, kSRunning, kSKilled}; /* Enum of states. */
-    State state_; 			/* The thread state. */
-    Priority priority_; 	/* The thread priority. */
-    Handle handle_; 	/* The thread handle. */
+    State state_;             /* The thread state. */
+    Priority priority_;     /* The thread priority. */
+    Handle handle_;     /* The thread handle. */
     unsigned long threadId_; /* The thread id. */
     int cpuAffinity_; /* The cpu affinity. */
-    UMutex killSafelyMutex_;	/* Mutex used to protect the kill() method. */
-    UMutex runningMutex_;	    /* Mutex used to notify the join method when the thread has finished. */
+    UMutex killSafelyMutex_;    /* Mutex used to protect the kill() method. */
+    UMutex runningMutex_;        /* Mutex used to notify the join method when the thread has finished. */
 };
 
 #endif // UTHREADNODE_H

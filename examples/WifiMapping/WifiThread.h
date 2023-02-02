@@ -29,28 +29,28 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define WIFITHREAD_H_
 
 #ifdef _WIN32
-	#ifndef UNICODE
-	#define UNICODE
-	#endif
+    #ifndef UNICODE
+    #define UNICODE
+    #endif
 
-	#include <windows.h>
-	#include <wlanapi.h>
-	#include <Windot11.h>           // for DOT11_SSID struct
-	#include <objbase.h>
-	#include <wtypes.h>
+    #include <windows.h>
+    #include <wlanapi.h>
+    #include <Windot11.h>           // for DOT11_SSID struct
+    #include <objbase.h>
+    #include <wtypes.h>
 
-	#include <stdio.h>
-	#include <stdlib.h>
+    #include <stdio.h>
+    #include <stdlib.h>
 
-	// Need to link with Wlanapi.lib and Ole32.lib
-	#pragma comment(lib, "wlanapi.lib")
-	#pragma comment(lib, "ole32.lib")
+    // Need to link with Wlanapi.lib and Ole32.lib
+    #pragma comment(lib, "wlanapi.lib")
+    #pragma comment(lib, "ole32.lib")
 #elif __APPLE__
 #include "WifiOSX.h"
 #else
-	#include <sys/socket.h>
-	#include <linux/wireless.h>
-	#include <sys/ioctl.h>
+    #include <sys/socket.h>
+    #include <linux/wireless.h>
+    #include <sys/ioctl.h>
 #endif
 #include <rtabmap/core/UserDataEvent.h>
 #include <rtabmap/utilite/UTimer.h>
@@ -64,162 +64,162 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // values between 1 and 99 using linear interpolation.
 inline int quality2dBm(int quality)
 {
-	// Quality to dBm:
-	if(quality <= 0)
-		return -100;
-	else if(quality >= 100)
-		return -50;
-	else
-		return (quality / 2) - 100;
+    // Quality to dBm:
+    if(quality <= 0)
+        return -100;
+    else if(quality >= 100)
+        return -50;
+    else
+        return (quality / 2) - 100;
 }
 
 
 class WifiThread : public UThread, public UEventsSender
 {
 public:
-	WifiThread(const std::string & interfaceName, float rate = 0.5) :
-		interfaceName_(interfaceName),
-		rate_(rate)
-	{}
-	virtual ~WifiThread() {}
+    WifiThread(const std::string & interfaceName, float rate = 0.5) :
+        interfaceName_(interfaceName),
+        rate_(rate)
+    {}
+    virtual ~WifiThread() {}
 
 private:
-	virtual void mainLoop()
-	{
-		uSleep(1000/rate_);
-		if(!this->isKilled())
-		{
-			int dBm = 0;
+    virtual void mainLoop()
+    {
+        uSleep(1000/rate_);
+        if(!this->isKilled())
+        {
+            int dBm = 0;
 #ifdef _WIN32
-			//From https://msdn.microsoft.com/en-us/library/windows/desktop/ms706765(v=vs.85).aspx
-			// Declare and initialize variables.
-			HANDLE hClient = NULL;
-			DWORD dwMaxClient = 2;      //
-			DWORD dwCurVersion = 0;
-			DWORD dwResult = 0;
+            //From https://msdn.microsoft.com/en-us/library/windows/desktop/ms706765(v=vs.85).aspx
+            // Declare and initialize variables.
+            HANDLE hClient = NULL;
+            DWORD dwMaxClient = 2;      //
+            DWORD dwCurVersion = 0;
+            DWORD dwResult = 0;
 
-			// variables used for WlanEnumInterfaces
-			PWLAN_INTERFACE_INFO_LIST pIfList = NULL;
-			PWLAN_INTERFACE_INFO pIfInfo = NULL;
+            // variables used for WlanEnumInterfaces
+            PWLAN_INTERFACE_INFO_LIST pIfList = NULL;
+            PWLAN_INTERFACE_INFO pIfInfo = NULL;
 
-			// variables used for WlanQueryInterfaces for opcode = wlan_intf_opcode_current_connection
-			PWLAN_CONNECTION_ATTRIBUTES pConnectInfo = NULL;
-			DWORD connectInfoSize = sizeof(WLAN_CONNECTION_ATTRIBUTES);
-			WLAN_OPCODE_VALUE_TYPE opCode = wlan_opcode_value_type_invalid;
+            // variables used for WlanQueryInterfaces for opcode = wlan_intf_opcode_current_connection
+            PWLAN_CONNECTION_ATTRIBUTES pConnectInfo = NULL;
+            DWORD connectInfoSize = sizeof(WLAN_CONNECTION_ATTRIBUTES);
+            WLAN_OPCODE_VALUE_TYPE opCode = wlan_opcode_value_type_invalid;
 
-			dwResult = WlanOpenHandle(dwMaxClient, NULL, &dwCurVersion, &hClient);
-			if (dwResult != ERROR_SUCCESS)
-			{
-				UERROR("WlanOpenHandle failed with error: %u\n", dwResult);
-			}
-			else
-			{
-				dwResult = WlanEnumInterfaces(hClient, NULL, &pIfList);
-				if (dwResult != ERROR_SUCCESS)
-				{
-					UERROR("WlanEnumInterfaces failed with error: %u\n", dwResult);
-				}
-				else
-				{
-					// take the first interface found
-					int i = 0;
-					pIfInfo = (WLAN_INTERFACE_INFO *) & pIfList->InterfaceInfo[i];
-					if(pIfInfo->isState == wlan_interface_state_connected)
-					{
-						dwResult = WlanQueryInterface(hClient,
-													  &pIfInfo->InterfaceGuid,
-													  wlan_intf_opcode_current_connection,
-													  NULL,
-													  &connectInfoSize,
-													  (PVOID *) &pConnectInfo,
-													  &opCode);
+            dwResult = WlanOpenHandle(dwMaxClient, NULL, &dwCurVersion, &hClient);
+            if (dwResult != ERROR_SUCCESS)
+            {
+                UERROR("WlanOpenHandle failed with error: %u\n", dwResult);
+            }
+            else
+            {
+                dwResult = WlanEnumInterfaces(hClient, NULL, &pIfList);
+                if (dwResult != ERROR_SUCCESS)
+                {
+                    UERROR("WlanEnumInterfaces failed with error: %u\n", dwResult);
+                }
+                else
+                {
+                    // take the first interface found
+                    int i = 0;
+                    pIfInfo = (WLAN_INTERFACE_INFO *) & pIfList->InterfaceInfo[i];
+                    if(pIfInfo->isState == wlan_interface_state_connected)
+                    {
+                        dwResult = WlanQueryInterface(hClient,
+                                                      &pIfInfo->InterfaceGuid,
+                                                      wlan_intf_opcode_current_connection,
+                                                      NULL,
+                                                      &connectInfoSize,
+                                                      (PVOID *) &pConnectInfo,
+                                                      &opCode);
 
-						if (dwResult != ERROR_SUCCESS)
-						{
-							UERROR("WlanQueryInterface failed with error: %u\n", dwResult);
-						}
-						else
-						{
-							int quality = pConnectInfo->wlanAssociationAttributes.wlanSignalQuality;
-							dBm = quality2dBm(quality);
-						}
-					}
-					else
-					{
-						UERROR("Interface not connected!");
-					}
-				}
-			}
-			if (pConnectInfo != NULL)
-			{
-				WlanFreeMemory(pConnectInfo);
-				pConnectInfo = NULL;
-			}
+                        if (dwResult != ERROR_SUCCESS)
+                        {
+                            UERROR("WlanQueryInterface failed with error: %u\n", dwResult);
+                        }
+                        else
+                        {
+                            int quality = pConnectInfo->wlanAssociationAttributes.wlanSignalQuality;
+                            dBm = quality2dBm(quality);
+                        }
+                    }
+                    else
+                    {
+                        UERROR("Interface not connected!");
+                    }
+                }
+            }
+            if (pConnectInfo != NULL)
+            {
+                WlanFreeMemory(pConnectInfo);
+                pConnectInfo = NULL;
+            }
 
-			if (pIfList != NULL)
-			{
-				WlanFreeMemory(pIfList);
-				pIfList = NULL;
-			}
+            if (pIfList != NULL)
+            {
+                WlanFreeMemory(pIfList);
+                pIfList = NULL;
+            }
 #elif __APPLE__
-			dBm = getRssi(interfaceName_);
+            dBm = getRssi(interfaceName_);
 #else
-			// Code inspired from http://blog.ajhodges.com/2011/10/using-ioctl-to-gather-wifi-information.html
+            // Code inspired from http://blog.ajhodges.com/2011/10/using-ioctl-to-gather-wifi-information.html
 
-			//have to use a socket for ioctl
-			int sockfd;
-			/* Any old socket will do, and a datagram socket is pretty cheap */
-			if((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-				UERROR("Could not create simple datagram socket");
-				return;
-			}
+            //have to use a socket for ioctl
+            int sockfd;
+            /* Any old socket will do, and a datagram socket is pretty cheap */
+            if((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+                UERROR("Could not create simple datagram socket");
+                return;
+            }
 
-			struct iwreq req;
-			struct iw_statistics stats;
+            struct iwreq req;
+            struct iw_statistics stats;
 
-			strncpy(req.ifr_name, interfaceName_.c_str(), IFNAMSIZ);
+            strncpy(req.ifr_name, interfaceName_.c_str(), IFNAMSIZ);
 
-			//make room for the iw_statistics object
-			req.u.data.pointer = (caddr_t) &stats;
-			req.u.data.length = sizeof(stats);
-			// clear updated flag
-			req.u.data.flags = 1;
+            //make room for the iw_statistics object
+            req.u.data.pointer = (caddr_t) &stats;
+            req.u.data.length = sizeof(stats);
+            // clear updated flag
+            req.u.data.flags = 1;
 
-			//this will gather the signal strength
-			if(ioctl(sockfd, SIOCGIWSTATS, &req) == -1)
-			{
-				//die with error, invalid interface
-				UERROR("Invalid interface (\"%s\"). Tip: Try with sudo!", interfaceName_.c_str());
-			}
-			else if(((iw_statistics *)req.u.data.pointer)->qual.updated & IW_QUAL_DBM)
-			{
-				//signal is measured in dBm and is valid for us to use
-				dBm = ((iw_statistics *)req.u.data.pointer)->qual.level - 256;
-			}
-			else
-			{
-				UERROR("Could not get signal level.");
-			}
+            //this will gather the signal strength
+            if(ioctl(sockfd, SIOCGIWSTATS, &req) == -1)
+            {
+                //die with error, invalid interface
+                UERROR("Invalid interface (\"%s\"). Tip: Try with sudo!", interfaceName_.c_str());
+            }
+            else if(((iw_statistics *)req.u.data.pointer)->qual.updated & IW_QUAL_DBM)
+            {
+                //signal is measured in dBm and is valid for us to use
+                dBm = ((iw_statistics *)req.u.data.pointer)->qual.level - 256;
+            }
+            else
+            {
+                UERROR("Could not get signal level.");
+            }
 
-			close(sockfd);
+            close(sockfd);
 #endif
-			if(dBm != 0)
-			{
-				double stamp = UTimer::now();
+            if(dBm != 0)
+            {
+                double stamp = UTimer::now();
 
-				// Create user data [level, stamp] with the value and a timestamp
-				cv::Mat data(1, 2, CV_64FC1);
-				data.at<double>(0) = double(dBm);
-				data.at<double>(1) = stamp;
-				this->post(new UserDataEvent(data));
-				//UWARN("posting level %d dBm", dBm);
-			}
-		}
-	}
+                // Create user data [level, stamp] with the value and a timestamp
+                cv::Mat data(1, 2, CV_64FC1);
+                data.at<double>(0) = double(dBm);
+                data.at<double>(1) = stamp;
+                this->post(new UserDataEvent(data));
+                //UWARN("posting level %d dBm", dBm);
+            }
+        }
+    }
 
 private:
-	std::string interfaceName_;
-	float rate_;
+    std::string interfaceName_;
+    float rate_;
 };
 
 #endif /* WIFITHREAD_H_ */

@@ -36,64 +36,64 @@ using namespace rtabmap;
 
 void showUsage()
 {
-	printf("\nUsage:\n"
-			"rtabmap-recovery [-d] \"my_corrupted_map.db\""
-			"  Options:\n"
-			"     -d        Delete database backup on success (\"*.backup.db\").\n"
-			"\n");
-	exit(1);
+    printf("\nUsage:\n"
+            "rtabmap-recovery [-d] \"my_corrupted_map.db\""
+            "  Options:\n"
+            "     -d        Delete database backup on success (\"*.backup.db\").\n"
+            "\n");
+    exit(1);
 }
 
 class RecoveryProgressState: public ProgressState
 {
-	virtual bool callback(const std::string & msg) const
-	{
-		if(!msg.empty())
-			printf("%s\n", msg.c_str());
-		return true;
-	}
+    virtual bool callback(const std::string & msg) const
+    {
+        if(!msg.empty())
+            printf("%s\n", msg.c_str());
+        return true;
+    }
 };
 RecoveryProgressState state;
 
 // catch ctrl-c
 void sighandler(int sig)
 {
-	printf("\nSignal %d caught...\n", sig);
-	state.setCanceled(true);
+    printf("\nSignal %d caught...\n", sig);
+    state.setCanceled(true);
 }
 
 int main(int argc, char * argv[])
 {
-	signal(SIGABRT, &sighandler);
-	signal(SIGTERM, &sighandler);
-	signal(SIGINT, &sighandler);
+    signal(SIGABRT, &sighandler);
+    signal(SIGTERM, &sighandler);
+    signal(SIGINT, &sighandler);
 
-	ULogger::setType(ULogger::kTypeConsole);
-	ULogger::setLevel(ULogger::kError);
+    ULogger::setType(ULogger::kTypeConsole);
+    ULogger::setLevel(ULogger::kError);
 
-	if(argc < 2)
-	{
-		showUsage();
-	}
+    if(argc < 2)
+    {
+        showUsage();
+    }
 
-	bool keepBackup = true;
-	for(int i=1; i<argc; ++i)
-	{
-		if(strcmp(argv[i], "-d") == 0)
-		{
-			keepBackup = false;
-		}
-	}
+    bool keepBackup = true;
+    for(int i=1; i<argc; ++i)
+    {
+        if(strcmp(argv[i], "-d") == 0)
+        {
+            keepBackup = false;
+        }
+    }
 
-	std::string databasePath = argv[argc-1];
+    std::string databasePath = argv[argc-1];
 
-	std::string errorMsg;
-	printf("Recovering \"%s\"\n", databasePath.c_str());
-	if(!databaseRecovery(databasePath, keepBackup, &errorMsg, &state))
-	{
-		printf("Error: %s\n", errorMsg.c_str());
-		return 1;
-	}
+    std::string errorMsg;
+    printf("Recovering \"%s\"\n", databasePath.c_str());
+    if(!databaseRecovery(databasePath, keepBackup, &errorMsg, &state))
+    {
+        printf("Error: %s\n", errorMsg.c_str());
+        return 1;
+    }
 
-	return 0;
+    return 0;
 }

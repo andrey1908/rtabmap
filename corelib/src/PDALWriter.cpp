@@ -44,410 +44,410 @@ namespace rtabmap {
 
 std::string getPDALSupportedWriters()
 {
-	std::string output;
-	// Force plugin loading.
+    std::string output;
+    // Force plugin loading.
 #if PDAL_VERSION_MAJOR>1 || (PDAL_VERSION_MAJOR == 1 && PDAL_VERSION_MINOR > 7) || (PDAL_VERSION_MAJOR == 1 && PDAL_VERSION_MINOR == 7 && PDAL_VERSION_MINOR>=1)
-	pdal::StageFactory f;
-	pdal::PluginManager<pdal::Stage>::loadAll();
-	pdal::StringList stages = pdal::PluginManager<pdal::Stage>::names();
+    pdal::StageFactory f;
+    pdal::PluginManager<pdal::Stage>::loadAll();
+    pdal::StringList stages = pdal::PluginManager<pdal::Stage>::names();
 #else
-	pdal::StageFactory f(false);
-	pdal::StringList stages = pdal::PluginManager::names(PF_PluginType_Writer);
+    pdal::StageFactory f(false);
+    pdal::StringList stages = pdal::PluginManager::names(PF_PluginType_Writer);
 #endif
-	for(pdal::StringList::iterator iter=stages.begin(); iter!=stages.end(); ++iter)
-	{
-		if(!uStrContains(*iter, "writers"))
-		{
-			continue;
-		}
-		if(iter->compare("writers.null") == 0)
-		{
-			continue;
-		}
-		if(iter!=stages.begin())
-		{
-			output += " ";
-		}
-		output += UFile::getExtension(*iter);
-	}
-	return output;
+    for(pdal::StringList::iterator iter=stages.begin(); iter!=stages.end(); ++iter)
+    {
+        if(!uStrContains(*iter, "writers"))
+        {
+            continue;
+        }
+        if(iter->compare("writers.null") == 0)
+        {
+            continue;
+        }
+        if(iter!=stages.begin())
+        {
+            output += " ";
+        }
+        output += UFile::getExtension(*iter);
+    }
+    return output;
 }
 
 int savePDALFile(const std::string & filePath,
-		const pcl::PointCloud<pcl::PointXYZ> & cloud,
-		const std::vector<int> & cameraIds,
-		bool binary)
+        const pcl::PointCloud<pcl::PointXYZ> & cloud,
+        const std::vector<int> & cameraIds,
+        bool binary)
 {
-	UASSERT_MSG(cameraIds.empty() || cameraIds.size() == cloud.size(),
-			uFormat("cameraIds=%d cloud=%d", (int)cameraIds.size(), (int)cloud.size()).c_str());
+    UASSERT_MSG(cameraIds.empty() || cameraIds.size() == cloud.size(),
+            uFormat("cameraIds=%d cloud=%d", (int)cameraIds.size(), (int)cloud.size()).c_str());
 
-	pdal::PointTable table;
+    pdal::PointTable table;
 
-	if(!cameraIds.empty())
-	{
-		table.layout()->registerDims({
-			pdal::Dimension::Id::X,
-			pdal::Dimension::Id::Y,
-			pdal::Dimension::Id::Z,
-			pdal::Dimension::Id::PointSourceId});
-	}
-	else
-	{
-		table.layout()->registerDims({
-			pdal::Dimension::Id::X,
-			pdal::Dimension::Id::Y,
-			pdal::Dimension::Id::Z});
-	}
-	pdal::BufferReader bufferReader;
+    if(!cameraIds.empty())
+    {
+        table.layout()->registerDims({
+            pdal::Dimension::Id::X,
+            pdal::Dimension::Id::Y,
+            pdal::Dimension::Id::Z,
+            pdal::Dimension::Id::PointSourceId});
+    }
+    else
+    {
+        table.layout()->registerDims({
+            pdal::Dimension::Id::X,
+            pdal::Dimension::Id::Y,
+            pdal::Dimension::Id::Z});
+    }
+    pdal::BufferReader bufferReader;
 
-	pdal::PointViewPtr view(new pdal::PointView(table));
-	for(size_t i=0; i<cloud.size(); ++i)
-	{
-		view->setField(pdal::Dimension::Id::X, i, cloud.at(i).x);
-		view->setField(pdal::Dimension::Id::Y, i, cloud.at(i).y);
-		view->setField(pdal::Dimension::Id::Z, i, cloud.at(i).z);
-		if(!cameraIds.empty())
-		{
-			view->setField(pdal::Dimension::Id::PointSourceId, i, cameraIds.at(i));
-		}
-	}
-	bufferReader.addView(view);
+    pdal::PointViewPtr view(new pdal::PointView(table));
+    for(size_t i=0; i<cloud.size(); ++i)
+    {
+        view->setField(pdal::Dimension::Id::X, i, cloud.at(i).x);
+        view->setField(pdal::Dimension::Id::Y, i, cloud.at(i).y);
+        view->setField(pdal::Dimension::Id::Z, i, cloud.at(i).z);
+        if(!cameraIds.empty())
+        {
+            view->setField(pdal::Dimension::Id::PointSourceId, i, cameraIds.at(i));
+        }
+    }
+    bufferReader.addView(view);
 
-	pdal::StageFactory factory;
-	std::string ext = UFile::getExtension(filePath);
-	pdal::Stage *writer = factory.createStage("writers." + ext);
-	if(writer)
-	{
-		pdal::Options writerOps;
-		writerOps.add("filename", filePath);
-		if(ext.compare("ply")==0) writerOps.add("storage_mode", binary?"little endian":"ascii"); // PLY
-		if(ext.compare("pcd")==0) writerOps.add("compression", binary?"binary":"ascii"); // PCD
+    pdal::StageFactory factory;
+    std::string ext = UFile::getExtension(filePath);
+    pdal::Stage *writer = factory.createStage("writers." + ext);
+    if(writer)
+    {
+        pdal::Options writerOps;
+        writerOps.add("filename", filePath);
+        if(ext.compare("ply")==0) writerOps.add("storage_mode", binary?"little endian":"ascii"); // PLY
+        if(ext.compare("pcd")==0) writerOps.add("compression", binary?"binary":"ascii"); // PCD
 
-		writer->setOptions(writerOps);
-		writer->setInput(bufferReader);
+        writer->setOptions(writerOps);
+        writer->setInput(bufferReader);
 
-		writer->prepare(table);
-		writer->execute(table);
-	}
-	else
-	{
-		UERROR("PDAL: cannot find writer for extension \"%s\". Available extensions: \"%s\"",
-				UFile::getExtension(filePath).c_str(),
-				getPDALSupportedWriters().c_str());
-		return 1;
-	}
+        writer->prepare(table);
+        writer->execute(table);
+    }
+    else
+    {
+        UERROR("PDAL: cannot find writer for extension \"%s\". Available extensions: \"%s\"",
+                UFile::getExtension(filePath).c_str(),
+                getPDALSupportedWriters().c_str());
+        return 1;
+    }
 
-	return 0; //success
+    return 0; //success
 }
 
 int savePDALFile(const std::string & filePath,
-		const pcl::PointCloud<pcl::PointXYZRGB> & cloud,
-		const std::vector<int> & cameraIds,
-		bool binary)
+        const pcl::PointCloud<pcl::PointXYZRGB> & cloud,
+        const std::vector<int> & cameraIds,
+        bool binary)
 {
-	UASSERT_MSG(cameraIds.empty() || cameraIds.size() == cloud.size(),
-			uFormat("cameraIds=%d cloud=%d", (int)cameraIds.size(), (int)cloud.size()).c_str());
+    UASSERT_MSG(cameraIds.empty() || cameraIds.size() == cloud.size(),
+            uFormat("cameraIds=%d cloud=%d", (int)cameraIds.size(), (int)cloud.size()).c_str());
 
-	pdal::PointTable table;
+    pdal::PointTable table;
 
-	if(!cameraIds.empty())
-	{
-		table.layout()->registerDims({
-			pdal::Dimension::Id::X,
-			pdal::Dimension::Id::Y,
-			pdal::Dimension::Id::Z,
-			pdal::Dimension::Id::Red,
-			pdal::Dimension::Id::Green,
-			pdal::Dimension::Id::Blue,
-			pdal::Dimension::Id::PointSourceId});
-	}
-	else
-	{
-		table.layout()->registerDims({
-			pdal::Dimension::Id::X,
-			pdal::Dimension::Id::Y,
-			pdal::Dimension::Id::Z,
-			pdal::Dimension::Id::Red,
-			pdal::Dimension::Id::Green,
-			pdal::Dimension::Id::Blue});
-	}
-	pdal::BufferReader bufferReader;
+    if(!cameraIds.empty())
+    {
+        table.layout()->registerDims({
+            pdal::Dimension::Id::X,
+            pdal::Dimension::Id::Y,
+            pdal::Dimension::Id::Z,
+            pdal::Dimension::Id::Red,
+            pdal::Dimension::Id::Green,
+            pdal::Dimension::Id::Blue,
+            pdal::Dimension::Id::PointSourceId});
+    }
+    else
+    {
+        table.layout()->registerDims({
+            pdal::Dimension::Id::X,
+            pdal::Dimension::Id::Y,
+            pdal::Dimension::Id::Z,
+            pdal::Dimension::Id::Red,
+            pdal::Dimension::Id::Green,
+            pdal::Dimension::Id::Blue});
+    }
+    pdal::BufferReader bufferReader;
 
-	pdal::PointViewPtr view(new pdal::PointView(table));
-	for(size_t i=0; i<cloud.size(); ++i)
-	{
-		view->setField(pdal::Dimension::Id::X, i, cloud.at(i).x);
-		view->setField(pdal::Dimension::Id::Y, i, cloud.at(i).y);
-		view->setField(pdal::Dimension::Id::Z, i, cloud.at(i).z);
-		view->setField(pdal::Dimension::Id::Red, i, cloud.at(i).r);
-		view->setField(pdal::Dimension::Id::Green, i, cloud.at(i).g);
-		view->setField(pdal::Dimension::Id::Blue, i, cloud.at(i).b);
-		if(!cameraIds.empty())
-		{
-			view->setField(pdal::Dimension::Id::PointSourceId, i, cameraIds.at(i));
-		}
-	}
-	bufferReader.addView(view);
+    pdal::PointViewPtr view(new pdal::PointView(table));
+    for(size_t i=0; i<cloud.size(); ++i)
+    {
+        view->setField(pdal::Dimension::Id::X, i, cloud.at(i).x);
+        view->setField(pdal::Dimension::Id::Y, i, cloud.at(i).y);
+        view->setField(pdal::Dimension::Id::Z, i, cloud.at(i).z);
+        view->setField(pdal::Dimension::Id::Red, i, cloud.at(i).r);
+        view->setField(pdal::Dimension::Id::Green, i, cloud.at(i).g);
+        view->setField(pdal::Dimension::Id::Blue, i, cloud.at(i).b);
+        if(!cameraIds.empty())
+        {
+            view->setField(pdal::Dimension::Id::PointSourceId, i, cameraIds.at(i));
+        }
+    }
+    bufferReader.addView(view);
 
-	pdal::StageFactory factory;
-	std::string ext = UFile::getExtension(filePath);
-	pdal::Stage *writer = factory.createStage("writers." + ext);
-	if(writer)
-	{
-		pdal::Options writerOps;
-		writerOps.add("filename", filePath);
-		if(ext.compare("ply")==0) writerOps.add("storage_mode", binary?"little endian":"ascii"); // PLY
-		if(ext.compare("pcd")==0) writerOps.add("compression", binary?"binary":"ascii"); // PCD
+    pdal::StageFactory factory;
+    std::string ext = UFile::getExtension(filePath);
+    pdal::Stage *writer = factory.createStage("writers." + ext);
+    if(writer)
+    {
+        pdal::Options writerOps;
+        writerOps.add("filename", filePath);
+        if(ext.compare("ply")==0) writerOps.add("storage_mode", binary?"little endian":"ascii"); // PLY
+        if(ext.compare("pcd")==0) writerOps.add("compression", binary?"binary":"ascii"); // PCD
 
-		writer->setOptions(writerOps);
-		writer->setInput(bufferReader);
+        writer->setOptions(writerOps);
+        writer->setInput(bufferReader);
 
-		writer->prepare(table);
-		writer->execute(table);
-	}
-	else
-	{
-		UERROR("PDAL: cannot find writer for extension \"%s\". Available extensions: \"%s\"",
-				UFile::getExtension(filePath).c_str(),
-				getPDALSupportedWriters().c_str());
-		return 1;
-	}
+        writer->prepare(table);
+        writer->execute(table);
+    }
+    else
+    {
+        UERROR("PDAL: cannot find writer for extension \"%s\". Available extensions: \"%s\"",
+                UFile::getExtension(filePath).c_str(),
+                getPDALSupportedWriters().c_str());
+        return 1;
+    }
 
-	return 0; //success
+    return 0; //success
 }
 
 int savePDALFile(const std::string & filePath,
-		const pcl::PointCloud<pcl::PointXYZRGBNormal> & cloud,
-		const std::vector<int> & cameraIds,
-		bool binary)
+        const pcl::PointCloud<pcl::PointXYZRGBNormal> & cloud,
+        const std::vector<int> & cameraIds,
+        bool binary)
 {
-	UASSERT_MSG(cameraIds.empty() || cameraIds.size() == cloud.size(),
-			uFormat("cameraIds=%d cloud=%d", (int)cameraIds.size(), (int)cloud.size()).c_str());
+    UASSERT_MSG(cameraIds.empty() || cameraIds.size() == cloud.size(),
+            uFormat("cameraIds=%d cloud=%d", (int)cameraIds.size(), (int)cloud.size()).c_str());
 
-	pdal::PointTable table;
+    pdal::PointTable table;
 
-	if(!cameraIds.empty())
-	{
-		table.layout()->registerDims({
-			pdal::Dimension::Id::X,
-			pdal::Dimension::Id::Y,
-			pdal::Dimension::Id::Z,
-			pdal::Dimension::Id::Red,
-			pdal::Dimension::Id::Green,
-			pdal::Dimension::Id::Blue,
-			pdal::Dimension::Id::NormalX,
-			pdal::Dimension::Id::NormalY,
-			pdal::Dimension::Id::NormalZ,
-			pdal::Dimension::Id::PointSourceId});
-	}
-	else
-	{
-		table.layout()->registerDims({
-			pdal::Dimension::Id::X,
-			pdal::Dimension::Id::Y,
-			pdal::Dimension::Id::Z,
-			pdal::Dimension::Id::Red,
-			pdal::Dimension::Id::Green,
-			pdal::Dimension::Id::Blue,
-			pdal::Dimension::Id::NormalX,
-			pdal::Dimension::Id::NormalY,
-			pdal::Dimension::Id::NormalZ});
-	}
-	pdal::BufferReader bufferReader;
+    if(!cameraIds.empty())
+    {
+        table.layout()->registerDims({
+            pdal::Dimension::Id::X,
+            pdal::Dimension::Id::Y,
+            pdal::Dimension::Id::Z,
+            pdal::Dimension::Id::Red,
+            pdal::Dimension::Id::Green,
+            pdal::Dimension::Id::Blue,
+            pdal::Dimension::Id::NormalX,
+            pdal::Dimension::Id::NormalY,
+            pdal::Dimension::Id::NormalZ,
+            pdal::Dimension::Id::PointSourceId});
+    }
+    else
+    {
+        table.layout()->registerDims({
+            pdal::Dimension::Id::X,
+            pdal::Dimension::Id::Y,
+            pdal::Dimension::Id::Z,
+            pdal::Dimension::Id::Red,
+            pdal::Dimension::Id::Green,
+            pdal::Dimension::Id::Blue,
+            pdal::Dimension::Id::NormalX,
+            pdal::Dimension::Id::NormalY,
+            pdal::Dimension::Id::NormalZ});
+    }
+    pdal::BufferReader bufferReader;
 
-	pdal::PointViewPtr view(new pdal::PointView(table));
-	for(size_t i=0; i<cloud.size(); ++i)
-	{
-		view->setField(pdal::Dimension::Id::X, i, cloud.at(i).x);
-		view->setField(pdal::Dimension::Id::Y, i, cloud.at(i).y);
-		view->setField(pdal::Dimension::Id::Z, i, cloud.at(i).z);
-		view->setField(pdal::Dimension::Id::Red, i, cloud.at(i).r);
-		view->setField(pdal::Dimension::Id::Green, i, cloud.at(i).g);
-		view->setField(pdal::Dimension::Id::Blue, i, cloud.at(i).b);
-		view->setField(pdal::Dimension::Id::NormalX, i, cloud.at(i).normal_x);
-		view->setField(pdal::Dimension::Id::NormalY, i, cloud.at(i).normal_y);
-		view->setField(pdal::Dimension::Id::NormalZ, i, cloud.at(i).normal_z);
-		if(!cameraIds.empty())
-		{
-			view->setField(pdal::Dimension::Id::PointSourceId, i, cameraIds.at(i));
-		}
-	}
-	bufferReader.addView(view);
+    pdal::PointViewPtr view(new pdal::PointView(table));
+    for(size_t i=0; i<cloud.size(); ++i)
+    {
+        view->setField(pdal::Dimension::Id::X, i, cloud.at(i).x);
+        view->setField(pdal::Dimension::Id::Y, i, cloud.at(i).y);
+        view->setField(pdal::Dimension::Id::Z, i, cloud.at(i).z);
+        view->setField(pdal::Dimension::Id::Red, i, cloud.at(i).r);
+        view->setField(pdal::Dimension::Id::Green, i, cloud.at(i).g);
+        view->setField(pdal::Dimension::Id::Blue, i, cloud.at(i).b);
+        view->setField(pdal::Dimension::Id::NormalX, i, cloud.at(i).normal_x);
+        view->setField(pdal::Dimension::Id::NormalY, i, cloud.at(i).normal_y);
+        view->setField(pdal::Dimension::Id::NormalZ, i, cloud.at(i).normal_z);
+        if(!cameraIds.empty())
+        {
+            view->setField(pdal::Dimension::Id::PointSourceId, i, cameraIds.at(i));
+        }
+    }
+    bufferReader.addView(view);
 
-	pdal::StageFactory factory;
-	std::string ext = UFile::getExtension(filePath);
-	pdal::Stage *writer = factory.createStage("writers." + ext);
-	if(writer)
-	{
-		pdal::Options writerOps;
-		writerOps.add("filename", filePath);
-		if(ext.compare("ply")==0) writerOps.add("storage_mode", binary?"little endian":"ascii"); // PLY
-		if(ext.compare("pcd")==0) writerOps.add("compression", binary?"binary":"ascii"); // PCD
+    pdal::StageFactory factory;
+    std::string ext = UFile::getExtension(filePath);
+    pdal::Stage *writer = factory.createStage("writers." + ext);
+    if(writer)
+    {
+        pdal::Options writerOps;
+        writerOps.add("filename", filePath);
+        if(ext.compare("ply")==0) writerOps.add("storage_mode", binary?"little endian":"ascii"); // PLY
+        if(ext.compare("pcd")==0) writerOps.add("compression", binary?"binary":"ascii"); // PCD
 
-		writer->setOptions(writerOps);
-		writer->setInput(bufferReader);
+        writer->setOptions(writerOps);
+        writer->setInput(bufferReader);
 
-		writer->prepare(table);
-		writer->execute(table);
-	}
-	else
-	{
-		UERROR("PDAL: cannot find writer for extension \"%s\". Available extensions: \"%s\"",
-				UFile::getExtension(filePath).c_str(),
-				getPDALSupportedWriters().c_str());
-		return 1;
-	}
+        writer->prepare(table);
+        writer->execute(table);
+    }
+    else
+    {
+        UERROR("PDAL: cannot find writer for extension \"%s\". Available extensions: \"%s\"",
+                UFile::getExtension(filePath).c_str(),
+                getPDALSupportedWriters().c_str());
+        return 1;
+    }
 
-	return 0; //success
+    return 0; //success
 }
 
 int savePDALFile(const std::string & filePath,
-		const pcl::PointCloud<pcl::PointXYZI> & cloud,
-		const std::vector<int> & cameraIds,
-		bool binary)
+        const pcl::PointCloud<pcl::PointXYZI> & cloud,
+        const std::vector<int> & cameraIds,
+        bool binary)
 {
-	UASSERT_MSG(cameraIds.empty() || cameraIds.size() == cloud.size(),
-			uFormat("cameraIds=%d cloud=%d", (int)cameraIds.size(), (int)cloud.size()).c_str());
+    UASSERT_MSG(cameraIds.empty() || cameraIds.size() == cloud.size(),
+            uFormat("cameraIds=%d cloud=%d", (int)cameraIds.size(), (int)cloud.size()).c_str());
 
-	pdal::PointTable table;
+    pdal::PointTable table;
 
-	if(!cameraIds.empty())
-	{
-		table.layout()->registerDims({
-			pdal::Dimension::Id::X,
-			pdal::Dimension::Id::Y,
-			pdal::Dimension::Id::Z,
-			pdal::Dimension::Id::Intensity,
-			pdal::Dimension::Id::PointSourceId});
-	}
-	else
-	{
-		table.layout()->registerDims({
-			pdal::Dimension::Id::X,
-			pdal::Dimension::Id::Y,
-			pdal::Dimension::Id::Z,
-			pdal::Dimension::Id::Intensity});
-	}
-	pdal::BufferReader bufferReader;
+    if(!cameraIds.empty())
+    {
+        table.layout()->registerDims({
+            pdal::Dimension::Id::X,
+            pdal::Dimension::Id::Y,
+            pdal::Dimension::Id::Z,
+            pdal::Dimension::Id::Intensity,
+            pdal::Dimension::Id::PointSourceId});
+    }
+    else
+    {
+        table.layout()->registerDims({
+            pdal::Dimension::Id::X,
+            pdal::Dimension::Id::Y,
+            pdal::Dimension::Id::Z,
+            pdal::Dimension::Id::Intensity});
+    }
+    pdal::BufferReader bufferReader;
 
-	pdal::PointViewPtr view(new pdal::PointView(table));
-	for(size_t i=0; i<cloud.size(); ++i)
-	{
-		view->setField(pdal::Dimension::Id::X, i, cloud.at(i).x);
-		view->setField(pdal::Dimension::Id::Y, i, cloud.at(i).y);
-		view->setField(pdal::Dimension::Id::Z, i, cloud.at(i).z);
-		view->setField(pdal::Dimension::Id::Intensity, i, (unsigned short)cloud.at(i).intensity);
-		if(!cameraIds.empty())
-		{
-			view->setField(pdal::Dimension::Id::PointSourceId, i, cameraIds.at(i));
-		}
-	}
-	bufferReader.addView(view);
+    pdal::PointViewPtr view(new pdal::PointView(table));
+    for(size_t i=0; i<cloud.size(); ++i)
+    {
+        view->setField(pdal::Dimension::Id::X, i, cloud.at(i).x);
+        view->setField(pdal::Dimension::Id::Y, i, cloud.at(i).y);
+        view->setField(pdal::Dimension::Id::Z, i, cloud.at(i).z);
+        view->setField(pdal::Dimension::Id::Intensity, i, (unsigned short)cloud.at(i).intensity);
+        if(!cameraIds.empty())
+        {
+            view->setField(pdal::Dimension::Id::PointSourceId, i, cameraIds.at(i));
+        }
+    }
+    bufferReader.addView(view);
 
-	pdal::StageFactory factory;
-	std::string ext = UFile::getExtension(filePath);
-	pdal::Stage *writer = factory.createStage("writers." + ext);
-	if(writer)
-	{
-		pdal::Options writerOps;
-		writerOps.add("filename", filePath);
-		if(ext.compare("ply")==0) writerOps.add("storage_mode", binary?"little endian":"ascii"); // PLY
-		if(ext.compare("pcd")==0) writerOps.add("compression", binary?"binary":"ascii"); // PCD
+    pdal::StageFactory factory;
+    std::string ext = UFile::getExtension(filePath);
+    pdal::Stage *writer = factory.createStage("writers." + ext);
+    if(writer)
+    {
+        pdal::Options writerOps;
+        writerOps.add("filename", filePath);
+        if(ext.compare("ply")==0) writerOps.add("storage_mode", binary?"little endian":"ascii"); // PLY
+        if(ext.compare("pcd")==0) writerOps.add("compression", binary?"binary":"ascii"); // PCD
 
-		writer->setOptions(writerOps);
-		writer->setInput(bufferReader);
+        writer->setOptions(writerOps);
+        writer->setInput(bufferReader);
 
-		writer->prepare(table);
-		writer->execute(table);
-	}
-	else
-	{
-		UERROR("PDAL: cannot find writer for extension \"%s\". Available extensions: \"%s\"",
-				UFile::getExtension(filePath).c_str(),
-				getPDALSupportedWriters().c_str());
-		return 1;
-	}
+        writer->prepare(table);
+        writer->execute(table);
+    }
+    else
+    {
+        UERROR("PDAL: cannot find writer for extension \"%s\". Available extensions: \"%s\"",
+                UFile::getExtension(filePath).c_str(),
+                getPDALSupportedWriters().c_str());
+        return 1;
+    }
 
-	return 0; //success
+    return 0; //success
 }
 
 int savePDALFile(const std::string & filePath,
-		const pcl::PointCloud<pcl::PointXYZINormal> & cloud,
-		const std::vector<int> & cameraIds,
-		bool binary)
+        const pcl::PointCloud<pcl::PointXYZINormal> & cloud,
+        const std::vector<int> & cameraIds,
+        bool binary)
 {
-	UASSERT_MSG(cameraIds.empty() || cameraIds.size() == cloud.size(),
-			uFormat("cameraIds=%d cloud=%d", (int)cameraIds.size(), (int)cloud.size()).c_str());
+    UASSERT_MSG(cameraIds.empty() || cameraIds.size() == cloud.size(),
+            uFormat("cameraIds=%d cloud=%d", (int)cameraIds.size(), (int)cloud.size()).c_str());
 
-	pdal::PointTable table;
+    pdal::PointTable table;
 
-	if(!cameraIds.empty())
-	{
-		table.layout()->registerDims({
-			pdal::Dimension::Id::X,
-			pdal::Dimension::Id::Y,
-			pdal::Dimension::Id::Z,
-			pdal::Dimension::Id::Intensity,
-			pdal::Dimension::Id::NormalX,
-			pdal::Dimension::Id::NormalY,
-			pdal::Dimension::Id::NormalZ,
-			pdal::Dimension::Id::PointSourceId});
-	}
-	else
-	{
-		table.layout()->registerDims({
-			pdal::Dimension::Id::X,
-			pdal::Dimension::Id::Y,
-			pdal::Dimension::Id::Z,
-			pdal::Dimension::Id::Intensity,
-			pdal::Dimension::Id::NormalX,
-			pdal::Dimension::Id::NormalY,
-			pdal::Dimension::Id::NormalZ});
-	}
-	pdal::BufferReader bufferReader;
+    if(!cameraIds.empty())
+    {
+        table.layout()->registerDims({
+            pdal::Dimension::Id::X,
+            pdal::Dimension::Id::Y,
+            pdal::Dimension::Id::Z,
+            pdal::Dimension::Id::Intensity,
+            pdal::Dimension::Id::NormalX,
+            pdal::Dimension::Id::NormalY,
+            pdal::Dimension::Id::NormalZ,
+            pdal::Dimension::Id::PointSourceId});
+    }
+    else
+    {
+        table.layout()->registerDims({
+            pdal::Dimension::Id::X,
+            pdal::Dimension::Id::Y,
+            pdal::Dimension::Id::Z,
+            pdal::Dimension::Id::Intensity,
+            pdal::Dimension::Id::NormalX,
+            pdal::Dimension::Id::NormalY,
+            pdal::Dimension::Id::NormalZ});
+    }
+    pdal::BufferReader bufferReader;
 
-	pdal::PointViewPtr view(new pdal::PointView(table));
-	for(size_t i=0; i<cloud.size(); ++i)
-	{
-		view->setField(pdal::Dimension::Id::X, i, cloud.at(i).x);
-		view->setField(pdal::Dimension::Id::Y, i, cloud.at(i).y);
-		view->setField(pdal::Dimension::Id::Z, i, cloud.at(i).z);
-		view->setField(pdal::Dimension::Id::Intensity, i, (unsigned short)cloud.at(i).intensity);
-		view->setField(pdal::Dimension::Id::NormalX, i, cloud.at(i).normal_x);
-		view->setField(pdal::Dimension::Id::NormalY, i, cloud.at(i).normal_y);
-		view->setField(pdal::Dimension::Id::NormalZ, i, cloud.at(i).normal_z);
-		if(!cameraIds.empty())
-		{
-			view->setField(pdal::Dimension::Id::PointSourceId, i, cameraIds.at(i));
-		}
-	}
-	bufferReader.addView(view);
+    pdal::PointViewPtr view(new pdal::PointView(table));
+    for(size_t i=0; i<cloud.size(); ++i)
+    {
+        view->setField(pdal::Dimension::Id::X, i, cloud.at(i).x);
+        view->setField(pdal::Dimension::Id::Y, i, cloud.at(i).y);
+        view->setField(pdal::Dimension::Id::Z, i, cloud.at(i).z);
+        view->setField(pdal::Dimension::Id::Intensity, i, (unsigned short)cloud.at(i).intensity);
+        view->setField(pdal::Dimension::Id::NormalX, i, cloud.at(i).normal_x);
+        view->setField(pdal::Dimension::Id::NormalY, i, cloud.at(i).normal_y);
+        view->setField(pdal::Dimension::Id::NormalZ, i, cloud.at(i).normal_z);
+        if(!cameraIds.empty())
+        {
+            view->setField(pdal::Dimension::Id::PointSourceId, i, cameraIds.at(i));
+        }
+    }
+    bufferReader.addView(view);
 
-	pdal::StageFactory factory;
-	std::string ext = UFile::getExtension(filePath);
-	pdal::Stage *writer = factory.createStage("writers." + ext);
-	if(writer)
-	{
-		pdal::Options writerOps;
-		writerOps.add("filename", filePath);
-		if(ext.compare("ply")==0) writerOps.add("storage_mode", binary?"little endian":"ascii"); // PLY
-		if(ext.compare("pcd")==0) writerOps.add("compression", binary?"binary":"ascii"); // PCD
+    pdal::StageFactory factory;
+    std::string ext = UFile::getExtension(filePath);
+    pdal::Stage *writer = factory.createStage("writers." + ext);
+    if(writer)
+    {
+        pdal::Options writerOps;
+        writerOps.add("filename", filePath);
+        if(ext.compare("ply")==0) writerOps.add("storage_mode", binary?"little endian":"ascii"); // PLY
+        if(ext.compare("pcd")==0) writerOps.add("compression", binary?"binary":"ascii"); // PCD
 
-		writer->setOptions(writerOps);
-		writer->setInput(bufferReader);
+        writer->setOptions(writerOps);
+        writer->setInput(bufferReader);
 
-		writer->prepare(table);
-		writer->execute(table);
-	}
-	else
-	{
-		UERROR("PDAL: cannot find writer for extension \"%s\". Available extensions: \"%s\"",
-				UFile::getExtension(filePath).c_str(),
-				getPDALSupportedWriters().c_str());
-		return 1;
-	}
+        writer->prepare(table);
+        writer->execute(table);
+    }
+    else
+    {
+        UERROR("PDAL: cannot find writer for extension \"%s\". Available extensions: \"%s\"",
+                UFile::getExtension(filePath).c_str(),
+                getPDALSupportedWriters().c_str());
+        return 1;
+    }
 
-	return 0; //success
+    return 0; //success
 }
 
 }

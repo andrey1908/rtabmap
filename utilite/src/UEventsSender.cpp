@@ -22,10 +22,10 @@
 
 UEventsSender::~UEventsSender()
 {
-	UEventsManager::removeAllPipes(this);
+    UEventsManager::removeAllPipes(this);
 }
 
 void UEventsSender::post(UEvent * event, bool async) const
 {
-	UEventsManager::post(event, async, this);
+    UEventsManager::post(event, async, this);
 }

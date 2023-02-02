@@ -128,8 +128,8 @@ class UEvent;
 class UTILITE_EXP UEventsHandler : public UEventsSender {
 public:
 
-	void registerToEventsManager();
-	void unregisterFromEventsManager();
+    void registerToEventsManager();
+    void unregisterFromEventsManager();
     
 
 protected:

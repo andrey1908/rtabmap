@@ -26,7 +26,7 @@ class UException: public std::runtime_error {
 public:
 
   UException(const std::string & what) :
-	  std::runtime_error(what)
+      std::runtime_error(what)
   {}
 };
 

@@ -34,19 +34,19 @@
 class UEventDispatcher : public UThread
 {
 public:
-	virtual ~UEventDispatcher();
+    virtual ~UEventDispatcher();
 protected:
-	friend class UEventsManager;
-	UEventDispatcher();
+    friend class UEventsManager;
+    UEventDispatcher();
 
-	virtual void mainLoop();
-
-private:
-	virtual void killCleanup();
+    virtual void mainLoop();
 
 private:
-	UEvent * _event;
-	std::vector<UEventsHandler*> _handlers;
+    virtual void killCleanup();
+
+private:
+    UEvent * _event;
+    std::vector<UEventsHandler*> _handlers;
 };
 
 /**
@@ -110,14 +110,14 @@ public:
     static void post(UEvent * event, bool async = true, const UEventsSender * sender = 0);
 
     static void createPipe(
-		const UEventsSender * sender,
-		const UEventsHandler * receiver,
-		const std::string & eventName);
+        const UEventsSender * sender,
+        const UEventsHandler * receiver,
+        const std::string & eventName);
 
     static void removePipe(
-		const UEventsSender * sender,
-		const UEventsHandler * receiver,
-		const std::string & eventName);
+        const UEventsSender * sender,
+        const UEventsHandler * receiver,
+        const std::string & eventName);
 
     static void removeAllPipes(const UEventsSender * sender);
     static void removeNullPipes(const UEventsSender * sender);
@@ -155,15 +155,15 @@ protected:
     friend class UDestroyer<UEventsManager>;
 
     /**
-	 * The UEventsManager's main loop.
-	 */
+     * The UEventsManager's main loop.
+     */
     virtual void mainLoop();
 
 private:
 
     /**
-	 * Reimplemented to wake up UEventsManager on termination.
-	 */
+     * Reimplemented to wake up UEventsManager on termination.
+     */
     virtual void mainLoopKill();
 
     /*
@@ -173,8 +173,8 @@ private:
     virtual void dispatchEvents();
 
     /*
-	 * This method dispatches an event to all handlers.
-	 */
+     * This method dispatches an event to all handlers.
+     */
     virtual bool dispatchEvent(UEvent * event, const UEventsSender * sender);
 
     /*
@@ -208,18 +208,18 @@ private:
     void _postEvent(UEvent * event, bool async = true, const UEventsSender * sender = 0);
 
     std::list<UEventsHandler*> getPipes(
-    		const UEventsSender * sender,
-    		const std::string & eventName);
+            const UEventsSender * sender,
+            const std::string & eventName);
 
     void _createPipe(
-		const UEventsSender * sender,
-		const UEventsHandler * receiver,
-		const std::string & eventName);
+        const UEventsSender * sender,
+        const UEventsHandler * receiver,
+        const std::string & eventName);
 
     void _removePipe(
-		const UEventsSender * sender,
-		const UEventsHandler * receiver,
-		const std::string & eventName);
+        const UEventsSender * sender,
+        const UEventsHandler * receiver,
+        const std::string & eventName);
 
     void _removeAllPipes(const UEventsSender * sender);
     void _removeNullPipes(const UEventsSender * sender);
@@ -229,14 +229,14 @@ private:
     class Pipe
     {
     public:
-    	Pipe(const UEventsSender * sender, const UEventsHandler * receiver, const std::string & eventName) :
-    		sender_(sender),
-    		receiver_(receiver),
-    		eventName_(eventName)
-    	{}
-    	const UEventsSender * sender_;
-    	const UEventsHandler * receiver_;
-    	const std::string eventName_;
+        Pipe(const UEventsSender * sender, const UEventsHandler * receiver, const std::string & eventName) :
+            sender_(sender),
+            receiver_(receiver),
+            eventName_(eventName)
+        {}
+        const UEventsSender * sender_;
+        const UEventsHandler * receiver_;
+        const std::string eventName_;
     };
 
     static UEventsManager* instance_;            /* The EventsManager instance pointer. */

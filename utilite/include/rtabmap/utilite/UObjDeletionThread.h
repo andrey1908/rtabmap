@@ -31,12 +31,12 @@
 class UObjDeletedEvent : public UEvent
 {
 public:
-	UObjDeletedEvent(int objDeletionThreadId) : UEvent(objDeletionThreadId) {}
-	virtual ~UObjDeletedEvent() {}
-	/**
-	 * @return string "UObjDeletedEvent"
-	 */
-	virtual std::string getClassName() const {return std::string("UObjDeletedEvent");}
+    UObjDeletedEvent(int objDeletionThreadId) : UEvent(objDeletionThreadId) {}
+    virtual ~UObjDeletedEvent() {}
+    /**
+     * @return string "UObjDeletedEvent"
+     */
+    virtual std::string getClassName() const {return std::string("UObjDeletedEvent");}
 };
 
 /**
@@ -48,82 +48,82 @@ template<class T>
 class UObjDeletionThread : public UThread
 {
 public:
-	/**
-	 * The constructor.
-	 * @param obj the object to delete
-	 * @param id the custom id which will be sent in a event UObjDeletedEvent after the object is deleted
-	 */
-	UObjDeletionThread(T * obj, int id=0) :
-		obj_(obj),
-		id_(id),
-		waitMs_(0) {}
+    /**
+     * The constructor.
+     * @param obj the object to delete
+     * @param id the custom id which will be sent in a event UObjDeletedEvent after the object is deleted
+     */
+    UObjDeletionThread(T * obj, int id=0) :
+        obj_(obj),
+        id_(id),
+        waitMs_(0) {}
 
-	/**
-	 * The destructor. If this thread is not started but with an object set, the
-	 * object is deleted. If the thread has not finished to delete the object, the
-	 * calling thread will wait (on a UThreadNode::join()) until the object is deleted.
-	 * @param obj the object to delete
-	 * @param id the custom id which will be sent in a event UObjDeletedEvent after the object is deleted
-	 */
-	virtual ~UObjDeletionThread()
-	{
-		join(true);
-		if(obj_)
-		{
-			delete obj_;
-		}
-	}
+    /**
+     * The destructor. If this thread is not started but with an object set, the
+     * object is deleted. If the thread has not finished to delete the object, the
+     * calling thread will wait (on a UThreadNode::join()) until the object is deleted.
+     * @param obj the object to delete
+     * @param id the custom id which will be sent in a event UObjDeletedEvent after the object is deleted
+     */
+    virtual ~UObjDeletionThread()
+    {
+        join(true);
+        if(obj_)
+        {
+            delete obj_;
+        }
+    }
 
-	/**
-	 * Start the thread after optional delay.
-	 * @param waitMs the delay before deletion
-	 */
-	void startDeletion(int waitMs = 0) {waitMs_ = waitMs; this->start();}
+    /**
+     * Start the thread after optional delay.
+     * @param waitMs the delay before deletion
+     */
+    void startDeletion(int waitMs = 0) {waitMs_ = waitMs; this->start();}
 
-	/**
-	 * Get id of the deleted object.
-	 * @return the id
-	 */
-	int id() const {return id_;}
+    /**
+     * Get id of the deleted object.
+     * @return the id
+     */
+    int id() const {return id_;}
 
-	/**
-	 * Set a new object, if one was already set, the old one is deleted.
-	 * @param obj the object to delete
-	 */
-	void setObj(T * obj)
-	{
-		join();
-		if(obj_)
-		{
-			delete obj_;
-			obj_ = 0;
-		}
-		obj_ = obj;
-	}
-
-private:
-	/**
-	 * Thread main loop...
-	 */
-	virtual void mainLoop()
-	{
-		if(waitMs_)
-		{
-			uSleep(waitMs_);
-		}
-		if(obj_)
-		{
-			delete obj_;
-			obj_ = 0;
-		}
-		this->kill();
-		UEventsManager::post(new UObjDeletedEvent(id_), false);
-	}
+    /**
+     * Set a new object, if one was already set, the old one is deleted.
+     * @param obj the object to delete
+     */
+    void setObj(T * obj)
+    {
+        join();
+        if(obj_)
+        {
+            delete obj_;
+            obj_ = 0;
+        }
+        obj_ = obj;
+    }
 
 private:
-	T * obj_;
-	int id_;
-	int waitMs_;
+    /**
+     * Thread main loop...
+     */
+    virtual void mainLoop()
+    {
+        if(waitMs_)
+        {
+            uSleep(waitMs_);
+        }
+        if(obj_)
+        {
+            delete obj_;
+            obj_ = 0;
+        }
+        this->kill();
+        UEventsManager::post(new UObjDeletedEvent(id_), false);
+    }
+
+private:
+    T * obj_;
+    int id_;
+    int waitMs_;
 };
 
 #endif /* UOBJDELETIONTHREAD_H */

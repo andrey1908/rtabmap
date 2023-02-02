@@ -44,9 +44,9 @@ class UEventsHandler;
  *
  *  int main(int argc, char * argv[])
  *  {
- *  	...
- *  	UEventsManager::post(new MyEvent()); // UEventsManager take ownership of the event (deleted by UEventsManager).
- *  	...
+ *      ...
+ *      UEventsManager::post(new MyEvent()); // UEventsManager take ownership of the event (deleted by UEventsManager).
+ *      ...
  *  }
  * @endcode
  *
@@ -75,10 +75,10 @@ public:
 
 protected:
     /**
-	 * @param code the event code.
-	 * TODO : Remove the code, not required for most of all implemented events
-	 */
-	UEvent(int code = 0) : code_(code) {}
+     * @param code the event code.
+     * TODO : Remove the code, not required for most of all implemented events
+     */
+    UEvent(int code = 0) : code_(code) {}
 
 private:
     int code_; /**< The event's code. */

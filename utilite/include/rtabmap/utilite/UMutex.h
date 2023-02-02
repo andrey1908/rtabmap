@@ -56,77 +56,77 @@ class UMutex
 
 public:
 
-	/**
-	 * The constructor.
-	 */
-	UMutex()
-	{
+    /**
+     * The constructor.
+     */
+    UMutex()
+    {
 #ifdef _WIN32
-		InitializeCriticalSection(&C);
+        InitializeCriticalSection(&C);
 #else
-		pthread_mutexattr_t attr;
-		pthread_mutexattr_init(&attr);
-		pthread_mutexattr_settype(&attr,PTHREAD_MUTEX_RECURSIVE);
-		pthread_mutex_init(&M,&attr);
-		pthread_mutexattr_destroy(&attr);
+        pthread_mutexattr_t attr;
+        pthread_mutexattr_init(&attr);
+        pthread_mutexattr_settype(&attr,PTHREAD_MUTEX_RECURSIVE);
+        pthread_mutex_init(&M,&attr);
+        pthread_mutexattr_destroy(&attr);
 #endif
-	}
+    }
 
-	virtual ~UMutex()
-	{
+    virtual ~UMutex()
+    {
 #ifdef _WIN32
-		DeleteCriticalSection(&C);
+        DeleteCriticalSection(&C);
 #else
-		pthread_mutex_unlock(&M); pthread_mutex_destroy(&M);
+        pthread_mutex_unlock(&M); pthread_mutex_destroy(&M);
 #endif
-	}
+    }
 
-	/**
-	 * Lock the mutex.
-	 */
-	int lock() const
-	{
+    /**
+     * Lock the mutex.
+     */
+    int lock() const
+    {
 #ifdef _WIN32
-		EnterCriticalSection(&C); return 0;
+        EnterCriticalSection(&C); return 0;
 #else
-		return pthread_mutex_lock(&M);
+        return pthread_mutex_lock(&M);
 #endif
-	}
+    }
 
 #ifdef _WIN32
-	#if(_WIN32_WINNT >= 0x0400)
-	int lockTry() const
-	{
-		return (TryEnterCriticalSection(&C)?0:EBUSY);
-	}
-	#endif
+    #if(_WIN32_WINNT >= 0x0400)
+    int lockTry() const
+    {
+        return (TryEnterCriticalSection(&C)?0:EBUSY);
+    }
+    #endif
 #else
-	int lockTry() const
-	{
-		return pthread_mutex_trylock(&M);
-	}
+    int lockTry() const
+    {
+        return pthread_mutex_trylock(&M);
+    }
 #endif
 
-	/**
-	 * Unlock the mutex.
-	 */
-	int unlock() const
-	{
+    /**
+     * Unlock the mutex.
+     */
+    int unlock() const
+    {
 #ifdef _WIN32
-		LeaveCriticalSection(&C); return 0;
+        LeaveCriticalSection(&C); return 0;
 #else
-		return pthread_mutex_unlock(&M);
+        return pthread_mutex_unlock(&M);
 #endif
-	}
+    }
 
-	private:
+    private:
 #ifdef _WIN32
-		mutable CRITICAL_SECTION C;
+        mutable CRITICAL_SECTION C;
 #else
-		mutable pthread_mutex_t M;
+        mutable pthread_mutex_t M;
 #endif
-		void operator=(UMutex &) {}
-		UMutex( const UMutex & ) {}
+        void operator=(UMutex &) {}
+        UMutex( const UMutex & ) {}
 };
 
 /**
@@ -157,23 +157,23 @@ public:
 class UScopeMutex
 {
 public:
-	UScopeMutex(const UMutex & mutex) :
-		mutex_(mutex)
-	{
-		mutex_.lock();
-	}
-	// backward compatibility
-	UScopeMutex(UMutex * mutex) :
-		mutex_(*mutex)
-	{
-		mutex_.lock();
-	}
-	~UScopeMutex()
-	{
-		mutex_.unlock();
-	}
+    UScopeMutex(const UMutex & mutex) :
+        mutex_(mutex)
+    {
+        mutex_.lock();
+    }
+    // backward compatibility
+    UScopeMutex(UMutex * mutex) :
+        mutex_(*mutex)
+    {
+        mutex_.lock();
+    }
+    ~UScopeMutex()
+    {
+        mutex_.unlock();
+    }
 private:
-	const UMutex & mutex_;
+    const UMutex & mutex_;
 };
 
 #endif // UMUTEX_H

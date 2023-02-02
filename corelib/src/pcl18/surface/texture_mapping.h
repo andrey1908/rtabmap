@@ -172,27 +172,27 @@ namespace pcl
       }
 
       inline void
-	  setMaxDistance(float maxDistance)
+      setMaxDistance(float maxDistance)
       {
-    	  max_distance_ = maxDistance;
+          max_distance_ = maxDistance;
       }
 
       inline void
-	  setMaxDepthError(float maxDepthError)
-	  {
-    	  max_depth_error_ = maxDepthError;
-	  }
-
-      inline void
-	  setMaxAngle(float maxAngle)
-	  {
-    	  max_angle_ = maxAngle;
-	  }
-
-      inline void
-	  setMinClusterSize(int size)
+      setMaxDepthError(float maxDepthError)
       {
-    	  min_cluster_size_ = size;
+          max_depth_error_ = maxDepthError;
+      }
+
+      inline void
+      setMaxAngle(float maxAngle)
+      {
+          max_angle_ = maxAngle;
+      }
+
+      inline void
+      setMinClusterSize(int size)
+      {
+          min_cluster_size_ = size;
       }
 
       /** \brief Map texture to a mesh synthesis algorithm
@@ -366,9 +366,9 @@ namespace pcl
       bool
       textureMeshwithMultipleCameras2 (pcl::TextureMesh &mesh,
                                       const pcl::texture_mapping::CameraVector &cameras,
-									  const rtabmap::ProgressState * callback = 0,
-									  std::vector<std::map<int, pcl::PointXY> > * vertexToPixels = 0,
-									  bool distanceToCamPolicy = false);
+                                      const rtabmap::ProgressState * callback = 0,
+                                      std::vector<std::map<int, pcl::PointXY> > * vertexToPixels = 0,
+                                      bool distanceToCamPolicy = false);
 
     protected:
       /** \brief mesh scale control. */

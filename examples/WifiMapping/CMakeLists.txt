@@ -5,38 +5,38 @@ IF(DEFINED PROJECT_NAME)
 ENDIF(DEFINED PROJECT_NAME)
 
 if(internal)
-	# inside rtabmap project (see below for external build)
-	SET(RTABMap_INCLUDE_DIRS 
-	    ${PROJECT_SOURCE_DIR}/utilite/include
-		${PROJECT_SOURCE_DIR}/corelib/include
-		${PROJECT_SOURCE_DIR}/guilib/include
-	)
-	SET(RTABMap_LIBRARIES 
-	    rtabmap_core
-		rtabmap_gui
-		rtabmap_utilite
-	)  
+    # inside rtabmap project (see below for external build)
+    SET(RTABMap_INCLUDE_DIRS 
+        ${PROJECT_SOURCE_DIR}/utilite/include
+        ${PROJECT_SOURCE_DIR}/corelib/include
+        ${PROJECT_SOURCE_DIR}/guilib/include
+    )
+    SET(RTABMap_LIBRARIES 
+        rtabmap_core
+        rtabmap_gui
+        rtabmap_utilite
+    )  
 else()
-	# external build
-	PROJECT( MyProject )
-	
-	FIND_PACKAGE(RTABMap REQUIRED)
-	FIND_PACKAGE(OpenCV REQUIRED)
-	FIND_PACKAGE(PCL 1.7 REQUIRED)
-	
-	# Find Qt5 first
-	FIND_PACKAGE(Qt5 COMPONENTS Widgets Core Gui Svg QUIET)
-    	IF(NOT Qt5_FOUND)
-       		FIND_PACKAGE(Qt4 COMPONENTS QtCore QtGui QtSvg)
-    	ENDIF(NOT Qt5_FOUND)
+    # external build
+    PROJECT( MyProject )
+    
+    FIND_PACKAGE(RTABMap REQUIRED)
+    FIND_PACKAGE(OpenCV REQUIRED)
+    FIND_PACKAGE(PCL 1.7 REQUIRED)
+    
+    # Find Qt5 first
+    FIND_PACKAGE(Qt5 COMPONENTS Widgets Core Gui Svg QUIET)
+        IF(NOT Qt5_FOUND)
+               FIND_PACKAGE(Qt4 COMPONENTS QtCore QtGui QtSvg)
+        ENDIF(NOT Qt5_FOUND)
 endif()
 
 if(POLICY CMP0020)
-	cmake_policy(SET CMP0020 NEW)
+    cmake_policy(SET CMP0020 NEW)
 endif()
 
 SET(INCLUDE_DIRS
-	${RTABMap_INCLUDE_DIRS}
+    ${RTABMap_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
 )
@@ -46,26 +46,26 @@ IF(QT4_FOUND)
 ENDIF(QT4_FOUND)
 
 SET(LIBRARIES
-	${RTABMap_LIBRARIES}
-	${OpenCV_LIBRARIES}
-	${QT_LIBRARIES} 
-	${PCL_LIBRARIES}
+    ${RTABMap_LIBRARIES}
+    ${OpenCV_LIBRARIES}
+    ${QT_LIBRARIES} 
+    ${PCL_LIBRARIES}
 )
 
 # Hack as CameraRealsense2.h needs realsense2 include dir
 IF(realsense2_FOUND)
-	SET(INCLUDE_DIRS
-		${INCLUDE_DIRS}
-		${realsense2_INCLUDE_DIRS}
-	)
+    SET(INCLUDE_DIRS
+        ${INCLUDE_DIRS}
+        ${realsense2_INCLUDE_DIRS}
+    )
 ENDIF(realsense2_FOUND)
 
 # Hack as CameraK4A.h needs k4a include dir
 IF(k4a_FOUND)
-	SET(INCLUDE_DIRS
-		${INCLUDE_DIRS}
-		${k4a_INCLUDE_DIRS}
-	)
+    SET(INCLUDE_DIRS
+        ${INCLUDE_DIRS}
+        ${k4a_INCLUDE_DIRS}
+    )
 ENDIF(k4a_FOUND)
 
 INCLUDE_DIRECTORIES(${INCLUDE_DIRS})
@@ -84,14 +84,14 @@ IF(APPLE)
     FIND_LIBRARY(Foundation_LIBRARY Foundation)
     MARK_AS_ADVANCED(CoreWLAN_LIBRARY Foundation_LIBRARY)
     SET(LIBRARIES
-	    ${LIBRARIES}
-	    ${CoreWLAN_LIBRARY}
-	    ${Foundation_LIBRARY}
-	)
-	SET(srcs
-	    ${srcs}
-	    WifiOSX.mm
-	)
+        ${LIBRARIES}
+        ${CoreWLAN_LIBRARY}
+        ${Foundation_LIBRARY}
+    )
+    SET(srcs
+        ${srcs}
+        WifiOSX.mm
+    )
 ENDIF(APPLE)
 
 ADD_EXECUTABLE(wifi_mapping ${srcs} ${moc_srcs})

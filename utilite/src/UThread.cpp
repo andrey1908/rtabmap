@@ -41,107 +41,107 @@ UThread::UThread(Priority priority) :
 UThread::~UThread()
 {
 #if PRINT_DEBUG
-	ULOGGER_DEBUG("");
+    ULOGGER_DEBUG("");
 #endif
 }
 
 void UThread::kill()
 {
 #if PRINT_DEBUG
-	ULOGGER_DEBUG("");
+    ULOGGER_DEBUG("");
 #endif
     killSafelyMutex_.lock();
     {
-    	if(this->isRunning())
-    	{
-    		// Thread is creating
-    		while(state_ == kSCreating)
-			{
-				uSleep(1);
-			}
+        if(this->isRunning())
+        {
+            // Thread is creating
+            while(state_ == kSCreating)
+            {
+                uSleep(1);
+            }
 
-			if(state_ == kSRunning)
-			{
-				state_ = kSKilled;
+            if(state_ == kSRunning)
+            {
+                state_ = kSKilled;
 
-				// Call function to do something before wait
-				mainLoopKill();
-			}
-			else
-			{
-				UERROR("thread (%d) is supposed to be running...", threadId_);
-			}
-    	}
-    	else
-    	{
+                // Call function to do something before wait
+                mainLoopKill();
+            }
+            else
+            {
+                UERROR("thread (%d) is supposed to be running...", threadId_);
+            }
+        }
+        else
+        {
 #if PRINT_DEBUG
-    		UDEBUG("thread (%d) is not running...", threadId_);
+            UDEBUG("thread (%d) is not running...", threadId_);
 #endif
-    	}
+        }
     }
     killSafelyMutex_.unlock();
 }
 
 void UThread::join(bool killFirst)
 {
-	//make sure the thread is created
-	while(this->isCreating())
-	{
-		uSleep(1);
-	}
+    //make sure the thread is created
+    while(this->isCreating())
+    {
+        uSleep(1);
+    }
 
 #ifdef _WIN32
 #if PRINT_DEBUG
-	UDEBUG("Thread %d joining %d", UThreadC<void>::Self(), threadId_);
+    UDEBUG("Thread %d joining %d", UThreadC<void>::Self(), threadId_);
 #endif
-	if(UThreadC<void>::Self() == threadId_)
+    if(UThreadC<void>::Self() == threadId_)
 #else
 #if PRINT_DEBUG
-	UDEBUG("Thread %d joining %d", UThreadC<void>::Self(), handle_);
+    UDEBUG("Thread %d joining %d", UThreadC<void>::Self(), handle_);
 #endif
-	if(UThreadC<void>::Self() == handle_)
+    if(UThreadC<void>::Self() == handle_)
 #endif
-	{
-		UERROR("Thread cannot join itself");
-		return;
-	}
+    {
+        UERROR("Thread cannot join itself");
+        return;
+    }
 
-	if(killFirst)
-	{
-		this->kill();
-	}
+    if(killFirst)
+    {
+        this->kill();
+    }
 
-	runningMutex_.lock();
-	runningMutex_.unlock();
+    runningMutex_.lock();
+    runningMutex_.unlock();
 
 #if PRINT_DEBUG
-	UDEBUG("Join ended for %d", UThreadC<void>::Self());
+    UDEBUG("Join ended for %d", UThreadC<void>::Self());
 #endif
 }
 
 void UThread::start()
 {
 #if PRINT_DEBUG
-	ULOGGER_DEBUG("");
+    ULOGGER_DEBUG("");
 #endif
 
     if(state_ == kSIdle || state_ == kSKilled)
     {
-    	if(state_ == kSKilled)
-    	{
-			// make sure it is finished
-			runningMutex_.lock();
-			runningMutex_.unlock();
-    	}
+        if(state_ == kSKilled)
+        {
+            // make sure it is finished
+            runningMutex_.lock();
+            runningMutex_.unlock();
+        }
 
         state_ = kSCreating;
         int r = UThreadC<void>::Create(threadId_, &handle_, true); // Create detached
         if(r)
         {
-        	UERROR("Failed to create a thread! errno=%d", r);
-        	threadId_=0;
-        	handle_=0;
-        	state_ = kSIdle;
+            UERROR("Failed to create a thread! errno=%d", r);
+            threadId_=0;
+            handle_=0;
+            state_ = kSIdle;
         }
         else
         {
@@ -155,7 +155,7 @@ void UThread::start()
 //TODO : Support pThread
 void UThread::setPriority(Priority priority)
 {
-	priority_ = priority;
+    priority_ = priority;
 }
 
 //TODO : Support pThread
@@ -197,44 +197,44 @@ void UThread::applyPriority()
 
 void UThread::setAffinity(int cpu)
 {
-	cpuAffinity_ = cpu;
-	if(cpuAffinity_<0)
-	{
-		cpuAffinity_ = 0;
-	}
+    cpuAffinity_ = cpu;
+    if(cpuAffinity_<0)
+    {
+        cpuAffinity_ = 0;
+    }
 }
 
 //TODO : Support Windows and linux
 void UThread::applyAffinity()
 {
-	if(cpuAffinity_>0)
-	{
+    if(cpuAffinity_>0)
+    {
 #ifdef _WIN32
 #elif __APPLE__
-		thread_affinity_policy_data_t affPolicy;
-		affPolicy.affinity_tag = cpuAffinity_;
-		kern_return_t ret = thread_policy_set(
-				mach_thread_self(),
-				THREAD_AFFINITY_POLICY,
-				(integer_t*) &affPolicy,
-				THREAD_AFFINITY_POLICY_COUNT);
-		if(ret != KERN_SUCCESS)
-		{
-			UERROR("thread_policy_set returned %d", ret);
-		}
+        thread_affinity_policy_data_t affPolicy;
+        affPolicy.affinity_tag = cpuAffinity_;
+        kern_return_t ret = thread_policy_set(
+                mach_thread_self(),
+                THREAD_AFFINITY_POLICY,
+                (integer_t*) &affPolicy,
+                THREAD_AFFINITY_POLICY_COUNT);
+        if(ret != KERN_SUCCESS)
+        {
+            UERROR("thread_policy_set returned %d", ret);
+        }
 #else
-		/*unsigned long mask = cpuAffinity_;
+        /*unsigned long mask = cpuAffinity_;
 
-		if (pthread_setaffinity_np(
-			pthread_self(),
-			sizeof(mask),
-			&mask) <0)
-		{
-			UERROR("pthread_setaffinity_np failed");
-		}
-		}*/
+        if (pthread_setaffinity_np(
+            pthread_self(),
+            sizeof(mask),
+            &mask) <0)
+        {
+            UERROR("pthread_setaffinity_np failed");
+        }
+        }*/
 #endif
-	}
+    }
 }
 
 bool UThread::isCreating() const
@@ -263,31 +263,31 @@ bool UThread::isKilled() const
 
 void UThread::ThreadMain()
 {
-	runningMutex_.lock();
-	applyPriority();
-	applyAffinity();
+    runningMutex_.lock();
+    applyPriority();
+    applyAffinity();
 
 #if PRINT_DEBUG
-	ULOGGER_DEBUG("before mainLoopBegin()");
+    ULOGGER_DEBUG("before mainLoopBegin()");
 #endif
 
-	state_ = kSRunning;
+    state_ = kSRunning;
     mainLoopBegin();
 
 #if PRINT_DEBUG
-	ULOGGER_DEBUG("before mainLoop()");
+    ULOGGER_DEBUG("before mainLoop()");
 #endif
 
-	while(state_ == kSRunning)
-	{
-		mainLoop();
-	}
+    while(state_ == kSRunning)
+    {
+        mainLoop();
+    }
 
 #if PRINT_DEBUG
-	ULOGGER_DEBUG("before mainLoopEnd()");
+    ULOGGER_DEBUG("before mainLoopEnd()");
 #endif
 
-	mainLoopEnd();
+    mainLoopEnd();
 
     handle_ = 0;
     threadId_ = 0;
@@ -295,7 +295,7 @@ void UThread::ThreadMain()
 
     runningMutex_.unlock();
 #if PRINT_DEBUG
-	ULOGGER_DEBUG("Exiting thread loop");
+    ULOGGER_DEBUG("Exiting thread loop");
 #endif
 }
 

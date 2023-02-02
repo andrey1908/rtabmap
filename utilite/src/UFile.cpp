@@ -68,36 +68,36 @@ int UFile::rename(const std::string &oldFilePath,
 
 std::string UFile::getName(const std::string & filePath)
 {
-	std::string fullPath = filePath;
-	std::string name;
-	for(int i=(int)fullPath.size()-1; i>=0; --i)
-	{
-		if(fullPath[i] == '/' || fullPath[i] == '\\')
-		{
-			break;
-		}
-		else
-		{
-			name.insert(name.begin(), fullPath[i]);
-		}
-	}
-	return name;
+    std::string fullPath = filePath;
+    std::string name;
+    for(int i=(int)fullPath.size()-1; i>=0; --i)
+    {
+        if(fullPath[i] == '/' || fullPath[i] == '\\')
+        {
+            break;
+        }
+        else
+        {
+            name.insert(name.begin(), fullPath[i]);
+        }
+    }
+    return name;
 }
 
 std::string UFile::getExtension(const std::string &filePath)
 {
-	std::list<std::string> list = uSplit(filePath, '.');
-	if(list.size())
-	{
-		return list.back();
-	}
-	return "";
+    std::list<std::string> list = uSplit(filePath, '.');
+    if(list.size())
+    {
+        return list.back();
+    }
+    return "";
 }
 
 void UFile::copy(const std::string & from, const std::string & to)
 {
-	std::ifstream src(from.c_str());
-	std::ofstream dst(to.c_str());
+    std::ifstream src(from.c_str());
+    std::ofstream dst(to.c_str());
 
-	dst << src.rdbuf();
+    dst << src.rdbuf();
 }

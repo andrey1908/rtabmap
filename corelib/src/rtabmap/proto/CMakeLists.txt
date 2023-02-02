@@ -1,10 +1,10 @@
 SET(PROTO_FILES
-	Time.proto
-	Color.proto
-	Transform.proto
-	MapLimits.proto
-	LocalMap.proto
-	OccupancyGridMap.proto
+    Time.proto
+    Color.proto
+    Transform.proto
+    MapLimits.proto
+    LocalMap.proto
+    OccupancyGridMap.proto
 )
 
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_FILES})

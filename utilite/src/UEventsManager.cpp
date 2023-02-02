@@ -27,99 +27,99 @@ UDestroyer<UEventsManager> UEventsManager::destroyer_;
 
 void UEventsManager::addHandler(UEventsHandler* handler)
 {
-	if(!handler)
-	{
-		UERROR("Handler is null!");
-		return;
-	}
-	else
-	{
-		UEventsManager::getInstance()->_addHandler(handler);
-	}
+    if(!handler)
+    {
+        UERROR("Handler is null!");
+        return;
+    }
+    else
+    {
+        UEventsManager::getInstance()->_addHandler(handler);
+    }
 }
 
 void UEventsManager::removeHandler(UEventsHandler* handler)
 {
-	if(!handler)
-	{
-		UERROR("Handler is null!");
-		return;
-	}
-	else
-	{
-		UEventsManager::getInstance()->_removeHandler(handler);
-	}
+    if(!handler)
+    {
+        UERROR("Handler is null!");
+        return;
+    }
+    else
+    {
+        UEventsManager::getInstance()->_removeHandler(handler);
+    }
 }
 
 void UEventsManager::post(UEvent * event, bool async, const UEventsSender * sender)
 {
-	if(!event)
-	{
-		UERROR("Event is null!");
-		return;
-	}
-	else
-	{
-		UEventsManager::getInstance()->_postEvent(event, async, sender);
-	}
+    if(!event)
+    {
+        UERROR("Event is null!");
+        return;
+    }
+    else
+    {
+        UEventsManager::getInstance()->_postEvent(event, async, sender);
+    }
 }
 
 void UEventsManager::createPipe(
-		const UEventsSender * sender,
-		const UEventsHandler * receiver,
-		const std::string & eventName)
+        const UEventsSender * sender,
+        const UEventsHandler * receiver,
+        const std::string & eventName)
 {
-	if(!sender || !receiver)
-	{
-		UERROR("Sender and/or receiver is null!");
-		return;
-	}
-	else
-	{
-		UEventsManager::getInstance()->_createPipe(sender, receiver, eventName);
-	}
+    if(!sender || !receiver)
+    {
+        UERROR("Sender and/or receiver is null!");
+        return;
+    }
+    else
+    {
+        UEventsManager::getInstance()->_createPipe(sender, receiver, eventName);
+    }
 }
 
 void UEventsManager::removePipe(
-		const UEventsSender * sender,
-		const UEventsHandler * receiver,
-		const std::string & eventName)
+        const UEventsSender * sender,
+        const UEventsHandler * receiver,
+        const std::string & eventName)
 {
-	if(!sender || !receiver)
-	{
-		UERROR("Sender and/or receiver is null!");
-		return;
-	}
-	else
-	{
-		UEventsManager::getInstance()->_removePipe(sender, receiver, eventName);
-	}
+    if(!sender || !receiver)
+    {
+        UERROR("Sender and/or receiver is null!");
+        return;
+    }
+    else
+    {
+        UEventsManager::getInstance()->_removePipe(sender, receiver, eventName);
+    }
 }
 
 void UEventsManager::removeAllPipes(const UEventsSender * sender)
 {
-	if(!sender)
-	{
-		UERROR("Sender is null!");
-		return;
-	}
-	else
-	{
-		UEventsManager::getInstance()->_removeAllPipes(sender);
-	}
+    if(!sender)
+    {
+        UERROR("Sender is null!");
+        return;
+    }
+    else
+    {
+        UEventsManager::getInstance()->_removeAllPipes(sender);
+    }
 }
 
 void UEventsManager::removeNullPipes(const UEventsSender * sender)
 {
-	if(!sender)
-	{
-		UERROR("Sender is null!");
-		return;
-	}
-	else
-	{
-		UEventsManager::getInstance()->_removeNullPipes(sender);
-	}
+    if(!sender)
+    {
+        UERROR("Sender is null!");
+        return;
+    }
+    else
+    {
+        UEventsManager::getInstance()->_removeNullPipes(sender);
+    }
 }
 
 UEventsManager* UEventsManager::getInstance()
@@ -139,7 +139,7 @@ UEventsManager::UEventsManager()
 
 UEventsManager::~UEventsManager()
 {
-   	join(true);
+       join(true);
 
     // Free memory
     for(std::list<std::pair<UEvent*, const UEventsSender*> >::iterator it=events_.begin(); it!=events_.end(); ++it)
@@ -158,7 +158,7 @@ void UEventsManager::mainLoop()
     postEventSem_.acquire();
     if(!this->isKilled())
     {
-		dispatchEvents();
+        dispatchEvents();
     }
 }
 
@@ -187,59 +187,59 @@ void UEventsManager::dispatchEvents()
     }
     eventsMutex_.unlock();
 
-	// Past events to handlers
-	for(it=eventsBuf.begin(); it!=eventsBuf.end(); ++it)
-	{
-		if(!dispatchEvent(it->first, it->second))
-		{
-			delete it->first;
-		}
-	}
+    // Past events to handlers
+    for(it=eventsBuf.begin(); it!=eventsBuf.end(); ++it)
+    {
+        if(!dispatchEvent(it->first, it->second))
+        {
+            delete it->first;
+        }
+    }
     eventsBuf.clear();
 }
 
 bool UEventsManager::dispatchEvent(UEvent * event, const UEventsSender * sender)
 {
-	std::list<UEventsHandler*> handlers;
+    std::list<UEventsHandler*> handlers;
 
-	// Verify if there are pipes with the sender for his type of event
-	if(sender)
-	{
-		handlers = getPipes(sender, event->getClassName());
-	}
+    // Verify if there are pipes with the sender for his type of event
+    if(sender)
+    {
+        handlers = getPipes(sender, event->getClassName());
+    }
 
-	handlersMutex_.lock();
-	if(handlers.size() == 0)
-	{
-		//No pipes, send to all handlers
-		handlers = handlers_;
-	}
+    handlersMutex_.lock();
+    if(handlers.size() == 0)
+    {
+        //No pipes, send to all handlers
+        handlers = handlers_;
+    }
 
-	bool handled = false;
+    bool handled = false;
 
-	for(std::list<UEventsHandler*>::iterator it=handlers.begin(); it!=handlers.end() && !handled; ++it)
-	{
-		// Check if the handler is still in the
-		// handlers_ list (may be changed if addHandler() or
-		// removeHandler() is called in EventsHandler::handleEvent())
-		if(std::find(handlers_.begin(), handlers_.end(), *it) != handlers_.end())
-		{
-			UEventsHandler * handler = *it;
-			handlersMutex_.unlock();
+    for(std::list<UEventsHandler*>::iterator it=handlers.begin(); it!=handlers.end() && !handled; ++it)
+    {
+        // Check if the handler is still in the
+        // handlers_ list (may be changed if addHandler() or
+        // removeHandler() is called in EventsHandler::handleEvent())
+        if(std::find(handlers_.begin(), handlers_.end(), *it) != handlers_.end())
+        {
+            UEventsHandler * handler = *it;
+            handlersMutex_.unlock();
 
-			// Don't process event if the handler is the same as the sender
-			if(handler != sender)
-			{
-				// To be able to add/remove an handler in a handleEvent call (without a deadlock)
-				// @see _addHandler(), _removeHandler()
-				handled = handler->handleEvent(event);
-			}
+            // Don't process event if the handler is the same as the sender
+            if(handler != sender)
+            {
+                // To be able to add/remove an handler in a handleEvent call (without a deadlock)
+                // @see _addHandler(), _removeHandler()
+                handled = handler->handleEvent(event);
+            }
 
-			handlersMutex_.lock();
-		}
-	}
-	handlersMutex_.unlock();
-	return handled;
+            handlersMutex_.lock();
+        }
+    }
+    handlersMutex_.unlock();
+    return handled;
 }
 
 void UEventsManager::_addHandler(UEventsHandler* handler)
@@ -248,19 +248,19 @@ void UEventsManager::_addHandler(UEventsHandler* handler)
     {
         handlersMutex_.lock();
         {
-        	//make sure it is not already in the list
-        	bool handlerFound = false;
-        	for(std::list<UEventsHandler*>::iterator it=handlers_.begin(); it!=handlers_.end(); ++it)
-        	{
-        		if(*it == handler)
-        		{
-        			handlerFound = true;
-        		}
-        	}
-        	if(!handlerFound)
-        	{
-        		handlers_.push_back(handler);
-        	}
+            //make sure it is not already in the list
+            bool handlerFound = false;
+            for(std::list<UEventsHandler*>::iterator it=handlers_.begin(); it!=handlers_.end(); ++it)
+            {
+                if(*it == handler)
+                {
+                    handlerFound = true;
+                }
+            }
+            if(!handlerFound)
+            {
+                handlers_.push_back(handler);
+            }
         }
         handlersMutex_.unlock();
     }
@@ -285,13 +285,13 @@ void UEventsManager::_removeHandler(UEventsHandler* handler)
 
         pipesMutex_.lock();
         {
-        	for(std::list<Pipe>::iterator iter=pipes_.begin(); iter!= pipes_.end(); ++iter)
-			{
-				if(iter->receiver_ == handler)
-				{
-					iter->receiver_ = 0; // set to null
-				}
-			}
+            for(std::list<Pipe>::iterator iter=pipes_.begin(); iter!= pipes_.end(); ++iter)
+            {
+                if(iter->receiver_ == handler)
+                {
+                    iter->receiver_ = 0; // set to null
+                }
+            }
         }
         pipesMutex_.unlock();
     }
@@ -301,176 +301,176 @@ void UEventsManager::_postEvent(UEvent * event, bool async, const UEventsSender 
 {
     if(!this->isKilled())
     {
-    	if(async)
-    	{
-			eventsMutex_.lock();
-			{
-				events_.push_back(std::make_pair(event, sender));
-			}
-			eventsMutex_.unlock();
+        if(async)
+        {
+            eventsMutex_.lock();
+            {
+                events_.push_back(std::make_pair(event, sender));
+            }
+            eventsMutex_.unlock();
 
-			// Signal the EventsManager that an Event is added
-			postEventSem_.release();
-    	}
-    	else
-    	{
-    		if(!dispatchEvent(event, sender))
-    		{
-    			delete event;
-    		}
-    	}
+            // Signal the EventsManager that an Event is added
+            postEventSem_.release();
+        }
+        else
+        {
+            if(!dispatchEvent(event, sender))
+            {
+                delete event;
+            }
+        }
     }
     else
     {
-    	delete event;
+        delete event;
     }
 }
 
 std::list<UEventsHandler*> UEventsManager::getPipes(
-		const UEventsSender * sender,
-		const std::string & eventName)
+        const UEventsSender * sender,
+        const std::string & eventName)
 {
-	std::list<UEventsHandler*> pipes;
-	pipesMutex_.lock();
+    std::list<UEventsHandler*> pipes;
+    pipesMutex_.lock();
 
-	for(std::list<Pipe>::iterator iter=pipes_.begin(); iter!= pipes_.end(); ++iter)
-	{
-		if(iter->sender_ == sender && iter->eventName_.compare(eventName) == 0)
-		{
-			bool added = false;
-			if(iter->receiver_)
-			{
-				handlersMutex_.lock();
-				for(std::list<UEventsHandler*>::iterator jter=handlers_.begin(); jter!=handlers_.end(); ++jter)
-				{
-					if(*jter == iter->receiver_)
-					{
-						pipes.push_back(*jter);
-						added = true;
-						break;
-					}
-				}
-				handlersMutex_.unlock();
-			}
-			if(!added)
-			{
-				// Add nulls
-				pipes.push_back(0);
-			}
-		}
-	}
+    for(std::list<Pipe>::iterator iter=pipes_.begin(); iter!= pipes_.end(); ++iter)
+    {
+        if(iter->sender_ == sender && iter->eventName_.compare(eventName) == 0)
+        {
+            bool added = false;
+            if(iter->receiver_)
+            {
+                handlersMutex_.lock();
+                for(std::list<UEventsHandler*>::iterator jter=handlers_.begin(); jter!=handlers_.end(); ++jter)
+                {
+                    if(*jter == iter->receiver_)
+                    {
+                        pipes.push_back(*jter);
+                        added = true;
+                        break;
+                    }
+                }
+                handlersMutex_.unlock();
+            }
+            if(!added)
+            {
+                // Add nulls
+                pipes.push_back(0);
+            }
+        }
+    }
 
-	pipesMutex_.unlock();
-	return pipes;
+    pipesMutex_.unlock();
+    return pipes;
 }
 
 void UEventsManager::_createPipe(
-		const UEventsSender * sender,
-		const UEventsHandler * receiver,
-		const std::string & eventName)
+        const UEventsSender * sender,
+        const UEventsHandler * receiver,
+        const std::string & eventName)
 {
-	pipesMutex_.lock();
-	bool exist = false;
-	for(std::list<Pipe>::iterator iter=pipes_.begin(); iter!= pipes_.end();++iter)
-	{
-		if(iter->sender_ == sender && iter->receiver_ == receiver && iter->eventName_.compare(eventName) == 0)
-		{
-			exist = true;
-			break;
-		}
-	}
+    pipesMutex_.lock();
+    bool exist = false;
+    for(std::list<Pipe>::iterator iter=pipes_.begin(); iter!= pipes_.end();++iter)
+    {
+        if(iter->sender_ == sender && iter->receiver_ == receiver && iter->eventName_.compare(eventName) == 0)
+        {
+            exist = true;
+            break;
+        }
+    }
 
-	if(!exist)
-	{
-		bool handlerFound = false;
-		handlersMutex_.lock();
-		for(std::list<UEventsHandler*>::iterator iter=handlers_.begin(); iter!=handlers_.end(); ++iter)
-		{
-			if(*iter == receiver)
-			{
-				handlerFound = true;
-				break;
-			}
-		}
-		handlersMutex_.unlock();
-		if(handlerFound)
-		{
-			pipes_.push_back(Pipe(sender, receiver, eventName));
-		}
-		else
-		{
-			UERROR("Cannot create the pipe because the receiver is not yet "
-				   "added to UEventsManager's handlers list.");
-		}
-	}
-	else
-	{
-		UWARN("Pipe between sender %p and receiver %p with event %s was already created.",
-				sender, receiver, eventName.c_str());
-	}
-	pipesMutex_.unlock();
+    if(!exist)
+    {
+        bool handlerFound = false;
+        handlersMutex_.lock();
+        for(std::list<UEventsHandler*>::iterator iter=handlers_.begin(); iter!=handlers_.end(); ++iter)
+        {
+            if(*iter == receiver)
+            {
+                handlerFound = true;
+                break;
+            }
+        }
+        handlersMutex_.unlock();
+        if(handlerFound)
+        {
+            pipes_.push_back(Pipe(sender, receiver, eventName));
+        }
+        else
+        {
+            UERROR("Cannot create the pipe because the receiver is not yet "
+                   "added to UEventsManager's handlers list.");
+        }
+    }
+    else
+    {
+        UWARN("Pipe between sender %p and receiver %p with event %s was already created.",
+                sender, receiver, eventName.c_str());
+    }
+    pipesMutex_.unlock();
 }
 
 void UEventsManager::_removePipe(
-		const UEventsSender * sender,
-		const UEventsHandler * receiver,
-		const std::string & eventName)
+        const UEventsSender * sender,
+        const UEventsHandler * receiver,
+        const std::string & eventName)
 {
-	pipesMutex_.lock();
+    pipesMutex_.lock();
 
-	bool removed = false;
-	for(std::list<Pipe>::iterator iter=pipes_.begin(); iter!= pipes_.end();)
-	{
-		if(iter->sender_ == sender && iter->receiver_ == receiver && iter->eventName_.compare(eventName) == 0)
-		{
-			iter = pipes_.erase(iter);
-			removed = true;
-		}
-		else
-		{
-			++iter;
-		}
-	}
+    bool removed = false;
+    for(std::list<Pipe>::iterator iter=pipes_.begin(); iter!= pipes_.end();)
+    {
+        if(iter->sender_ == sender && iter->receiver_ == receiver && iter->eventName_.compare(eventName) == 0)
+        {
+            iter = pipes_.erase(iter);
+            removed = true;
+        }
+        else
+        {
+            ++iter;
+        }
+    }
 
-	if(!removed)
-	{
-		UWARN("Pipe between sender %p and receiver %p with event %s didn't exist.",
-				sender, receiver, eventName.c_str());
-	}
+    if(!removed)
+    {
+        UWARN("Pipe between sender %p and receiver %p with event %s didn't exist.",
+                sender, receiver, eventName.c_str());
+    }
 
-	pipesMutex_.unlock();
+    pipesMutex_.unlock();
 }
 
 void UEventsManager::_removeAllPipes(const UEventsSender * sender)
 {
-	pipesMutex_.lock();
-	for(std::list<Pipe>::iterator iter=pipes_.begin(); iter!=pipes_.end();)
-	{
-		if(iter->sender_ == sender)
-		{
-			iter = pipes_.erase(iter);
-		}
-		else
-		{
-			++iter;
-		}
-	}
-	pipesMutex_.unlock();
+    pipesMutex_.lock();
+    for(std::list<Pipe>::iterator iter=pipes_.begin(); iter!=pipes_.end();)
+    {
+        if(iter->sender_ == sender)
+        {
+            iter = pipes_.erase(iter);
+        }
+        else
+        {
+            ++iter;
+        }
+    }
+    pipesMutex_.unlock();
 }
 
 void UEventsManager::_removeNullPipes(const UEventsSender * sender)
 {
-	pipesMutex_.lock();
-	for(std::list<Pipe>::iterator iter=pipes_.begin(); iter!=pipes_.end();)
-	{
-		if(iter->receiver_ == 0)
-		{
-			iter = pipes_.erase(iter);
-		}
-		else
-		{
-			++iter;
-		}
-	}
-	pipesMutex_.unlock();
+    pipesMutex_.lock();
+    for(std::list<Pipe>::iterator iter=pipes_.begin(); iter!=pipes_.end();)
+    {
+        if(iter->receiver_ == 0)
+        {
+            iter = pipes_.erase(iter);
+        }
+        else
+        {
+            ++iter;
+        }
+    }
+    pipesMutex_.unlock();
 }

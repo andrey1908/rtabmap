@@ -37,162 +37,162 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 void showUsage()
 {
-	printf("\nUsage:\n"
-			"rtabmap-camera [option] \n"
-			" Options:\n"
-			"    --device #            USB camera device id (default 0).\n"
-			"    --rate #              Frame rate (default 0 Hz). 0 means as fast as possible.\n"
-			"    --path ""             Path to a directory of images or a video file.\n"
-			"    --calibration ""      Calibration file (*.yaml).\n\n");
-	exit(1);
+    printf("\nUsage:\n"
+            "rtabmap-camera [option] \n"
+            " Options:\n"
+            "    --device #            USB camera device id (default 0).\n"
+            "    --rate #              Frame rate (default 0 Hz). 0 means as fast as possible.\n"
+            "    --path ""             Path to a directory of images or a video file.\n"
+            "    --calibration ""      Calibration file (*.yaml).\n\n");
+    exit(1);
 }
 
 int main(int argc, char * argv[])
 {
-	ULogger::setType(ULogger::kTypeConsole);
-	ULogger::setLevel(ULogger::kInfo);
+    ULogger::setType(ULogger::kTypeConsole);
+    ULogger::setLevel(ULogger::kInfo);
 
-	int device = 0;
-	std::string path;
-	float rate = 0.0f;
-	std::string calibrationFile;
-	for(int i=1; i<argc; ++i)
-	{
-		if(strcmp(argv[i], "--rate") == 0)
-		{
-			++i;
-			if(i < argc)
-			{
-				rate = uStr2Float(argv[i]);
-				if(rate < 0)
-				{
-					showUsage();
-				}
-			}
-			else
-			{
-				showUsage();
-			}
-			continue;
-		}
-		if(strcmp(argv[i], "--device") == 0)
-		{
-			++i;
-			if(i < argc)
-			{
-				device = std::atoi(argv[i]);
-				if(device < 0)
-				{
-					showUsage();
-				}
-			}
-			else
-			{
-				showUsage();
-			}
-			continue;
-		}
-		if(strcmp(argv[i], "--path") == 0)
-		{
-			++i;
-			if(i < argc)
-			{
-				path = argv[i];
-			}
-			else
-			{
-				showUsage();
-			}
-			continue;
-		}
-		if(strcmp(argv[i], "--calibration") == 0)
-		{
-			++i;
-			if(i < argc)
-			{
-				calibrationFile = argv[i];
-			}
-			else
-			{
-				showUsage();
-			}
-			continue;
-		}
+    int device = 0;
+    std::string path;
+    float rate = 0.0f;
+    std::string calibrationFile;
+    for(int i=1; i<argc; ++i)
+    {
+        if(strcmp(argv[i], "--rate") == 0)
+        {
+            ++i;
+            if(i < argc)
+            {
+                rate = uStr2Float(argv[i]);
+                if(rate < 0)
+                {
+                    showUsage();
+                }
+            }
+            else
+            {
+                showUsage();
+            }
+            continue;
+        }
+        if(strcmp(argv[i], "--device") == 0)
+        {
+            ++i;
+            if(i < argc)
+            {
+                device = std::atoi(argv[i]);
+                if(device < 0)
+                {
+                    showUsage();
+                }
+            }
+            else
+            {
+                showUsage();
+            }
+            continue;
+        }
+        if(strcmp(argv[i], "--path") == 0)
+        {
+            ++i;
+            if(i < argc)
+            {
+                path = argv[i];
+            }
+            else
+            {
+                showUsage();
+            }
+            continue;
+        }
+        if(strcmp(argv[i], "--calibration") == 0)
+        {
+            ++i;
+            if(i < argc)
+            {
+                calibrationFile = argv[i];
+            }
+            else
+            {
+                showUsage();
+            }
+            continue;
+        }
 
-		printf("Unrecognized option : %s\n", argv[i]);
-		showUsage();
-	}
+        printf("Unrecognized option : %s\n", argv[i]);
+        showUsage();
+    }
 
-	if(path.empty())
-	{
-		UINFO("Using device %d", device);
-	}
-	else
-	{
-		UINFO("Using path %s", path.c_str());
-	}
+    if(path.empty())
+    {
+        UINFO("Using device %d", device);
+    }
+    else
+    {
+        UINFO("Using path %s", path.c_str());
+    }
 
-	rtabmap::Camera * camera = 0;
+    rtabmap::Camera * camera = 0;
 
-	if(!path.empty())
-	{
-		if(UFile::exists(path))
-		{
-			if(UFile::getExtension(path).compare("db") == 0)
-			{
-				camera = new rtabmap::DBReader(path, rate);
-			}
-			else
-			{
-				camera = new rtabmap::CameraVideo(path, false, rate);
-			}
-		}
-		else if(UDirectory::exists(path))
-		{
-			camera = new rtabmap::CameraImages(path, rate);
-		}
-		else
-		{
-			UERROR("Path not valid! \"%s\"", path.c_str());
-			return -1;
-		}
-	}
-	else
-	{
-		camera = new rtabmap::CameraVideo(device, false, rate);
-	}
+    if(!path.empty())
+    {
+        if(UFile::exists(path))
+        {
+            if(UFile::getExtension(path).compare("db") == 0)
+            {
+                camera = new rtabmap::DBReader(path, rate);
+            }
+            else
+            {
+                camera = new rtabmap::CameraVideo(path, false, rate);
+            }
+        }
+        else if(UDirectory::exists(path))
+        {
+            camera = new rtabmap::CameraImages(path, rate);
+        }
+        else
+        {
+            UERROR("Path not valid! \"%s\"", path.c_str());
+            return -1;
+        }
+    }
+    else
+    {
+        camera = new rtabmap::CameraVideo(device, false, rate);
+    }
 
-	if(camera)
-	{
-		if(!calibrationFile.empty())
-		{
-			UINFO("Set calibration: %s", calibrationFile.c_str());
-		}
-		if(!camera->init(UDirectory::getDir(calibrationFile), UFile::getName(calibrationFile)))
-		{
-			delete camera;
-			UERROR("Cannot initialize the camera.");
-			return -1;
-		}
-	}
+    if(camera)
+    {
+        if(!calibrationFile.empty())
+        {
+            UINFO("Set calibration: %s", calibrationFile.c_str());
+        }
+        if(!camera->init(UDirectory::getDir(calibrationFile), UFile::getName(calibrationFile)))
+        {
+            delete camera;
+            UERROR("Cannot initialize the camera.");
+            return -1;
+        }
+    }
 
-	cv::Mat rgb;
-	rgb = camera->takeImage().image();
-	cv::namedWindow("Video", CV_WINDOW_AUTOSIZE); // create window
-	while(!rgb.empty())
-	{
-		cv::imshow("Video", rgb); // show frame
+    cv::Mat rgb;
+    rgb = camera->takeImage().image();
+    cv::namedWindow("Video", CV_WINDOW_AUTOSIZE); // create window
+    while(!rgb.empty())
+    {
+        cv::imshow("Video", rgb); // show frame
 
-		int c = cv::waitKey(10); // wait 10 ms or for key stroke
-		if(c == 27)
-			break; // if ESC, break and quit
+        int c = cv::waitKey(10); // wait 10 ms or for key stroke
+        if(c == 27)
+            break; // if ESC, break and quit
 
-		rgb = camera->takeImage().image();
-	}
-	cv::destroyWindow("Video");
-	if(camera)
-	{
-		delete camera;
-	}
-	return 0;
+        rgb = camera->takeImage().image();
+    }
+    cv::destroyWindow("Video");
+    if(camera)
+    {
+        delete camera;
+    }
+    return 0;
 }

@@ -37,10 +37,10 @@ UTimer::~UTimer() {}
 double UTimer::now()
 {
 #if defined(_WIN32_WINNT) && (_WIN32_WINNT >= _WIN32_WINNT_WIN8)
-	FILETIME ft;
-	GetSystemTimePreciseAsFileTime(&ft);
-	__int64* val = (__int64*)&ft;
-	return static_cast<double>(*val) / 10000000.0 - 11644473600.0; // The Windows epoch is Jan 1 1601, the Unix epoch Jan 1 1970.
+    FILETIME ft;
+    GetSystemTimePreciseAsFileTime(&ft);
+    __int64* val = (__int64*)&ft;
+    return static_cast<double>(*val) / 10000000.0 - 11644473600.0; // The Windows epoch is Jan 1 1601, the Unix epoch Jan 1 1970.
 #else
     LARGE_INTEGER count, freq;
     QueryPerformanceFrequency(&freq);
@@ -61,20 +61,20 @@ void UTimer::stop()
 }
 double UTimer::getElapsedTime()
 {
-	LARGE_INTEGER now;
-	QueryPerformanceCounter(&now);
+    LARGE_INTEGER now;
+    QueryPerformanceCounter(&now);
     return double(now.QuadPart - startTimeRecorded_.QuadPart) / frequency_.QuadPart;
 }
 double UTimer::getInterval()
 {
-	if(stopTimeRecorded_.QuadPart == startTimeRecorded_.QuadPart)
-	{
-		return getElapsedTime();
-	}
-	else
-	{
-		return double(stopTimeRecorded_.QuadPart - startTimeRecorded_.QuadPart) / frequency_.QuadPart;
-	}
+    if(stopTimeRecorded_.QuadPart == startTimeRecorded_.QuadPart)
+    {
+        return getElapsedTime();
+    }
+    else
+    {
+        return double(stopTimeRecorded_.QuadPart - startTimeRecorded_.QuadPart) / frequency_.QuadPart;
+    }
 }
 #else
 double UTimer::now()
@@ -96,21 +96,21 @@ void UTimer::stop()
 }
 double UTimer::getElapsedTime()
 {
-	return UTimer::now() - (double(startTimeRecorded_.tv_sec) + double(startTimeRecorded_.tv_usec) / 1000000.0);
+    return UTimer::now() - (double(startTimeRecorded_.tv_sec) + double(startTimeRecorded_.tv_usec) / 1000000.0);
 
 }
 double UTimer::getInterval()
 {
-	if(startTimeRecorded_.tv_sec == stopTimeRecorded_.tv_sec && startTimeRecorded_.tv_usec == stopTimeRecorded_.tv_usec)
-	{
-		return getElapsedTime();
-	}
-	else
-	{
-		double start = double(startTimeRecorded_.tv_sec) + double(startTimeRecorded_.tv_usec) / 1000000.0;
-		double stop = double(stopTimeRecorded_.tv_sec) + double(stopTimeRecorded_.tv_usec) / 1000000.0;
-		return stop - start;
-	}
+    if(startTimeRecorded_.tv_sec == stopTimeRecorded_.tv_sec && startTimeRecorded_.tv_usec == stopTimeRecorded_.tv_usec)
+    {
+        return getElapsedTime();
+    }
+    else
+    {
+        double start = double(startTimeRecorded_.tv_sec) + double(startTimeRecorded_.tv_usec) / 1000000.0;
+        double stop = double(stopTimeRecorded_.tv_sec) + double(stopTimeRecorded_.tv_usec) / 1000000.0;
+        return stop - start;
+    }
 }
 #endif
 

@@ -28,14 +28,14 @@
  */
 class UTILITE_EXP UProcessInfo {
 public:
-	UProcessInfo();
-	virtual ~UProcessInfo();
+    UProcessInfo();
+    virtual ~UProcessInfo();
 
-	/**
-	 * Get the memory used by the current process.
-	 * @return the number of bytes used by the current process.
-	 */
-	static long int getMemoryUsage();
+    /**
+     * Get the memory used by the current process.
+     * @return the number of bytes used by the current process.
+     */
+    static long int getMemoryUsage();
 };
 
 #endif /* UPROCESSINFO_H */

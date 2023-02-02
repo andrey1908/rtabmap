@@ -34,10 +34,10 @@ template <class T>
 class UDestroyer
 {
 public:
-	/**
-	 * The constructor. Set the doomed object (take ownership of the object). The object is deleted
-	 * when this object is deleted.
-	 */
+    /**
+     * The constructor. Set the doomed object (take ownership of the object). The object is deleted
+     * when this object is deleted.
+     */
     UDestroyer(T* doomed = 0)  : doomed_(doomed) {}
     
     ~UDestroyer()
@@ -50,19 +50,19 @@ public:
     }
 
     /**
-	 * Set the doomed object. If a doomed object is already set, the function returns false.
-	 * @param doomed the doomed object
-	 * @return false if an object is already set and the new object is not null, otherwise true
-	 */
+     * Set the doomed object. If a doomed object is already set, the function returns false.
+     * @param doomed the doomed object
+     * @return false if an object is already set and the new object is not null, otherwise true
+     */
     bool setDoomed(T* doomed)
-	{
-    	if(doomed_ && doomed)
-    	{
-    		return false;
-    	}
-		doomed_ = doomed;
-		return true;
-	}
+    {
+        if(doomed_ && doomed)
+        {
+            return false;
+        }
+        doomed_ = doomed;
+        return true;
+    }
 
 private:
     // Prevent users from making copies of a 
