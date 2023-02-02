@@ -102,12 +102,12 @@ void LocalMap::fromColoredGrid(const ColoredGrid& coloredGrid,
             y = emptyCell.first;
 			x = emptyCell.second;
         }
-        float xf = (x + minX + 0.5f) * cellSize;
-        float yf = (y + minY + 0.5f) * cellSize;
         const Color& color =
             reinterpret_cast<const Color&>(coloredGrid.colors.at<int>(y, x));
 		if (!duplicatePoints)
 		{
+			float xf = (x + minX + 0.5f) * cellSize;
+			float yf = (y + minY + 0.5f) * cellSize;
 			points_(0, i) = xf;
 			points_(1, i) = yf;
 			points_(2, i) = 0.0f;
@@ -115,12 +115,16 @@ void LocalMap::fromColoredGrid(const ColoredGrid& coloredGrid,
 		}
 		else
 		{
-			points_(0, i * 2) = xf;
-			points_(1, i * 2) = yf;
+			float xf1 = (x + minX + 0.25f) * cellSize;
+			float yf1 = (y + minY + 0.25f) * cellSize;
+			float xf2 = (x + minX + 0.75f) * cellSize;
+			float yf2 = (y + minY + 0.75f) * cellSize;
+			points_(0, i * 2) = xf1;
+			points_(1, i * 2) = yf1;
 			points_(2, i * 2) = 0.0f;
 			colors_.push_back(color);
-			points_(0, i * 2 + 1) = xf + cellSize * 0.5f;
-			points_(1, i * 2 + 1) = yf + cellSize * 0.5f;
+			points_(0, i * 2 + 1) = xf2;
+			points_(1, i * 2 + 1) = yf2;
 			points_(2, i * 2 + 1) = 0.0f;
 			colors_.push_back(color);
 		}
