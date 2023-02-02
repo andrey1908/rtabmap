@@ -44,28 +44,32 @@ void OccupancyGridBuilder::parseParameters(const Parameters& parameters)
     for (int value = 0; value <= splitNum_ + 1; value++)
     {
         float prob = valueToProbability(value);
-        if (value == 1 || value == splitNum_ + 1)
+        float missUpdatedLogit, hitUpdatedLogit;
+        if (value == 1)
         {
-            // prob = 0.0 or prob = 1.0
-            missUpdates_.push_back(value);
-            hitUpdates_.push_back(value);
+            // prob = 0.0
+            missUpdatedLogit = minClampingLogit;
+            hitUpdatedLogit = minClampingLogit;
+        }
+        else if (value == splitNum_ + 1)
+        {
+            // prob = 1.0
+            missUpdatedLogit = maxClampingLogit;
+            hitUpdatedLogit = maxClampingLogit;
         }
         else
         {
             float logit = logodds(prob);
-            float missUpdate = logit + missLogit;
-            if (missUpdate < minClampingLogit)
-            {
-                missUpdate = minClampingLogit;
-            }
-            float hitUpdate = logit + hitLogit;
-            if (hitUpdate > maxClampingLogit)
-            {
-                hitUpdate = maxClampingLogit;
-            }
-            missUpdates_.push_back(probabilityToVlaue(probability(missUpdate)));
-            hitUpdates_.push_back(probabilityToVlaue(probability(hitUpdate)));
+            missUpdatedLogit = logit + missLogit;
+            hitUpdatedLogit = logit + hitLogit;
+            missUpdatedLogit =
+                std::clamp(missUpdatedLogit, minClampingLogit, maxClampingLogit);
+            hitUpdatedLogit =
+                std::clamp(hitUpdatedLogit, minClampingLogit, maxClampingLogit);
         }
+        missUpdates_.push_back(probabilityToVlaue(probability(missUpdatedLogit)));
+        hitUpdates_.push_back(probabilityToVlaue(probability(hitUpdatedLogit)));
+
         if (value == 0)
         {
             // unknown
