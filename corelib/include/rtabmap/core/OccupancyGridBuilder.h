@@ -117,18 +117,17 @@ public:
 private:
     void precomputeUpdateValues();
 
-    void cacheCurrentMap();
-    bool checkIfCachedMapCanBeUsed(const std::map<int, Transform>& newPoses);
+    void updateCachedMap();
+    bool cachedMapCanBeUsed(const std::map<int, Transform>& newPoses);
     void useCachedMap();
-    int tryToUseCachedMap(const std::map<int, Transform>& newPoses);
+    bool tryToUseCachedMap(const std::map<int, Transform>& newPoses);
 
-    TransformedLocalMap transformLocalMap(const LocalMap& localMap,
-        const Transform& transform);
     void createOrResizeMap(const MapLimitsI& newMapLimits);
     void deployLocalMap(int nodeId);
     void deployLocalMap(const Node& node);
 
     void clear();
+    void clearCachedMap();
 
     float valueToProbability(int value)
     {

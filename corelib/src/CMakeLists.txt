@@ -25,6 +25,7 @@ SET(SRC_FILES
     MapLimits.cpp
     LocalMap.cpp
     LocalMapBuilder.cpp
+    Node.cpp
     OccupancyGridBuilder.cpp
     TemporaryOccupancyGridBuilder.cpp
     DoorTracking.cpp

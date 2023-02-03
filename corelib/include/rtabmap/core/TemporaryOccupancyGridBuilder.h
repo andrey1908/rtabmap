@@ -92,11 +92,10 @@ public:
 private:
     void precomputeProbabilities();
 
-    TransformedLocalMap transformLocalMap(const LocalMap& localMap, const Transform& transform);
     void createOrResizeMap(const MapLimitsI& newMapLimits);
     void deployLastLocalMap();
     void deployLocalMap(const Node& node);
-    void removeLocalMap();
+    void removeFirstLocalMap();
 
     void clear();
 
