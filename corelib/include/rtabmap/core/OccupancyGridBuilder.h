@@ -77,6 +77,20 @@ private:
     using MapType = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
     using ColorsType = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
+    struct PrecomputedUpdateValues
+    {
+        // value 0 = unknown
+        // value 1 = prob 0.0
+        // value (splitNum + 1) = prob 1.0
+        static constexpr int splitNum = 1000;
+        static constexpr int updated = splitNum * 2;
+        static constexpr int unknown = 0;
+        std::vector<int> missUpdates;
+        std::vector<int> hitUpdates;
+        std::vector<std::int8_t> probabilities;
+        std::vector<std::int8_t> probabilitiesThr;
+    };
+
 public:
     OccupancyGridBuilder(const Parameters& parameters);
     void parseParameters(const Parameters& parameters);
@@ -101,6 +115,8 @@ public:
     void reset();
 
 private:
+    void precomputeUpdateValues();
+
     void cacheCurrentMap();
     bool checkIfCachedMapCanBeUsed(const std::map<int, Transform>& newPoses);
     void useCachedMap();
@@ -120,12 +136,12 @@ private:
         {
             return 0.5f;
         }
-        return 1.0f * (value - 1) / splitNum_;
+        return 1.0f * (value - 1) / PrecomputedUpdateValues::splitNum;
     }
 
     int probabilityToVlaue(float probability)
     {
-        return std::lround(probability * splitNum_) + 1;
+        return std::lround(probability * PrecomputedUpdateValues::splitNum) + 1;
     }
 
 private:
@@ -136,7 +152,6 @@ private:
     float maxClampingProb_;
     float occupancyProbThr_;
     int occupancyThr_;
-    int updated_;
     int temporarilyOccupiedCellColorRgb_;
     Color temporarilyOccupiedCellColor_;
     bool showTemporarilyOccupiedCells_;
@@ -153,15 +168,7 @@ private:
     ColorsType cachedColors_;
     std::vector<std::pair<int, int>> cachedTemporarilyOccupiedCells_;
 
-    // value 0 = unknown
-    // value 1 = prob 0.0
-    // value (splitNum_ + 1) = prob 1.0
-    static constexpr int splitNum_ = 1000;
-    static constexpr int unknown_ = 0;
-    std::vector<int> missUpdates_;
-    std::vector<int> hitUpdates_;
-    std::vector<std::int8_t> probabilities_;
-    std::vector<std::int8_t> probabilitiesThr_;
+    PrecomputedUpdateValues updateValues_;
 };
 
 }

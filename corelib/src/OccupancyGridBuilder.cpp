@@ -26,22 +26,26 @@ void OccupancyGridBuilder::parseParameters(const Parameters& parameters)
     UASSERT(minClampingProb_ < maxClampingProb_);
     UASSERT(occupancyProbThr_ > 0.0f && occupancyProbThr_ < 1.0f);
 
-    float missLogit = logodds(missProb_);
-    float hitLogit = logodds(hitProb_);
-    float minClampingLogit = logodds(minClampingProb_);
-    float maxClampingLogit = logodds(maxClampingProb_);
     occupancyThr_ = probabilityToVlaue(occupancyProbThr_);
-    updated_ = splitNum_ * 2;
     if (temporarilyOccupiedCellColorRgb_ >= 0)
     {
         temporarilyOccupiedCellColor_.setRgb(temporarilyOccupiedCellColorRgb_);
     }
+    precomputeUpdateValues();
+}
 
-    missUpdates_.clear();
-    hitUpdates_.clear();
-    probabilities_.clear();
-    probabilitiesThr_.clear();
-    for (int value = 0; value <= splitNum_ + 1; value++)
+void OccupancyGridBuilder::precomputeUpdateValues()
+{
+    float missLogit = logodds(missProb_);
+    float hitLogit = logodds(hitProb_);
+    float minClampingLogit = logodds(minClampingProb_);
+    float maxClampingLogit = logodds(maxClampingProb_);
+
+    updateValues_.missUpdates.clear();
+    updateValues_.hitUpdates.clear();
+    updateValues_.probabilities.clear();
+    updateValues_.probabilitiesThr.clear();
+    for (int value = 0; value <= PrecomputedUpdateValues::splitNum + 1; value++)
     {
         float prob = valueToProbability(value);
         float missUpdatedLogit, hitUpdatedLogit;
@@ -51,7 +55,7 @@ void OccupancyGridBuilder::parseParameters(const Parameters& parameters)
             missUpdatedLogit = minClampingLogit;
             hitUpdatedLogit = minClampingLogit;
         }
-        else if (value == splitNum_ + 1)
+        else if (value == PrecomputedUpdateValues::splitNum + 1)
         {
             // prob = 1.0
             missUpdatedLogit = maxClampingLogit;
@@ -67,35 +71,37 @@ void OccupancyGridBuilder::parseParameters(const Parameters& parameters)
             hitUpdatedLogit =
                 std::clamp(hitUpdatedLogit, minClampingLogit, maxClampingLogit);
         }
-        missUpdates_.push_back(probabilityToVlaue(probability(missUpdatedLogit)));
-        hitUpdates_.push_back(probabilityToVlaue(probability(hitUpdatedLogit)));
+        updateValues_.missUpdates.push_back(
+            probabilityToVlaue(probability(missUpdatedLogit)));
+        updateValues_.hitUpdates.push_back(
+            probabilityToVlaue(probability(hitUpdatedLogit)));
 
         if (value == 0)
         {
             // unknown
-            probabilitiesThr_.push_back(-1);
-            probabilities_.push_back(-1);
+            updateValues_.probabilitiesThr.push_back(-1);
+            updateValues_.probabilities.push_back(-1);
         }
         else
         {
-            probabilities_.push_back(std::lround(prob * 100.0f));
+            updateValues_.probabilities.push_back(std::lround(prob * 100.0f));
             if (prob >= occupancyProbThr_)
             {
-                probabilitiesThr_.push_back(100);
+                updateValues_.probabilitiesThr.push_back(100);
             }
             else
             {
-                probabilitiesThr_.push_back(0);
+                updateValues_.probabilitiesThr.push_back(0);
             }
         }
     }
-    for (int& updatedValue : missUpdates_)
+    for (int& updatedValue : updateValues_.missUpdates)
     {
-        updatedValue += updated_;
+        updatedValue += PrecomputedUpdateValues::updated;
     }
-    for (int& updatedValue : hitUpdates_)
+    for (int& updatedValue : updateValues_.hitUpdates)
     {
-        updatedValue += updated_;
+        updatedValue += PrecomputedUpdateValues::updated;
     }
 }
 
@@ -325,7 +331,7 @@ void OccupancyGridBuilder::createOrResizeMap(const MapLimitsI& newMapLimits)
         mapLimits_ = newMapLimits;
         int height = newMapLimits.height();
         int width = newMapLimits.width();
-        map_ = MapType::Constant(height, width, unknown_);
+        map_ = MapType::Constant(height, width, PrecomputedUpdateValues::unknown);
         colors_ = ColorsType::Constant(height, width, Color::missingColor.data());
     }
     else if(mapLimits_ != newMapLimits)
@@ -341,7 +347,7 @@ void OccupancyGridBuilder::createOrResizeMap(const MapLimitsI& newMapLimits)
 
         int height = newMapLimits.height();
         int width = newMapLimits.width();
-        MapType newMap = MapType::Constant(height, width, unknown_);
+        MapType newMap = MapType::Constant(height, width, PrecomputedUpdateValues::unknown);
         ColorsType newColors =
             ColorsType::Constant(height, width, Color::missingColor.data());
 
@@ -373,7 +379,7 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
         UASSERT(y >= 0 && x >= 0 && y < map_.rows() && x < map_.cols());
 
         int& value = map_.coeffRef(y, x);
-        if (value >= updated_)
+        if (value >= PrecomputedUpdateValues::updated)
         {
             continue;
         }
@@ -389,7 +395,7 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
                     continue;
                 }
             }
-            value = hitUpdates_[value];
+            value = updateValues_.hitUpdates[value];
         }
         else
         {
@@ -406,7 +412,7 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
                     continue;
                 }
             }
-            value = missUpdates_[value];
+            value = updateValues_.missUpdates[value];
         }
 
         const Color& color = node.localMap->colors()[i];
@@ -419,9 +425,9 @@ void OccupancyGridBuilder::deployLocalMap(const Node& node)
     {
         for (int x = 0; x < map_.cols(); x++)
         {
-            if (map_.coeffRef(y, x) >= updated_)
+            if (map_.coeffRef(y, x) >= PrecomputedUpdateValues::updated)
             {
-                map_.coeffRef(y, x) -= updated_;
+                map_.coeffRef(y, x) -= PrecomputedUpdateValues::updated;
             }
         }
     }
@@ -459,7 +465,7 @@ OccupancyGrid OccupancyGridBuilder::getOccupancyGrid(
         {
             int value = map_.coeff(y + srcStartY, x + srcStartX);
             occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) =
-                probabilitiesThr_[value];
+                updateValues_.probabilitiesThr[value];
         }
     }
     if (showTemporarilyOccupiedCells_)
@@ -511,7 +517,7 @@ OccupancyGrid OccupancyGridBuilder::getProbOccupancyGrid(
         {
             int value = map_.coeff(y + srcStartY, x + srcStartX);
             occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) =
-                probabilities_[value];
+                updateValues_.probabilities[value];
         }
     }
     if (showTemporarilyOccupiedCells_)
