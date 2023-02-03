@@ -21,30 +21,34 @@ void TemporaryOccupancyGridBuilder::parseParameters(const Parameters& parameters
     UASSERT(temporaryOccupancyProbThr_ > 0.0f && temporaryOccupancyProbThr_ < 1.0f);
     UASSERT(maxTemporaryLocalMaps_ >= 1);
 
+    updated_ = maxTemporaryLocalMaps_ * 2 + 1;
+    precomputeProbabilities();
+}
+
+void TemporaryOccupancyGridBuilder::precomputeProbabilities()
+{
     float missLogit = logodds(temporaryMissProb_);
     float hitLogit = logodds(temporaryHitProb_);
-    updated_ = maxTemporaryLocalMaps_ * 2 + 1;
-
-    probabilities_.resize(maxTemporaryLocalMaps_ + 1, maxTemporaryLocalMaps_ + 1);
-    probabilitiesThr_.resize(maxTemporaryLocalMaps_ + 1, maxTemporaryLocalMaps_ + 1);
+    precomputedProbabilities_.probabilities.resize(maxTemporaryLocalMaps_ + 1, maxTemporaryLocalMaps_ + 1);
+    precomputedProbabilities_.probabilitiesThr.resize(maxTemporaryLocalMaps_ + 1, maxTemporaryLocalMaps_ + 1);
     for (int hits = 0; hits <= maxTemporaryLocalMaps_; hits++)
     {
         for (int misses = 0; misses <= maxTemporaryLocalMaps_; misses++)
         {
             float prob = probability(hits * hitLogit + misses * missLogit);
-            probabilities_.coeffRef(hits, misses) = std::lround(prob * 100.0f);
+            precomputedProbabilities_.probabilities.coeffRef(hits, misses) = std::lround(prob * 100.0f);
             if (prob >= temporaryOccupancyProbThr_)
             {
-                probabilitiesThr_.coeffRef(hits, misses) = 100;
+                precomputedProbabilities_.probabilitiesThr.coeffRef(hits, misses) = 100;
             }
             else
             {
-                probabilitiesThr_.coeffRef(hits, misses) = 0;
+                precomputedProbabilities_.probabilitiesThr.coeffRef(hits, misses) = 0;
             }
         }
     }
-    probabilities_.coeffRef(0, 0) = -1;
-    probabilitiesThr_.coeffRef(0, 0) = -1;
+    precomputedProbabilities_.probabilities.coeffRef(0, 0) = -1;
+    precomputedProbabilities_.probabilitiesThr.coeffRef(0, 0) = -1;
 }
 
 void TemporaryOccupancyGridBuilder::addLocalMap(
@@ -306,7 +310,7 @@ OccupancyGrid TemporaryOccupancyGridBuilder::getOccupancyGrid(
             int hits = hitCounter_.coeff(y + srcStartY, x + srcStartX);
             int misses = missCounter_.coeff(y + srcStartY, x + srcStartX);
             occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) =
-                probabilitiesThr_.coeff(hits, misses);
+                precomputedProbabilities_.probabilitiesThr.coeff(hits, misses);
         }
     }
     return occupancyGrid;
@@ -345,7 +349,7 @@ OccupancyGrid TemporaryOccupancyGridBuilder::getProbOccupancyGrid(
             int hits = hitCounter_.coeff(y + srcStartY, x + srcStartX);
             int misses = missCounter_.coeff(y + srcStartY, x + srcStartX);
             occupancyGrid.grid.coeffRef(y + dstStartY, x + dstStartX) =
-                probabilities_.coeff(hits, misses);
+                precomputedProbabilities_.probabilities.coeff(hits, misses);
         }
     }
     return occupancyGrid;

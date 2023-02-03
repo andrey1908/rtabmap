@@ -62,6 +62,12 @@ private:
     using CounterType = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
     using ColorsType = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
+    struct PrecomputedProbabilities
+    {
+        Eigen::Matrix<std::int8_t, Eigen::Dynamic, Eigen::Dynamic> probabilities;
+        Eigen::Matrix<std::int8_t, Eigen::Dynamic, Eigen::Dynamic> probabilitiesThr;
+    };
+
 public:
     TemporaryOccupancyGridBuilder(const Parameters& parameters);
     void parseParameters(const Parameters& parameters);
@@ -84,6 +90,8 @@ public:
     void reset();
 
 private:
+    void precomputeProbabilities();
+
     TransformedLocalMap transformLocalMap(const LocalMap& localMap, const Transform& transform);
     void createOrResizeMap(const MapLimitsI& newMapLimits);
     void deployLastLocalMap();
@@ -106,8 +114,7 @@ private:
     CounterType missCounter_;
     ColorsType colors_;
 
-    Eigen::Matrix<std::int8_t, Eigen::Dynamic, Eigen::Dynamic> probabilities_;
-    Eigen::Matrix<std::int8_t, Eigen::Dynamic, Eigen::Dynamic> probabilitiesThr_;
+    PrecomputedProbabilities precomputedProbabilities_;
 };
 
 }
