@@ -130,7 +130,7 @@ void OccupancyGridBuilder::addLocalMap(int nodeId, const Transform& pose,
     {
         createOrResizeMap(newMapLimits);
     }
-    deployLocalMap(newNodeIt->second);
+    deployNode(newNodeIt->second);
 }
 
 void OccupancyGridBuilder::updateCachedMap()
@@ -274,7 +274,7 @@ void OccupancyGridBuilder::updatePoses(
             createOrResizeMap(newMapLimits);
             for(int nodeIdToDeploy : nodeIdsToDeploy)
             {
-                deployLocalMap(nodeIdToDeploy);
+                deployNode(nodeIdToDeploy);
             }
             if (!usedCachedMap)
             {
@@ -292,7 +292,7 @@ void OccupancyGridBuilder::updatePoses(
         createOrResizeMap(newMapLimits);
         for(int nodeIdToDeploy : nodeIdsToDeploy)
         {
-            deployLocalMap(nodeIdToDeploy);
+            deployNode(nodeIdToDeploy);
         }
     }
 }
@@ -336,12 +336,12 @@ void OccupancyGridBuilder::createOrResizeMap(const MapLimitsI& newMapLimits)
     }
 }
 
-void OccupancyGridBuilder::deployLocalMap(int nodeId)
+void OccupancyGridBuilder::deployNode(int nodeId)
 {
-    deployLocalMap(nodes_.at(nodeId));
+    deployNode(nodes_.at(nodeId));
 }
 
-void OccupancyGridBuilder::deployLocalMap(const Node& node)
+void OccupancyGridBuilder::deployNode(const Node& node)
 {
     UASSERT(node.transformedLocalMap.valid());
     temporarilyOccupiedCells_.clear();

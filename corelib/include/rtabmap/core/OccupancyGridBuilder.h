@@ -123,8 +123,8 @@ private:
     bool tryToUseCachedMap(const std::map<int, Transform>& newPoses);
 
     void createOrResizeMap(const MapLimitsI& newMapLimits);
-    void deployLocalMap(int nodeId);
-    void deployLocalMap(const Node& node);
+    void deployNode(int nodeId);
+    void deployNode(const Node& node);
 
     void clear();
     void clearCachedMap();

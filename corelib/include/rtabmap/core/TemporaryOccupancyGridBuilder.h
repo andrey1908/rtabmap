@@ -93,9 +93,9 @@ private:
     void precomputeProbabilities();
 
     void createOrResizeMap(const MapLimitsI& newMapLimits);
-    void deployLastLocalMap();
-    void deployLocalMap(const Node& node);
-    void removeFirstLocalMap();
+    void deployLastNode();
+    void deployNode(const Node& node);
+    void removeFirstNode();
 
     void clear();
 

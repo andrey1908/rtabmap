@@ -66,10 +66,10 @@ void TemporaryOccupancyGridBuilder::addLocalMap(
     {
         createOrResizeMap(newMapLimits);
     }
-    deployLastLocalMap();
+    deployLastNode();
     if (nodes_.size() > maxTemporaryLocalMaps_)
     {
-        removeFirstLocalMap();
+        removeFirstNode();
     }
 }
 
@@ -112,7 +112,7 @@ void TemporaryOccupancyGridBuilder::updatePoses(
         createOrResizeMap(newMapLimits);
         for (const Node& node : nodes_)
         {
-            deployLocalMap(node);
+            deployNode(node);
         }
     }
 }
@@ -161,13 +161,13 @@ void TemporaryOccupancyGridBuilder::createOrResizeMap(const MapLimitsI& newMapLi
     }
 }
 
-void TemporaryOccupancyGridBuilder::deployLastLocalMap()
+void TemporaryOccupancyGridBuilder::deployLastNode()
 {
     UASSERT(nodes_.size());
-    deployLocalMap(nodes_.back());
+    deployNode(nodes_.back());
 }
 
-void TemporaryOccupancyGridBuilder::deployLocalMap(const Node& node)
+void TemporaryOccupancyGridBuilder::deployNode(const Node& node)
 {
     UASSERT(node.transformedLocalMap.valid());
     const Eigen::Matrix2Xi& transformedPoints = node.transformedLocalMap.points();
@@ -207,7 +207,7 @@ void TemporaryOccupancyGridBuilder::deployLocalMap(const Node& node)
     }
 }
 
-void TemporaryOccupancyGridBuilder::removeFirstLocalMap()
+void TemporaryOccupancyGridBuilder::removeFirstNode()
 {
     UASSERT(nodes_.size());
     const Node& node = nodes_.front();
