@@ -76,6 +76,26 @@ public:
 private:
     using MapType = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
     using ColorsType = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+    using Cell = std::pair<int, int>;
+    using Cells = std::vector<Cell>;
+
+    struct ColoredGridMap
+    {
+        std::map<int, Node> nodes;
+        MapLimitsI mapLimits;
+        MapType map;
+        ColorsType colors;
+        Cells temporarilyOccupiedCells;
+    };
+
+    struct CachedColoredGridMap
+    {
+        std::map<int, Transform> poses;
+        MapLimitsI mapLimits;
+        MapType map;
+        ColorsType colors;
+        Cells temporarilyOccupiedCells;
+    };
 
     struct PrecomputedUpdateValues
     {
@@ -109,8 +129,8 @@ public:
     ColorGrid getColorGrid() const;
     ColorGrid getColorGrid(const MapLimitsI& roi) const;
 
-    const std::map<int, Node>& nodes() const { return nodes_; }
-    const MapLimitsI& mapLimits() const { return mapLimits_; }
+    const std::map<int, Node>& nodes() const { return map_.nodes; }
+    const MapLimitsI& mapLimits() const { return map_.mapLimits; }
 
     void reset();
 
@@ -155,17 +175,8 @@ private:
     Color temporarilyOccupiedCellColor_;
     bool showTemporarilyOccupiedCells_;
 
-    std::map<int, Node> nodes_;
-    MapLimitsI mapLimits_;
-    MapType map_;
-    ColorsType colors_;
-    std::vector<std::pair<int, int>> temporarilyOccupiedCells_;
-
-    std::map<int, Transform> cachedPoses_;
-    MapLimitsI cachedMapLimits_;
-    MapType cachedMap_;
-    ColorsType cachedColors_;
-    std::vector<std::pair<int, int>> cachedTemporarilyOccupiedCells_;
+    ColoredGridMap map_;
+    CachedColoredGridMap cachedMap_;
 
     PrecomputedUpdateValues updateValues_;
 };
