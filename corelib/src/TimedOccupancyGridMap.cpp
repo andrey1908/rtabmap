@@ -114,7 +114,7 @@ void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories)
         }
         UASSERT(nodeIt == nodesRef.end());
     }
-    
+
     int lastNodeIdToIncludeInCachedMap = -1;
     if (trajectories.size())
     {
