@@ -1,4 +1,4 @@
-#include <rtabmap/core/OccupancyGridBuilder.h>
+#include <rtabmap/core/Node.h>
 
 #include "time_measurer/time_measurer.h"
 
