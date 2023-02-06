@@ -134,7 +134,7 @@ public:
         auto it = trajectories_.lower_bound(time);
         if (it == trajectories_.begin())
         {
-            trajectories_.end();
+            return trajectories_.end();
         }
         return std::prev(it);
     }
