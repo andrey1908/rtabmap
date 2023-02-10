@@ -6,6 +6,7 @@
 #include <rtabmap/core/OccupancyGridBuilder.h>
 #include <rtabmap/core/TemporaryOccupancyGridBuilder.h>
 #include <rtabmap/core/ObstacleDilation.h>
+#include <rtabmap/core/ObjectTracking.h>
 
 #include <yaml-cpp/yaml.h>
 
@@ -119,6 +120,8 @@ public:
     const cv::Mat& lastDilatedSemantic() const
         { return localMapBuilder_->lastDilatedSemantic(); }
     int numBuilders() const { return numBuilders_; }
+    const std::vector<ObjectTracking::TrackedObject>& trackedObjects()
+        { return objectTracking_->trackedObjects(); }
 
     void reset();
 
@@ -132,6 +135,8 @@ private:
     std::vector<std::unique_ptr<OccupancyGridBuilder>> occupancyGridBuilders_;
     std::vector<std::unique_ptr<TemporaryOccupancyGridBuilder>>
         temporaryOccupancyGridBuilders_;
+
+    std::unique_ptr<ObjectTracking> objectTracking_;
 
     std::map<int, const std::shared_ptr<const LocalMap>> localMapsWithoutObstacleDilation_;
 };

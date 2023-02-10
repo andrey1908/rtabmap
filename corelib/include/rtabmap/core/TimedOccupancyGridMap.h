@@ -4,6 +4,7 @@
 #include <rtabmap/core/Time.h>
 #include <rtabmap/core/Transform.h>
 #include <rtabmap/core/Trajectory.h>
+#include <rtabmap/core/ObjectTracking.h>
 #include <rtabmap/core/OccupancyGridMap.h>
 
 #include <yaml-cpp/yaml.h>
@@ -88,6 +89,8 @@ public:
     const cv::Mat& lastDilatedSemantic() const
         { return occupancyGridMap_->lastDilatedSemantic(); }
     int numBuilders() const { return occupancyGridMap_->numBuilders(); };
+    const std::vector<ObjectTracking::TrackedObject>& trackedObjects()
+        { return occupancyGridMap_->trackedObjects(); }
 
     void reset();
 
