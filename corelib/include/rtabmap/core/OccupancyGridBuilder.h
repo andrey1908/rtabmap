@@ -115,9 +115,9 @@ public:
     OccupancyGridBuilder(const Parameters& parameters);
     void parseParameters(const Parameters& parameters);
 
-    void addLocalMap(int nodeId, std::shared_ptr<const LocalMap> localMap);
-    void addLocalMap(int nodeId, const Transform& pose,
-        std::shared_ptr<const LocalMap> localMap);
+    int addLocalMap(const std::shared_ptr<const LocalMap>& localMap);
+    int addLocalMap(const Transform& pose,
+        const std::shared_ptr<const LocalMap>& localMap);
 
     void updatePoses(const std::map<int, Transform>& updatedPoses,
         int lastNodeIdToIncludeInMapCache = -1);

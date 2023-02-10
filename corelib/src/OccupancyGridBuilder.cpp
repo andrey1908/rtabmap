@@ -105,22 +105,20 @@ void OccupancyGridBuilder::precomputeUpdateValues()
     }
 }
 
-void OccupancyGridBuilder::addLocalMap(int nodeId, std::shared_ptr<const LocalMap> localMap)
+int OccupancyGridBuilder::addLocalMap(
+    const std::shared_ptr<const LocalMap>& localMap)
 {
-    UASSERT(localMap);
-    UASSERT(nodeId >= 0);
-    UASSERT(map_.nodes.empty() || map_.nodes.rbegin()->first < nodeId);
+    int nodeId = map_.nodes.size();
     Node node(localMap, TransformedLocalMap());
     map_.nodes.emplace(nodeId, std::move(node));
+    return nodeId;
 }
 
-void OccupancyGridBuilder::addLocalMap(int nodeId, const Transform& pose,
-    std::shared_ptr<const LocalMap> localMap)
+int OccupancyGridBuilder::addLocalMap(const Transform& pose,
+    const std::shared_ptr<const LocalMap>& localMap)
 {
     MEASURE_BLOCK_TIME(OccupancyGridBuilder__addLocalMap__withPose);
-    UASSERT(localMap);
-    UASSERT(nodeId >= 0);
-    UASSERT(map_.nodes.empty() || map_.nodes.rbegin()->first < nodeId);
+    int nodeId = map_.nodes.size();
     TransformedLocalMap transformedLocalMap(*localMap, pose, cellSize_);
     Node node(localMap, std::move(transformedLocalMap));
     auto newNodeIt = map_.nodes.emplace(nodeId, std::move(node)).first;
@@ -131,6 +129,7 @@ void OccupancyGridBuilder::addLocalMap(int nodeId, const Transform& pose,
         createOrResizeMap(newMapLimits);
     }
     deployNode(newNodeIt->second);
+    return nodeId;
 }
 
 void OccupancyGridBuilder::updateCachedMap()

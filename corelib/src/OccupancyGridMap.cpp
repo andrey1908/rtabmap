@@ -44,20 +44,15 @@ void OccupancyGridMap::parseParameters(const Parameters& parameters)
     }
 }
 
-std::shared_ptr<LocalMap> OccupancyGridMap::createLocalMap(
-    const Signature& signature,
-    const Transform& fromUpdatedPose /* Transform::getIdentity() */) const
+std::shared_ptr<LocalMap> OccupancyGridMap::createLocalMap(const SensorData& sensorData,
+    const Time& time, const Transform& fromUpdatedPose) const
 {
-    UASSERT(!fromUpdatedPose.isNull());
-    std::shared_ptr<LocalMap> localMap = localMapBuilder_->createLocalMap(signature);
-    localMap->setFromUpdatedPose(fromUpdatedPose);
-    return localMap;
+    return localMapBuilder_->createLocalMap(sensorData, time, fromUpdatedPose);
 }
 
-void OccupancyGridMap::addLocalMap(int nodeId,
-    std::shared_ptr<const LocalMap> localMap)
+int OccupancyGridMap::addLocalMap(const std::shared_ptr<const LocalMap>& localMap)
 {
-    localMapsWithoutObstacleDilation_.emplace(nodeId, localMap);
+    int nodeId;
     for (int i = 0; i < numBuilders_; i++)
     {
         std::shared_ptr<const LocalMap> dilatedLocalMap;
@@ -70,14 +65,16 @@ void OccupancyGridMap::addLocalMap(int nodeId,
         {
             dilatedLocalMap = localMap;
         }
-        occupancyGridBuilders_[i]->addLocalMap(nodeId, dilatedLocalMap);
+        nodeId = occupancyGridBuilders_[i]->addLocalMap(dilatedLocalMap);
     }
+    localMapsWithoutObstacleDilation_.emplace(nodeId, localMap);
+    return nodeId;
 }
 
-void OccupancyGridMap::addLocalMap(int nodeId, const Transform& pose,
-    std::shared_ptr<const LocalMap> localMap)
+int OccupancyGridMap::addLocalMap(const Transform& pose,
+    const std::shared_ptr<const LocalMap>& localMap)
 {
-    localMapsWithoutObstacleDilation_.emplace(nodeId, localMap);
+    int nodeId;
     for (int i = 0; i < numBuilders_; i++)
     {
         std::shared_ptr<const LocalMap> dilatedLocalMap;
@@ -90,16 +87,19 @@ void OccupancyGridMap::addLocalMap(int nodeId, const Transform& pose,
         {
             dilatedLocalMap = localMap;
         }
-        occupancyGridBuilders_[i]->addLocalMap(nodeId, pose, dilatedLocalMap);
+        nodeId = occupancyGridBuilders_[i]->addLocalMap(pose, dilatedLocalMap);
     }
+    localMapsWithoutObstacleDilation_.emplace(nodeId, localMap);
+    return nodeId;
 }
 
-void OccupancyGridMap::addTemporaryLocalMap(const Transform& pose,
-    std::shared_ptr<const LocalMap> localMap)
+bool OccupancyGridMap::addTemporaryLocalMap(const Transform& pose,
+    const std::shared_ptr<const LocalMap>& localMap)
 {
-    std::shared_ptr<const LocalMap> dilatedLocalMap;
+    bool overflowed = false;
     for (int i = 0; i < numBuilders_; i++)
     {
+        std::shared_ptr<const LocalMap> dilatedLocalMap;
         if (obstacleDilations_[i]->dilationSize() != 0.0f)
         {
             MEASURE_BLOCK_TIME(OccupancyGridMap__obstacleDilation);
@@ -109,13 +109,44 @@ void OccupancyGridMap::addTemporaryLocalMap(const Transform& pose,
         {
             dilatedLocalMap = localMap;
         }
-        temporaryOccupancyGridBuilders_[i]->addLocalMap(pose, dilatedLocalMap);
+        overflowed =
+            temporaryOccupancyGridBuilders_[i]->addLocalMap(pose, dilatedLocalMap);
     }
+    return overflowed;
+}
+
+int OccupancyGridMap::addSensorData(const SensorData& sensorData,
+    const Time& time, const Transform& fromUpdatedPose)
+{
+    std::shared_ptr<LocalMap> localMap =
+        createLocalMap(sensorData, time, fromUpdatedPose);
+    int nodeId = addLocalMap(localMap);
+    return nodeId;
+}
+
+int OccupancyGridMap::addSensorData(const SensorData& sensorData,
+    const Time& time, const Transform& pose,
+    const Transform& fromUpdatedPose)
+{
+    std::shared_ptr<LocalMap> localMap =
+        createLocalMap(sensorData, time, fromUpdatedPose);
+    int nodeId = addLocalMap(pose, localMap);
+    return nodeId;
+}
+
+bool OccupancyGridMap::addTemporarySensorData(const SensorData& sensorData,
+    const Time& time, const Transform& pose,
+    const Transform& fromUpdatedPose)
+{
+    std::shared_ptr<LocalMap> localMap =
+        createLocalMap(sensorData, time, fromUpdatedPose);
+    bool overflowed = addTemporaryLocalMap(pose, localMap);
+    return overflowed;
 }
 
 void OccupancyGridMap::updatePoses(const std::map<int, Transform>& updatedPoses,
-        const std::deque<Transform>& updatedTemporaryPoses,
-        int lastNodeIdToIncludeInCachedMap /* -1 */)
+    const std::deque<Transform>& updatedTemporaryPoses,
+    int lastNodeIdToIncludeInCachedMap /* -1 */)
 {
     for (int i = 0; i < numBuilders_; i++)
     {

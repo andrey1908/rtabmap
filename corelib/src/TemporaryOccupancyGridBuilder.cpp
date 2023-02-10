@@ -51,8 +51,8 @@ void TemporaryOccupancyGridBuilder::precomputeProbabilities()
     precomputedProbabilities_.probabilitiesThr.coeffRef(0, 0) = -1;
 }
 
-void TemporaryOccupancyGridBuilder::addLocalMap(
-    const Transform& pose, std::shared_ptr<const LocalMap> localMap)
+bool TemporaryOccupancyGridBuilder::addLocalMap(
+    const Transform& pose, const std::shared_ptr<const LocalMap>& localMap)
 {
     MEASURE_BLOCK_TIME(TemporaryOccupancyGridBuilder__addLocalMap);
     UASSERT(localMap);
@@ -67,10 +67,13 @@ void TemporaryOccupancyGridBuilder::addLocalMap(
         createOrResizeMap(newMapLimits);
     }
     deployLastNode();
+    bool overflowed = false;
     if (nodes_.size() > maxTemporaryLocalMaps_)
     {
+        overflowed = true;
         removeFirstNode();
     }
+    return overflowed;
 }
 
 void TemporaryOccupancyGridBuilder::updatePoses(

@@ -55,15 +55,21 @@ public:
     TimedOccupancyGridMap(const Parameters& parameters);
     void parseParameters(const Parameters& parameters);
 
-    std::shared_ptr<LocalMap> createLocalMap(const Signature& signature, const Time& time,
-        const Transform& fromUpdatedPose = Transform::getIdentity()) const;
+    std::shared_ptr<LocalMap> createLocalMap(const SensorData& sensorData,
+        const Time& time, const Transform& fromUpdatedPose) const;
 
-    void addLocalMap(int nodeId,
-        std::shared_ptr<const LocalMap> localMap);
-    void addLocalMap(int nodeId, const Transform& pose,
-        std::shared_ptr<const LocalMap> localMap);
-    void addTemporaryLocalMap(const Transform& pose,
-        std::shared_ptr<const LocalMap> localMap);
+    int addLocalMap(const std::shared_ptr<const LocalMap>& localMap);
+    int addLocalMap(const Transform& pose,
+        const std::shared_ptr<const LocalMap>& localMap);
+    bool addTemporaryLocalMap(const Transform& pose,
+        const std::shared_ptr<const LocalMap>& localMap);
+
+    int addSensorData(const SensorData& sensorData, const Time& time,
+        const Transform& fromUpdatedPose);
+    int addSensorData(const SensorData& sensorData, const Time& time,
+        const Transform& pose, const Transform& fromUpdatedPose);
+    bool addTemporarySensorData(const SensorData& sensorData, const Time& time,
+        const Transform& pose, const Transform& fromUpdatedPose);
 
     void updatePoses(const Trajectories& trajectories);
 
@@ -92,7 +98,7 @@ public:
     void reset();
 
     void save(const std::string& file);
-    int load(const std::string& file);
+    void load(const std::string& file);
 
 private:
     std::pair<std::optional<Transform>, bool /* if pose was extrapolated */> getPose(

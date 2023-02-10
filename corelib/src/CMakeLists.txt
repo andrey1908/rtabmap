@@ -3,13 +3,11 @@ ADD_SUBDIRECTORY( rtabmap/proto )
 SET(SRC_FILES
     CameraModel.cpp
 
-    Signature.cpp
     Transform.cpp
 
     util3d.cpp
     util3d_transforms.cpp
 
-    SensorData.cpp
     LaserScan.cpp
     IMU.cpp
 

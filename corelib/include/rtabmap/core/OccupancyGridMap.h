@@ -1,7 +1,7 @@
 #pragma once
 
 #include <rtabmap/utilite/ULogger.h>
-#include <rtabmap/core/Signature.h>
+#include <rtabmap/core/SensorData.h>
 #include <rtabmap/core/LocalMapBuilder.h>
 #include <rtabmap/core/OccupancyGridBuilder.h>
 #include <rtabmap/core/TemporaryOccupancyGridBuilder.h>
@@ -89,15 +89,21 @@ public:
     OccupancyGridMap(const Parameters& parameters);
     void parseParameters(const Parameters& parameters);
 
-    std::shared_ptr<LocalMap> createLocalMap(const Signature& signature,
-        const Transform& fromUpdatedPose = Transform::getIdentity()) const;
+    std::shared_ptr<LocalMap> createLocalMap(const SensorData& sensorData,
+        const Time& time, const Transform& fromUpdatedPose) const;
 
-    void addLocalMap(int nodeId,
-        std::shared_ptr<const LocalMap> localMap);
-    void addLocalMap(int nodeId, const Transform& pose,
-        std::shared_ptr<const LocalMap> localMap);
-    void addTemporaryLocalMap(const Transform& pose,
-        std::shared_ptr<const LocalMap> localMap);
+    int addLocalMap(const std::shared_ptr<const LocalMap>& localMap);
+    int addLocalMap(const Transform& pose,
+        const std::shared_ptr<const LocalMap>& localMap);
+    bool addTemporaryLocalMap(const Transform& pose,
+        const std::shared_ptr<const LocalMap>& localMap);
+
+    int addSensorData(const SensorData& sensorData, const Time& time,
+        const Transform& fromUpdatedPose);
+    int addSensorData(const SensorData& sensorData, const Time& time,
+        const Transform& pose, const Transform& fromUpdatedPose);
+    bool addTemporarySensorData(const SensorData& sensorData, const Time& time,
+        const Transform& pose, const Transform& fromUpdatedPose);
 
     void updatePoses(const std::map<int, Transform>& updatedPoses,
         const std::deque<Transform>& updatedTemporaryPoses,

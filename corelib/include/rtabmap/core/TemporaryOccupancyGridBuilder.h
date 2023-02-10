@@ -72,7 +72,8 @@ public:
     TemporaryOccupancyGridBuilder(const Parameters& parameters);
     void parseParameters(const Parameters& parameters);
 
-    void addLocalMap(const Transform& pose, std::shared_ptr<const LocalMap> localMap);
+    bool addLocalMap(const Transform& pose,
+        const std::shared_ptr<const LocalMap>& localMap);
 
     void updatePoses(const std::deque<Transform>& updatedPoses);
 
