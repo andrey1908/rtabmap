@@ -116,7 +116,10 @@ std::vector<ObjectTracking::TrackedObject> ObjectTracking::assign(
             const TrackedObject& trackedObjectJ = trackedObjects[j];
             int sizeI = trackedObjectI.object.size();
             int sizeJ = trackedObjectJ.object.size();
-            const Point& positionI = trackedObjectI.position;
+            Point positionI = trackedObjectI.position;
+            float dt = 0.1f;
+            positionI.x += trackedObjectI.velocity.vx * dt;
+            positionI.y += trackedObjectI.velocity.vy * dt;
             const Point& positionJ = trackedObjectJ.position;
             Score score;
             score.score = (1.0f * std::abs(sizeI - sizeJ) / std::min(sizeI, sizeJ)) +
