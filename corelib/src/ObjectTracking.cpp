@@ -25,6 +25,12 @@ void ObjectTracking::track(const LocalMap& localMap)
             trackedObject.id = assignedTrackedObject.id;
             trackedObject.velocity.vx = dx / dt;
             trackedObject.velocity.vy = dy / dt;
+
+            float f = 0.5f;
+            trackedObject.velocity.vx = f * trackedObject.velocity.vx +
+                (1 - f) * assignedTrackedObject.velocity.vx;
+            trackedObject.velocity.vy = f * trackedObject.velocity.vy +
+                (1 - f) * assignedTrackedObject.velocity.vy;
         }
         else
         {
