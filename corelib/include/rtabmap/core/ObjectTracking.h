@@ -99,14 +99,15 @@ private:
 public:
     ObjectTracking(float cellSize) : cellSize_(cellSize) {};
 
-    void track(const LocalMap& localMap);
+    void track(const LocalMap& localMap, const Transform& pose);
 
     const std::vector<TrackedObject>& trackedObjects() { return trackedObjects_; }
 
 public:
-    std::vector<TrackedObject> detect(const LocalMap& localMap);
+    std::vector<TrackedObject> detect(
+        const LocalMap& localMap, const Transform& pose);
     TrackedObject segment(cv::Mat& colorGrid, const Cell& startCell,
-        const MapLimitsI& mapLimits);
+        const MapLimitsI& mapLimits, const Transform& pose);
     std::vector<TrackedObject> assign(const std::vector<TrackedObject>& trackedObjects);
 
 private:

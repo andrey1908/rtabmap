@@ -7,10 +7,10 @@
 
 namespace rtabmap {
 
-void ObjectTracking::track(const LocalMap& localMap)
+void ObjectTracking::track(const LocalMap& localMap, const Transform& pose)
 {
     MEASURE_BLOCK_TIME(_________track);
-    std::vector<TrackedObject> trackedObjects = detect(localMap);
+    std::vector<TrackedObject> trackedObjects = detect(localMap, pose);
     std::vector<TrackedObject> assignedTrackedObjects = assign(trackedObjects);
     UASSERT(trackedObjects.size() == assignedTrackedObjects.size());
     for (int i = 0; i < trackedObjects.size(); i++)
@@ -41,7 +41,8 @@ void ObjectTracking::track(const LocalMap& localMap)
     trackedObjects_ = std::move(trackedObjects);
 }
 
-std::vector<ObjectTracking::TrackedObject> ObjectTracking::detect(const LocalMap& localMap)
+std::vector<ObjectTracking::TrackedObject> ObjectTracking::detect(
+    const LocalMap& localMap, const Transform& pose)
 {
     LocalMap::ColoredGrid coloredGrid = localMap.toColoredGrid();
     MapLimitsI mapLimits = coloredGrid.limits;
@@ -53,7 +54,8 @@ std::vector<ObjectTracking::TrackedObject> ObjectTracking::detect(const LocalMap
         {
             if (colorGrid.at<std::int32_t>(y, x) == 9831741)
             {
-                TrackedObject trackedObject = segment(colorGrid, Cell(y, x), mapLimits);
+                TrackedObject trackedObject = segment(colorGrid, Cell(y, x), mapLimits,
+                    pose);
                 if (trackedObject.object.size() >= 4)
                 {
                     trackedObjects.push_back(std::move(trackedObject));
@@ -65,7 +67,8 @@ std::vector<ObjectTracking::TrackedObject> ObjectTracking::detect(const LocalMap
 }
 
 ObjectTracking::TrackedObject ObjectTracking::segment(
-    cv::Mat& colorGrid, const Cell& startCell, const MapLimitsI& mapLimits)
+    cv::Mat& colorGrid, const Cell& startCell, const MapLimitsI& mapLimits,
+    const Transform& pose)
 {
     Cell shift(mapLimits.minY(), mapLimits.minX());
     TrackedObject trackedObject;
@@ -103,9 +106,14 @@ ObjectTracking::TrackedObject ObjectTracking::segment(
         x += cell.x / num;
         y += cell.y / num;
     }
+    Eigen::Vector3f position;
+    position.x() = x * cellSize_ + cellSize_ / 2;
+    position.y() = y * cellSize_ + cellSize_ / 2;
+    position.z() = 0.0f;
+    position = pose.toEigen3fRotation() * position + pose.toEigen3fTranslation();
     trackedObject.position = Point(
-        x * cellSize_ + cellSize_ / 2,
-        y * cellSize_ + cellSize_ / 2);
+        position.x(),
+        position.y());
 
     return trackedObject;
 }
