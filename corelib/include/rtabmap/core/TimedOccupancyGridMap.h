@@ -71,6 +71,9 @@ public:
     bool addTemporarySensorData(const SensorData& sensorData, const Time& time,
         const Transform& pose, const Transform& fromUpdatedPose);
 
+    void transformMap(const Transform& transform)
+        { occupancyGridMap_->transformMap(transform); }
+
     void updatePoses(const Trajectories& trajectories);
 
     OccupancyGrid getOccupancyGrid(int index) const

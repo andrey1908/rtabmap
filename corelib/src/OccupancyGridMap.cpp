@@ -144,6 +144,15 @@ bool OccupancyGridMap::addTemporarySensorData(const SensorData& sensorData,
     return overflowed;
 }
 
+void OccupancyGridMap::transformMap(const Transform& transform)
+{
+    for (int i = 0; i < numBuilders_; i++)
+    {
+        occupancyGridBuilders_[i]->transformMap(transform);
+        temporaryOccupancyGridBuilders_[i]->transformMap(transform);
+    }
+}
+
 void OccupancyGridMap::updatePoses(const std::map<int, Transform>& updatedPoses,
     const std::deque<Transform>& updatedTemporaryPoses,
     int lastNodeIdToIncludeInCachedMap /* -1 */)

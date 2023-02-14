@@ -62,6 +62,15 @@ private:
     using CounterType = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
     using ColorsType = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
+    struct ColoredGridMap
+    {
+        std::deque<Node> nodes;
+        MapLimitsI mapLimits;
+        CounterType hitCounter;
+        CounterType missCounter;
+        ColorsType colors;
+    };
+
     struct PrecomputedProbabilities
     {
         Eigen::Matrix<std::int8_t, Eigen::Dynamic, Eigen::Dynamic> probabilities;
@@ -75,6 +84,8 @@ public:
     bool addLocalMap(const Transform& pose,
         const std::shared_ptr<const LocalMap>& localMap);
 
+    void transformMap(const Transform& transform);
+
     void updatePoses(const std::deque<Transform>& updatedPoses);
 
     OccupancyGrid getOccupancyGrid() const;
@@ -85,8 +96,8 @@ public:
     ColorGrid getColorGrid(const MapLimitsI& roi) const;
 
     int maxTemporaryLocalMaps() const { return maxTemporaryLocalMaps_; }
-    const std::deque<Node>& nodes() const { return nodes_; }
-    const MapLimitsI& mapLimits() const { return mapLimits_; }
+    const std::deque<Node>& nodes() const { return map_.nodes; }
+    const MapLimitsI& mapLimits() const { return map_.mapLimits; }
 
     void reset();
 
@@ -108,11 +119,7 @@ private:
     int updated_;
     int maxTemporaryLocalMaps_;
 
-    std::deque<Node> nodes_;
-    MapLimitsI mapLimits_;
-    CounterType hitCounter_;
-    CounterType missCounter_;
-    ColorsType colors_;
+    ColoredGridMap map_;
 
     PrecomputedProbabilities precomputedProbabilities_;
 };

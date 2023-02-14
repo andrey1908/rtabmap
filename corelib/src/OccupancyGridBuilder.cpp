@@ -132,6 +132,117 @@ int OccupancyGridBuilder::addLocalMap(const Transform& pose,
     return nodeId;
 }
 
+void OccupancyGridBuilder::transformMap(const Transform& transform)
+{
+    MEASURE_BLOCK_TIME(OccupancyGridBuilder__transformMap);
+    Transform transform3DoF = transform.to3DoF();
+    Eigen::Matrix2f rotation2D =
+        transform3DoF.toEigen3fRotation().block(0, 0, 2, 2);
+    Eigen::Vector2f translation2D =
+        transform3DoF.toEigen3fTranslation().block(0, 0, 2, 1);
+
+    int numPoints = 0;
+    for (int y = 0; y < map_.map.rows(); y++)
+    {
+        for (int x = 0; x < map_.map.cols(); x++)
+        {
+            std::int8_t cellState =
+                updateValues_.probabilitiesThr[map_.map.coeff(y, x)];
+            if (cellState == (std::int8_t)0)
+            {
+                // empty
+                numPoints += 2;
+            }
+            else if (cellState == (std::int8_t)100)
+            {
+                // occupied
+                numPoints++;
+            }
+        }
+    }
+
+    Eigen::Matrix2Xf points;
+    std::vector<int> values;
+    std::vector<int> colors;
+    points.resize(2, numPoints);
+    values.reserve(numPoints);
+    colors.reserve(numPoints);
+    int i = 0;
+    for (int y = 0; y < map_.map.rows(); y++)
+    {
+        for (int x = 0; x < map_.map.cols(); x++)
+        {
+            int value = map_.map.coeff(y, x);
+            std::int8_t cellState = updateValues_.probabilitiesThr[value];
+            if (cellState == (std::int8_t)0)
+            {
+                // empty
+                int color = map_.colors.coeff(y, x);
+                points.coeffRef(0, i) = (x + map_.mapLimits.minX() + 0.25f) * cellSize_;
+                points.coeffRef(1, i) = (y + map_.mapLimits.minY() + 0.25f) * cellSize_;
+                values.push_back(value);
+                colors.push_back(color);
+                i++;
+                points.coeffRef(0, i) = (x + map_.mapLimits.minX() + 0.75f) * cellSize_;
+                points.coeffRef(1, i) = (y + map_.mapLimits.minY() + 0.75f) * cellSize_;
+                values.push_back(value);
+                colors.push_back(color);
+                i++;
+            }
+            else if (cellState == (std::int8_t)100)
+            {
+                // occupied
+                int color = map_.colors.coeff(y, x);
+                points.coeffRef(0, i) = (x + map_.mapLimits.minX() + 0.5f) * cellSize_;
+                points.coeffRef(1, i) = (y + map_.mapLimits.minY() + 0.5f) * cellSize_;
+                values.push_back(value);
+                colors.push_back(color);
+                i++;
+            }
+        }
+    }
+
+    points = (rotation2D * points).colwise() + translation2D;
+
+    MapLimitsF newMapLimitsF;
+    for (int i = 0; i < numPoints; i++)
+    {
+        float x = points.coeff(0, i);
+        float y = points.coeff(1, i);
+        newMapLimitsF.update(x, y);
+    }
+    MapLimitsI newMapLimits(
+        std::floor(newMapLimitsF.minX() / cellSize_),
+        std::floor(newMapLimitsF.minY() / cellSize_),
+        std::floor(newMapLimitsF.maxX() / cellSize_),
+        std::floor(newMapLimitsF.maxY() / cellSize_));
+
+    clear();
+    map_.mapLimits = newMapLimits;
+    int width = newMapLimits.width();
+    int height = newMapLimits.height();
+    map_.map = MapType::Constant(height, width, PrecomputedUpdateValues::unknown);
+    map_.colors = ColorsType::Constant(height, width, Color::missingColor.data());
+    for (int i = 0; i < numPoints; i++)
+    {
+        float xf = points.coeff(0, i);
+        float yf = points.coeff(1, i);
+        int value = values[i];
+        int color = colors[i];
+
+        int y = std::floor(yf / cellSize_) - newMapLimits.minY();
+        int x = std::floor(xf / cellSize_) - newMapLimits.minX();
+        if (value > map_.map.coeff(y, x))
+        {
+            map_.map.coeffRef(y, x) = value;
+            if (color != Color::missingColor.data())
+            {
+                map_.colors.coeffRef(y, x) = color;
+            }
+        }
+    }
+}
+
 void OccupancyGridBuilder::updateCachedMap()
 {
     if(!map_.mapLimits.valid())

@@ -105,6 +105,8 @@ public:
     bool addTemporarySensorData(const SensorData& sensorData, const Time& time,
         const Transform& pose, const Transform& fromUpdatedPose);
 
+    void transformMap(const Transform& transform);
+
     void updatePoses(const std::map<int, Transform>& updatedPoses,
         const std::deque<Transform>& updatedTemporaryPoses,
         int lastNodeIdToIncludeInCachedMap = -1);

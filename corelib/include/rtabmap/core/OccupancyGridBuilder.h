@@ -119,6 +119,8 @@ public:
     int addLocalMap(const Transform& pose,
         const std::shared_ptr<const LocalMap>& localMap);
 
+    void transformMap(const Transform& transform);
+
     void updatePoses(const std::map<int, Transform>& updatedPoses,
         int lastNodeIdToIncludeInMapCache = -1);
 
