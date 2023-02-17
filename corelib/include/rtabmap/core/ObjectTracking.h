@@ -63,6 +63,7 @@ public:
     struct TrackedObject
     {
         std::int32_t id = -1;
+        std::uint32_t trackedTimes = 0;
         Point position;
         Velocity velocity;
         std::vector<Cell> object;

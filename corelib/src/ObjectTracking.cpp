@@ -39,6 +39,7 @@ void ObjectTracking::track(const LocalMap& localMap, const Transform& pose)
             float dy = trackedObject.position.y - assignedTrackedObject.position.y;
             float dt = 0.1;
             trackedObject.id = assignedTrackedObject.id;
+            trackedObject.trackedTimes = assignedTrackedObject.trackedTimes + 1;
             trackedObject.velocity.vx = dx / dt;
             trackedObject.velocity.vy = dy / dt;
 
@@ -51,6 +52,7 @@ void ObjectTracking::track(const LocalMap& localMap, const Transform& pose)
         else
         {
             trackedObject.id = nextTrackedId_;
+            trackedObject.trackedTimes = 1;
             nextTrackedId_++;
         }
     }
