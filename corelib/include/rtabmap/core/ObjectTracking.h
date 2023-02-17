@@ -69,23 +69,6 @@ public:
     };
 
 private:
-    // row-major order
-    class Indexing
-    {
-    public:
-        Indexing(int rows, int cols) :
-            rows_(rows),
-            cols_(cols) {}
-        
-        int index(int i, int j) const { return i * cols_ + j; }
-        int row(int index) const { return index / cols_; }
-        int col(int index) const { return index % cols_; }
-        int total() const { return rows_ * cols_; }
-    
-    private:
-        int rows_;
-        int cols_;
-    };
 
     struct Score
     {
@@ -97,7 +80,7 @@ private:
     };
 
 public:
-    ObjectTracking(float cellSize) : cellSize_(cellSize) {};
+    ObjectTracking(float cellSize);
 
     void track(const LocalMap& localMap, const Transform& pose);
 
@@ -115,6 +98,8 @@ private:
     std::vector<TrackedObject> trackedObjects_;
 
     std::int32_t nextTrackedId_ = 0;
+
+    std::vector<Cell> neighborCells_;
 };
 
 }

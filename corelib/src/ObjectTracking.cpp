@@ -7,6 +7,22 @@
 
 namespace rtabmap {
 
+ObjectTracking::ObjectTracking(float cellSize) :
+    cellSize_(cellSize)
+{
+    constexpr int size = 1;
+    for (int y = -size; y <= size; y++)
+    {
+        for (int x = -size; x <= size; x++)
+        {
+            if (y != 0 || x != 0)
+            {
+                neighborCells_.emplace_back(y, x);
+            }
+        }
+    }
+};
+
 void ObjectTracking::track(const LocalMap& localMap, const Transform& pose)
 {
     MEASURE_BLOCK_TIME(_________track);
@@ -82,18 +98,16 @@ ObjectTracking::TrackedObject ObjectTracking::segment(
         queue.pop_front();
         trackedObject.object.push_back(currentCell + shift);
 
-        int y = currentCell.y;
-        int x = currentCell.x;
-        for (int dy = -1; dy <= 1; dy++)
+        for (const Cell& neighborCell : neighborCells_)
         {
-            for (int dx = -1; dx <= 1; dx++)
+            Cell nextCell = currentCell + neighborCell;
+            int y = nextCell.y;
+            int x = nextCell.x;
+            if (colorGrid.at<std::int32_t>(y, x) == 9831741)
             {
-                if (colorGrid.at<std::int32_t>(y + dy, x + dx) == 9831741)
-                {
-                    queue.emplace_back(y + dy, x + dx);
-                    colorGrid.at<std::int32_t>(y + dy, x + dx) =
-                        Color::missingColor.data();
-                }
+                queue.emplace_back(y, x);
+                colorGrid.at<std::int32_t>(y, x) =
+                    Color::missingColor.data();
             }
         }
     }
