@@ -98,6 +98,7 @@ private:
     float cellSize_;
     std::vector<TrackedObject> trackedObjects_;
 
+    Time prevTime_;
     std::int32_t nextTrackedId_ = 0;
 
     std::vector<Cell> neighborCells_;

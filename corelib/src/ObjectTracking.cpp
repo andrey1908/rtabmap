@@ -29,6 +29,7 @@ void ObjectTracking::track(const LocalMap& localMap, const Transform& pose)
     std::vector<TrackedObject> trackedObjects = detect(localMap, pose);
     std::vector<TrackedObject> assignedTrackedObjects = assign(trackedObjects);
     UASSERT(trackedObjects.size() == assignedTrackedObjects.size());
+    float dt = localMap.time().toSec() - prevTime_.toSec();
     for (int i = 0; i < trackedObjects.size(); i++)
     {
         TrackedObject& trackedObject = trackedObjects[i];
@@ -37,7 +38,6 @@ void ObjectTracking::track(const LocalMap& localMap, const Transform& pose)
         {
             float dx = trackedObject.position.x - assignedTrackedObject.position.x;
             float dy = trackedObject.position.y - assignedTrackedObject.position.y;
-            float dt = 0.1;
             trackedObject.id = assignedTrackedObject.id;
             trackedObject.trackedTimes = assignedTrackedObject.trackedTimes + 1;
             trackedObject.velocity.vx = dx / dt;
@@ -57,6 +57,7 @@ void ObjectTracking::track(const LocalMap& localMap, const Transform& pose)
         }
     }
     trackedObjects_ = std::move(trackedObjects);
+    prevTime_ = localMap.time();
 }
 
 std::vector<ObjectTracking::TrackedObject> ObjectTracking::detect(
