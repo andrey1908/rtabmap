@@ -26,15 +26,164 @@ ObjectTracking::ObjectTracking(float cellSize) :
 void ObjectTracking::track(const LocalMap& localMap, const Transform& pose)
 {
     MEASURE_BLOCK_TIME(_________track);
-    std::vector<TrackedObject> trackedObjects = detect(localMap, pose);
-    std::vector<TrackedObject> assignedTrackedObjects = assign(trackedObjects);
-    UASSERT(trackedObjects.size() == assignedTrackedObjects.size());
     float dt = localMap.time().toSec() - prevTime_.toSec();
+    std::vector<TrackedObject> trackedObjects = detect(localMap, pose);
+    std::vector<TrackedObject> assignedTrackedObjects = assign(trackedObjects, dt);
+    update(trackedObjects, assignedTrackedObjects, dt);
+    trackedObjects_ = std::move(trackedObjects);
+    prevTime_ = localMap.time();
+}
+
+std::vector<ObjectTracking::TrackedObject> ObjectTracking::detect(
+    const LocalMap& localMap, const Transform& pose)
+{
+    LocalMap::ColoredGrid coloredGrid = localMap.toColoredGrid();
+    MapLimitsI mapLimits = coloredGrid.limits;
+    cv::Mat colorGrid = coloredGrid.colors;
+    std::vector<TrackedObject> trackedObjects;
+    for (int y = 0; y < colorGrid.rows; y++)
+    {
+        for (int x = 0; x < colorGrid.cols; x++)
+        {
+            if (colorGrid.at<std::int32_t>(y, x) != Color::missingColor.data())
+            {
+                TrackedObject trackedObject = segment(colorGrid, Cell(y, x), mapLimits,
+                    pose);
+                if (trackedObject.object.size() >= 4)
+                {
+                    trackedObjects.push_back(std::move(trackedObject));
+                }
+            }
+        }
+    }
+    return trackedObjects;
+}
+
+ObjectTracking::TrackedObject ObjectTracking::segment(
+    cv::Mat& colorGrid, const Cell& startCell, const MapLimitsI& mapLimits,
+    const Transform& pose)
+{
+    Cell shift(mapLimits.minY(), mapLimits.minX());
+
+    std::int32_t& startCellColor = colorGrid.at<std::int32_t>(startCell.y, startCell.x);
+    Color segmentColor = reinterpret_cast<const Color&>(startCellColor);
+    UASSERT(segmentColor != Color::missingColor);
+
+    TrackedObject trackedObject;
+    std::deque<Cell> queue;
+    queue.push_back(startCell);
+    startCellColor = Color::missingColor.data();
+    while (queue.size())
+    {
+        Cell currentCell = queue.front();
+        queue.pop_front();
+        trackedObject.object.push_back(currentCell + shift);
+
+        for (const Cell& neighborCell : neighborCells_)
+        {
+            Cell nextCell = currentCell + neighborCell;
+            int y = nextCell.y;
+            int x = nextCell.x;
+            std::int32_t& color = colorGrid.at<std::int32_t>(y, x);
+            if (color == segmentColor.data())
+            {
+                queue.emplace_back(y, x);
+                color = Color::missingColor.data();
+            }
+        }
+    }
+
+    float x = 0.0f;
+    float y = 0.0f;
+    float num = trackedObject.object.size();
+    for (const Cell& cell : trackedObject.object)
+    {
+        x += cell.x / num;
+        y += cell.y / num;
+    }
+    Eigen::Vector3f position;
+    position.x() = x * cellSize_ + cellSize_ / 2;
+    position.y() = y * cellSize_ + cellSize_ / 2;
+    position.z() = 0.0f;
+    position = pose.toEigen3fRotation() * position + pose.toEigen3fTranslation();
+    trackedObject.position = Point(
+        position.x(),
+        position.y());
+    trackedObject.color = segmentColor;
+
+    return trackedObject;
+}
+
+std::vector<ObjectTracking::TrackedObject> ObjectTracking::assign(
+    const std::vector<TrackedObject>& trackedObjects, float dt)
+{
+    std::vector<Score> scores;
+    for (int oldIndex = 0; oldIndex < trackedObjects_.size(); oldIndex++)
+    {
+        const TrackedObject& oldTrackedObject = trackedObjects_[oldIndex];
+        int oldSize = oldTrackedObject.object.size();
+        const Point& oldPosition = oldTrackedObject.position;
+        Point predictedPosition;
+        predictedPosition.x = oldPosition.x + oldTrackedObject.velocity.vx * dt;
+        predictedPosition.y = oldPosition.y + oldTrackedObject.velocity.vy * dt;
+        for (int newIndex = 0; newIndex < trackedObjects.size(); newIndex++)
+        {
+            const TrackedObject& newTrackedObject = trackedObjects[newIndex];
+            if (oldTrackedObject.color != newTrackedObject.color)
+            {
+                continue;
+            }
+            int newSize = newTrackedObject.object.size();
+            const Point& newPosition = newTrackedObject.position;
+            Score score;
+            score.score =
+                (1.0f * std::abs(oldSize - newSize) / std::min(oldSize, newSize)) +
+                (Point::distanceSqr(predictedPosition, newPosition) * 2.0f /* some factor */);
+            score.oldIndex = oldIndex;
+            score.newIndex = newIndex;
+            scores.push_back(score);
+        }
+    }
+
+    std::sort(scores.begin(), scores.end());
+
+    std::vector<int> usedOldIndices;
+    std::vector<int> usedNewIndices;
+    std::vector<TrackedObject> assignedTrackedObjects(trackedObjects.size());
+    for (const Score& score : scores)
+    {
+        if (score.score > 2.0f)
+        {
+            break;
+        }
+        int oldIndex = score.oldIndex;
+        int newIndex = score.newIndex;
+        bool usedOldIndex =
+            std::find(usedOldIndices.begin(), usedOldIndices.end(), oldIndex) !=
+                usedOldIndices.end();
+        bool usedNewIndex =
+            std::find(usedNewIndices.begin(), usedNewIndices.end(), newIndex) !=
+                usedNewIndices.end();
+        if (!usedOldIndex && !usedNewIndex)
+        {
+            assignedTrackedObjects[newIndex] = trackedObjects_[oldIndex];
+            usedOldIndices.push_back(oldIndex);
+            usedNewIndices.push_back(newIndex);
+        }
+    }
+
+    return assignedTrackedObjects;
+}
+
+void ObjectTracking::update(std::vector<TrackedObject>& trackedObjects,
+    const std::vector<TrackedObject>& assignedTrackedObjects, float dt)
+{
+    UASSERT(trackedObjects.size() == assignedTrackedObjects.size());
     for (int i = 0; i < trackedObjects.size(); i++)
     {
         TrackedObject& trackedObject = trackedObjects[i];
         const TrackedObject& assignedTrackedObject = assignedTrackedObjects[i];
-        if (assignedTrackedObject.id != (std::int32_t)(-1))
+        if (assignedTrackedObject.id != -1)
         {
             float dx = trackedObject.position.x - assignedTrackedObject.position.x;
             float dy = trackedObject.position.y - assignedTrackedObject.position.y;
@@ -56,141 +205,6 @@ void ObjectTracking::track(const LocalMap& localMap, const Transform& pose)
             nextTrackedId_++;
         }
     }
-    trackedObjects_ = std::move(trackedObjects);
-    prevTime_ = localMap.time();
-}
-
-std::vector<ObjectTracking::TrackedObject> ObjectTracking::detect(
-    const LocalMap& localMap, const Transform& pose)
-{
-    LocalMap::ColoredGrid coloredGrid = localMap.toColoredGrid();
-    MapLimitsI mapLimits = coloredGrid.limits;
-    cv::Mat colorGrid = coloredGrid.colors;
-    std::vector<TrackedObject> trackedObjects;
-    for (int y = 0; y < colorGrid.rows; y++)
-    {
-        for (int x = 0; x < colorGrid.cols; x++)
-        {
-            if (colorGrid.at<std::int32_t>(y, x) == 9831741)
-            {
-                TrackedObject trackedObject = segment(colorGrid, Cell(y, x), mapLimits,
-                    pose);
-                if (trackedObject.object.size() >= 4)
-                {
-                    trackedObjects.push_back(std::move(trackedObject));
-                }
-            }
-        }
-    }
-    return trackedObjects;
-}
-
-ObjectTracking::TrackedObject ObjectTracking::segment(
-    cv::Mat& colorGrid, const Cell& startCell, const MapLimitsI& mapLimits,
-    const Transform& pose)
-{
-    Cell shift(mapLimits.minY(), mapLimits.minX());
-    TrackedObject trackedObject;
-    std::deque<Cell> queue;
-    queue.push_back(startCell);
-    colorGrid.at<std::int32_t>(startCell.y, startCell.x) =
-        Color::missingColor.data();
-    while (queue.size())
-    {
-        Cell currentCell = queue.front();
-        queue.pop_front();
-        trackedObject.object.push_back(currentCell + shift);
-
-        for (const Cell& neighborCell : neighborCells_)
-        {
-            Cell nextCell = currentCell + neighborCell;
-            int y = nextCell.y;
-            int x = nextCell.x;
-            if (colorGrid.at<std::int32_t>(y, x) == 9831741)
-            {
-                queue.emplace_back(y, x);
-                colorGrid.at<std::int32_t>(y, x) =
-                    Color::missingColor.data();
-            }
-        }
-    }
-
-    float x = 0.0f;
-    float y = 0.0f;
-    float num = trackedObject.object.size();
-    for (const Cell& cell : trackedObject.object)
-    {
-        x += cell.x / num;
-        y += cell.y / num;
-    }
-    Eigen::Vector3f position;
-    position.x() = x * cellSize_ + cellSize_ / 2;
-    position.y() = y * cellSize_ + cellSize_ / 2;
-    position.z() = 0.0f;
-    position = pose.toEigen3fRotation() * position + pose.toEigen3fTranslation();
-    trackedObject.position = Point(
-        position.x(),
-        position.y());
-
-    return trackedObject;
-}
-
-std::vector<ObjectTracking::TrackedObject> ObjectTracking::assign(
-    const std::vector<TrackedObject>& trackedObjects)
-{
-    std::vector<Score> scores;
-    for (int i = 0; i < trackedObjects_.size(); i++)
-    {
-        for (int j = 0; j < trackedObjects.size(); j++)
-        {
-            const TrackedObject& trackedObjectI = trackedObjects_[i];
-            const TrackedObject& trackedObjectJ = trackedObjects[j];
-            int sizeI = trackedObjectI.object.size();
-            int sizeJ = trackedObjectJ.object.size();
-            Point positionI = trackedObjectI.position;
-            float dt = 0.1f;
-            positionI.x += trackedObjectI.velocity.vx * dt;
-            positionI.y += trackedObjectI.velocity.vy * dt;
-            const Point& positionJ = trackedObjectJ.position;
-            Score score;
-            score.score = (1.0f * std::abs(sizeI - sizeJ) / std::min(sizeI, sizeJ)) +
-                (Point::distanceSqr(positionI, positionJ) * 2.0f /* some factor */);
-            score.i = i;
-            score.j = j;
-            scores.push_back(score);
-        }
-    }
-
-    std::sort(scores.begin(), scores.end());
-
-    std::vector<int> usedI;
-    std::vector<int> usedJ;
-    std::vector<TrackedObject> assignedTrackedObjects(trackedObjects.size());
-    for (const Score& score : scores)
-    {
-        if (score.score > 2.0f)
-        {
-            break;
-        }
-        int i = score.i;
-        int j = score.j;
-        bool foundI = (std::find(usedI.begin(), usedI.end(), i) != usedI.end());
-        bool foundJ = (std::find(usedJ.begin(), usedJ.end(), j) != usedJ.end());
-        if (!foundI && !foundJ)
-        {
-            assignedTrackedObjects[j] = trackedObjects_[i];
-        }
-        if (!foundI)
-        {
-            usedI.push_back(i);
-        }
-        if (!foundJ)
-        {
-            usedJ.push_back(j);
-        }
-    }
-
-    return assignedTrackedObjects;
 }
 
 }

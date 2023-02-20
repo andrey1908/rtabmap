@@ -67,6 +67,7 @@ public:
         Point position;
         Velocity velocity;
         std::vector<Cell> object;
+        Color color;
     };
 
 private:
@@ -76,8 +77,8 @@ private:
         bool operator<(const Score& other) { return score < other.score; }
 
         float score;
-        int i;
-        int j;
+        int oldIndex;
+        int newIndex;
     };
 
 public:
@@ -92,7 +93,11 @@ public:
         const LocalMap& localMap, const Transform& pose);
     TrackedObject segment(cv::Mat& colorGrid, const Cell& startCell,
         const MapLimitsI& mapLimits, const Transform& pose);
-    std::vector<TrackedObject> assign(const std::vector<TrackedObject>& trackedObjects);
+    std::vector<TrackedObject> assign(
+        const std::vector<TrackedObject>& trackedObjects, float dt);
+    void update(std::vector<TrackedObject>& trackedObjects,
+        const std::vector<TrackedObject>& assignedTrackedObjects,
+        float dt);
 
 private:
     float cellSize_;
