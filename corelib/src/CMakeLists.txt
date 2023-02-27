@@ -27,6 +27,7 @@ SET(SRC_FILES
     OccupancyGridBuilder.cpp
     TemporaryOccupancyGridBuilder.cpp
     DoorTracking.cpp
+    ObjectTracking.cpp
     SemanticDilation.cpp
     RayTracing.cpp
     ObstacleDilation.cpp

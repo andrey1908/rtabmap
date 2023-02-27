@@ -6,6 +6,7 @@
 #include <rtabmap/core/OccupancyGridBuilder.h>
 #include <rtabmap/core/TemporaryOccupancyGridBuilder.h>
 #include <rtabmap/core/ObstacleDilation.h>
+#include <rtabmap/core/ObjectTracking.h>
 
 #include <yaml-cpp/yaml.h>
 
@@ -27,6 +28,7 @@ public:
         OccupancyGridBuilder::Parameters occupancyGridBuilderParameters;
         TemporaryOccupancyGridBuilder::Parameters
             temporaryOccupancyGridBuilderParameters;
+        bool enableObjectTracking = false;
 
         static Parameters createParameters(const YAML::Node& node)
         {
@@ -81,6 +83,11 @@ public:
                     TemporaryOccupancyGridBuilder::Parameters::createParameters(
                         node["TemporaryOccupancyGridBuilder"]);
             }
+            if (node["EnableObjectTracking"])
+            {
+                parameters.enableObjectTracking =
+                    node["EnableObjectTracking"].as<bool>();
+            }
             return parameters;
         }
     };
@@ -127,11 +134,15 @@ public:
     const cv::Mat& lastDilatedSemantic() const
         { return localMapBuilder_->lastDilatedSemantic(); }
     int numBuilders() const { return numBuilders_; }
+    bool objectTrackingIsEnabled() const { return objectTracking_ != nullptr; }
+    const std::vector<ObjectTracking::TrackedObject>& trackedObjects() const
+        { return objectTracking_->trackedObjects(); }
 
     void reset();
 
 private:
     float cellSize_;
+    bool enableObjectTracking_;
 
     std::unique_ptr<LocalMapBuilder> localMapBuilder_;
 
@@ -140,6 +151,8 @@ private:
     std::vector<std::unique_ptr<OccupancyGridBuilder>> occupancyGridBuilders_;
     std::vector<std::unique_ptr<TemporaryOccupancyGridBuilder>>
         temporaryOccupancyGridBuilders_;
+
+    std::unique_ptr<ObjectTracking> objectTracking_;
 
     std::map<int, const std::shared_ptr<const LocalMap>> localMapsWithoutObstacleDilation_;
 };

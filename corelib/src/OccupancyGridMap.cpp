@@ -13,6 +13,7 @@ void OccupancyGridMap::parseParameters(const Parameters& parameters)
 {
     UASSERT(parameters.obstacleDilationsParameters.size());
     cellSize_ = parameters.cellSize;
+    enableObjectTracking_ = parameters.enableObjectTracking;
 
     LocalMapBuilder::Parameters localMapBuilderParameters =
         parameters.localMapBuilderParameters;
@@ -41,6 +42,15 @@ void OccupancyGridMap::parseParameters(const Parameters& parameters)
         temporaryOccupancyGridBuilders_.push_back(
             std::make_unique<TemporaryOccupancyGridBuilder>(
                 temporaryOccupancyGridBuilderParameters));
+    }
+
+    if (enableObjectTracking_)
+    {
+        objectTracking_ = std::make_unique<ObjectTracking>(cellSize_);
+    }
+    else
+    {
+        objectTracking_.reset();
     }
 }
 
@@ -111,6 +121,10 @@ bool OccupancyGridMap::addTemporaryLocalMap(const Transform& pose,
         }
         overflowed =
             temporaryOccupancyGridBuilders_[i]->addLocalMap(pose, dilatedLocalMap);
+    }
+    if (objectTracking_)
+    {
+        objectTracking_->track(*localMap, pose);
     }
     return overflowed;
 }
