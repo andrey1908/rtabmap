@@ -22,6 +22,9 @@ void OccupancyGridMap::parseParameters(const Parameters& parameters)
         std::make_unique<LocalMapBuilder>(localMapBuilderParameters);
 
     numBuilders_ = parameters.obstacleDilationsParameters.size();
+    obstacleDilations_.clear();
+    occupancyGridBuilders_.clear();
+    temporaryOccupancyGridBuilders_.clear();
     for (int i = 0; i < numBuilders_; i++)
     {
         ObstacleDilation::Parameters obstacleDilationParameters =
