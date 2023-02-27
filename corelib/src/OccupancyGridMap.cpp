@@ -94,7 +94,6 @@ void OccupancyGridMap::addLocalMap(int nodeId, const Transform& pose,
         }
         occupancyGridBuilders_[i]->addLocalMap(nodeId, pose, dilatedLocalMap);
     }
-    objectTracking_->track(*localMap, pose);
 }
 
 void OccupancyGridMap::addTemporaryLocalMap(const Transform& pose,

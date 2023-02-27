@@ -25,7 +25,7 @@ ObjectTracking::ObjectTracking(float cellSize) :
 
 void ObjectTracking::track(const LocalMap& localMap, const Transform& pose)
 {
-    MEASURE_BLOCK_TIME(_________track);
+    MEASURE_BLOCK_TIME(ObjectTracking__track);
     float dt = localMap.time().toSec() - prevTime_.toSec();
     std::vector<TrackedObject> trackedObjects = detect(localMap, pose);
     std::vector<TrackedObject> assignedTrackedObjects = assign(trackedObjects, dt);
