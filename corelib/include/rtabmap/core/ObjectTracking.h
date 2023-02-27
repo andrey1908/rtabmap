@@ -86,7 +86,8 @@ public:
 
     void track(const LocalMap& localMap, const Transform& pose);
 
-    const std::vector<TrackedObject>& trackedObjects() { return trackedObjects_; }
+    const std::vector<TrackedObject>& trackedObjects() const
+        { return trackedObjects_; }
 
 public:
     std::vector<TrackedObject> detect(

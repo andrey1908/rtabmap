@@ -28,6 +28,7 @@ public:
         OccupancyGridBuilder::Parameters occupancyGridBuilderParameters;
         TemporaryOccupancyGridBuilder::Parameters
             temporaryOccupancyGridBuilderParameters;
+        bool enableObjectTracking = false;
 
         static Parameters createParameters(const YAML::Node& node)
         {
@@ -82,6 +83,11 @@ public:
                     TemporaryOccupancyGridBuilder::Parameters::createParameters(
                         node["TemporaryOccupancyGridBuilder"]);
             }
+            if (node["EnableObjectTracking"])
+            {
+                parameters.enableObjectTracking =
+                    node["EnableObjectTracking"].as<bool>();
+            }
             return parameters;
         }
     };
@@ -120,13 +126,15 @@ public:
     const cv::Mat& lastDilatedSemantic() const
         { return localMapBuilder_->lastDilatedSemantic(); }
     int numBuilders() const { return numBuilders_; }
-    const std::vector<ObjectTracking::TrackedObject>& trackedObjects()
+    bool objectTrackingIsEnabled() const { return objectTracking_ != nullptr; }
+    const std::vector<ObjectTracking::TrackedObject>& trackedObjects() const
         { return objectTracking_->trackedObjects(); }
 
     void reset();
 
 private:
     float cellSize_;
+    bool enableObjectTracking_;
 
     std::unique_ptr<LocalMapBuilder> localMapBuilder_;
 
