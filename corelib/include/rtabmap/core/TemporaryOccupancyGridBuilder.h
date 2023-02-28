@@ -76,12 +76,9 @@ public:
 
     void updatePoses(const std::deque<Transform>& updatedPoses);
 
-    OccupancyGrid getOccupancyGrid() const;
-    OccupancyGrid getOccupancyGrid(const MapLimitsI& roi) const;
-    OccupancyGrid getProbOccupancyGrid() const;
-    OccupancyGrid getProbOccupancyGrid(const MapLimitsI& roi) const;
-    ColorGrid getColorGrid() const;
-    ColorGrid getColorGrid(const MapLimitsI& roi) const;
+    OccupancyGrid getOccupancyGrid(MapLimitsI roi = MapLimitsI()) const;
+    OccupancyGrid getProbOccupancyGrid(MapLimitsI roi = MapLimitsI()) const;
+    ColorGrid getColorGrid(MapLimitsI roi = MapLimitsI()) const;
 
     int maxTemporaryLocalMaps() const { return maxTemporaryLocalMaps_; }
     const std::deque<Node>& nodes() const { return nodes_; }
@@ -93,9 +90,15 @@ private:
     void precomputeProbabilities();
 
     void createOrResizeMap(const MapLimitsI& newMapLimits);
+
     void deployLastNode();
-    void deployNode(const Node& node);
+    void deployAllNodes();
     void removeFirstNode();
+
+    void deployTransformedLocalMap(const LocalMap& localMap,
+        const TransformedLocalMap& transformedLocalMap);
+    void removeTransformedLocalMap(const LocalMap& localMap,
+        const TransformedLocalMap& transformedLocalMap);
 
     void clear();
 

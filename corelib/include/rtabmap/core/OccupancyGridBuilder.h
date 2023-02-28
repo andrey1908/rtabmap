@@ -13,6 +13,7 @@
 #include <map>
 #include <utility>
 #include <optional>
+#include <functional>
 #include <Eigen/Core>
 
 namespace rtabmap {
@@ -120,14 +121,11 @@ public:
         std::shared_ptr<const LocalMap> localMap);
 
     void updatePoses(const std::map<int, Transform>& updatedPoses,
-        int lastNodeIdToIncludeInMapCache = -1);
+        int lastNodeIdToIncludeInCachedMap = -1);
 
-    OccupancyGrid getOccupancyGrid() const;
-    OccupancyGrid getOccupancyGrid(const MapLimitsI& roi) const;
-    OccupancyGrid getProbOccupancyGrid() const;
-    OccupancyGrid getProbOccupancyGrid(const MapLimitsI& roi) const;
-    ColorGrid getColorGrid() const;
-    ColorGrid getColorGrid(const MapLimitsI& roi) const;
+    OccupancyGrid getOccupancyGrid(MapLimitsI roi = MapLimitsI()) const;
+    OccupancyGrid getProbOccupancyGrid(MapLimitsI roi = MapLimitsI()) const;
+    ColorGrid getColorGrid(MapLimitsI roi = MapLimitsI()) const;
 
     const std::map<int, Node>& nodes() const { return map_.nodes; }
     const MapLimitsI& mapLimits() const { return map_.mapLimits; }
@@ -143,8 +141,12 @@ private:
     bool tryToUseCachedMap(const std::map<int, Transform>& newPoses);
 
     void createOrResizeMap(const MapLimitsI& newMapLimits);
-    void deployNode(int nodeId);
+
     void deployNode(const Node& node);
+    void deployNodes(const std::vector<std::reference_wrapper<Node>>& nodes);
+
+    void deployTransformedLocalMap(const LocalMap& localMap,
+        const TransformedLocalMap& transformedLocalMap);
 
     void clear();
     void clearCachedMap();

@@ -111,11 +111,13 @@ public:
     std::pair<float, float> getGridOrigin(int index) const;
     int maxTemporaryLocalMaps(int index) const
         { return temporaryOccupancyGridBuilders_[index]->maxTemporaryLocalMaps(); }
-    const std::map<int, Node>& nodes(int index) const { return occupancyGridBuilders_[index]->nodes(); }
+    const std::map<int, Node>& nodes(int index) const
+        { return occupancyGridBuilders_[index]->nodes(); }
     const std::deque<Node>& temporaryNodes(int index) const
         { return temporaryOccupancyGridBuilders_[index]->nodes(); }
     const std::map<int, const std::shared_ptr<const LocalMap>>&
-        localMapsWithoutObstacleDilation() const { return localMapsWithoutObstacleDilation_; }
+        localMapsWithoutObstacleDilation() const
+            { return localMapsWithoutObstacleDilation_; }
     const cv::Mat& lastDilatedSemantic() const
         { return localMapBuilder_->lastDilatedSemantic(); }
     int numBuilders() const { return numBuilders_; }

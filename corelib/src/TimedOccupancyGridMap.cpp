@@ -70,11 +70,11 @@ void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories)
             UASSERT(nodeIt != nodesRef.end());
             int nodeId = canExtrapolateIt->first;
             const Node& node = nodeIt->second;
-            const Time& time = node.localMap->time();
+            const Time& time = node.localMap()->time();
             std::optional<Transform> prevPose = std::nullopt;
-            if (node.transformedLocalMap.valid())
+            if (node.hasPose())
             {
-                prevPose = node.transformedLocalMap.pose();
+                prevPose = node.pose();
             }
             std::optional<Transform> pose;
             bool extrapolated;
@@ -100,8 +100,8 @@ void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories)
         {
             UASSERT(nodeIt != nodesRef.end());
             const Node& node = *nodeIt;
-            const Time& time = node.localMap->time();
-            const Transform& prevPose = node.transformedLocalMap.pose();
+            const Time& time = node.localMap()->time();
+            const Transform& prevPose = node.pose();
             std::optional<Transform> pose;
             bool extrapolated;
             std::tie(pose, extrapolated) =
@@ -122,7 +122,7 @@ void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories)
         const auto& nodesRef = nodes(0);
         for (const auto& [nodeId, node] : nodesRef)
         {
-            const Time& time = node.localMap->time();
+            const Time& time = node.localMap()->time();
             if (time >= latestTrajectoryIt->minTime())
             {
                 break;
@@ -242,13 +242,13 @@ void TimedOccupancyGridMap::save(const std::string& file)
     {
         UASSERT(nodeIt != nodesRef.end());
         UASSERT(localMapIt->first == nodeIt->first);
+        int nodeId = nodeIt->first;
         const Node& node = nodeIt->second;
         proto::OccupancyGridMap::Node proto;
-        proto.set_node_id(localMapIt->first);
-        if (node.transformedLocalMap.valid())
+        proto.set_node_id(nodeId);
+        if (node.hasPose())
         {
-            *proto.mutable_pose() =
-                rtabmap::toProto(node.transformedLocalMap.pose());
+            *proto.mutable_pose() = rtabmap::toProto(node.pose());
         }
         *proto.mutable_local_map() = rtabmap::toProto(*(localMapIt->second));
         writer.write(proto);

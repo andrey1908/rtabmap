@@ -1,4 +1,4 @@
-#include <rtabmap/core/OccupancyGridBuilder.h>
+#include <rtabmap/core/Node.h>
 
 #include "time_measurer/time_measurer.h"
 
@@ -7,7 +7,6 @@ namespace rtabmap {
 void TransformedLocalMap::set(const LocalMap& localMap, const Transform& pose,
     float cellSize)
 {
-    pose_ = pose;
     points_.resize(2, localMap.points().cols());
     Eigen::Matrix3Xf transformedPoints =
         (pose.toEigen3fRotation() * localMap.points()).colwise() +
@@ -21,6 +20,7 @@ void TransformedLocalMap::set(const LocalMap& localMap, const Transform& pose,
         points_.coeffRef(1, i) = y;
         mapLimits_.update(x, y);
     }
+    UASSERT(mapLimits_.valid());
 }
 
 }
