@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pcl/TextureMesh.h>
 #include <rtabmap/core/Transform.h>
 #include <rtabmap/core/SensorData.h>
+#include <rtabmap/core/StereoCameraModel.h>
 #include <opencv2/core/core.hpp>
 #include <rtabmap/core/ProgressState.h>
 #include <map>

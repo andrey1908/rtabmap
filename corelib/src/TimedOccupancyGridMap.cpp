@@ -3,7 +3,7 @@
 
 #include <rtabmap/proto/OccupancyGridMap.pb.h>
 
-#include "time_measurer/time_measurer.h"
+#include <time_measurer/time_measurer.h>
 
 namespace rtabmap {
 
@@ -22,40 +22,70 @@ void TimedOccupancyGridMap::parseParameters(const Parameters& parameters)
 }
 
 std::shared_ptr<LocalMap> TimedOccupancyGridMap::createLocalMap(
-    const Signature& signature, const Time& time,
-    const Transform& fromUpdatedPose /* Transform::getIdentity() */) const
+    const SensorData& sensorData,
+    const Time& time, const Transform& fromUpdatedPose) const
 {
-    std::shared_ptr<LocalMap> localMap =
-        occupancyGridMap_->createLocalMap(signature, fromUpdatedPose);
-    localMap->setTime(time);
-    return localMap;
+    return occupancyGridMap_->createLocalMap(sensorData, time, fromUpdatedPose);
 }
 
-void TimedOccupancyGridMap::addLocalMap(int nodeId,
-    std::shared_ptr<const LocalMap> localMap)
+int TimedOccupancyGridMap::addLocalMap(const std::shared_ptr<const LocalMap>& localMap)
 {
-    UASSERT(canExtrapolate_.count(nodeId) == 0);
+    int nodeId = occupancyGridMap_->addLocalMap(localMap);
     canExtrapolate_[nodeId] = true;
-    occupancyGridMap_->addLocalMap(nodeId, localMap);
+    return nodeId;
 }
 
-void TimedOccupancyGridMap::addLocalMap(int nodeId, const Transform& pose,
-    std::shared_ptr<const LocalMap> localMap)
+int TimedOccupancyGridMap::addLocalMap(const Transform& pose,
+    const std::shared_ptr<const LocalMap>& localMap)
 {
-    UASSERT(canExtrapolate_.count(nodeId) == 0);
+    int nodeId = occupancyGridMap_->addLocalMap(pose, localMap);
     canExtrapolate_[nodeId] = true;
-    occupancyGridMap_->addLocalMap(nodeId, pose, localMap);
+    return nodeId;
 }
 
-void TimedOccupancyGridMap::addTemporaryLocalMap(const Transform& pose,
-    std::shared_ptr<const LocalMap> localMap)
+bool TimedOccupancyGridMap::addTemporaryLocalMap(const Transform& pose,
+    const std::shared_ptr<const LocalMap>& localMap)
 {
+    bool overflowed = occupancyGridMap_->addTemporaryLocalMap(pose, localMap);
     temporaryCanExtrapolate_.push_back(true);
-    if ((int)temporaryCanExtrapolate_.size() > maxTemporaryLocalMaps(0))
+    if (overflowed)
     {
         temporaryCanExtrapolate_.pop_front();
     }
-    occupancyGridMap_->addTemporaryLocalMap(pose, localMap);
+    return overflowed;
+}
+
+int TimedOccupancyGridMap::addSensorData(const SensorData& sensorData,
+    const Time& time, const Transform& fromUpdatedPose)
+{
+    int nodeId = occupancyGridMap_->addSensorData(
+        sensorData, time, fromUpdatedPose);
+    canExtrapolate_[nodeId] = true;
+    return nodeId;
+}
+
+int TimedOccupancyGridMap::addSensorData(const SensorData& sensorData,
+    const Time& time, const Transform& pose,
+    const Transform& fromUpdatedPose)
+{
+    int nodeId = occupancyGridMap_->addSensorData(
+        sensorData, time, pose, fromUpdatedPose);
+    canExtrapolate_[nodeId] = true;
+    return nodeId;
+}
+
+bool TimedOccupancyGridMap::addTemporarySensorData(const SensorData& sensorData,
+    const Time& time, const Transform& pose,
+    const Transform& fromUpdatedPose)
+{
+    bool overflowed = occupancyGridMap_->addTemporarySensorData(
+        sensorData, time, pose, fromUpdatedPose);
+    temporaryCanExtrapolate_.push_back(true);
+    if (overflowed)
+    {
+        temporaryCanExtrapolate_.pop_front();
+    }
+    return overflowed;
 }
 
 void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories)
@@ -259,33 +289,30 @@ void TimedOccupancyGridMap::save(const std::string& file)
     writer.close();
 }
 
-int TimedOccupancyGridMap::load(const std::string& file)
+void TimedOccupancyGridMap::load(const std::string& file)
 {
     MEASURE_BLOCK_TIME(TimedOccupancyGridMap__load);
     reset();
     Deserialization reader(file);
     UASSERT(cellSize() == reader.metaData().cell_size());
     std::optional<proto::OccupancyGridMap::Node> proto;
-    int maxNodeId = -1;
     while (proto = reader.readNode())
     {
-        int nodeId = proto->node_id();
         std::shared_ptr<LocalMap> localMap =
             rtabmap::fromProto(proto->local_map());
+        int nodeId;
         if (proto->has_pose())
         {
             Transform pose = rtabmap::fromProto(proto->pose());
-            addLocalMap(nodeId, pose, localMap);
+            nodeId = addLocalMap(pose, localMap);
         }
         else
         {
-            addLocalMap(nodeId, localMap);
+            nodeId = addLocalMap(localMap);
         }
         canExtrapolate_[nodeId] = false;
-        maxNodeId = std::max(maxNodeId, nodeId);
     }
     reader.close();
-    return maxNodeId + 1;
 }
 
 }

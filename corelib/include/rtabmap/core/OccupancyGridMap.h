@@ -1,11 +1,12 @@
 #pragma once
 
 #include <rtabmap/utilite/ULogger.h>
-#include <rtabmap/core/Signature.h>
+#include <rtabmap/core/SensorData.h>
 #include <rtabmap/core/LocalMapBuilder.h>
 #include <rtabmap/core/OccupancyGridBuilder.h>
 #include <rtabmap/core/TemporaryOccupancyGridBuilder.h>
 #include <rtabmap/core/ObstacleDilation.h>
+#include <rtabmap/core/ObjectTracking.h>
 
 #include <yaml-cpp/yaml.h>
 
@@ -27,6 +28,7 @@ public:
         OccupancyGridBuilder::Parameters occupancyGridBuilderParameters;
         TemporaryOccupancyGridBuilder::Parameters
             temporaryOccupancyGridBuilderParameters;
+        bool enableObjectTracking = false;
 
         static Parameters createParameters(const YAML::Node& node)
         {
@@ -81,6 +83,11 @@ public:
                     TemporaryOccupancyGridBuilder::Parameters::createParameters(
                         node["TemporaryOccupancyGridBuilder"]);
             }
+            if (node["EnableObjectTracking"])
+            {
+                parameters.enableObjectTracking =
+                    node["EnableObjectTracking"].as<bool>();
+            }
             return parameters;
         }
     };
@@ -89,15 +96,23 @@ public:
     OccupancyGridMap(const Parameters& parameters);
     void parseParameters(const Parameters& parameters);
 
-    std::shared_ptr<LocalMap> createLocalMap(const Signature& signature,
-        const Transform& fromUpdatedPose = Transform::getIdentity()) const;
+    std::shared_ptr<LocalMap> createLocalMap(const SensorData& sensorData,
+        const Time& time, const Transform& fromUpdatedPose) const;
 
-    void addLocalMap(int nodeId,
-        std::shared_ptr<const LocalMap> localMap);
-    void addLocalMap(int nodeId, const Transform& pose,
-        std::shared_ptr<const LocalMap> localMap);
-    void addTemporaryLocalMap(const Transform& pose,
-        std::shared_ptr<const LocalMap> localMap);
+    int addLocalMap(const std::shared_ptr<const LocalMap>& localMap);
+    int addLocalMap(const Transform& pose,
+        const std::shared_ptr<const LocalMap>& localMap);
+    bool addTemporaryLocalMap(const Transform& pose,
+        const std::shared_ptr<const LocalMap>& localMap);
+
+    int addSensorData(const SensorData& sensorData, const Time& time,
+        const Transform& fromUpdatedPose);
+    int addSensorData(const SensorData& sensorData, const Time& time,
+        const Transform& pose, const Transform& fromUpdatedPose);
+    bool addTemporarySensorData(const SensorData& sensorData, const Time& time,
+        const Transform& pose, const Transform& fromUpdatedPose);
+
+    void transformMap(const Transform& transform);
 
     void updatePoses(const std::map<int, Transform>& updatedPoses,
         const std::deque<Transform>& updatedTemporaryPoses,
@@ -121,11 +136,15 @@ public:
     const cv::Mat& lastDilatedSemantic() const
         { return localMapBuilder_->lastDilatedSemantic(); }
     int numBuilders() const { return numBuilders_; }
+    bool objectTrackingIsEnabled() const { return objectTracking_ != nullptr; }
+    const std::vector<ObjectTracking::TrackedObject>& trackedObjects() const
+        { return objectTracking_->trackedObjects(); }
 
     void reset();
 
 private:
     float cellSize_;
+    bool enableObjectTracking_;
 
     std::unique_ptr<LocalMapBuilder> localMapBuilder_;
 
@@ -134,6 +153,8 @@ private:
     std::vector<std::unique_ptr<OccupancyGridBuilder>> occupancyGridBuilders_;
     std::vector<std::unique_ptr<TemporaryOccupancyGridBuilder>>
         temporaryOccupancyGridBuilders_;
+
+    std::unique_ptr<ObjectTracking> objectTracking_;
 
     std::map<int, const std::shared_ptr<const LocalMap>> localMapsWithoutObstacleDilation_;
 };

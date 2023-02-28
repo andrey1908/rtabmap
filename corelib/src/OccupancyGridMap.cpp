@@ -1,6 +1,6 @@
 #include <rtabmap/core/OccupancyGridMap.h>
 
-#include "time_measurer/time_measurer.h"
+#include <time_measurer/time_measurer.h>
 
 namespace rtabmap {
 
@@ -13,6 +13,7 @@ void OccupancyGridMap::parseParameters(const Parameters& parameters)
 {
     UASSERT(parameters.obstacleDilationsParameters.size());
     cellSize_ = parameters.cellSize;
+    enableObjectTracking_ = parameters.enableObjectTracking;
 
     LocalMapBuilder::Parameters localMapBuilderParameters =
         parameters.localMapBuilderParameters;
@@ -21,6 +22,9 @@ void OccupancyGridMap::parseParameters(const Parameters& parameters)
         std::make_unique<LocalMapBuilder>(localMapBuilderParameters);
 
     numBuilders_ = parameters.obstacleDilationsParameters.size();
+    obstacleDilations_.clear();
+    occupancyGridBuilders_.clear();
+    temporaryOccupancyGridBuilders_.clear();
     for (int i = 0; i < numBuilders_; i++)
     {
         ObstacleDilation::Parameters obstacleDilationParameters =
@@ -42,22 +46,26 @@ void OccupancyGridMap::parseParameters(const Parameters& parameters)
             std::make_unique<TemporaryOccupancyGridBuilder>(
                 temporaryOccupancyGridBuilderParameters));
     }
+
+    if (enableObjectTracking_)
+    {
+        objectTracking_ = std::make_unique<ObjectTracking>(cellSize_);
+    }
+    else
+    {
+        objectTracking_.reset();
+    }
 }
 
-std::shared_ptr<LocalMap> OccupancyGridMap::createLocalMap(
-    const Signature& signature,
-    const Transform& fromUpdatedPose /* Transform::getIdentity() */) const
+std::shared_ptr<LocalMap> OccupancyGridMap::createLocalMap(const SensorData& sensorData,
+    const Time& time, const Transform& fromUpdatedPose) const
 {
-    UASSERT(!fromUpdatedPose.isNull());
-    std::shared_ptr<LocalMap> localMap = localMapBuilder_->createLocalMap(signature);
-    localMap->setFromUpdatedPose(fromUpdatedPose);
-    return localMap;
+    return localMapBuilder_->createLocalMap(sensorData, time, fromUpdatedPose);
 }
 
-void OccupancyGridMap::addLocalMap(int nodeId,
-    std::shared_ptr<const LocalMap> localMap)
+int OccupancyGridMap::addLocalMap(const std::shared_ptr<const LocalMap>& localMap)
 {
-    localMapsWithoutObstacleDilation_.emplace(nodeId, localMap);
+    int nodeId;
     for (int i = 0; i < numBuilders_; i++)
     {
         std::shared_ptr<const LocalMap> dilatedLocalMap;
@@ -70,14 +78,16 @@ void OccupancyGridMap::addLocalMap(int nodeId,
         {
             dilatedLocalMap = localMap;
         }
-        occupancyGridBuilders_[i]->addLocalMap(nodeId, dilatedLocalMap);
+        nodeId = occupancyGridBuilders_[i]->addLocalMap(dilatedLocalMap);
     }
+    localMapsWithoutObstacleDilation_.emplace(nodeId, localMap);
+    return nodeId;
 }
 
-void OccupancyGridMap::addLocalMap(int nodeId, const Transform& pose,
-    std::shared_ptr<const LocalMap> localMap)
+int OccupancyGridMap::addLocalMap(const Transform& pose,
+    const std::shared_ptr<const LocalMap>& localMap)
 {
-    localMapsWithoutObstacleDilation_.emplace(nodeId, localMap);
+    int nodeId;
     for (int i = 0; i < numBuilders_; i++)
     {
         std::shared_ptr<const LocalMap> dilatedLocalMap;
@@ -90,16 +100,19 @@ void OccupancyGridMap::addLocalMap(int nodeId, const Transform& pose,
         {
             dilatedLocalMap = localMap;
         }
-        occupancyGridBuilders_[i]->addLocalMap(nodeId, pose, dilatedLocalMap);
+        nodeId = occupancyGridBuilders_[i]->addLocalMap(pose, dilatedLocalMap);
     }
+    localMapsWithoutObstacleDilation_.emplace(nodeId, localMap);
+    return nodeId;
 }
 
-void OccupancyGridMap::addTemporaryLocalMap(const Transform& pose,
-    std::shared_ptr<const LocalMap> localMap)
+bool OccupancyGridMap::addTemporaryLocalMap(const Transform& pose,
+    const std::shared_ptr<const LocalMap>& localMap)
 {
-    std::shared_ptr<const LocalMap> dilatedLocalMap;
+    bool overflowed = false;
     for (int i = 0; i < numBuilders_; i++)
     {
+        std::shared_ptr<const LocalMap> dilatedLocalMap;
         if (obstacleDilations_[i]->dilationSize() != 0.0f)
         {
             MEASURE_BLOCK_TIME(OccupancyGridMap__obstacleDilation);
@@ -109,13 +122,57 @@ void OccupancyGridMap::addTemporaryLocalMap(const Transform& pose,
         {
             dilatedLocalMap = localMap;
         }
-        temporaryOccupancyGridBuilders_[i]->addLocalMap(pose, dilatedLocalMap);
+        overflowed =
+            temporaryOccupancyGridBuilders_[i]->addLocalMap(pose, dilatedLocalMap);
+    }
+    if (objectTracking_)
+    {
+        objectTracking_->track(*localMap, pose);
+    }
+    return overflowed;
+}
+
+int OccupancyGridMap::addSensorData(const SensorData& sensorData,
+    const Time& time, const Transform& fromUpdatedPose)
+{
+    std::shared_ptr<LocalMap> localMap =
+        createLocalMap(sensorData, time, fromUpdatedPose);
+    int nodeId = addLocalMap(localMap);
+    return nodeId;
+}
+
+int OccupancyGridMap::addSensorData(const SensorData& sensorData,
+    const Time& time, const Transform& pose,
+    const Transform& fromUpdatedPose)
+{
+    std::shared_ptr<LocalMap> localMap =
+        createLocalMap(sensorData, time, fromUpdatedPose);
+    int nodeId = addLocalMap(pose, localMap);
+    return nodeId;
+}
+
+bool OccupancyGridMap::addTemporarySensorData(const SensorData& sensorData,
+    const Time& time, const Transform& pose,
+    const Transform& fromUpdatedPose)
+{
+    std::shared_ptr<LocalMap> localMap =
+        createLocalMap(sensorData, time, fromUpdatedPose);
+    bool overflowed = addTemporaryLocalMap(pose, localMap);
+    return overflowed;
+}
+
+void OccupancyGridMap::transformMap(const Transform& transform)
+{
+    for (int i = 0; i < numBuilders_; i++)
+    {
+        occupancyGridBuilders_[i]->transformMap(transform);
+        temporaryOccupancyGridBuilders_[i]->transformMap(transform);
     }
 }
 
 void OccupancyGridMap::updatePoses(const std::map<int, Transform>& updatedPoses,
-        const std::deque<Transform>& updatedTemporaryPoses,
-        int lastNodeIdToIncludeInCachedMap /* -1 */)
+    const std::deque<Transform>& updatedTemporaryPoses,
+    int lastNodeIdToIncludeInCachedMap /* -1 */)
 {
     for (int i = 0; i < numBuilders_; i++)
     {

@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <rtabmap/core/util3d_transforms.h>
 #include <rtabmap/utilite/ULogger.h>
+#include <rtabmap/utilite/UMath.h>
 
 namespace rtabmap{
 namespace util3d{

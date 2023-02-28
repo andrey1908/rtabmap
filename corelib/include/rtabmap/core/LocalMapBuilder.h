@@ -1,7 +1,7 @@
 #pragma once
 
 #include <rtabmap/utilite/ULogger.h>
-#include <rtabmap/core/Signature.h>
+#include <rtabmap/core/SensorData.h>
 #include <rtabmap/core/LaserScan.h>
 #include <rtabmap/core/Transform.h>
 #include <rtabmap/core/SemanticDilation.h>
@@ -98,7 +98,8 @@ public:
     LocalMapBuilder(const Parameters& parameters);
     void parseParameters(const Parameters& parameters);
 
-    std::shared_ptr<LocalMap> createLocalMap(const Signature& signature) const;
+    std::shared_ptr<LocalMap> createLocalMap(const SensorData& sensorData,
+        const Time& time, const Transform& fromUpdatedPose) const;
 
     const cv::Mat& lastDilatedSemantic() const { return lastDilatedSemantic_; }
 

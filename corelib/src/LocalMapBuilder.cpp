@@ -1,7 +1,7 @@
 #include <rtabmap/core/LocalMapBuilder.h>
 #include <limits>
 
-#include "time_measurer/time_measurer.h"
+#include <time_measurer/time_measurer.h>
 
 namespace rtabmap {
 
@@ -47,12 +47,15 @@ void LocalMapBuilder::parseParameters(const Parameters& parameters)
 }
 
 std::shared_ptr<LocalMap> LocalMapBuilder::createLocalMap(
-    const Signature& signature) const
+    const SensorData& sensorData, const Time& time,
+    const Transform& fromUpdatedPose) const
 {
     MEASURE_BLOCK_TIME(LocalMapBuilder__createLocalMap);
-    UASSERT(!signature.sensorData().laserScan().isEmpty() &&
-            !signature.sensorData().laserScan().is2d());
-    const LaserScan& laserScan = signature.sensorData().laserScan();
+    UASSERT(!sensorData.laserScan().isEmpty() &&
+            !sensorData.laserScan().is2d());
+    UASSERT(!sensorData.laserScan().localTransform().isNull());
+    UASSERT(!fromUpdatedPose.isNull());
+    const LaserScan& laserScan = sensorData.laserScan();
     const Transform& transform = laserScan.localTransform();
     Eigen::Matrix3Xf points, obstacles;
     points = convertLaserScan(laserScan);
@@ -64,12 +67,12 @@ std::shared_ptr<LocalMap> LocalMapBuilder::createLocalMap(
     obstacles = getObstaclePoints(points);
 
     std::vector<Color> colors;
-    if (signature.sensorData().images().size())
+    if (sensorData.numImages())
     {
         if (semanticDilation_->dilationSize() > 0)
         {
             std::vector<cv::Mat> dilatedImages;
-            for (const cv::Mat& image : signature.sensorData().images())
+            for (const cv::Mat& image : sensorData.images())
             {
                 MEASURE_BLOCK_TIME(LocalMapBuilder__dilate);
                 cv::Mat dilatedImage =
@@ -78,12 +81,12 @@ std::shared_ptr<LocalMap> LocalMapBuilder::createLocalMap(
                 lastDilatedSemantic_ = dilatedImage;
             }
             colors = getPointsColors(obstacles, dilatedImages,
-                signature.sensorData().cameraModels());
+                sensorData.cameraModels());
         }
         else
         {
-            colors = getPointsColors(obstacles, signature.sensorData().images(),
-                signature.sensorData().cameraModels());
+            colors = getPointsColors(obstacles, sensorData.images(),
+                sensorData.cameraModels());
         }
     }
     else
@@ -103,10 +106,10 @@ std::shared_ptr<LocalMap> LocalMapBuilder::createLocalMap(
 
     auto localMap = std::make_shared<LocalMap>(
         coloredGrid, maxRange2dSqr_, true /* duplicatePoints */);
-
     localMap->setSensorBlindRange2dSqr(sensorBlindRange2dSqr_);
-    UASSERT(!signature.sensorData().laserScan().localTransform().isNull());
-    localMap->setToSensor(signature.sensorData().laserScan().localTransform());
+    localMap->setToSensor(sensorData.laserScan().localTransform());
+    localMap->setFromUpdatedPose(fromUpdatedPose);
+    localMap->setTime(time);
     return localMap;
 }
 
