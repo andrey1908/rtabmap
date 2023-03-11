@@ -126,6 +126,11 @@ std::vector<ObjectTracking::TrackedObject> ObjectTracking::assign(
         Point predictedPosition;
         predictedPosition.x = oldPosition.x + oldTrackedObject.velocity.vx * dt;
         predictedPosition.y = oldPosition.y + oldTrackedObject.velocity.vy * dt;
+        float distanceFactor = 2.0f;
+        if (oldTrackedObject.trackedTimes == 1)
+        {
+            distanceFactor = 0.4f;
+        }
         for (int newIndex = 0; newIndex < trackedObjects.size(); newIndex++)
         {
             const TrackedObject& newTrackedObject = trackedObjects[newIndex];
@@ -138,7 +143,7 @@ std::vector<ObjectTracking::TrackedObject> ObjectTracking::assign(
             Score score;
             score.score =
                 (1.0f * std::abs(oldSize - newSize) / std::min(oldSize, newSize)) +
-                (Point::distanceSqr(predictedPosition, newPosition) * 2.0f /* some factor */);
+                (Point::distanceSqr(predictedPosition, newPosition) * distanceFactor);
             score.oldIndex = oldIndex;
             score.newIndex = newIndex;
             scores.push_back(score);
