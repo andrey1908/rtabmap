@@ -16,8 +16,8 @@ public:
     MapLimits() :
         minX_(std::numeric_limits<T>::max()),
         minY_(std::numeric_limits<T>::max()),
-        maxX_(std::numeric_limits<T>::min()),
-        maxY_(std::numeric_limits<T>::min()) {}
+        maxX_(std::numeric_limits<T>::lowest()),
+        maxY_(std::numeric_limits<T>::lowest()) {}
     MapLimits(const T& minX, const T& minY, const T& maxX, const T& maxY)
     {
         set(minX, minY, maxX, maxY);

@@ -551,7 +551,7 @@ float UVariant::toFloat(bool * ok) const
     else if(type_ == kDouble)
     {
         double tmp = toDouble();
-        if(tmp >= std::numeric_limits<float>::min() && tmp <= std::numeric_limits<float>::max())
+        if(tmp >= std::numeric_limits<float>::lowest() && tmp <= std::numeric_limits<float>::max())
         {
             v = (float)tmp;
             if(ok)
