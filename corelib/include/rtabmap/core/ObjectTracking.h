@@ -70,6 +70,28 @@ public:
         Color color;
     };
 
+    struct MOT16TrackedObject
+    {
+        std::int32_t frameId = -1;
+        std::int32_t id = -1;
+        Point center;
+        float width = 0.0;
+        float height = 0.0;
+
+        std::string toMOT16Entry() const
+        {
+            std::string mot16Entry =
+                std::to_string(frameId + 1) + ", " +
+                std::to_string(id + 1) + ", " +
+                std::to_string(center.x - width / 2) + ", " +
+                std::to_string(center.y - height / 2) + ", " +
+                std::to_string(width) + ", " +
+                std::to_string(height) + ", " +
+                "0.9, -1, -1, -1";
+            return mot16Entry;
+        }
+    };
+
 private:
 
     struct Score
@@ -88,24 +110,34 @@ public:
 
     const std::vector<TrackedObject>& trackedObjects() const
         { return trackedObjects_; }
+    const std::list<MOT16TrackedObject>& mot16TrackedObjectsCache() const
+        { return mot16TrackedObjectsCache_; }
 
-public:
+private:
     std::vector<TrackedObject> detect(
-        const LocalMap& localMap, const Transform& pose);
+        const LocalMap& localMap, const Transform& pose) const;
     TrackedObject segment(cv::Mat& colorGrid, const Cell& startCell,
-        const MapLimitsI& mapLimits, const Transform& pose);
+        const MapLimitsI& mapLimits, const Transform& pose) const;
     std::vector<TrackedObject> assign(
-        const std::vector<TrackedObject>& trackedObjects, float dt);
+        const std::vector<TrackedObject>& trackedObjects, float dt) const;
     void update(std::vector<TrackedObject>& trackedObjects,
         const std::vector<TrackedObject>& assignedTrackedObjects,
         float dt);
+
+    void cacheTrackedObjectsInMOT16Format(
+        const std::vector<TrackedObject>& trackedObjects,
+        const Transform& pose);
 
 private:
     float cellSize_;
     std::vector<TrackedObject> trackedObjects_;
 
+    std::int32_t frameId_ = 0;
+
     Time prevTime_;
     std::int32_t nextTrackedId_ = 0;
+
+    std::list<MOT16TrackedObject> mot16TrackedObjectsCache_;
 
     std::vector<Cell> neighborCells_;
 };

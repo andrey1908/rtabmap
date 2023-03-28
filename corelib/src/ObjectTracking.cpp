@@ -31,11 +31,13 @@ void ObjectTracking::track(const LocalMap& localMap, const Transform& pose)
     std::vector<TrackedObject> assignedTrackedObjects = assign(trackedObjects, dt);
     update(trackedObjects, assignedTrackedObjects, dt);
     trackedObjects_ = std::move(trackedObjects);
+    cacheTrackedObjectsInMOT16Format(trackedObjects_, pose);
     prevTime_ = localMap.time();
+    frameId_++;
 }
 
 std::vector<ObjectTracking::TrackedObject> ObjectTracking::detect(
-    const LocalMap& localMap, const Transform& pose)
+    const LocalMap& localMap, const Transform& pose) const
 {
     LocalMap::ColoredGrid coloredGrid = localMap.toColoredGrid();
     MapLimitsI mapLimits = coloredGrid.limits;
@@ -61,7 +63,7 @@ std::vector<ObjectTracking::TrackedObject> ObjectTracking::detect(
 
 ObjectTracking::TrackedObject ObjectTracking::segment(
     cv::Mat& colorGrid, const Cell& startCell, const MapLimitsI& mapLimits,
-    const Transform& pose)
+    const Transform& pose) const
 {
     Cell shift(mapLimits.minY(), mapLimits.minX());
 
@@ -115,7 +117,7 @@ ObjectTracking::TrackedObject ObjectTracking::segment(
 }
 
 std::vector<ObjectTracking::TrackedObject> ObjectTracking::assign(
-    const std::vector<TrackedObject>& trackedObjects, float dt)
+    const std::vector<TrackedObject>& trackedObjects, float dt) const
 {
     std::vector<Score> scores;
     for (int oldIndex = 0; oldIndex < trackedObjects_.size(); oldIndex++)
@@ -209,6 +211,66 @@ void ObjectTracking::update(std::vector<TrackedObject>& trackedObjects,
             trackedObject.trackedTimes = 1;
             nextTrackedId_++;
         }
+    }
+}
+
+void ObjectTracking::cacheTrackedObjectsInMOT16Format(
+    const std::vector<TrackedObject>& trackedObjects,
+    const Transform& pose)
+{
+    Eigen::Matrix4f transform = pose.toEigen4f();
+    for (const TrackedObject& trackedObject : trackedObjects)
+    {
+        if (trackedObject.trackedTimes < 3)
+        {
+            continue;
+        }
+
+        float minX = std::numeric_limits<float>::max();
+        float minY = std::numeric_limits<float>::max();
+        float maxX = std::numeric_limits<float>::lowest();
+        float maxY = std::numeric_limits<float>::lowest();
+        for (const Cell& cell : trackedObject.object)
+        {
+            minX = std::min(minX, cell.x * cellSize_);
+            minY = std::min(minY, cell.y * cellSize_);
+            maxX = std::max(maxX, (cell.x + 1) * cellSize_);
+            maxY = std::max(maxY, (cell.y + 1) * cellSize_);
+        }
+
+        Eigen::Matrix4f corners;
+        corners.coeffRef(0, 0) = minX;
+        corners.coeffRef(1, 0) = minY;
+        corners.coeffRef(0, 1) = minX;
+        corners.coeffRef(1, 1) = maxY;
+        corners.coeffRef(0, 2) = maxX;
+        corners.coeffRef(1, 2) = minY;
+        corners.coeffRef(0, 3) = maxX;
+        corners.coeffRef(1, 3) = maxY;
+        for (int i = 0; i < corners.cols(); i++)
+        {
+            corners.coeffRef(2, i) = 0.0f;
+            corners.coeffRef(3, i) = 1.0f;
+        }
+
+        corners = transform * corners;
+
+        const auto& min = corners.rowwise().minCoeff();
+        const auto& max = corners.rowwise().maxCoeff();
+        minX = min.coeff(0);
+        minY = min.coeff(1);
+        maxX = max.coeff(0);
+        maxY = max.coeff(1);
+
+        MOT16TrackedObject mot16TrackedObject;
+        mot16TrackedObject.frameId = frameId_;
+        mot16TrackedObject.id = trackedObject.id;
+        mot16TrackedObject.center.x = (minX + maxX) / 2;
+        mot16TrackedObject.center.y = (minY + maxY) / 2;
+        mot16TrackedObject.width = maxX - minX;
+        mot16TrackedObject.height = maxY - minY;
+
+        mot16TrackedObjectsCache_.emplace_back(std::move(mot16TrackedObject));
     }
 }
 

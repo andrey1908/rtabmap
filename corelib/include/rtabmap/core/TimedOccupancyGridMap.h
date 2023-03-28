@@ -102,6 +102,8 @@ public:
         { return occupancyGridMap_->objectTrackingIsEnabled(); }
     const std::vector<ObjectTracking::TrackedObject>& trackedObjects() const
         { return occupancyGridMap_->trackedObjects(); }
+    const std::list<ObjectTracking::MOT16TrackedObject>& mot16TrackedObjectsCache() const
+        { return occupancyGridMap_->mot16TrackedObjectsCache(); }
 
     void reset();
 
