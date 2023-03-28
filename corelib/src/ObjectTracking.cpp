@@ -10,7 +10,7 @@ namespace rtabmap {
 ObjectTracking::ObjectTracking(float cellSize) :
     cellSize_(cellSize)
 {
-    constexpr int size = 1;
+    constexpr int size = 3;
     for (int y = -size; y <= size; y++)
     {
         for (int x = -size; x <= size; x++)
