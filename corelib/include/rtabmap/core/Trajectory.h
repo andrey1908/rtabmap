@@ -1,5 +1,13 @@
 #pragma once
 
+#include <rtabmap/core/Time.h>
+#include <rtabmap/core/Transform.h>
+
+#include <set>
+#include <utility>
+#include <optional>
+#include <limits>
+
 namespace rtabmap {
 
 struct TimedPose
@@ -58,15 +66,17 @@ public:
 public:
     void addPose(const Time& time, const Transform& pose)
     {
-        bool emplaced = trajectory_.emplace(time, pose).second;
-        UASSERT(emplaced);
+        const_iterator it;
+        bool emplaced;
+        std::tie(it, emplaced) = trajectory_.emplace(time, pose);
+        UASSERT(emplaced || it->pose == pose);
     }
-    Time minTime() const
+    const Time& minTime() const
     {
         UASSERT(trajectory_.size());
         return trajectory_.begin()->time;
     }
-    Time maxTime() const
+    const Time& maxTime() const
     {
         UASSERT(trajectory_.size());
         return trajectory_.rbegin()->time;
@@ -81,18 +91,30 @@ public:
         UASSERT(trajectory_.size());
         return trajectory_.count(time);
     }
-    Bounds getBounds(const Time& time) const
+    std::optional<Transform> getPose(const Time& time)
     {
-        if (!containsTime(time))
+        auto it = trajectory_.find(time);
+        if (it == trajectory_.end())
         {
-            return std::make_pair(trajectory_.cend(), trajectory_.cend());
+            return std::nullopt;
         }
-        auto it = trajectory_.upper_bound(time);
-        return std::make_pair(std::prev(it), it);
+        return it->pose;
     }
+    Bounds getBounds(const Time& time) const;
+    std::optional<Transform> interpolate(const Time& time,
+        double maxInterpolationTimeError = std::numeric_limits<double>::max()) const;
+    void trim(const Time& time);
     size_t size() const
     {
         return trajectory_.size();
+    }
+    bool empty() const
+    {
+        return trajectory_.empty();
+    }
+    void clear()
+    {
+        trajectory_.clear();
     }
     bool operator<(const Trajectory& other) const
     {
@@ -125,13 +147,22 @@ public:
         bool emplaced = trajectories_.emplace(std::forward<T>(trajectory)).second;
         UASSERT(emplaced);
     }
-    const_iterator findContainingTrajectory(const Time& time) const
+    const_iterator findCurrentTrajectory(const Time& time) const
     {
         return trajectories_.find(time);
     }
-    const_iterator findContinuedTrajectory(const Time& time) const
+    const_iterator findPreviousTrajectory(const Time& time) const
     {
         auto it = trajectories_.lower_bound(time);
+        if (it == trajectories_.begin())
+        {
+            return trajectories_.end();
+        }
+        return std::prev(it);
+    }
+    const_iterator findCurrentOrPreviousTrajectory(const Time& time) const
+    {
+        auto it = trajectories_.upper_bound(time);
         if (it == trajectories_.begin())
         {
             return trajectories_.end();
@@ -141,6 +172,10 @@ public:
     size_t size() const
     {
         return trajectories_.size();
+    }
+    bool empty() const
+    {
+        return trajectories_.empty();
     }
     const_iterator begin() const
     {

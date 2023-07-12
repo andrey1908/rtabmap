@@ -20,6 +20,7 @@ SET(SRC_FILES
 
     Time.cpp
     Color.cpp
+    Trajectory.cpp
     MapLimits.cpp
     LocalMap.cpp
     LocalMapBuilder.cpp

@@ -31,36 +31,41 @@ std::shared_ptr<LocalMap> TimedOccupancyGridMap::createLocalMap(
 int TimedOccupancyGridMap::addLocalMap(const std::shared_ptr<const LocalMap>& localMap)
 {
     int nodeId = occupancyGridMap_->addLocalMap(localMap);
-    canExtrapolate_[nodeId] = true;
     return nodeId;
 }
 
 int TimedOccupancyGridMap::addLocalMap(const Transform& pose,
     const std::shared_ptr<const LocalMap>& localMap)
 {
+    UASSERT(localMap->time() > lastPoseTime_);
     int nodeId = occupancyGridMap_->addLocalMap(pose, localMap);
-    canExtrapolate_[nodeId] = true;
+
+    const Transform& toUpdatedPose = localMap->fromUpdatedPose().inverse();
+    currentTrajectory_.addPose(localMap->time(), pose * toUpdatedPose);
+    lastPoseTime_ = localMap->time();
+
     return nodeId;
 }
 
 bool TimedOccupancyGridMap::addTemporaryLocalMap(const Transform& pose,
     const std::shared_ptr<const LocalMap>& localMap)
 {
+    UASSERT(localMap->time() > lastTemporaryPoseTime_);
     bool overflowed = occupancyGridMap_->addTemporaryLocalMap(pose, localMap);
-    temporaryCanExtrapolate_.push_back(true);
-    if (overflowed)
-    {
-        temporaryCanExtrapolate_.pop_front();
-    }
+
+    const Transform& toUpdatedPose = localMap->fromUpdatedPose().inverse();
+    currentTrajectory_.addPose(localMap->time(), pose * toUpdatedPose);
+    lastTemporaryPoseTime_ = localMap->time();
+
     return overflowed;
 }
 
 int TimedOccupancyGridMap::addSensorData(const SensorData& sensorData,
     const Time& time, const Transform& fromUpdatedPose)
 {
-    int nodeId = occupancyGridMap_->addSensorData(
-        sensorData, time, fromUpdatedPose);
-    canExtrapolate_[nodeId] = true;
+    std::shared_ptr<LocalMap> localMap =
+        createLocalMap(sensorData, time, fromUpdatedPose);
+    int nodeId = addLocalMap(localMap);
     return nodeId;
 }
 
@@ -68,9 +73,9 @@ int TimedOccupancyGridMap::addSensorData(const SensorData& sensorData,
     const Time& time, const Transform& pose,
     const Transform& fromUpdatedPose)
 {
-    int nodeId = occupancyGridMap_->addSensorData(
-        sensorData, time, pose, fromUpdatedPose);
-    canExtrapolate_[nodeId] = true;
+    std::shared_ptr<LocalMap> localMap =
+        createLocalMap(sensorData, time, fromUpdatedPose);
+    int nodeId = addLocalMap(pose, localMap);
     return nodeId;
 }
 
@@ -78,182 +83,168 @@ bool TimedOccupancyGridMap::addTemporarySensorData(const SensorData& sensorData,
     const Time& time, const Transform& pose,
     const Transform& fromUpdatedPose)
 {
-    bool overflowed = occupancyGridMap_->addTemporarySensorData(
-        sensorData, time, pose, fromUpdatedPose);
-    temporaryCanExtrapolate_.push_back(true);
-    if (overflowed)
-    {
-        temporaryCanExtrapolate_.pop_front();
-    }
+    std::shared_ptr<LocalMap> localMap =
+        createLocalMap(sensorData, time, fromUpdatedPose);
+    bool overflowed = addTemporaryLocalMap(pose, localMap);
     return overflowed;
+}
+
+void TimedOccupancyGridMap::transformMap(const Transform& transform)
+{
+    Transform transform3DoF = transform.to3DoF();
+    Trajectory transformedCurrentTrajectory;
+    for (const auto& timedPose : currentTrajectory_)
+    {
+        const Transform& pose = timedPose.pose;
+        Transform transformedPose = transform3DoF * pose;
+        transformedCurrentTrajectory.addPose(timedPose.time, transformedPose);
+    }
+    currentTrajectory_ = std::move(transformedCurrentTrajectory);
+
+    occupancyGridMap_->transformMap(transform);
 }
 
 void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories)
 {
-    std::map<int, Transform> updatedPoses;
+    const Trajectory* activeTrajectoryPtr = nullptr;
+    if (currentTrajectory_.size())
     {
-        auto canExtrapolateIt = canExtrapolate_.begin();
-        const auto& nodesRef = nodes(0);
-        auto nodeIt = nodesRef.begin();
-        while (canExtrapolateIt != canExtrapolate_.end())
+        auto activeTrajectoryIt = trajectories.findCurrentOrPreviousTrajectory(
+            currentTrajectory_.maxTime());
+        if (activeTrajectoryIt != trajectories.end())
         {
-            UASSERT(nodeIt != nodesRef.end());
-            int nodeId = canExtrapolateIt->first;
-            const Node& node = nodeIt->second;
-            const Time& time = node.localMap()->time();
-            std::optional<Transform> prevPose = std::nullopt;
-            if (node.hasPose())
-            {
-                prevPose = node.pose();
-            }
-            std::optional<Transform> pose;
-            bool extrapolated;
-            std::tie(pose, extrapolated) =
-                getPose(trajectories, time, canExtrapolateIt->second, prevPose);
-            canExtrapolateIt->second = extrapolated;
-            if (pose.has_value())
-            {
-                updatedPoses[nodeId] = *pose;
-            }
-            ++canExtrapolateIt;
-            ++nodeIt;
+            activeTrajectoryPtr = &(*activeTrajectoryIt);
         }
-        UASSERT(nodeIt == nodesRef.end());
+    }
+    std::optional<Transform> extrapolationShift = std::nullopt;
+    if (activeTrajectoryPtr)
+    {
+        Time commonTime = std::min(
+            currentTrajectory_.maxTime(), activeTrajectoryPtr->maxTime());
+        std::optional<Transform> currentPose = currentTrajectory_.interpolate(commonTime);
+        std::optional<Transform> updatedPose = activeTrajectoryPtr->interpolate(commonTime);
+        if (currentPose.has_value() && updatedPose.has_value())
+        {
+            extrapolationShift = (*updatedPose) * currentPose->inverse();
+        }
     }
 
-    std::deque<Transform> updatedTemporaryPoses;
+    Trajectory updatedCurrentTrajectory;
+    Time minUpdatedCurrentTrajectoryTime(0, 0);
+    if (currentTrajectory_.size())
     {
-        auto canExtrapolateIt = temporaryCanExtrapolate_.begin();
-        const auto& nodesRef = temporaryNodes(0);
-        auto nodeIt = nodesRef.begin();
-        while (canExtrapolateIt != temporaryCanExtrapolate_.end())
+        minUpdatedCurrentTrajectoryTime =
+            Time(currentTrajectory_.maxTime().toSec() - guaranteedInterpolationTimeWindow_);
+        if (activeTrajectoryPtr)
         {
-            UASSERT(nodeIt != nodesRef.end());
-            const Node& node = *nodeIt;
-            const Time& time = node.localMap()->time();
-            const Transform& prevPose = node.pose();
-            std::optional<Transform> pose;
-            bool extrapolated;
-            std::tie(pose, extrapolated) =
-                getPose(trajectories, time, *canExtrapolateIt, prevPose);
-            UASSERT(pose.has_value());
-            *canExtrapolateIt = extrapolated;
-            updatedTemporaryPoses.push_back(*pose);
-            ++canExtrapolateIt;
-            ++nodeIt;
+            minUpdatedCurrentTrajectoryTime = std::min(
+                minUpdatedCurrentTrajectoryTime,
+                activeTrajectoryPtr->maxTime());
         }
-        UASSERT(nodeIt == nodesRef.end());
+        if (lastTemporaryPoseTime_ != Time())
+        {
+            minUpdatedCurrentTrajectoryTime = std::min(
+                minUpdatedCurrentTrajectoryTime,
+                temporaryNodes(0).begin()->localMap()->time());
+        }
     }
 
     int lastNodeIdToIncludeInCachedMap = -1;
-    if (trajectories.size())
+    std::map<int, Transform> updatedPoses;
     {
-        auto latestTrajectoryIt = std::prev(trajectories.end());
         const auto& nodesRef = nodes(0);
         for (const auto& [nodeId, node] : nodesRef)
         {
             const Time& time = node.localMap()->time();
-            if (time >= latestTrajectoryIt->minTime())
+            std::optional<Transform> pose = getPose(
+                trajectories, time, activeTrajectoryPtr, extrapolationShift);
+            if (pose.has_value())
             {
-                break;
-            }
-            if (updatedPoses.count(nodeId))
-            {
-                lastNodeIdToIncludeInCachedMap =
-                    std::max(lastNodeIdToIncludeInCachedMap, nodeId);
+                auto nodeTrajectoryIt = trajectories.findCurrentTrajectory(time);
+                if (activeTrajectoryPtr && nodeTrajectoryIt != trajectories.end() &&
+                    *nodeTrajectoryIt < *activeTrajectoryPtr)
+                {
+                    lastNodeIdToIncludeInCachedMap = nodeId;
+                }
+                if (currentTrajectory_.containsTime(time) &&
+                    time >= minUpdatedCurrentTrajectoryTime)
+                {
+                    updatedCurrentTrajectory.addPose(time, *pose);
+                }
+                updatedPoses[nodeId] = *pose;
             }
         }
     }
 
-    prevTrajectories_ = trajectories;
+    std::deque<Transform> updatedTemporaryPoses;
+    {
+        const auto& nodesRef = temporaryNodes(0);
+        for (const Node& node : nodesRef)
+        {
+            const Time& time = node.localMap()->time();
+            std::optional<Transform> pose = getPose(
+                trajectories, time, activeTrajectoryPtr, extrapolationShift);
+            UASSERT(pose.has_value());
+            updatedCurrentTrajectory.addPose(time, *pose);
+            updatedTemporaryPoses.push_back(*pose);
+        }
+    }
+
+    if (extrapolationShift.has_value())
+    {
+        currentTrajectory_ = std::move(updatedCurrentTrajectory);
+    }
+    else
+    {
+        currentTrajectory_.clear();
+    }
+
     occupancyGridMap_->updatePoses(updatedPoses, updatedTemporaryPoses,
         lastNodeIdToIncludeInCachedMap);
 }
 
-std::pair<std::optional<Transform>, bool /* if pose was extrapolated */>
-TimedOccupancyGridMap::getPose(
-    const Trajectories& trajectories, const Time& time, bool canExtrapolate,
-    const std::optional<Transform>& prevPose /* std::nullopt */)
+std::optional<Transform> TimedOccupancyGridMap::getPose(
+    const Trajectories& trajectories, const Time& time,
+    const Trajectory* activeTrajectoryPtr /* nullptr */,
+    const std::optional<Transform>& extrapolationShift /* std::nullopt */)
 {
-    if (trajectories.size() == 0)
+    if (trajectories.empty())
     {
-        return std::make_pair(std::nullopt, false);
+        return std::nullopt;
     }
     for (const Trajectory& trajectory : trajectories)
     {
-        std::optional<Transform> pose;
-        bool containsTime;
-        std::tie(pose, containsTime) = getPose(trajectory, time);
+        std::optional<Transform> pose = trajectory.interpolate(time, maxInterpolationTimeError_);
         if (pose.has_value())
         {
-            return std::make_pair(std::move(pose), false);
-        }
-        else if (containsTime)
-        {
-            return std::make_pair(std::nullopt, false);
+            return pose;
         }
     }
-    if (canExtrapolate && prevPose.has_value())
+    if (currentTrajectory_.size() &&
+        currentTrajectory_.maxTime().toSec() - guaranteedInterpolationTimeWindow_ <= time.toSec() &&
+        activeTrajectoryPtr && extrapolationShift.has_value())
     {
-        auto prevTrajectoryIt =
-            prevTrajectories_.findContinuedTrajectory(time);
-        auto trajectoryIt =
-            trajectories.findContinuedTrajectory(time);
-        if (prevTrajectoryIt != prevTrajectories_.end() &&
-            trajectoryIt != trajectories.end())
+        auto trajectoryIt = trajectories.findCurrentOrPreviousTrajectory(time);
+        if (&(*trajectoryIt) == activeTrajectoryPtr)
         {
-            Time commonEndTime =
-                std::min(prevTrajectoryIt->maxTime(), trajectoryIt->maxTime());
-            std::optional<Transform> prevTrajectoryEnd =
-                getPose(*prevTrajectoryIt, commonEndTime).first;
-            std::optional<Transform> trajectoryEnd =
-                getPose(*trajectoryIt, commonEndTime).first;
-            if (prevTrajectoryEnd.has_value() && trajectoryEnd.has_value())
+            std::optional<Transform> currentPose = currentTrajectory_.getPose(time);
+            UASSERT(currentPose.has_value() || !currentTrajectory_.containsTime(time));
+            if (currentPose.has_value())
             {
-                Transform shift = (*trajectoryEnd) * prevTrajectoryEnd->inverse();
-                Transform pose = shift * (*prevPose);
-                return std::make_pair(std::move(pose), true);
+                Transform pose = *extrapolationShift * (*currentPose);
+                return pose;
             }
         }
     }
-    return std::make_pair(std::nullopt, false);
-}
-
-std::pair<std::optional<Transform>, bool /* if trajectory contains time */>
-TimedOccupancyGridMap::getPose(
-    const Trajectory& trajectory, const Time& time)
-{
-    const Trajectory::Bounds& bounds = trajectory.getBounds(time);
-    if (bounds.first == trajectory.end())
-    {
-        return std::make_pair(std::nullopt, false);
-    }
-    if (bounds.first->time == time)
-    {
-        return std::make_pair(bounds.first->pose, true);
-    }
-    UASSERT(bounds.second != trajectory.end());
-    if (std::min(
-            std::abs(time.toSec() - bounds.first->time.toSec()),
-            std::abs(time.toSec() - bounds.second->time.toSec())) >
-                maxInterpolationTimeError_ &&
-        trajectory.maxTime().toSec() - time.toSec() >
-            guaranteedInterpolationTimeWindow_)
-    {
-        return std::make_pair(std::nullopt, true);
-    }
-    float t = (time.toSec() - bounds.first->time.toSec()) /
-        (bounds.second->time.toSec() - bounds.first->time.toSec());
-    UASSERT(t > 0.0 && t < 1.0);
-    return std::make_pair(
-        bounds.first->pose.interpolate(t, bounds.second->pose), true);
+    return std::nullopt;
 }
 
 void TimedOccupancyGridMap::reset()
 {
-    canExtrapolate_.clear();
-    temporaryCanExtrapolate_.clear();
     occupancyGridMap_->reset();
+    currentTrajectory_.clear();
+    lastPoseTime_ = Time();
+    lastTemporaryPoseTime_ = Time();
 }
 
 void TimedOccupancyGridMap::save(const std::string& file)
@@ -300,17 +291,15 @@ void TimedOccupancyGridMap::load(const std::string& file)
     {
         std::shared_ptr<LocalMap> localMap =
             rtabmap::fromProto(proto->local_map());
-        int nodeId;
         if (proto->has_pose())
         {
             Transform pose = rtabmap::fromProto(proto->pose());
-            nodeId = addLocalMap(pose, localMap);
+            addLocalMap(pose, localMap);
         }
         else
         {
-            nodeId = addLocalMap(localMap);
+            addLocalMap(localMap);
         }
-        canExtrapolate_[nodeId] = false;
     }
     reader.close();
 }

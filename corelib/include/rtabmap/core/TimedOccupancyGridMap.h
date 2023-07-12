@@ -72,9 +72,7 @@ public:
     bool addTemporarySensorData(const SensorData& sensorData, const Time& time,
         const Transform& pose, const Transform& fromUpdatedPose);
 
-    void transformMap(const Transform& transform)
-        { occupancyGridMap_->transformMap(transform); }
-
+    void transformMap(const Transform& transform);
     void updatePoses(const Trajectories& trajectories);
 
     OccupancyGrid getOccupancyGrid(int index) const
@@ -111,21 +109,21 @@ public:
     void load(const std::string& file);
 
 private:
-    std::pair<std::optional<Transform>, bool /* if pose was extrapolated */> getPose(
-        const Trajectories& trajectories, const Time& time, bool canExtrapolate,
-        const std::optional<Transform>& prevPose = std::nullopt);
-    std::pair<std::optional<Transform>, bool /* if trajectory contains time */> getPose(
-        const Trajectory& trajectory, const Time& time);
+    std::optional<Transform> getPose(
+        const Trajectories& trajectories, const Time& time,
+        const Trajectory* activeTrajectoryPtr = nullptr,
+        const std::optional<Transform>& extrapolationShift = std::nullopt);
 
 private:
     double maxInterpolationTimeError_;
     double guaranteedInterpolationTimeWindow_;
 
-    std::map<int, bool> canExtrapolate_;
-    std::deque<bool> temporaryCanExtrapolate_;
     std::unique_ptr<OccupancyGridMap> occupancyGridMap_;
 
-    Trajectories prevTrajectories_;
+    Trajectory currentTrajectory_;
+
+    Time lastPoseTime_;
+    Time lastTemporaryPoseTime_;
 };
 
 }
