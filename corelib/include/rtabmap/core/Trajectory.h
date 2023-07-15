@@ -144,6 +144,7 @@ public:
     template<typename T>
     void addTrajectory(T&& trajectory)
     {
+        UASSERT(trajectory.size());
         bool emplaced = trajectories_.emplace(std::forward<T>(trajectory)).second;
         UASSERT(emplaced);
     }
