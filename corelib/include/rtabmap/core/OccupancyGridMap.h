@@ -142,7 +142,8 @@ public:
     const std::list<ObjectTracking::MOT16TrackedObject>& mot16TrackedObjectsCache() const
         { return objectTracking_->mot16TrackedObjectsCache(); }
 
-    void reset();
+    void resetAll();
+    void resetTemporary();
 
 private:
     float cellSize_;

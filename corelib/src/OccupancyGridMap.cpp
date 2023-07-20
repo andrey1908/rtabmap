@@ -321,11 +321,19 @@ std::pair<float, float> OccupancyGridMap::getGridOrigin(int index) const
     return std::make_pair(originX, originY);
 }
 
-void OccupancyGridMap::reset()
+void OccupancyGridMap::resetAll()
 {
     for (int i = 0; i < numBuilders_; i++)
     {
         occupancyGridBuilders_[i]->reset();
+        temporaryOccupancyGridBuilders_[i]->reset();
+    }
+}
+
+void OccupancyGridMap::resetTemporary()
+{
+    for (int i = 0; i < numBuilders_; i++)
+    {
         temporaryOccupancyGridBuilders_[i]->reset();
     }
 }

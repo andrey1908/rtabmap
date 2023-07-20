@@ -241,7 +241,7 @@ std::optional<Transform> TimedOccupancyGridMap::getPose(
 
 void TimedOccupancyGridMap::reset()
 {
-    occupancyGridMap_->reset();
+    occupancyGridMap_->resetAll();
     currentTrajectory_.clear();
     lastPoseTime_ = Time();
     lastTemporaryPoseTime_ = Time();
