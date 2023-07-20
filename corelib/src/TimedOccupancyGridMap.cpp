@@ -129,8 +129,13 @@ void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories)
         }
     }
 
-    Trajectory updatedCurrentTrajectory;
-    Time minUpdatedCurrentTrajectoryTime(0, 0);
+    if (!extrapolationShift.has_value())
+    {
+        currentTrajectory_.clear();
+        occupancyGridMap_->resetTemporary();
+    }
+
+    Time minUpdatedCurrentTrajectoryTime = Time::max();
     if (currentTrajectory_.size())
     {
         minUpdatedCurrentTrajectoryTime =
@@ -141,14 +146,17 @@ void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories)
                 minUpdatedCurrentTrajectoryTime,
                 activeTrajectoryPtr->maxTime());
         }
-        if (lastTemporaryPoseTime_ != Time())
+        const auto& temporaryNodesRef = temporaryNodes(0);
+        if (temporaryNodesRef.size())
         {
             minUpdatedCurrentTrajectoryTime = std::min(
                 minUpdatedCurrentTrajectoryTime,
                 temporaryNodes(0).begin()->localMap()->time());
         }
     }
+    currentTrajectory_.trim(minUpdatedCurrentTrajectoryTime);
 
+    Trajectory updatedCurrentTrajectory;
     int lastNodeIdToIncludeInCachedMap = -1;
     std::map<int, Transform> updatedPoses;
     {
@@ -166,8 +174,8 @@ void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories)
                 {
                     lastNodeIdToIncludeInCachedMap = nodeId;
                 }
-                if (currentTrajectory_.containsTime(time) &&
-                    time >= minUpdatedCurrentTrajectoryTime)
+                if (currentTrajectory_.size() &&
+                    currentTrajectory_.containsTime(time))
                 {
                     updatedCurrentTrajectory.addPose(time, *pose);
                 }
@@ -190,15 +198,7 @@ void TimedOccupancyGridMap::updatePoses(const Trajectories& trajectories)
         }
     }
 
-    if (extrapolationShift.has_value())
-    {
-        currentTrajectory_ = std::move(updatedCurrentTrajectory);
-    }
-    else
-    {
-        currentTrajectory_.clear();
-    }
-
+    currentTrajectory_ = std::move(updatedCurrentTrajectory);
     occupancyGridMap_->updatePoses(updatedPoses, updatedTemporaryPoses,
         lastNodeIdToIncludeInCachedMap);
 }
@@ -221,7 +221,7 @@ std::optional<Transform> TimedOccupancyGridMap::getPose(
         }
     }
     if (currentTrajectory_.size() &&
-        currentTrajectory_.maxTime().toSec() - guaranteedInterpolationTimeWindow_ <= time.toSec() &&
+        currentTrajectory_.containsTime(time) &&
         activeTrajectoryPtr && extrapolationShift.has_value())
     {
         auto trajectoryIt = trajectories.findCurrentOrPreviousTrajectory(time);
