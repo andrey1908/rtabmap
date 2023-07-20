@@ -19,6 +19,16 @@ struct Time
     {
         fromSec(stamp);
     }
+    static Time min()
+    {
+        return Time();
+    }
+    static Time max()
+    {
+        return Time(
+            std::numeric_limits<uint32_t>::max(),
+            std::numeric_limits<uint32_t>::max());
+    }
     Time& operator=(const Time& other)
     {
         sec = other.sec;
