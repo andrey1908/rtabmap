@@ -612,9 +612,10 @@ INCLUDE_DIRECTORIES(${INCLUDE_DIRS})
 
 # Add binary that is built from the source file "main.cpp".
 # The extension is automatically found.
-ADD_LIBRARY(rtabmap_core ${SRC_FILES} ${RESOURCES_HEADERS})
+SET_SOURCE_FILES_PROPERTIES(${PROTO_SRCS} ${PROTO_HDRS} PROPERTIES GENERATED TRUE)
+ADD_LIBRARY(rtabmap_core ${SRC_FILES} ${PROTO_SRCS} ${RESOURCES_HEADERS})
 ADD_DEPENDENCIES(rtabmap_core generated_protobuf_code)
-TARGET_LINK_LIBRARIES(rtabmap_core rtabmap_utilite ${LIBRARIES} ${PROTO_SRCS})
+TARGET_LINK_LIBRARIES(rtabmap_core rtabmap_utilite ${LIBRARIES})
 
 SET_TARGET_PROPERTIES(
      rtabmap_core
