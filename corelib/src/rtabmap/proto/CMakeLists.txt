@@ -5,6 +5,9 @@ SET(PROTO_FILES
     MapLimits.proto
     LocalMap.proto
     OccupancyGridMap.proto
+
+    PointCloud.proto
+    RawData.proto
 )
 
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_FILES})

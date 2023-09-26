@@ -250,7 +250,7 @@ void TimedOccupancyGridMap::reset()
 void TimedOccupancyGridMap::save(const std::string& file)
 {
     MEASURE_BLOCK_TIME(TimedOccupancyGridMap__save);
-    Serialization writer(file);
+    MapSerialization writer(file);
     proto::OccupancyGridMap::MetaData metaData;
     metaData.set_cell_size(cellSize());
     writer.write(metaData);
@@ -284,7 +284,7 @@ void TimedOccupancyGridMap::load(const std::string& file)
 {
     MEASURE_BLOCK_TIME(TimedOccupancyGridMap__load);
     reset();
-    Deserialization reader(file);
+    MapDeserialization reader(file);
     UASSERT(cellSize() == reader.metaData().cell_size());
     std::optional<proto::OccupancyGridMap::Node> proto;
     while (proto = reader.readNode())

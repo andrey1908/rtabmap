@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package rtabmap.proto;
+
+import "Time.proto";
+import "Transform.proto";
+import "PointCloud.proto";
+
+message RawData
+{
+    Time time = 1;
+    Transform global_pose = 2;
+    Transform local_pose = 3;
+    PointCloud point_cloud = 4;
+}

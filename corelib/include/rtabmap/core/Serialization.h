@@ -7,15 +7,14 @@
 
 #include <google/protobuf/message.h>
 #include <rtabmap/proto/OccupancyGridMap.pb.h>
+#include <rtabmap/proto/RawData.pb.h>
 
 namespace rtabmap {
 
-extern const std::string serializationExtension;
-
-class Serialization
+class MapSerialization
 {
 public:
-    Serialization(const std::string& fileName);
+    MapSerialization(const std::string& fileName);
 
     void write(const google::protobuf::Message& proto);
     void close();
@@ -24,10 +23,10 @@ private:
     std::ofstream output_;
 };
 
-class Deserialization
+class MapDeserialization
 {
 public:
-    Deserialization(const std::string& fileName);
+    MapDeserialization(const std::string& fileName);
 
     const proto::OccupancyGridMap::MetaData& metaData();
     std::optional<proto::OccupancyGridMap::Node> readNode();
@@ -40,6 +39,33 @@ private:
 private:
     std::ifstream input_;
     proto::OccupancyGridMap::MetaData metaData_;
+};
+
+class RawDataSerialization
+{
+public:
+    RawDataSerialization(const std::string& fileName);
+
+    void write(const google::protobuf::Message& proto);
+    void close();
+
+private:
+    std::ofstream output_;
+};
+
+class RawDataDeserialization
+{
+public:
+    RawDataDeserialization(const std::string& fileName);
+
+    std::optional<proto::RawData> readRawData();
+    void close();
+
+private:
+    std::string readString();
+
+private:
+    std::ifstream input_;
 };
 
 }

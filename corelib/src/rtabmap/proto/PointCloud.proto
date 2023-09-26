@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package rtabmap.proto;
+
+import "Transform.proto";
+
+message PointCloud
+{
+    Transform to_sensor = 1;
+    repeated float points_in_sensor = 2;
+}
