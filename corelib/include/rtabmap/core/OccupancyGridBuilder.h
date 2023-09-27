@@ -120,6 +120,8 @@ public:
     int addLocalMap(const Transform& pose,
         const std::shared_ptr<const LocalMap>& localMap);
 
+    void removeNodes(const std::vector<int>& nodeIdsToRemove);
+
     void transformMap(const Transform& transform);
 
     void updatePoses(const std::map<int, Transform>& updatedPoses,

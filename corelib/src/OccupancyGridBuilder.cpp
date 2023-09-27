@@ -108,7 +108,15 @@ void OccupancyGridBuilder::precomputeUpdateValues()
 int OccupancyGridBuilder::addLocalMap(
     const std::shared_ptr<const LocalMap>& localMap)
 {
-    int nodeId = map_.nodes.size();
+    int nodeId;
+    if (map_.nodes.empty())
+    {
+        nodeId = 0;
+    }
+    else
+    {
+        nodeId = map_.nodes.rbegin()->first + 1;
+    }
     map_.nodes.emplace(nodeId, Node(localMap));
     return nodeId;
 }
@@ -117,13 +125,32 @@ int OccupancyGridBuilder::addLocalMap(const Transform& pose,
     const std::shared_ptr<const LocalMap>& localMap)
 {
     MEASURE_BLOCK_TIME(OccupancyGridBuilder__addLocalMap__withPose);
-    int nodeId = map_.nodes.size();
+    int nodeId;
+    if (map_.nodes.empty())
+    {
+        nodeId = 0;
+    }
+    else
+    {
+        nodeId = map_.nodes.rbegin()->first + 1;
+    }
     Node node(localMap, pose, cellSize_);
     auto newNodeIt = map_.nodes.emplace(nodeId, std::move(node)).first;
     Node& newNode = newNodeIt->second;
     deployNode(newNode);
     newNode.removeTransformedLocalMap();
     return nodeId;
+}
+
+void OccupancyGridBuilder::removeNodes(const std::vector<int>& nodeIdsToRemove)
+{
+    for (int nodeIdToRemove : nodeIdsToRemove)
+    {
+        auto it = map_.nodes.find(nodeIdToRemove);
+        UASSERT(it != map_.nodes.end());
+        UASSERT(it != std::prev(map_.nodes.end(), 1));
+        map_.nodes.erase(it);
+    }
 }
 
 void OccupancyGridBuilder::transformMap(const Transform& transform)
