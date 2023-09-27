@@ -3,6 +3,8 @@
 #include <rtabmap/core/Time.h>
 #include <rtabmap/core/Transform.h>
 
+#include <rtabmap/proto/Trajectory.pb.h>
+
 #include <set>
 #include <utility>
 #include <optional>
@@ -190,5 +192,14 @@ public:
 private:
     TrajectoriesSet trajectories_;
 };
+
+proto::TimedPose toProto(const TimedPose& timedPose);
+TimedPose fromProto(const proto::TimedPose& proto);
+
+proto::Trajectory toProto(const Trajectory& trajectory);
+Trajectory fromProto(const proto::Trajectory& proto);
+
+proto::Trajectories toProto(const Trajectories& trajectories);
+Trajectories fromProto(const proto::Trajectories& proto);
 
 }

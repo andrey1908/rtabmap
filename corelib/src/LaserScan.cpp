@@ -412,4 +412,87 @@ LaserScan LaserScan::operator+(const LaserScan & scan)
     return dest;
 }
 
+proto::LaserScan toProto(const LaserScan& laserScan)
+{
+    UASSERT_MSG(
+        laserScan.format() == LaserScan::kXYZ ||
+        laserScan.format() == LaserScan::kXYZI,
+            "Unsupported laser scan format.");
+
+    proto::LaserScan proto;
+    *proto.mutable_to_sensor() = toProto(laserScan.localTransform());
+
+    bool hasIntensity = laserScan.hasIntensity();
+    int intensityOffset = laserScan.getIntensityOffset();
+
+    proto.mutable_points_in_sensor()->Reserve(laserScan.size() * 3);
+    if (hasIntensity)
+    {
+        proto.mutable_intensities()->Reserve(laserScan.size());
+    }
+    for (int i = 0; i < laserScan.size(); i++)
+    {
+        float x = laserScan.field(i, 0);
+        float y = laserScan.field(i, 1);
+        float z = laserScan.field(i, 2);
+        proto.add_points_in_sensor(x);
+        proto.add_points_in_sensor(y);
+        proto.add_points_in_sensor(z);
+
+        if (hasIntensity)
+        {
+            float intensity = laserScan.field(i, intensityOffset);
+            proto.add_intensities(intensity);
+        }
+    }
+
+    return proto;
+}
+
+LaserScan fromProto(const proto::LaserScan& proto)
+{
+    Transform toSensor = fromProto(proto.to_sensor());
+
+    LaserScan::Format format;
+    if (proto.intensities_size() == 0)
+    {
+        format = LaserScan::Format::kXYZ;
+    }
+    else
+    {
+        format = LaserScan::Format::kXYZI;
+    }
+    bool hasIntensity = LaserScan::isScanHasIntensity(format);
+    int intensityOffset = LaserScan::getScanIntensityOffset(format);
+
+    UASSERT(proto.points_in_sensor_size() % 3 == 0);
+    int numPoints = proto.points_in_sensor_size() / 3;
+    UASSERT(!hasIntensity || proto.intensities_size() == numPoints);
+
+    cv::Mat laserScanData(1, numPoints, CV_32FC(LaserScan::channels(format)));
+    auto pointsIt = proto.points_in_sensor().begin();
+    auto intensityIt = proto.intensities().begin();
+    int i = 0;
+    while (pointsIt != proto.points_in_sensor().end())
+    {
+        float x = *pointsIt++;
+        float y = *pointsIt++;
+        float z = *pointsIt++;
+        laserScanData.ptr<float>(0, i)[0] = x;
+        laserScanData.ptr<float>(0, i)[1] = y;
+        laserScanData.ptr<float>(0, i)[2] = z;
+
+        if (hasIntensity)
+        {
+            float intensity = *intensityIt++;
+            laserScanData.ptr<float>(0, i)[intensityOffset] = intensity;
+        }
+        i++;
+    }
+    UASSERT(intensityIt == proto.intensities().end());
+
+    LaserScan laserScan(laserScanData, 999999, 999999, format, toSensor);
+    return laserScan;
+}
+
 }

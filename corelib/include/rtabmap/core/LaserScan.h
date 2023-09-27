@@ -32,6 +32,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <rtabmap/core/Transform.h>
 
+#include <rtabmap/proto/LaserScan.pb.h>
+
 namespace rtabmap {
 
 class RTABMAP_EXP LaserScan
@@ -182,6 +184,9 @@ private:
     float angleIncrement_;
     Transform localTransform_;
 };
+
+proto::LaserScan toProto(const LaserScan& laserScan);
+LaserScan fromProto(const proto::LaserScan& proto);
 
 }
 

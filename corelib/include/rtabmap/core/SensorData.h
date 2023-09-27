@@ -32,6 +32,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <rtabmap/core/LaserScan.h>
 #include <rtabmap/utilite/ULogger.h>
 
+#include <rtabmap/proto/SensorData.pb.h>
+
 #include <opencv2/core/core.hpp>
 
 #include <vector>
@@ -82,5 +84,8 @@ private:
 
     std::optional<LaserScan> laserScan_;
 };
+
+proto::SensorData toProto(const SensorData& sensorData);
+SensorData fromProto(const proto::SensorData& proto);
 
 }

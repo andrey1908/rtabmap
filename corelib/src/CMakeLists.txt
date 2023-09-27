@@ -22,6 +22,7 @@ SET(SRC_FILES
     Color.cpp
     Trajectory.cpp
     MapLimits.cpp
+    SensorData.cpp
     LocalMap.cpp
     LocalMapBuilder.cpp
     Node.cpp

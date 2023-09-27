@@ -52,4 +52,63 @@ void Trajectory::trim(const Time& time)
     trajectory_.erase(trajectory_.begin(), std::prev(it));
 }
 
+proto::TimedPose toProto(const TimedPose& timedPose)
+{
+    proto::TimedPose proto;
+    *proto.mutable_time() = toProto(timedPose.time);
+    *proto.mutable_pose() = toProto(timedPose.pose);
+    return proto;
+}
+
+TimedPose fromProto(const proto::TimedPose& proto)
+{
+    Time time = fromProto(proto.time());
+    Transform pose = fromProto(proto.pose());
+    TimedPose timedPose(std::move(time), std::move(pose));
+    return timedPose;
+}
+
+proto::Trajectory toProto(const Trajectory& trajectory)
+{
+    proto::Trajectory proto;
+    proto.mutable_timed_poses()->Reserve(trajectory.size());
+    for (const TimedPose& timedPose : trajectory)
+    {
+        *proto.add_timed_poses() = toProto(timedPose);
+    }
+    return proto;
+}
+
+Trajectory fromProto(const proto::Trajectory& proto)
+{
+    Trajectory trajectory;
+    for (const proto::TimedPose& timedPoseProto : proto.timed_poses())
+    {
+        TimedPose timedPose = fromProto(timedPoseProto);
+        trajectory.addPose(timedPose.time, timedPose.pose);
+    }
+    return trajectory;
+}
+
+proto::Trajectories toProto(const Trajectories& trajectories)
+{
+    proto::Trajectories proto;
+    proto.mutable_trajectories()->Reserve(trajectories.size());
+    for (const Trajectory& trajectory : trajectories)
+    {
+        *proto.add_trajectories() = toProto(trajectory);
+    }
+    return proto;
+}
+
+Trajectories fromProto(const proto::Trajectories& proto)
+{
+    Trajectories trajectories;
+    for (const proto::Trajectory& trajectoryProto : proto.trajectories())
+    {
+        trajectories.addTrajectory(fromProto(trajectoryProto));
+    }
+    return trajectories;
+}
+
 }
