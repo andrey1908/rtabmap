@@ -118,9 +118,9 @@ Eigen::Matrix3Xf LocalMapBuilder::convertLaserScan(const LaserScan& laserScan) c
     Eigen::Matrix3Xf points(3, laserScan.size());
     for (int i = 0; i < laserScan.size(); i++)
     {
-        float x = laserScan.data().ptr<float>(0, i)[0];
-        float y = laserScan.data().ptr<float>(0, i)[1];
-        float z = laserScan.data().ptr<float>(0, i)[2];
+        float x = laserScan.field(i, 0);
+        float y = laserScan.field(i, 1);
+        float z = laserScan.field(i, 2);
         points(0, i) = x;
         points(1, i) = y;
         points(2, i) = z;

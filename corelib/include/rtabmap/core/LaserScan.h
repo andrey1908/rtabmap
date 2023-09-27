@@ -55,6 +55,11 @@ public:
     static bool isScanHasNormals(const Format & format);
     static bool isScanHasRGB(const Format & format);
     static bool isScanHasIntensity(const Format & format);
+
+    static int getScanIntensityOffset(const Format & format);
+    static int getScanRGBOffset(const Format & format);
+    static int getScanNormalsOffset(const Format & format);
+
     static LaserScan backwardCompatibility(
             const cv::Mat & oldScanFormat,
             int maxPoints = 0,
@@ -131,12 +136,18 @@ public:
     bool hasIntensity() const {return isScanHasIntensity(format_);}
     LaserScan clone() const;
 
-    int getIntensityOffset() const {return hasIntensity()?(is2d()?2:3):-1;}
-    int getRGBOffset() const {return hasRGB()?(is2d()?2:3):-1;}
-    int getNormalsOffset() const {return hasNormals()?(2 + (is2d()?0:1) + ((hasRGB() || hasIntensity())?1:0)):-1;}
+    int getIntensityOffset() const {return getScanIntensityOffset(format_);}
+    int getRGBOffset() const {return getScanRGBOffset(format_);}
+    int getNormalsOffset() const {return getScanNormalsOffset(format_);}
 
-    float & field(unsigned int pointIndex, unsigned int channelOffset);
-    const float & field(unsigned int pointIndex, unsigned int channelOffset) const;
+    float & field(unsigned int pointIndex, unsigned int channelOffset)
+    {
+        return data_.ptr<float>(0, pointIndex)[channelOffset];
+    }
+    const float & field(unsigned int pointIndex, unsigned int channelOffset) const
+    {
+        return data_.ptr<float>(0, pointIndex)[channelOffset];
+    }
 
     void clear() {data_ = cv::Mat();}
 

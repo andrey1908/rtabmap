@@ -122,6 +122,21 @@ bool LaserScan::isScanHasIntensity(const Format & format)
     return format==kXYZI || format==kXYZINormal || format == kXYI || format == kXYINormal;
 }
 
+int LaserScan::getScanIntensityOffset(const Format & format)
+{
+    return isScanHasIntensity(format)?(isScan2d(format)?2:3):-1;
+}
+
+int LaserScan::getScanRGBOffset(const Format & format)
+{
+    return isScanHasRGB(format)?(isScan2d(format)?2:3):-1;
+}
+
+int LaserScan::getScanNormalsOffset(const Format & format)
+{
+    return isScanHasNormals(format)?(2 + (isScan2d(format)?0:1) + ((isScanHasRGB(format) || isScanHasIntensity(format))?1:0)):-1;
+}
+
 LaserScan LaserScan::backwardCompatibility(
         const cv::Mat & oldScanFormat,
         int maxPoints,
@@ -364,20 +379,6 @@ LaserScan LaserScan::clone() const
         return LaserScan(data_.clone(), format_, rangeMin_, rangeMax_, angleMin_, angleMax_, angleIncrement_, localTransform_.clone());
     }
     return LaserScan(data_.clone(), maxPoints_, rangeMax_, format_, localTransform_.clone());
-}
-
-float & LaserScan::field(unsigned int pointIndex, unsigned int channelOffset)
-{
-    UASSERT(pointIndex < data_.cols);
-    UASSERT(channelOffset < data_.channels());
-    return data_.ptr<float>(0, pointIndex)[channelOffset];
-}
-
-const float & LaserScan::field(unsigned int pointIndex, unsigned int channelOffset) const
-{
-    UASSERT(pointIndex < data_.cols);
-    UASSERT(channelOffset < data_.channels());
-    return data_.ptr<float>(0, pointIndex)[channelOffset];
 }
 
 LaserScan & LaserScan::operator+=(const LaserScan & scan)
