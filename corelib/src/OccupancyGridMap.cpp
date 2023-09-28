@@ -161,6 +161,18 @@ bool OccupancyGridMap::addTemporarySensorData(const SensorData& sensorData,
     return overflowed;
 }
 
+void OccupancyGridMap::removeNodes(const std::vector<int>& nodeIdsToRemove)
+{
+    for (int i = 0; i < numBuilders_; i++)
+    {
+        occupancyGridBuilders_[i]->removeNodes(nodeIdsToRemove);
+    }
+    for (int nodeIdToRemove : nodeIdsToRemove)
+    {
+        localMapsWithoutObstacleDilation_.erase(nodeIdToRemove);
+    }
+}
+
 void OccupancyGridMap::transformMap(const Transform& transform)
 {
     for (int i = 0; i < numBuilders_; i++)

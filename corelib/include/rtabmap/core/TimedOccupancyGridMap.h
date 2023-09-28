@@ -72,6 +72,9 @@ public:
     bool addTemporarySensorData(const SensorData& sensorData, const Time& time,
         const Transform& pose, const Transform& fromUpdatedPose);
 
+    void removeNodes(const std::vector<int>& nodeIdsToRemove)
+        { occupancyGridMap_->removeNodes(nodeIdsToRemove); }
+
     void transformMap(const Transform& transform);
     void updatePoses(const Trajectories& trajectories);
 
