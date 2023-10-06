@@ -353,21 +353,17 @@ void OccupancyGridBuilder::useCachedMap()
 
 bool OccupancyGridBuilder::tryToUseCachedMap(const std::map<int, Transform>& newPoses)
 {
-    static time_measurer::TimeMeasurer OccupancyGridBuilder__tryToUseCachedMap__fail(
-        "OccupancyGridBuilder__tryToUseCachedMap__fail", true);
-    static time_measurer::TimeMeasurer OccupancyGridBuilder__tryToUseCachedMap__success(
-        "OccupancyGridBuilder__tryToUseCachedMap__success", true);
-    OccupancyGridBuilder__tryToUseCachedMap__fail.start();
-    OccupancyGridBuilder__tryToUseCachedMap__success.start();
+    MEASURE_TIME_FROM_HERE(OccupancyGridBuilder__tryToUseCachedMap__fail);
+    MEASURE_TIME_FROM_HERE(OccupancyGridBuilder__tryToUseCachedMap__success);
 
     if (!cachedMapCanBeUsed(newPoses))
     {
-        OccupancyGridBuilder__tryToUseCachedMap__fail.stop();
+        STOP_TIME_MEASUREMENT(OccupancyGridBuilder__tryToUseCachedMap__fail);
         return false;
     }
 
     useCachedMap();
-    OccupancyGridBuilder__tryToUseCachedMap__success.stop();
+    STOP_TIME_MEASUREMENT(OccupancyGridBuilder__tryToUseCachedMap__success);
     return true;
 }
 

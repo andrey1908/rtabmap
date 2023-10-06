@@ -27,7 +27,7 @@ struct Time
     {
         return Time(
             std::numeric_limits<uint32_t>::max(),
-            std::numeric_limits<uint32_t>::max());
+            static_cast<uint32_t>(1e9 - 1));
     }
     Time& operator=(const Time& other)
     {
