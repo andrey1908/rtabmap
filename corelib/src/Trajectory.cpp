@@ -52,6 +52,87 @@ void Trajectory::trim(const Time& time)
     trajectory_.erase(trajectory_.begin(), std::prev(it));
 }
 
+Trajectories::const_pose_iterator Trajectories::const_pose_iterator::beginOf(
+    const Trajectories& trajectories)
+{
+    const_pose_iterator it(trajectories);
+    it.trajectoryIt_ = trajectories.begin();
+    if (it.trajectoryIt_ != it.trajectoriesEnd_)
+    {
+        it.poseIt_ = it.trajectoryIt_->begin();
+    }
+    return it;
+}
+
+Trajectories::const_pose_iterator Trajectories::const_pose_iterator::endOf(
+    const Trajectories& trajectories)
+{
+    const_pose_iterator it(trajectories);
+    it.trajectoryIt_ = it.trajectoriesEnd_;
+    return it;
+}
+
+Trajectories::const_pose_iterator Trajectories::const_pose_iterator::fromPose(
+    const Trajectories& trajectories,
+    const const_iterator& trajectoryIt, const Trajectory::const_iterator& poseIt)
+{
+    const_pose_iterator it(trajectories);
+    it.trajectoryIt_ = trajectoryIt;
+    it.poseIt_ = poseIt;
+    return it;
+}
+
+Trajectories::const_pose_iterator& Trajectories::const_pose_iterator::operator++()
+{
+    ++poseIt_;
+    if (poseIt_ == trajectoryIt_->end())
+    {
+        ++trajectoryIt_;
+        if (trajectoryIt_ != trajectoriesEnd_)
+        {
+            poseIt_ = trajectoryIt_->begin();
+        }
+    }
+    return *this;
+}
+
+Trajectories::const_pose_iterator Trajectories::const_pose_iterator::operator++(int)
+{
+    const_pose_iterator it = *this;
+    ++(*this);
+    return it;
+}
+
+Trajectories::const_pose_iterator& Trajectories::const_pose_iterator::operator--()
+{
+    if (trajectoryIt_ != trajectoriesEnd_ && poseIt_ != trajectoryIt_->begin())
+    {
+        --poseIt_;
+    }
+    else
+    {
+        --trajectoryIt_;
+        poseIt_ = std::prev(trajectoryIt_->end());
+    }
+    return *this;
+}
+
+Trajectories::const_pose_iterator Trajectories::const_pose_iterator::operator--(int)
+{
+    const_pose_iterator it = *this;
+    --(*this);
+    return it;
+}
+
+bool Trajectories::const_pose_iterator::operator==(const const_pose_iterator& other)
+{
+    if (trajectoryIt_ == trajectoriesEnd_ || other.trajectoryIt_ == other.trajectoriesEnd_)
+    {
+        return trajectoryIt_ == other.trajectoryIt_;
+    }
+    return poseIt_ == other.poseIt_;
+}
+
 proto::TimedPose toProto(const TimedPose& timedPose)
 {
     proto::TimedPose proto;

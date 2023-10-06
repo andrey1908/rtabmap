@@ -141,6 +141,35 @@ class Trajectories
 public:
     using TrajectoriesSet = std::set<Trajectory, Trajectory::CompareId>;
     using const_iterator = TrajectoriesSet::const_iterator;
+    class const_pose_iterator
+    {
+    public:
+        static const_pose_iterator beginOf(const Trajectories& trajectories);
+        static const_pose_iterator endOf(const Trajectories& trajectories);
+        static const_pose_iterator fromPose(const Trajectories& trajectories,
+            const const_iterator& trajectoryIt, const Trajectory::const_iterator& poseIt);
+
+        const_pose_iterator(const Trajectories& trajectories) :
+            trajectoriesEnd_(trajectories.end()) {}
+
+        const_pose_iterator& operator++();
+        const_pose_iterator operator++(int);
+
+        const_pose_iterator& operator--();
+        const_pose_iterator operator--(int);
+
+        const TimedPose& operator*() { return *poseIt_; }
+        const TimedPose* operator->() { return &(*poseIt_); }
+        const Trajectory& trajectory() { return *trajectoryIt_; }
+
+        bool operator==(const const_pose_iterator& other);
+        bool operator!=(const const_pose_iterator& other) { return !operator==(other); }
+
+    private:
+        const_iterator trajectoryIt_;
+        Trajectory::const_iterator poseIt_;
+        const const_iterator trajectoriesEnd_;
+    };
 
 public:
     template<typename T>
@@ -172,6 +201,11 @@ public:
         }
         return std::prev(it);
     }
+    const_iterator findCurrentOrNextTrajectory(const Time& time) const
+    {
+        auto it = trajectories_.lower_bound(time);
+        return it;
+    }
     size_t size() const
     {
         return trajectories_.size();
@@ -187,6 +221,20 @@ public:
     const_iterator end() const
     {
         return trajectories_.cend();
+    }
+    const_pose_iterator poses_begin() const
+    {
+        return const_pose_iterator::beginOf(*this);
+    }
+    const_pose_iterator poses_end() const
+    {
+        return const_pose_iterator::endOf(*this);
+    }
+    const_pose_iterator poses_iterator(
+        const const_iterator& trajectoryIt,
+        const Trajectory::const_iterator& poseIt) const
+    {
+        return const_pose_iterator::fromPose(*this, trajectoryIt, poseIt);
     }
 
 private:
