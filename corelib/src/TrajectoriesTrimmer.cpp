@@ -197,6 +197,7 @@ std::set<Time> TrajectoriesTrimmer::trimTrajectories(
             if (similarity >= minSimilarity_)
             {
                 posesToTrim.insert(oldIt->time);
+                newLocalMapIt->second = nullptr;
             }
         }
         UASSERT(oldLocalMapIt == lastOldLocalMapIt);
