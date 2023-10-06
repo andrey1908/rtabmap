@@ -6,6 +6,7 @@
 #include <rtabmap/core/Trajectory.h>
 #include <rtabmap/core/ObjectTracking.h>
 #include <rtabmap/core/OccupancyGridMap.h>
+#include <rtabmap/core/TrajectoriesTrimmer.h>
 
 #include <yaml-cpp/yaml.h>
 
@@ -76,6 +77,8 @@ public:
         { occupancyGridMap_->removeNodes(nodeIdsToRemove); }
 
     void transformMap(const Transform& transform);
+    std::set<Time> trimTrajectories(const Trajectories& trajectories)
+        { return trajectoriesTrimmer_->trimTrajectories(trajectories); }
     void updatePoses(const Trajectories& trajectories);
 
     OccupancyGrid getOccupancyGrid(int index) const
@@ -122,6 +125,7 @@ private:
     double guaranteedInterpolationTimeWindow_;
 
     std::unique_ptr<OccupancyGridMap> occupancyGridMap_;
+    std::unique_ptr<TrajectoriesTrimmer> trajectoriesTrimmer_;
 
     Trajectory currentTrajectory_;
 

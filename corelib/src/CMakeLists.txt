@@ -33,6 +33,7 @@ SET(SRC_FILES
     SemanticDilation.cpp
     RayTracing.cpp
     ObstacleDilation.cpp
+    TrajectoriesTrimmer.cpp
 
     Compression.cpp
     Serialization.cpp
