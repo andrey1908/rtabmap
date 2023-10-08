@@ -1,5 +1,7 @@
 #include <rtabmap/core/OccupancyGridBuilder.h>
 
+#include <stdexcept>
+
 #include <time_measurer/time_measurer.h>
 
 namespace rtabmap {
@@ -148,7 +150,10 @@ void OccupancyGridBuilder::removeNodes(const std::vector<int>& nodeIdsToRemove)
     {
         auto it = map_.nodes.find(nodeIdToRemove);
         UASSERT(it != map_.nodes.end());
-        UASSERT(it != std::prev(map_.nodes.end(), 1));
+        if (it == std::prev(map_.nodes.end()))
+        {
+            throw std::runtime_error("Cannot remove last node.");
+        }
         map_.nodes.erase(it);
     }
 }
