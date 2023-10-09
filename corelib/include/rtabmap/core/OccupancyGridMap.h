@@ -134,9 +134,9 @@ public:
     int numBuilders() const { return numBuilders_; }
     bool objectTrackingEnabled() const { return objectTracking_ != nullptr; }
     const std::vector<ObjectTracking::TrackedObject>& trackedObjects() const
-        { return objectTracking_->trackedObjects(); }
+        { UASSERT(objectTracking_); return objectTracking_->trackedObjects(); }
     const std::list<ObjectTracking::MOT16TrackedObject>& mot16TrackedObjectsCache() const
-        { return objectTracking_->mot16TrackedObjectsCache(); }
+        { UASSERT(objectTracking_); return objectTracking_->mot16TrackedObjectsCache(); }
 
     void resetAll();
     void resetTemporary();

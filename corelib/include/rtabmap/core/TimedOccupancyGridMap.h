@@ -92,7 +92,7 @@ public:
     void transformMap(const Transform& transform);
     bool trajectoriesTrimmerEnabled() const { return trajectoriesTrimmer_ != nullptr; }
     std::set<Time> trimTrajectories(const Trajectories& trajectories)
-        { return trajectoriesTrimmer_->trimTrajectories(trajectories); }
+        { UASSERT(trajectoriesTrimmer_); return trajectoriesTrimmer_->trimTrajectories(trajectories); }
     void updatePoses(const Trajectories& trajectories);
 
     OccupancyGrid getOccupancyGrid(int index) const
