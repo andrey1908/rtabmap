@@ -57,7 +57,7 @@ int TimedOccupancyGridMap::addLocalMap(const Transform& pose,
     if (trajectoriesTrimmer_)
     {
         trajectoriesTrimmer_->addLocalMap(
-            occupancyGridMap_->localMapsWithoutObstacleDilation().rbegin()->second);
+            occupancyGridMap_->localMapsWithoutDilation().rbegin()->second);
     }
 
     return nodeId;
@@ -271,7 +271,7 @@ void TimedOccupancyGridMap::save(const std::string& file)
     metaData.set_cell_size(cellSize());
     writer.write(metaData);
 
-    const auto& localMapsRef = localMapsWithoutObstacleDilation();
+    const auto& localMapsRef = localMapsWithoutDilation();
     auto localMapIt = localMapsRef.begin();
     const auto& nodesRef = nodes(0);
     auto nodeIt = nodesRef.begin();

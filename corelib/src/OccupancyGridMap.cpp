@@ -80,7 +80,7 @@ int OccupancyGridMap::addLocalMap(const std::shared_ptr<const LocalMap>& localMa
         }
         nodeId = occupancyGridBuilders_[i]->addLocalMap(dilatedLocalMap);
     }
-    localMapsWithoutObstacleDilation_.emplace(nodeId, localMap);
+    localMapsWithoutDilation_.emplace(nodeId, localMap);
     return nodeId;
 }
 
@@ -102,7 +102,7 @@ int OccupancyGridMap::addLocalMap(const Transform& pose,
         }
         nodeId = occupancyGridBuilders_[i]->addLocalMap(pose, dilatedLocalMap);
     }
-    localMapsWithoutObstacleDilation_.emplace(nodeId, localMap);
+    localMapsWithoutDilation_.emplace(nodeId, localMap);
     return nodeId;
 }
 
@@ -169,7 +169,7 @@ void OccupancyGridMap::removeNodes(const std::vector<int>& nodeIdsToRemove)
     }
     for (int nodeIdToRemove : nodeIdsToRemove)
     {
-        localMapsWithoutObstacleDilation_.erase(nodeIdToRemove);
+        localMapsWithoutDilation_.erase(nodeIdToRemove);
     }
 }
 

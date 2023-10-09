@@ -126,9 +126,8 @@ public:
         { return occupancyGridBuilders_[index]->nodes(); }
     const std::deque<Node>& temporaryNodes(int index) const
         { return temporaryOccupancyGridBuilders_[index]->nodes(); }
-    const std::map<int, const std::shared_ptr<const LocalMap>>&
-        localMapsWithoutObstacleDilation() const
-            { return localMapsWithoutObstacleDilation_; }
+    const std::map<int, const std::shared_ptr<const LocalMap>>& localMapsWithoutDilation() const
+        { return localMapsWithoutDilation_; }
     const cv::Mat& lastDilatedSemantic() const
         { return localMapBuilder_->lastDilatedSemantic(); }
     int numBuilders() const { return numBuilders_; }
@@ -155,7 +154,7 @@ private:
 
     std::unique_ptr<ObjectTracking> objectTracking_;
 
-    std::map<int, const std::shared_ptr<const LocalMap>> localMapsWithoutObstacleDilation_;
+    std::map<int, const std::shared_ptr<const LocalMap>> localMapsWithoutDilation_;
 };
 
 }

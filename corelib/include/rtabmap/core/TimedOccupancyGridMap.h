@@ -110,9 +110,8 @@ public:
     const std::map<int, Node>& nodes(int index) const { return occupancyGridMap_->nodes(index); }
     const std::deque<Node>& temporaryNodes(int index) const
         { return occupancyGridMap_->temporaryNodes(index); }
-    const std::map<int, const std::shared_ptr<const LocalMap>>&
-        localMapsWithoutObstacleDilation() const
-            { return occupancyGridMap_->localMapsWithoutObstacleDilation(); }
+    const std::map<int, const std::shared_ptr<const LocalMap>>& localMapsWithoutDilation() const
+        { return occupancyGridMap_->localMapsWithoutDilation(); }
     const cv::Mat& lastDilatedSemantic() const
         { return occupancyGridMap_->lastDilatedSemantic(); }
     int numBuilders() const { return occupancyGridMap_->numBuilders(); };
