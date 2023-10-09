@@ -24,7 +24,8 @@ public:
     {
         float cellSize = 0.1f;
         LocalMapBuilder::Parameters localMapBuilderParameters;
-        std::vector<ObstacleDilation::Parameters> obstacleDilationsParameters;
+        std::vector<ObstacleDilation::Parameters> obstacleDilationsParameters =
+            std::vector<ObstacleDilation::Parameters>(1);
         OccupancyGridBuilder::Parameters occupancyGridBuilderParameters;
         TemporaryOccupancyGridBuilder::Parameters
             temporaryOccupancyGridBuilderParameters;
@@ -63,13 +64,6 @@ public:
                                 obstacleDilationNode));
                     }
                 }
-            }
-            else
-            {
-                ObstacleDilation::Parameters obstacleDilationParameters;
-                obstacleDilationParameters.dilationSize = 0.0f;
-                parameters.obstacleDilationsParameters.push_back(
-                    obstacleDilationParameters);
             }
             if (node["OccupancyGridBuilder"])
             {
