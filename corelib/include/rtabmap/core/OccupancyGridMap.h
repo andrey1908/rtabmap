@@ -132,7 +132,7 @@ public:
     const cv::Mat& lastDilatedSemantic() const
         { return localMapBuilder_->lastDilatedSemantic(); }
     int numBuilders() const { return numBuilders_; }
-    bool objectTrackingIsEnabled() const { return objectTracking_ != nullptr; }
+    bool objectTrackingEnabled() const { return objectTracking_ != nullptr; }
     const std::vector<ObjectTracking::TrackedObject>& trackedObjects() const
         { return objectTracking_->trackedObjects(); }
     const std::list<ObjectTracking::MOT16TrackedObject>& mot16TrackedObjectsCache() const

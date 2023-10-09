@@ -116,8 +116,8 @@ public:
     const cv::Mat& lastDilatedSemantic() const
         { return occupancyGridMap_->lastDilatedSemantic(); }
     int numBuilders() const { return occupancyGridMap_->numBuilders(); };
-    bool objectTrackingIsEnabled() const
-        { return occupancyGridMap_->objectTrackingIsEnabled(); }
+    bool objectTrackingEnabled() const
+        { return occupancyGridMap_->objectTrackingEnabled(); }
     const std::vector<ObjectTracking::TrackedObject>& trackedObjects() const
         { return occupancyGridMap_->trackedObjects(); }
     const std::list<ObjectTracking::MOT16TrackedObject>& mot16TrackedObjectsCache() const
