@@ -26,7 +26,9 @@ public:
     {
         float maxInterpolationTimeError = 0.06f;
         float guaranteedInterpolationTimeWindow = 1.0f;
+        bool enableTrajectoriesTrimmer = false;
 
+        TrajectoriesTrimmer::Parameters trajectoriesTrimmerParameters;
         OccupancyGridMap::Parameters occupancyGridMapParameters;
 
         static Parameters createParameters(const YAML::Node& node)
@@ -42,6 +44,17 @@ public:
             {
                 parameters.guaranteedInterpolationTimeWindow =
                     node["GuaranteedInterpolationTimeWindow"].as<float>();
+            }
+            if (node["EnableTrajectoriesTrimmer"])
+            {
+                parameters.enableTrajectoriesTrimmer =
+                    node["EnableTrajectoriesTrimmer"].as<bool>();
+            }
+            if (node["TrajectoriesTrimmer"])
+            {
+                parameters.trajectoriesTrimmerParameters =
+                    TrajectoriesTrimmer::Parameters::createParameters(
+                        node["TrajectoriesTrimmer"]);
             }
             if (node["OccupancyGridMap"])
             {
@@ -77,6 +90,7 @@ public:
         { occupancyGridMap_->removeNodes(nodeIdsToRemove); }
 
     void transformMap(const Transform& transform);
+    bool trajectoriesTrimmerEnabled() const { return trajectoriesTrimmer_ != nullptr; }
     std::set<Time> trimTrajectories(const Trajectories& trajectories)
         { return trajectoriesTrimmer_->trimTrajectories(trajectories); }
     void updatePoses(const Trajectories& trajectories);
@@ -123,6 +137,7 @@ private:
 private:
     double maxInterpolationTimeError_;
     double guaranteedInterpolationTimeWindow_;
+    bool enableTrajectoriesTrimmer_;
 
     std::unique_ptr<OccupancyGridMap> occupancyGridMap_;
     std::unique_ptr<TrajectoriesTrimmer> trajectoriesTrimmer_;

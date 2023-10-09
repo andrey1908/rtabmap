@@ -4,6 +4,8 @@
 #include <list>
 #include <map>
 
+#include <yaml-cpp/yaml.h>
+
 #include <rtabmap/core/Transform.h>
 #include <rtabmap/core/Trajectory.h>
 #include <rtabmap/core/LocalMap.h>
@@ -24,7 +26,41 @@ public:
 class TrajectoriesTrimmer
 {
 public:
-    TrajectoriesTrimmer(int skipLastN, float maxDistance, float minSimilarity);
+    struct Parameters
+    {
+        float maxTimeErrorForClosestLocalMapSearch = 0.1;
+        int skipLastN = 20;
+        float maxDistance = 3.0f;
+        float minSimilarity = 0.9f;
+
+        static Parameters createParameters(const YAML::Node& node)
+        {
+            UASSERT(node.IsMap());
+            Parameters parameters;
+            if (node["MaxTimeErrorForClosestLocalMapSearch"])
+            {
+                parameters.maxTimeErrorForClosestLocalMapSearch =
+                    node["MaxTimeErrorForClosestLocalMapSearch"].as<float>();
+            }
+            if (node["SkipLastN"])
+            {
+                parameters.skipLastN = node["SkipLastN"].as<int>();
+            }
+            if (node["MaxDistance"])
+            {
+                parameters.maxDistance = node["MaxDistance"].as<float>();
+            }
+            if (node["MinSimilarity"])
+            {
+                parameters.minSimilarity = node["MinSimilarity"].as<float>();
+            }
+            return parameters;
+        }
+    };
+
+public:
+    TrajectoriesTrimmer(const Parameters& parameters);
+    void parseParameters(const Parameters& parameters);
 
     void addLocalMap(const std::shared_ptr<const LocalMap>& localMap);
     std::set<Time> trimTrajectories(const Trajectories& trajectories);
@@ -34,11 +70,12 @@ public:
 private:
     const LocalMap* findNextClosestLocalMap(
         std::vector<std::shared_ptr<const LocalMap>>::const_iterator& it,
-        const Time& time, double maxDiff) const;
+        const Time& time, double maxError) const;
     std::map<Time, const LocalMap*> findClosestLocalMaps(
-        const Trajectories& trajectories, double maxDiff) const;
+        const Trajectories& trajectories, double maxError) const;
 
 private:
+    float maxTimeErrorForClosestLocalMapSearch_;
     int skipLastN_;
     float maxDistance_;
     float maxDistanceSqr_;

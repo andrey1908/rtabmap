@@ -37,9 +37,20 @@ float NodesSimilarityEstimation::getSimilarity(
     return similarity;
 }
 
-TrajectoriesTrimmer::TrajectoriesTrimmer(int skipLastN, float maxDistance, float minSimilarity) :
-    skipLastN_(skipLastN), maxDistance_(maxDistance), minSimilarity_(minSimilarity)
+TrajectoriesTrimmer::TrajectoriesTrimmer(const Parameters& parameters)
 {
+    parseParameters(parameters);
+}
+
+void TrajectoriesTrimmer::parseParameters(const Parameters& parameters)
+{
+    maxTimeErrorForClosestLocalMapSearch_ =
+        parameters.maxTimeErrorForClosestLocalMapSearch;
+    skipLastN_ = parameters.skipLastN;
+    maxDistance_ = parameters.maxDistance;
+    minSimilarity_ = parameters.minSimilarity;
+
+    UASSERT(maxDistance_ >= 0.0f);
     maxDistanceSqr_ = maxDistance_ * maxDistance_;
 }
 
@@ -51,7 +62,7 @@ void TrajectoriesTrimmer::addLocalMap(const std::shared_ptr<const LocalMap>& loc
 
 const LocalMap* TrajectoriesTrimmer::findNextClosestLocalMap(
     std::vector<std::shared_ptr<const LocalMap>>::const_iterator& it,
-    const Time& time, double maxDiff) const
+    const Time& time, double maxError) const
 {
     while (it != localMaps_.end() && (*it)->time() < time)
     {
@@ -77,7 +88,7 @@ const LocalMap* TrajectoriesTrimmer::findNextClosestLocalMap(
         UASSERT(lowerDiff > 0.0);
     }
 
-    if (std::min(upperDiff, lowerDiff) <= maxDiff)
+    if (std::min(upperDiff, lowerDiff) <= maxError)
     {
         if (upperDiff < lowerDiff)
         {
@@ -92,14 +103,14 @@ const LocalMap* TrajectoriesTrimmer::findNextClosestLocalMap(
 }
 
 std::map<Time, const LocalMap*> TrajectoriesTrimmer::findClosestLocalMaps(
-    const Trajectories& trajectories, double maxDiff) const
+    const Trajectories& trajectories, double maxError) const
 {
     std::map<Time, const LocalMap*> closestLocalMaps;
     auto localMapIt = localMaps_.begin();
     for (auto it = trajectories.poses_begin(); it != trajectories.poses_end(); ++it)
     {
         const LocalMap* closestLocalMap = findNextClosestLocalMap(
-            localMapIt, it->time, maxDiff);
+            localMapIt, it->time, maxError);
         closestLocalMaps.insert(closestLocalMaps.end(),
             std::make_pair(it->time, closestLocalMap));
     }
@@ -127,7 +138,7 @@ std::set<Time> TrajectoriesTrimmer::trimTrajectories(
     }
 
     std::map<Time, const LocalMap*> closestLocalMaps =
-        findClosestLocalMaps(trajectories, 0.1);
+        findClosestLocalMaps(trajectories, maxTimeErrorForClosestLocalMapSearch_);
     auto newIt = trajectories.poses_iterator(trajectoryIt, poseIt);
     auto newLocalMapIt = closestLocalMaps.find(newIt->time);
     UASSERT(newLocalMapIt != closestLocalMaps.end());

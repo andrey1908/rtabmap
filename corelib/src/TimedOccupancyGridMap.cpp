@@ -10,16 +10,25 @@ namespace rtabmap {
 TimedOccupancyGridMap::TimedOccupancyGridMap(const Parameters& parameters)
 {
     parseParameters(parameters);
-    trajectoriesTrimmer_ = std::make_unique<TrajectoriesTrimmer>(8, 1.0f, 0.9f);
 }
 
 void TimedOccupancyGridMap::parseParameters(const Parameters& parameters)
 {
     maxInterpolationTimeError_ = parameters.maxInterpolationTimeError;
     guaranteedInterpolationTimeWindow_ = parameters.guaranteedInterpolationTimeWindow;
+    enableTrajectoriesTrimmer_ = parameters.enableTrajectoriesTrimmer;
 
-    occupancyGridMap_ =
-        std::make_unique<OccupancyGridMap>(parameters.occupancyGridMapParameters);
+    occupancyGridMap_ = std::make_unique<OccupancyGridMap>(
+        parameters.occupancyGridMapParameters);
+    if (enableTrajectoriesTrimmer_)
+    {
+        trajectoriesTrimmer_ = std::make_unique<TrajectoriesTrimmer>(
+            parameters.trajectoriesTrimmerParameters);
+    }
+    else
+    {
+        trajectoriesTrimmer_.reset();
+    }
 }
 
 std::shared_ptr<LocalMap> TimedOccupancyGridMap::createLocalMap(
@@ -45,8 +54,11 @@ int TimedOccupancyGridMap::addLocalMap(const Transform& pose,
     currentTrajectory_.addPose(localMap->time(), pose * toUpdatedPose);
     lastPoseTime_ = localMap->time();
 
-    trajectoriesTrimmer_->addLocalMap(
-        occupancyGridMap_->localMapsWithoutObstacleDilation().rbegin()->second);
+    if (trajectoriesTrimmer_)
+    {
+        trajectoriesTrimmer_->addLocalMap(
+            occupancyGridMap_->localMapsWithoutObstacleDilation().rbegin()->second);
+    }
 
     return nodeId;
 }
