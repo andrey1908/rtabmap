@@ -24,11 +24,25 @@ void LocalMapBuilder::parseParameters(const Parameters& parameters)
     maxRange2d_ = parameters.maxRange2d;
     sensorBlindRange2d_ = parameters.sensorBlindRange2d;
     UASSERT(minObstacleHeight_ < maxObstacleHeight_);
-    UASSERT(maxSemanticRange_ == 0.0f || minSemanticRange_ < maxSemanticRange_);
+    UASSERT(maxSemanticRange_ < 0.0f || minSemanticRange_ < maxSemanticRange_);
 
-    maxVisibleRangeSqr_ = maxVisibleRange_ * maxVisibleRange_;
+    if (maxVisibleRange_ >= 0.0f)
+    {
+        maxVisibleRangeSqr_ = maxVisibleRange_ * maxVisibleRange_;
+    }
+    else
+    {
+        maxVisibleRangeSqr_ = -1.0f;
+    }
     minSemanticRangeSqr_ = minSemanticRange_ * minSemanticRange_;
-    maxSemanticRangeSqr_ = maxSemanticRange_ * maxSemanticRange_;
+    if (maxSemanticRange_ >= 0.0f)
+    {
+        maxSemanticRangeSqr_ = maxSemanticRange_ * maxSemanticRange_;
+    }
+    else
+    {
+        maxSemanticRangeSqr_ = -1.0f;
+    }
     maxRange2dSqr_ = maxRange2d_ * maxRange2d_;
     sensorBlindRange2dSqr_ = sensorBlindRange2d_ * sensorBlindRange2d_;
 
@@ -59,7 +73,7 @@ std::shared_ptr<LocalMap> LocalMapBuilder::createLocalMap(
     const Transform& transform = laserScan.localTransform();
     Eigen::Matrix3Xf points, obstacles;
     points = convertLaserScan(laserScan);
-    if (maxVisibleRangeSqr_ != 0.0f)
+    if (maxVisibleRangeSqr_ >= 0.0f)
     {
         points = filterMaxVisibleRange(points);
     }
@@ -216,7 +230,7 @@ std::vector<Color> LocalMapBuilder::getPointsColors(
             cameraModel.reproject(x, y, z, u, v);
             if (cameraModel.inFrame(u, v) && z > 0 &&
                 rangeSqr >= minSemanticRangeSqr_ &&
-                (maxSemanticRangeSqr_ == 0.0f || rangeSqr <= maxSemanticRangeSqr_))
+                (maxSemanticRangeSqr_ < 0.0f || rangeSqr <= maxSemanticRangeSqr_))
             {
                 const cv::Vec3b& pixelColor = image.at<cv::Vec3b>(v, u);
                 if (pixelColor == semanticBackgroundColor)

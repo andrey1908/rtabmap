@@ -24,11 +24,11 @@ public:
     struct Parameters
     {
         float cellSize = 0.1f;
-        float maxVisibleRange = 0.0f;
+        float maxVisibleRange = -1.0f;  // inf
         float minObstacleHeight = 0.2f;
         float maxObstacleHeight = 1.5f;
         float minSemanticRange = 0.0f;
-        float maxSemanticRange = 0.0f;
+        float maxSemanticRange = -1.0f;  // inf
         bool enableRayTracing = false;
         float maxRange2d = 10.0f;
         float sensorBlindRange2d = 0.0f;
