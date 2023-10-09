@@ -25,12 +25,12 @@ public:
     {
         float cellSize = 0.1f;
         float maxVisibleRange = 0.0f;
-        float maxRange2d = 10.0f;
         float minObstacleHeight = 0.2f;
         float maxObstacleHeight = 1.5f;
         float minSemanticRange = 0.0f;
         float maxSemanticRange = 0.0f;
         bool enableRayTracing = false;
+        float maxRange2d = 10.0f;
         float sensorBlindRange2d = 0.0f;
 
         SemanticDilation::Parameters semanticDilationParameters;
@@ -47,10 +47,6 @@ public:
             if (node["MaxVisibleRange"])
             {
                 parameters.maxVisibleRange = node["MaxVisibleRange"].as<float>();
-            }
-            if (node["MaxRange2d"])
-            {
-                parameters.maxRange2d = node["MaxRange2d"].as<float>();
             }
             if (node["MinObstacleHeight"])
             {
@@ -71,6 +67,10 @@ public:
             if (node["EnableRayTracing"])
             {
                 parameters.enableRayTracing = node["EnableRayTracing"].as<bool>();
+            }
+            if (node["MaxRange2d"])
+            {
+                parameters.maxRange2d = node["MaxRange2d"].as<float>();
             }
             if (node["SensorBlindRange2d"])
             {
@@ -124,8 +124,6 @@ private:
     float cellSize_;
     float maxVisibleRange_;
     float maxVisibleRangeSqr_;
-    float maxRange2d_;
-    float maxRange2dSqr_;
     float minObstacleHeight_;
     float maxObstacleHeight_;
     float minSemanticRange_;
@@ -133,6 +131,8 @@ private:
     float maxSemanticRange_;
     float maxSemanticRangeSqr_;
     bool enableRayTracing_;
+    float maxRange2d_;
+    float maxRange2dSqr_;
     float sensorBlindRange2d_;
     float sensorBlindRange2dSqr_;
 

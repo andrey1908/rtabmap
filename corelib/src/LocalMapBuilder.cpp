@@ -16,24 +16,24 @@ void LocalMapBuilder::parseParameters(const Parameters& parameters)
 {
     cellSize_ = parameters.cellSize;
     maxVisibleRange_ = parameters.maxVisibleRange;
-    maxRange2d_ = parameters.maxRange2d;
     minObstacleHeight_ = parameters.minObstacleHeight;
     maxObstacleHeight_ = parameters.maxObstacleHeight;
     minSemanticRange_ = parameters.minSemanticRange;
     maxSemanticRange_ = parameters.maxSemanticRange;
     enableRayTracing_ = parameters.enableRayTracing;
+    maxRange2d_ = parameters.maxRange2d;
     sensorBlindRange2d_ = parameters.sensorBlindRange2d;
     UASSERT(minObstacleHeight_ < maxObstacleHeight_);
     UASSERT(maxSemanticRange_ == 0.0f || minSemanticRange_ < maxSemanticRange_);
 
     maxVisibleRangeSqr_ = maxVisibleRange_ * maxVisibleRange_;
-    maxRange2dSqr_ = maxRange2d_ * maxRange2d_;
     minSemanticRangeSqr_ = minSemanticRange_ * minSemanticRange_;
     maxSemanticRangeSqr_ = maxSemanticRange_ * maxSemanticRange_;
+    maxRange2dSqr_ = maxRange2d_ * maxRange2d_;
     sensorBlindRange2dSqr_ = sensorBlindRange2d_ * sensorBlindRange2d_;
 
-    semanticDilation_ =
-        std::make_unique<SemanticDilation>(parameters.semanticDilationParameters);
+    semanticDilation_ = std::make_unique<SemanticDilation>(
+        parameters.semanticDilationParameters);
     if (enableRayTracing_)
     {
         RayTracing::Parameters rayTracingParameters = parameters.rayTracingParameters;
