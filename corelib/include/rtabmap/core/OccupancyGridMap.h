@@ -49,6 +49,7 @@ public:
             {
                 UASSERT(node["ObstacleDilation"].IsMap() ||
                     node["ObstacleDilation"].IsSequence());
+                parameters.obstacleDilationsParameters.clear();
                 if (node["ObstacleDilation"].IsMap())
                 {
                     parameters.obstacleDilationsParameters.push_back(
