@@ -50,7 +50,7 @@ void LocalMap::fromColoredGrid(const ColoredGrid& coloredGrid,
     {
         for (int x = 0; x < coloredGrid.grid.cols; x++)
         {
-            if (maxRange2dSqr != 0.0f)
+            if (maxRange2dSqr >= 0.0f)
             {
                 float xf = (x + minX + 0.5f) * cellSize;
                 float yf = (y + minY + 0.5f) * cellSize;

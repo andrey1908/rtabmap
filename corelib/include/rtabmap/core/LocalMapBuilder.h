@@ -30,7 +30,7 @@ public:
         float minSemanticRange = 0.0f;
         float maxSemanticRange = -1.0f;  // inf
         bool enableRayTracing = false;
-        float maxRange2d = 10.0f;
+        float maxRange2d = 10.0f;  // (-1) - inf
         float sensorBlindRange2d = 0.0f;
 
         SemanticDilation::Parameters semanticDilationParameters;

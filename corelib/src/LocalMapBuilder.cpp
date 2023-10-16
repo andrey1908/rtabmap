@@ -43,7 +43,14 @@ void LocalMapBuilder::parseParameters(const Parameters& parameters)
     {
         maxSemanticRangeSqr_ = -1.0f;
     }
-    maxRange2dSqr_ = maxRange2d_ * maxRange2d_;
+    if (maxRange2d_ >= 0.0f)
+    {
+        maxRange2dSqr_ = maxRange2d_ * maxRange2d_;
+    }
+    else
+    {
+        maxRange2dSqr_ = -1.0f;
+    }
     sensorBlindRange2dSqr_ = sensorBlindRange2d_ * sensorBlindRange2d_;
 
     semanticDilation_ = std::make_unique<SemanticDilation>(
