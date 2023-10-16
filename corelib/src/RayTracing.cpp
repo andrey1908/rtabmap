@@ -14,6 +14,9 @@ void RayTracing::parseParameters(const Parameters& parameters)
     maxVisibleRangeF_ = parameters.maxVisibleRange;
     maxTracingRangeF_ = parameters.maxTracingRange;
     traceIntoUnknownSpace_ = parameters.traceIntoUnknownSpace;
+    UASSERT(cellSize_ > 0.0f);
+    UASSERT(maxVisibleRangeF_ >= 0.0f);
+    UASSERT(maxTracingRangeF_ >= 0.0f);
     UASSERT(maxVisibleRangeF_ >= maxTracingRangeF_);
 
     maxVisibleRange_ = std::lround(maxVisibleRangeF_ / cellSize_);

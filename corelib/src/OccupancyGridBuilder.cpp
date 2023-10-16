@@ -21,6 +21,7 @@ void OccupancyGridBuilder::parseParameters(const Parameters& parameters)
     occupancyProbThr_ = parameters.occupancyProbThr;
     temporarilyOccupiedCellColorRgb_ = parameters.temporarilyOccupiedCellColorRgb;
     showTemporarilyOccupiedCells_ = parameters.showTemporarilyOccupiedCells;
+    UASSERT(cellSize_ > 0.0f);
     UASSERT(missProb_ > 0.0f && missProb_ <= 0.5f);
     UASSERT(hitProb_ >= 0.5f && hitProb_ < 1.0f);
     UASSERT(minClampingProb_ > 0.0f && minClampingProb_ < 1.0f);
@@ -555,7 +556,7 @@ void OccupancyGridBuilder::deployTransformedLocalMap(const LocalMap& localMap,
         }
         else
         {
-            if (localMap.sensorBlindRange2dSqr() != 0.0f &&
+            if (localMap.sensorBlindRange2dSqr() > 0.0f &&
                 value >= occupancyThr_)
             {
                 float localX = localMap.points().coeff(0, i);

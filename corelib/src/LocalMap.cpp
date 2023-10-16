@@ -31,7 +31,7 @@ LocalMap::LocalMap(const ColoredGrid& coloredGrid,
 void LocalMap::fromColoredGrid(const ColoredGrid& coloredGrid,
     float maxRange2dSqr, bool duplicatePoints)
 {
-    UASSERT(coloredGrid.cellSize != 0.0f);
+    UASSERT(coloredGrid.cellSize > 0.0f);
     UASSERT(coloredGrid.limits.valid());
     UASSERT(coloredGrid.grid.type() == CV_8S);
     UASSERT(coloredGrid.colors.type() == CV_32S);

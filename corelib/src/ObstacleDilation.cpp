@@ -14,6 +14,7 @@ void ObstacleDilation::parseParameters(const Parameters& parameters)
 {
     cellSize_ = parameters.cellSize;
     dilationSizeF_ = parameters.dilationSize;
+    UASSERT(cellSize_ > 0.0f);
     UASSERT(dilationSizeF_ >= 0.0f);
 
     dilationSize_ = std::ceil(dilationSizeF_ / cellSize_);

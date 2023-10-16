@@ -23,8 +23,11 @@ void LocalMapBuilder::parseParameters(const Parameters& parameters)
     enableRayTracing_ = parameters.enableRayTracing;
     maxRange2d_ = parameters.maxRange2d;
     sensorBlindRange2d_ = parameters.sensorBlindRange2d;
+    UASSERT(cellSize_ > 0.0f);
     UASSERT(minObstacleHeight_ < maxObstacleHeight_);
+    UASSERT(minSemanticRange_ >= 0.0f);
     UASSERT(maxSemanticRange_ < 0.0f || minSemanticRange_ < maxSemanticRange_);
+    UASSERT(sensorBlindRange2d_ >= 0.0f);
 
     if (maxVisibleRange_ >= 0.0f)
     {

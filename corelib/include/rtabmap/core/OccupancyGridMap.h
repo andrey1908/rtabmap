@@ -23,13 +23,14 @@ public:
     struct Parameters
     {
         float cellSize = 0.1f;
+        bool enableObjectTracking = false;
+
         LocalMapBuilder::Parameters localMapBuilderParameters;
         std::vector<ObstacleDilation::Parameters> obstacleDilationsParameters =
             std::vector<ObstacleDilation::Parameters>(1);
         OccupancyGridBuilder::Parameters occupancyGridBuilderParameters;
         TemporaryOccupancyGridBuilder::Parameters
             temporaryOccupancyGridBuilderParameters;
-        bool enableObjectTracking = false;
 
         static Parameters createParameters(const YAML::Node& node)
         {
@@ -38,6 +39,11 @@ public:
             if (node["CellSize"])
             {
                 parameters.cellSize = node["CellSize"].as<float>();
+            }
+            if (node["EnableObjectTracking"])
+            {
+                parameters.enableObjectTracking =
+                    node["EnableObjectTracking"].as<bool>();
             }
             if (node["LocalMapBuilder"])
             {
@@ -77,11 +83,6 @@ public:
                 parameters.temporaryOccupancyGridBuilderParameters =
                     TemporaryOccupancyGridBuilder::Parameters::createParameters(
                         node["TemporaryOccupancyGridBuilder"]);
-            }
-            if (node["EnableObjectTracking"])
-            {
-                parameters.enableObjectTracking =
-                    node["EnableObjectTracking"].as<bool>();
             }
             return parameters;
         }

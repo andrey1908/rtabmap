@@ -12,8 +12,10 @@ OccupancyGridMap::OccupancyGridMap(const Parameters& parameters)
 void OccupancyGridMap::parseParameters(const Parameters& parameters)
 {
     UASSERT(parameters.obstacleDilationsParameters.size());
+
     cellSize_ = parameters.cellSize;
     enableObjectTracking_ = parameters.enableObjectTracking;
+    UASSERT(cellSize_ > 0.0f);
 
     LocalMapBuilder::Parameters localMapBuilderParameters =
         parameters.localMapBuilderParameters;
@@ -69,7 +71,7 @@ int OccupancyGridMap::addLocalMap(const std::shared_ptr<const LocalMap>& localMa
     for (int i = 0; i < numBuilders_; i++)
     {
         std::shared_ptr<const LocalMap> dilatedLocalMap;
-        if (obstacleDilations_[i]->dilationSize() != 0.0f)
+        if (obstacleDilations_[i]->dilationSize() > 0.0f)
         {
             MEASURE_BLOCK_TIME(OccupancyGridMap__obstacleDilation);
             dilatedLocalMap = obstacleDilations_[i]->dilate(*localMap);
@@ -91,7 +93,7 @@ int OccupancyGridMap::addLocalMap(const Transform& pose,
     for (int i = 0; i < numBuilders_; i++)
     {
         std::shared_ptr<const LocalMap> dilatedLocalMap;
-        if (obstacleDilations_[i]->dilationSize() != 0.0f)
+        if (obstacleDilations_[i]->dilationSize() > 0.0f)
         {
             MEASURE_BLOCK_TIME(OccupancyGridMap__obstacleDilation);
             dilatedLocalMap = obstacleDilations_[i]->dilate(*localMap);
@@ -113,7 +115,7 @@ bool OccupancyGridMap::addTemporaryLocalMap(const Transform& pose,
     for (int i = 0; i < numBuilders_; i++)
     {
         std::shared_ptr<const LocalMap> dilatedLocalMap;
-        if (obstacleDilations_[i]->dilationSize() != 0.0f)
+        if (obstacleDilations_[i]->dilationSize() > 0.0f)
         {
             MEASURE_BLOCK_TIME(OccupancyGridMap__obstacleDilation);
             dilatedLocalMap = obstacleDilations_[i]->dilate(*localMap);

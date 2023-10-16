@@ -16,6 +16,7 @@ void TemporaryOccupancyGridBuilder::parseParameters(const Parameters& parameters
     temporaryHitProb_ = parameters.temporaryHitProb;
     temporaryOccupancyProbThr_ = parameters.temporaryOccupancyProbThr;
     maxTemporaryLocalMaps_ = parameters.maxTemporaryLocalMaps;
+    UASSERT(cellSize_ > 0.0f);
     UASSERT(temporaryMissProb_ > 0.0f && temporaryMissProb_ <= 0.5f);
     UASSERT(temporaryHitProb_ >= 0.5f && temporaryHitProb_ < 1.0f);
     UASSERT(temporaryOccupancyProbThr_ > 0.0f && temporaryOccupancyProbThr_ < 1.0f);

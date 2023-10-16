@@ -49,8 +49,10 @@ void TrajectoriesTrimmer::parseParameters(const Parameters& parameters)
     skipLastN_ = parameters.skipLastN;
     maxDistance_ = parameters.maxDistance;
     minSimilarity_ = parameters.minSimilarity;
-
+    UASSERT(skipLastN_ >= 0);
     UASSERT(maxDistance_ >= 0.0f);
+    UASSERT(minSimilarity_ >= 0.0f && minSimilarity_ <= 1.0f);
+
     maxDistanceSqr_ = maxDistance_ * maxDistance_;
 }
 
