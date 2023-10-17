@@ -206,7 +206,7 @@ proto::LocalMap toProto(const LocalMap& localMap)
 std::shared_ptr<LocalMap> fromProto(const proto::LocalMap& proto)
 {
     auto localMap = std::make_shared<LocalMap>(fromProto(proto.colored_grid()),
-        0.0f, proto.points_duplicated());
+        -1.0f, proto.points_duplicated());
     localMap->setSensorBlindRange2dSqr(proto.sensor_blind_range_2d_sqr());
     localMap->setToSensor(fromProto(proto.to_sensor()));
     localMap->setFromUpdatedPose(fromProto(proto.from_updated_pose()));
