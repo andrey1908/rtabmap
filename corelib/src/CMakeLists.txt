@@ -58,6 +58,7 @@ SET(INCLUDE_DIRS
     ${ZLIB_INCLUDE_DIRS}
     ${time_measurer_INCLUDE_DIRS}
     ${Protobuf_INCLUDE_DIRS}
+    ${gflags_INCLUDE_DIR}
 )
 
 SET(LIBRARIES
@@ -67,6 +68,7 @@ SET(LIBRARIES
     ${ZLIB_LIBRARIES}
     ${time_measurer_LIBRARIES}
     ${Protobuf_LIBRARIES}
+    ${gflags_LIBRARIES}
 )
 
 IF(TORCH_FOUND)

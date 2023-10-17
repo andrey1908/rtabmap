@@ -221,6 +221,7 @@ FIND_PACKAGE(time_measurer REQUIRED)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(OpenCV REQUIRED QUIET)
 FIND_PACKAGE(yaml-cpp REQUIRED)
+FIND_PACKAGE(gflags REQUIRED)
 
 IF(WITH_QT)
 FIND_PACKAGE(PCL 1.7 REQUIRED QUIET COMPONENTS common io kdtree search surface filters registration sample_consensus segmentation visualization)
