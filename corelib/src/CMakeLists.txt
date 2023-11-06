@@ -621,6 +621,9 @@ ADD_LIBRARY(rtabmap_core ${SRC_FILES} ${PROTO_SRCS} ${RESOURCES_HEADERS})
 ADD_DEPENDENCIES(rtabmap_core generated_protobuf_code)
 TARGET_LINK_LIBRARIES(rtabmap_core rtabmap_utilite ${LIBRARIES})
 
+ADD_EXECUTABLE(ocp_map_to_image ocp_map_to_image.cpp)
+TARGET_LINK_LIBRARIES(ocp_map_to_image rtabmap_core)
+
 SET_TARGET_PROPERTIES(
      rtabmap_core
     PROPERTIES
