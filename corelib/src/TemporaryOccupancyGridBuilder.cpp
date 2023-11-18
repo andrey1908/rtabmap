@@ -1,6 +1,6 @@
 #include <rtabmap/core/TemporaryOccupancyGridBuilder.h>
 
-#include <kas_metrics/time_measurer.h>
+#include <kas_utils/time_measurer.h>
 
 namespace rtabmap {
 

@@ -56,7 +56,7 @@ SET(INCLUDE_DIRS
     ${YAML_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
     ${ZLIB_INCLUDE_DIRS}
-    ${kas_metrics_INCLUDE_DIRS}
+    ${kas_utils_cpp_INCLUDE_DIRS}
     ${Protobuf_INCLUDE_DIRS}
     ${gflags_INCLUDE_DIR}
 )
@@ -66,7 +66,7 @@ SET(LIBRARIES
     ${YAML_CPP_LIBRARIES}
     ${PCL_LIBRARIES}
     ${ZLIB_LIBRARIES}
-    ${kas_metrics_LIBRARIES}
+    ${kas_utils_cpp_LIBRARIES}
     ${Protobuf_LIBRARIES}
     ${gflags_LIBRARIES}
 )
