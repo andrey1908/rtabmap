@@ -32,6 +32,7 @@ private:
         float roll = 0.0f;
         float pitch = 0.0f;
         float yaw = 0.0f;
+        bool transparent = false;
 
         static Area createArea(const YAML::Node& node)
         {
@@ -56,6 +57,10 @@ private:
             area.roll = node["roll"].as<float>();
             area.pitch = node["pitch"].as<float>();
             area.yaw = node["yaw"].as<float>();
+            if (node["transparent"])
+            {
+                area.transparent = node["transparent"].as<bool>();
+            }
 
             return area;
         }
@@ -156,16 +161,18 @@ public:
 private:
     Eigen::Matrix3Xf convertLaserScan(const LaserScan& laserScan) const;
     Eigen::Matrix3Xf filterMaxVisibleRange(const Eigen::Matrix3Xf& points) const;
-    Eigen::Matrix3Xf removeSensorIgnoreAreas(const Eigen::Matrix3Xf& points) const;
     Eigen::Matrix3Xf transformPoints(const Eigen::Matrix3Xf& points,
         const Transform& transform) const;
     Eigen::Matrix3Xf getObstaclePoints(const Eigen::Matrix3Xf& points) const;
+    std::pair<Eigen::Matrix3Xf, Eigen::Matrix3Xf> applySensorIgnoreAreas(
+        const Eigen::Matrix3Xf& points, const Transform& toSensor) const;
 
     std::vector<Color> getPointsColors(const Eigen::Matrix3Xf& points,
         const std::vector<cv::Mat>& images,
         const std::vector<rtabmap::CameraModel>& cameraModels) const;
 
     LocalMap::ColoredGrid coloredGridFromObstacles(const Eigen::Matrix3Xf& points,
+        const Eigen::Matrix3Xf& ignorePoints,
         const std::vector<Color>& colors,
         const Eigen::Vector2f& sensor) const;
     void traceRays(LocalMap::ColoredGrid& coloredGrid,
@@ -175,10 +182,11 @@ private:
     float cellSize_;
     float maxVisibleRange_;
     float maxVisibleRangeSqr_;
-    std::vector<Transform> sensorIgnoreAreaPosesInv_;
+    std::vector<Transform> fromSensorIgnoreAreas_;
     std::vector<std::pair<float, float>> sensorIgnoreAreaXRanges_;
     std::vector<std::pair<float, float>> sensorIgnoreAreaYRanges_;
     std::vector<std::pair<float, float>> sensorIgnoreAreaZRanges_;
+    std::vector<std::int8_t> sensorIgnoreAreasTransparent_;  // to avoid std::vector<bool> specialization
     float minObstacleHeight_;
     float maxObstacleHeight_;
     float minSemanticRange_;

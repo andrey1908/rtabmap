@@ -92,8 +92,7 @@ public:
     RayTracing(const Parameters& parameters);
     void parseParameters(const Parameters& parameters);
 
-    void traceRays(cv::Mat& grid, const Cell& origin,
-        std::int8_t occupiedCellValue, std::int8_t emptyCellValue) const;
+    void traceRays(cv::Mat& grid, const Cell& origin) const;
 
     bool traceIntoUnknownSpace() const
     {

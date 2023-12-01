@@ -1,4 +1,6 @@
 #include <rtabmap/core/RayTracing.h>
+#include <rtabmap/core/LocalMap.h>
+
 #include <kas_utils/time_measurer.h>
 
 namespace rtabmap {
@@ -25,8 +27,7 @@ void RayTracing::parseParameters(const Parameters& parameters)
     computeRays();
 }
 
-void RayTracing::traceRays(cv::Mat& grid, const Cell& origin,
-    std::int8_t occupiedCellValue, std::int8_t emptyCellValue) const
+void RayTracing::traceRays(cv::Mat& grid, const Cell& origin) const
 {
     UASSERT(grid.type() == CV_8S);
     UASSERT(origin.inFrame(grid.rows, grid.cols));
@@ -42,7 +43,9 @@ void RayTracing::traceRays(cv::Mat& grid, const Cell& origin,
             {
                 break;
             }
-            if (grid.at<std::int8_t>(cell.y, cell.x) == occupiedCellValue)
+            const std::int8_t& cellValue = grid.at<std::int8_t>(cell.y, cell.x);
+            if (cellValue == LocalMap::ColoredGrid::occupiedCellValue ||
+                cellValue == LocalMap::ColoredGrid::ignoredOccupiedCellValue)
             {
                 encounteredObstacle = true;
                 break;
@@ -57,7 +60,7 @@ void RayTracing::traceRays(cv::Mat& grid, const Cell& origin,
         {
             for (const Cell& litCell : litCells_)
             {
-                grid.at<std::int8_t>(litCell.y, litCell.x) = emptyCellValue;
+                grid.at<std::int8_t>(litCell.y, litCell.x) = LocalMap::ColoredGrid::emptyCellValue;
             }
         }
     }
