@@ -14,10 +14,14 @@ namespace rtabmap {
 class MapSerialization
 {
 public:
-    MapSerialization(const std::string& fileName);
+    MapSerialization(const std::string& fileName, float cellSize);
 
-    void write(const google::protobuf::Message& proto);
+    void write(const proto::OccupancyGridMap::Node& proto);
     void close();
+
+private:
+    void writeMetaData(float cellSize);
+    void writeString(const std::string& uncompressed);
 
 private:
     std::ofstream output_;
@@ -29,7 +33,8 @@ public:
     MapDeserialization(const std::string& fileName);
 
     const proto::OccupancyGridMap::MetaData& metaData();
-    std::optional<proto::OccupancyGridMap::Node> readNode();
+
+    std::optional<proto::OccupancyGridMap::Node> read();
     void close();
 
 private:
@@ -46,8 +51,11 @@ class RawDataSerialization
 public:
     RawDataSerialization(const std::string& fileName);
 
-    void write(const google::protobuf::Message& proto);
+    void write(const rtabmap::proto::RawData& rawData);
     void close();
+
+private:
+    void writeString(const std::string& uncompressed);
 
 private:
     std::ofstream output_;
@@ -58,7 +66,7 @@ class RawDataDeserialization
 public:
     RawDataDeserialization(const std::string& fileName);
 
-    std::optional<proto::RawData> readRawData();
+    std::optional<proto::RawData> read();
     void close();
 
 private:

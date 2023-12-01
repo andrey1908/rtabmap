@@ -266,10 +266,7 @@ void TimedOccupancyGridMap::reset()
 void TimedOccupancyGridMap::save(const std::string& file)
 {
     MEASURE_BLOCK_TIME(TimedOccupancyGridMap__save);
-    MapSerialization writer(file);
-    proto::OccupancyGridMap::MetaData metaData;
-    metaData.set_cell_size(cellSize());
-    writer.write(metaData);
+    MapSerialization writer(file, cellSize());
 
     const auto& localMapsRef = localMapsWithoutDilation();
     auto localMapIt = localMapsRef.begin();
@@ -303,7 +300,7 @@ void TimedOccupancyGridMap::load(const std::string& file)
     MapDeserialization reader(file);
     UASSERT(cellSize() == reader.metaData().cell_size());
     std::optional<proto::OccupancyGridMap::Node> proto;
-    while (proto = reader.readNode())
+    while (proto = reader.read())
     {
         std::shared_ptr<LocalMap> localMap =
             rtabmap::fromProto(proto->local_map());
