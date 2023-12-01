@@ -1,4 +1,6 @@
 #include <rtabmap/core/LocalMapBuilder.h>
+
+#include <set>
 #include <limits>
 
 #include <kas_utils/time_measurer.h>
@@ -28,6 +30,26 @@ void LocalMapBuilder::parseParameters(const Parameters& parameters)
     UASSERT(minSemanticRange_ >= 0.0f);
     UASSERT(maxSemanticRange_ < 0.0f || minSemanticRange_ < maxSemanticRange_);
     UASSERT(sensorBlindRange2d_ >= 0.0f);
+
+    for (const Area& area : parameters.sensorIgnoreAreas)
+    {
+        UASSERT(area.length >= 0.0f);
+        UASSERT(area.width >= 0.0f);
+        UASSERT(area.height >= 0.0f);
+
+        Transform areaPose(
+            area.x, area.y, area.z,
+            area.roll, area.pitch, area.yaw);
+        Transform areaPoseInv = areaPose.inverse();
+        sensorIgnoreAreaPosesInv_.push_back(std::move(areaPoseInv));
+
+        std::pair<float, float> xRange = std::make_pair(-area.length / 2, area.length / 2);
+        std::pair<float, float> yRange = std::make_pair(-area.width / 2, area.width / 2);
+        std::pair<float, float> zRange = std::make_pair(-area.height / 2, area.height / 2);
+        sensorIgnoreAreaXRanges_.push_back(xRange);
+        sensorIgnoreAreaYRanges_.push_back(yRange);
+        sensorIgnoreAreaZRanges_.push_back(zRange);
+    }
 
     if (maxVisibleRange_ >= 0.0f)
     {
@@ -86,6 +108,10 @@ std::shared_ptr<LocalMap> LocalMapBuilder::createLocalMap(
     if (maxVisibleRangeSqr_ >= 0.0f)
     {
         points = filterMaxVisibleRange(points);
+    }
+    if (sensorIgnoreAreaPosesInv_.size())
+    {
+        points = removeSensorIgnoreAreas(points);
     }
     points = transformPoints(points, transform);
     obstacles = getObstaclePoints(points);
@@ -177,6 +203,53 @@ Eigen::Matrix3Xf LocalMapBuilder::filterMaxVisibleRange(const Eigen::Matrix3Xf& 
         i++;
     }
     return filtered;
+}
+
+Eigen::Matrix3Xf LocalMapBuilder::removeSensorIgnoreAreas(const Eigen::Matrix3Xf& points) const
+{
+    MEASURE_BLOCK_TIME(LocalMapBuilder__removeSensorIgnoreAreas);
+    std::set<int> indicesToRemove;
+    for (int i = 0; i < sensorIgnoreAreaPosesInv_.size(); i++)
+    {
+        const Transform& areaPoseInv = sensorIgnoreAreaPosesInv_[i];
+        const std::pair<float, float>& xRange = sensorIgnoreAreaXRanges_[i];
+        const std::pair<float, float>& yRange = sensorIgnoreAreaYRanges_[i];
+        const std::pair<float, float>& zRange = sensorIgnoreAreaZRanges_[i];
+
+        Eigen::Matrix3Xf pointsInArea = transformPoints(points, areaPoseInv);
+        for (int j = 0; j < pointsInArea.cols(); j++)
+        {
+            float x = pointsInArea(0, j);
+            float y = pointsInArea(1, j);
+            float z = pointsInArea(2, j);
+            if (xRange.first <= x && x <= xRange.second &&
+                yRange.first <= y && y <= yRange.second &&
+                zRange.first <= z && z <= zRange.second)
+            {
+                indicesToRemove.insert(j);
+            }
+        }
+    }
+
+    Eigen::Matrix3Xf removed(3, points.cols() - indicesToRemove.size());
+    indicesToRemove.insert(indicesToRemove.end(), std::numeric_limits<int>::max());
+    auto indicesToRemoveIt = indicesToRemove.cbegin();
+    int i = 0;
+    for (int index = 0; index < points.cols(); index++)
+    {
+        if (index == *indicesToRemoveIt)
+        {
+            ++indicesToRemoveIt;
+            continue;
+        }
+        removed(0, i) = points(0, index);
+        removed(1, i) = points(1, index);
+        removed(2, i) = points(2, index);
+        i++;
+    }
+    UASSERT(i == removed.cols());
+
+    return removed;
 }
 
 Eigen::Matrix3Xf LocalMapBuilder::transformPoints(const Eigen::Matrix3Xf& points,

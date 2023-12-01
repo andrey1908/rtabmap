@@ -20,11 +20,53 @@ namespace rtabmap {
 
 class LocalMapBuilder
 {
+private:
+    struct Area
+    {
+        float length = 0.0f;
+        float width = 0.0f;
+        float height = 0.0f;
+        float x = 0.0f;
+        float y = 0.0f;
+        float z = 0.0f;
+        float roll = 0.0f;
+        float pitch = 0.0f;
+        float yaw = 0.0f;
+
+        static Area createArea(const YAML::Node& node)
+        {
+            UASSERT(node.IsMap());
+            UASSERT(node["length"]);
+            UASSERT(node["width"]);
+            UASSERT(node["height"]);
+            UASSERT(node["x"]);
+            UASSERT(node["y"]);
+            UASSERT(node["z"]);
+            UASSERT(node["roll"]);
+            UASSERT(node["pitch"]);
+            UASSERT(node["yaw"]);
+
+            Area area;
+            area.length = node["length"].as<float>();
+            area.width = node["width"].as<float>();
+            area.height = node["height"].as<float>();
+            area.x = node["x"].as<float>();
+            area.y = node["y"].as<float>();
+            area.z = node["z"].as<float>();
+            area.roll = node["roll"].as<float>();
+            area.pitch = node["pitch"].as<float>();
+            area.yaw = node["yaw"].as<float>();
+
+            return area;
+        }
+    };
+
 public:
     struct Parameters
     {
         float cellSize = 0.1f;
         float maxVisibleRange = -1.0f;  // inf
+        std::vector<Area> sensorIgnoreAreas;
         float minObstacleHeight = 0.2f;
         float maxObstacleHeight = 1.5f;
         float minSemanticRange = 0.0f;
@@ -47,6 +89,14 @@ public:
             if (node["MaxVisibleRange"])
             {
                 parameters.maxVisibleRange = node["MaxVisibleRange"].as<float>();
+            }
+            if (node["SensorIgnoreAreas"])
+            {
+                UASSERT(node["SensorIgnoreAreas"].IsSequence());
+                for (const YAML::Node& areaNode : node["SensorIgnoreAreas"])
+                {
+                    parameters.sensorIgnoreAreas.push_back(Area::createArea(areaNode));
+                }
             }
             if (node["MinObstacleHeight"])
             {
@@ -106,6 +156,7 @@ public:
 private:
     Eigen::Matrix3Xf convertLaserScan(const LaserScan& laserScan) const;
     Eigen::Matrix3Xf filterMaxVisibleRange(const Eigen::Matrix3Xf& points) const;
+    Eigen::Matrix3Xf removeSensorIgnoreAreas(const Eigen::Matrix3Xf& points) const;
     Eigen::Matrix3Xf transformPoints(const Eigen::Matrix3Xf& points,
         const Transform& transform) const;
     Eigen::Matrix3Xf getObstaclePoints(const Eigen::Matrix3Xf& points) const;
@@ -124,6 +175,10 @@ private:
     float cellSize_;
     float maxVisibleRange_;
     float maxVisibleRangeSqr_;
+    std::vector<Transform> sensorIgnoreAreaPosesInv_;
+    std::vector<std::pair<float, float>> sensorIgnoreAreaXRanges_;
+    std::vector<std::pair<float, float>> sensorIgnoreAreaYRanges_;
+    std::vector<std::pair<float, float>> sensorIgnoreAreaZRanges_;
     float minObstacleHeight_;
     float maxObstacleHeight_;
     float minSemanticRange_;
