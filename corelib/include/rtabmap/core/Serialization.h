@@ -61,7 +61,7 @@ class RawDataSerialization
 public:
     RawDataSerialization(const std::string& fileName);
 
-    void write(const rtabmap::proto::RawData& rawData);
+    void write(const proto::RawData& rawData);
     void close();
 
 private:

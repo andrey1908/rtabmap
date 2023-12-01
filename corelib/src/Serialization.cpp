@@ -135,7 +135,7 @@ void RawDataSerialization::writeMetaData()
     writeString(uncompressed);
 }
 
-void RawDataSerialization::write(const rtabmap::proto::RawData& rawData)
+void RawDataSerialization::write(const proto::RawData& rawData)
 {
     std::string uncompressed;
     rawData.SerializeToString(&uncompressed);
