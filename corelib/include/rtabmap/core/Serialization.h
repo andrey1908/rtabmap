@@ -11,6 +11,11 @@
 
 namespace rtabmap {
 
+enum MapVersions
+{
+    mapLatestVersion = 0
+};
+
 class MapSerialization
 {
 public:
@@ -46,6 +51,11 @@ private:
     proto::OccupancyGridMap::MetaData metaData_;
 };
 
+enum RawDataVersions
+{
+    rawDataLatestVersion = 0
+};
+
 class RawDataSerialization
 {
 public:
@@ -55,6 +65,7 @@ public:
     void close();
 
 private:
+    void writeMetaData();
     void writeString(const std::string& uncompressed);
 
 private:
@@ -66,14 +77,18 @@ class RawDataDeserialization
 public:
     RawDataDeserialization(const std::string& fileName);
 
+    const proto::RawData::MetaData& metaData();
+
     std::optional<proto::RawData> read();
     void close();
 
 private:
+    void readMetaData();
     std::string readString();
 
 private:
     std::ifstream input_;
+    proto::RawData::MetaData metaData_;
 };
 
 }

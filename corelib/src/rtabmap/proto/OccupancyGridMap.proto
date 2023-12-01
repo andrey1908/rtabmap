@@ -8,6 +8,7 @@ import "LocalMap.proto";
 
 message MetaData
 {
+    int32 version = 2;
     float cell_size = 1;
 }
 

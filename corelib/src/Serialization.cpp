@@ -27,6 +27,7 @@ MapSerialization::MapSerialization(const std::string& fileName, float cellSize)
 void MapSerialization::writeMetaData(float cellSize)
 {
     proto::OccupancyGridMap::MetaData metaData;
+    metaData.set_version(MapVersions::mapLatestVersion);
     metaData.set_cell_size(cellSize);
 
     std::string uncompressed;
@@ -120,6 +121,18 @@ RawDataSerialization::RawDataSerialization(const std::string& fileName)
     output_.open(fileName, std::ios::out | std::ios::binary);
     UASSERT(output_.is_open());
     output_.write((const char*)&magicNumber, sizeof(magicNumber));
+
+    writeMetaData();
+}
+
+void RawDataSerialization::writeMetaData()
+{
+    proto::RawData::MetaData metaData;
+    metaData.set_version(RawDataVersions::rawDataLatestVersion);
+
+    std::string uncompressed;
+    metaData.SerializeToString(&uncompressed);
+    writeString(uncompressed);
 }
 
 void RawDataSerialization::write(const rtabmap::proto::RawData& rawData)
@@ -155,6 +168,13 @@ RawDataDeserialization::RawDataDeserialization(const std::string& fileName)
     input_.read((char*)&checkMagicNumber, sizeof(checkMagicNumber));
     UASSERT(input_.gcount() == sizeof(checkMagicNumber));
     UASSERT(checkMagicNumber == magicNumber);
+
+    readMetaData();
+}
+
+void RawDataDeserialization::readMetaData()
+{
+    metaData_.ParseFromString(readString());
 }
 
 std::optional<proto::RawData> RawDataDeserialization::read()
@@ -177,6 +197,11 @@ std::string RawDataDeserialization::readString()
     input_.read(uncompressed.data(), size);
     UASSERT(input_.gcount() == size);
     return uncompressed;
+}
+
+const proto::RawData::MetaData& RawDataDeserialization::metaData()
+{
+    return metaData_;
 }
 
 void RawDataDeserialization::close()

@@ -298,7 +298,8 @@ void TimedOccupancyGridMap::load(const std::string& file)
     MEASURE_BLOCK_TIME(TimedOccupancyGridMap__load);
     reset();
     MapDeserialization reader(file);
-    UASSERT(cellSize() == reader.metaData().cell_size());
+    UASSERT(reader.metaData().version() == MapVersions::mapLatestVersion);
+    UASSERT(reader.metaData().cell_size() == cellSize());
     std::optional<proto::OccupancyGridMap::Node> proto;
     while (proto = reader.read())
     {

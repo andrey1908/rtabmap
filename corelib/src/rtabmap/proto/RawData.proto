@@ -9,6 +9,11 @@ import "Trajectory.proto";
 
 message RawData
 {
+    message MetaData
+    {
+        int32 version = 1;
+    }
+
     message InputData
     {
         SensorData sensor_data = 1;
