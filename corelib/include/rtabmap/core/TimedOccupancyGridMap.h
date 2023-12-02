@@ -121,6 +121,8 @@ public:
         { return occupancyGridMap_->trackedObjects(); }
     const std::list<ObjectTracking::MOT16TrackedObject>& mot16TrackedObjectsCache() const
         { return occupancyGridMap_->mot16TrackedObjectsCache(); }
+    const std::vector<LocalMapBuilder::Area>& sensorIgnoreAreas() const
+        { return occupancyGridMap_->sensorIgnoreAreas(); }
 
     void reset();
 

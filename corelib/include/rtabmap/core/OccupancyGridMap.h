@@ -138,6 +138,8 @@ public:
         { UASSERT(objectTracking_); return objectTracking_->trackedObjects(); }
     const std::list<ObjectTracking::MOT16TrackedObject>& mot16TrackedObjectsCache() const
         { UASSERT(objectTracking_); return objectTracking_->mot16TrackedObjectsCache(); }
+    const std::vector<LocalMapBuilder::Area>& sensorIgnoreAreas() const
+        { return localMapBuilder_->sensorIgnoreAreas(); }
 
     void resetAll();
     void resetTemporary();

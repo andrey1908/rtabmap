@@ -20,7 +20,7 @@ namespace rtabmap {
 
 class LocalMapBuilder
 {
-private:
+public:
     struct Area
     {
         float length = 0.0f;
@@ -66,7 +66,6 @@ private:
         }
     };
 
-public:
     struct Parameters
     {
         float cellSize = 0.1f;
@@ -157,6 +156,7 @@ public:
         const Time& time, const Transform& fromUpdatedPose) const;
 
     const cv::Mat& lastDilatedSemantic() const { return lastDilatedSemantic_; }
+    const std::vector<Area>& sensorIgnoreAreas() const { return sensorIgnoreAreas_; }
 
 private:
     Eigen::Matrix3Xf convertLaserScan(const LaserScan& laserScan) const;
@@ -182,6 +182,7 @@ private:
     float cellSize_;
     float maxVisibleRange_;
     float maxVisibleRangeSqr_;
+    std::vector<Area> sensorIgnoreAreas_;
     std::vector<Transform> fromSensorIgnoreAreas_;
     std::vector<std::pair<float, float>> sensorIgnoreAreaXRanges_;
     std::vector<std::pair<float, float>> sensorIgnoreAreaYRanges_;

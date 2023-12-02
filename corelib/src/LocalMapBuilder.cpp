@@ -18,6 +18,7 @@ void LocalMapBuilder::parseParameters(const Parameters& parameters)
 {
     cellSize_ = parameters.cellSize;
     maxVisibleRange_ = parameters.maxVisibleRange;
+    sensorIgnoreAreas_ = parameters.sensorIgnoreAreas;
     minObstacleHeight_ = parameters.minObstacleHeight;
     maxObstacleHeight_ = parameters.maxObstacleHeight;
     minSemanticRange_ = parameters.minSemanticRange;
@@ -31,7 +32,7 @@ void LocalMapBuilder::parseParameters(const Parameters& parameters)
     UASSERT(maxSemanticRange_ < 0.0f || minSemanticRange_ < maxSemanticRange_);
     UASSERT(sensorBlindRange2d_ >= 0.0f);
 
-    for (const Area& area : parameters.sensorIgnoreAreas)
+    for (const Area& area : sensorIgnoreAreas_)
     {
         UASSERT(area.length >= 0.0f);
         UASSERT(area.width >= 0.0f);
