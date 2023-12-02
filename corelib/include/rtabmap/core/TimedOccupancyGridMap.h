@@ -6,7 +6,7 @@
 #include <rtabmap/core/Trajectory.h>
 #include <rtabmap/core/ObjectTracking.h>
 #include <rtabmap/core/OccupancyGridMap.h>
-#include <rtabmap/core/TrajectoriesTrimmer.h>
+#include <rtabmap/core/NodesTrimmer.h>
 
 #include <yaml-cpp/yaml.h>
 
@@ -26,9 +26,9 @@ public:
     {
         float maxInterpolationTimeError = 0.06f;
         float guaranteedInterpolationTimeWindow = 1.0f;
-        bool enableTrajectoriesTrimmer = false;
+        bool enableNodesTrimmer = false;
 
-        TrajectoriesTrimmer::Parameters trajectoriesTrimmerParameters;
+        NodesTrimmer::Parameters nodesTrimmerParameters;
         OccupancyGridMap::Parameters occupancyGridMapParameters;
 
         static Parameters createParameters(const YAML::Node& node)
@@ -45,16 +45,14 @@ public:
                 parameters.guaranteedInterpolationTimeWindow =
                     node["GuaranteedInterpolationTimeWindow"].as<float>();
             }
-            if (node["EnableTrajectoriesTrimmer"])
+            if (node["EnableNodesTrimmer"])
             {
-                parameters.enableTrajectoriesTrimmer =
-                    node["EnableTrajectoriesTrimmer"].as<bool>();
+                parameters.enableNodesTrimmer = node["EnableNodesTrimmer"].as<bool>();
             }
-            if (node["TrajectoriesTrimmer"])
+            if (node["NodesTrimmer"])
             {
-                parameters.trajectoriesTrimmerParameters =
-                    TrajectoriesTrimmer::Parameters::createParameters(
-                        node["TrajectoriesTrimmer"]);
+                parameters.nodesTrimmerParameters =
+                    NodesTrimmer::Parameters::createParameters(node["NodesTrimmer"]);
             }
             if (node["OccupancyGridMap"])
             {
@@ -90,9 +88,9 @@ public:
         { occupancyGridMap_->removeNodes(nodeIdsToRemove); }
 
     void transformMap(const Transform& transform);
-    bool trajectoriesTrimmerEnabled() const { return trajectoriesTrimmer_ != nullptr; }
-    std::set<Time> trimTrajectories(const Trajectories& trajectories)
-        { UASSERT(trajectoriesTrimmer_); return trajectoriesTrimmer_->trimTrajectories(trajectories); }
+    bool nodesTrimmerEnabled() const { return nodesTrimmer_ != nullptr; }
+    std::set<Time> trimPoses(const Trajectories& trajectories)
+        { UASSERT(nodesTrimmer_); return nodesTrimmer_->trimPoses(trajectories); }
     void updatePoses(const Trajectories& trajectories);
 
     OccupancyGrid getOccupancyGrid(int index) const
@@ -138,10 +136,10 @@ private:
 private:
     double maxInterpolationTimeError_;
     double guaranteedInterpolationTimeWindow_;
-    bool enableTrajectoriesTrimmer_;
+    bool enableNodesTrimmer_;
 
     std::unique_ptr<OccupancyGridMap> occupancyGridMap_;
-    std::unique_ptr<TrajectoriesTrimmer> trajectoriesTrimmer_;
+    std::unique_ptr<NodesTrimmer> nodesTrimmer_;
 
     Trajectory currentTrajectory_;
 

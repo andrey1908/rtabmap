@@ -1,4 +1,4 @@
-#include <rtabmap/core/TrajectoriesTrimmer.h>
+#include <rtabmap/core/NodesTrimmer.h>
 #include <rtabmap/utilite/ULogger.h>
 
 #include <kas_utils/time_measurer.h>
@@ -37,12 +37,12 @@ float NodesSimilarityEstimation::getSimilarity(
     return similarity;
 }
 
-TrajectoriesTrimmer::TrajectoriesTrimmer(const Parameters& parameters)
+NodesTrimmer::NodesTrimmer(const Parameters& parameters)
 {
     parseParameters(parameters);
 }
 
-void TrajectoriesTrimmer::parseParameters(const Parameters& parameters)
+void NodesTrimmer::parseParameters(const Parameters& parameters)
 {
     maxTimeErrorForClosestLocalMapSearch_ =
         parameters.maxTimeErrorForClosestLocalMapSearch;
@@ -56,13 +56,13 @@ void TrajectoriesTrimmer::parseParameters(const Parameters& parameters)
     maxDistanceSqr_ = maxDistance_ * maxDistance_;
 }
 
-void TrajectoriesTrimmer::addLocalMap(const std::shared_ptr<const LocalMap>& localMap)
+void NodesTrimmer::addLocalMap(const std::shared_ptr<const LocalMap>& localMap)
 {
     UASSERT(localMaps_.empty() || (*localMaps_.rbegin())->time() < localMap->time());
     localMaps_.push_back(localMap);
 }
 
-const LocalMap* TrajectoriesTrimmer::findNextClosestLocalMap(
+const LocalMap* NodesTrimmer::findNextClosestLocalMap(
     std::vector<std::shared_ptr<const LocalMap>>::const_iterator& it,
     const Time& time, double maxError) const
 {
@@ -104,7 +104,7 @@ const LocalMap* TrajectoriesTrimmer::findNextClosestLocalMap(
     return nullptr;
 }
 
-std::map<Time, const LocalMap*> TrajectoriesTrimmer::findClosestLocalMaps(
+std::map<Time, const LocalMap*> NodesTrimmer::findClosestLocalMaps(
     const Trajectories& trajectories, double maxError) const
 {
     std::map<Time, const LocalMap*> closestLocalMaps;
@@ -119,10 +119,10 @@ std::map<Time, const LocalMap*> TrajectoriesTrimmer::findClosestLocalMaps(
     return closestLocalMaps;
 }
 
-std::set<Time> TrajectoriesTrimmer::trimTrajectories(
+std::set<Time> NodesTrimmer::trimPoses(
     const Trajectories& trajectories)
 {
-    MEASURE_TIME_FROM_HERE(TrajectoriesTrimmer__trimTrajectories);
+    MEASURE_TIME_FROM_HERE(NodesTrimmer__trimPoses);
 
     auto trajectoryIt = trajectories.findCurrentOrNextTrajectory(prevLastTime_);
     if (trajectoryIt == trajectories.end())
@@ -219,11 +219,11 @@ std::set<Time> TrajectoriesTrimmer::trimTrajectories(
 
     prevLastTime_ = (--trajectories.poses_end())->time;
 
-    STOP_TIME_MEASUREMENT(TrajectoriesTrimmer__trimTrajectories);
+    STOP_TIME_MEASUREMENT(NodesTrimmer__trimPoses);
     return posesToTrim;
 }
 
-Trajectories TrajectoriesTrimmer::getTrimmedTrajectories(
+Trajectories NodesTrimmer::removePosesFromTrajectories(
     const Trajectories& trajectories, const std::set<Time>& posesToTrim)
 {
     Trajectories trimmedTrajectories;

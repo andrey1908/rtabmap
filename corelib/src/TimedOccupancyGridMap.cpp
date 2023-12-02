@@ -16,18 +16,18 @@ void TimedOccupancyGridMap::parseParameters(const Parameters& parameters)
 {
     maxInterpolationTimeError_ = parameters.maxInterpolationTimeError;
     guaranteedInterpolationTimeWindow_ = parameters.guaranteedInterpolationTimeWindow;
-    enableTrajectoriesTrimmer_ = parameters.enableTrajectoriesTrimmer;
+    enableNodesTrimmer_ = parameters.enableNodesTrimmer;
 
     occupancyGridMap_ = std::make_unique<OccupancyGridMap>(
         parameters.occupancyGridMapParameters);
-    if (enableTrajectoriesTrimmer_)
+    if (enableNodesTrimmer_)
     {
-        trajectoriesTrimmer_ = std::make_unique<TrajectoriesTrimmer>(
-            parameters.trajectoriesTrimmerParameters);
+        nodesTrimmer_ = std::make_unique<NodesTrimmer>(
+            parameters.nodesTrimmerParameters);
     }
     else
     {
-        trajectoriesTrimmer_.reset();
+        nodesTrimmer_.reset();
     }
 }
 
@@ -54,9 +54,9 @@ int TimedOccupancyGridMap::addLocalMap(const Transform& pose,
     currentTrajectory_.addPose(localMap->time(), pose * toUpdatedPose);
     lastPoseTime_ = localMap->time();
 
-    if (trajectoriesTrimmer_)
+    if (nodesTrimmer_)
     {
-        trajectoriesTrimmer_->addLocalMap(
+        nodesTrimmer_->addLocalMap(
             occupancyGridMap_->localMapsWithoutDilation().rbegin()->second);
     }
 
