@@ -13,7 +13,8 @@ namespace rtabmap {
 
 enum MapVersions
 {
-    mapLatestVersion = 0
+    mapOldCellValues = 0,
+    mapLatestVersion = 1
 };
 
 class MapSerialization

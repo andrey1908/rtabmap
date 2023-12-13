@@ -27,14 +27,14 @@ public:
     {
         float cellSize = 0.0f;
         MapLimitsI limits;
-        cv::Mat grid;  // CV_8S
+        cv::Mat grid;  // CV_8U
         cv::Mat colors;  // CV_32S
 
-        static constexpr std::int8_t unknownCellValue = -1;
-        static constexpr std::int8_t emptyCellValue = 0;
-        static constexpr std::int8_t occupiedCellValue = 100;
+        static constexpr std::uint8_t unknownCellValue = 0;
+        static constexpr std::uint8_t emptyCellValue = 1;
+        static constexpr std::uint8_t occupiedCellValue = 2;
 
-        static constexpr std::int8_t ignoredOccupiedCellValue = 99;
+        static constexpr std::uint8_t ignoredOccupiedCellValue = 3;
     };
 
     struct Properties

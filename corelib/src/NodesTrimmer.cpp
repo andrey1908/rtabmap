@@ -26,7 +26,7 @@ float NodesSimilarityEstimation::getSimilarity(
         {
             continue;
         }
-        if (newGrid.grid.at<std::int8_t>(yi, xi) == LocalMap::ColoredGrid::unknownCellValue)
+        if (newGrid.grid.at<std::uint8_t>(yi, xi) == LocalMap::ColoredGrid::unknownCellValue)
         {
             continue;
         }

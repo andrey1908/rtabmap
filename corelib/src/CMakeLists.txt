@@ -624,6 +624,9 @@ TARGET_LINK_LIBRARIES(rtabmap_core rtabmap_utilite ${LIBRARIES})
 ADD_EXECUTABLE(ocp_map_to_image ocp_map_to_image.cpp)
 TARGET_LINK_LIBRARIES(ocp_map_to_image rtabmap_core)
 
+ADD_EXECUTABLE(migrate_ocp_map migrate_ocp_map.cpp)
+TARGET_LINK_LIBRARIES(migrate_ocp_map rtabmap_core)
+
 SET_TARGET_PROPERTIES(
      rtabmap_core
     PROPERTIES

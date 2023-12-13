@@ -33,7 +33,7 @@ void LocalMap::fromColoredGrid(const ColoredGrid& coloredGrid,
 {
     UASSERT(coloredGrid.cellSize > 0.0f);
     UASSERT(coloredGrid.limits.valid());
-    UASSERT(coloredGrid.grid.type() == CV_8S);
+    UASSERT(coloredGrid.grid.type() == CV_8U);
     UASSERT(coloredGrid.colors.type() == CV_32S);
     UASSERT(coloredGrid.grid.rows == coloredGrid.limits.height());
     UASSERT(coloredGrid.grid.cols == coloredGrid.limits.width());
@@ -59,7 +59,7 @@ void LocalMap::fromColoredGrid(const ColoredGrid& coloredGrid,
                     continue;
                 }
             }
-            std::int8_t value = coloredGrid.grid.at<std::int8_t>(y, x);
+            std::uint8_t value = coloredGrid.grid.at<std::uint8_t>(y, x);
             if (value == ColoredGrid::occupiedCellValue)
             {
                 occupiedCells.emplace_back(y, x);
@@ -140,7 +140,7 @@ LocalMap::ColoredGrid LocalMap::toColoredGrid() const
     ColoredGrid coloredGrid;
     coloredGrid.cellSize = cellSize_;
     coloredGrid.limits = limits_;
-    coloredGrid.grid = cv::Mat(limits_.height(), limits_.width(), CV_8S,
+    coloredGrid.grid = cv::Mat(limits_.height(), limits_.width(), CV_8U,
         ColoredGrid::unknownCellValue);
     coloredGrid.colors = cv::Mat(limits_.height(), limits_.width(), CV_32S,
         Color::missingColor.data());
@@ -156,12 +156,12 @@ LocalMap::ColoredGrid LocalMap::toColoredGrid() const
         int x = std::floor(xf / cellSize_) - minX;
         if (isObstacle(i))
         {
-            coloredGrid.grid.at<std::int8_t>(y, x) =
+            coloredGrid.grid.at<std::uint8_t>(y, x) =
                 LocalMap::ColoredGrid::occupiedCellValue;
         }
         else
         {
-            coloredGrid.grid.at<std::int8_t>(y, x) =
+            coloredGrid.grid.at<std::uint8_t>(y, x) =
                 LocalMap::ColoredGrid::emptyCellValue;
         }
         coloredGrid.colors.at<std::int32_t>(y, x) = colors_[i].data();

@@ -421,7 +421,7 @@ LocalMap::ColoredGrid LocalMapBuilder::coloredGridFromObstacles(
         std::floor(limitsF.maxY() / cellSize_));
     int height = coloredGrid.limits.height();
     int width = coloredGrid.limits.width();
-    coloredGrid.grid = cv::Mat(height, width, CV_8S, LocalMap::ColoredGrid::unknownCellValue);
+    coloredGrid.grid = cv::Mat(height, width, CV_8U, LocalMap::ColoredGrid::unknownCellValue);
     coloredGrid.colors = cv::Mat(height, width, CV_32S, Color::missingColor.data());
     const int& minX = coloredGrid.limits.minX();
     const int& minY = coloredGrid.limits.minY();
@@ -436,7 +436,7 @@ LocalMap::ColoredGrid LocalMapBuilder::coloredGridFromObstacles(
         {
             continue;
         }
-        coloredGrid.grid.at<std::int8_t>(y, x) = LocalMap::ColoredGrid::ignoredOccupiedCellValue;
+        coloredGrid.grid.at<std::uint8_t>(y, x) = LocalMap::ColoredGrid::ignoredOccupiedCellValue;
     }
 
     for (int i = 0; i < points.cols(); i++)
@@ -445,7 +445,7 @@ LocalMap::ColoredGrid LocalMapBuilder::coloredGridFromObstacles(
         float yf = points(1, i);
         int y = std::floor(yf / cellSize_) - minY;
         int x = std::floor(xf / cellSize_) - minX;
-        coloredGrid.grid.at<std::int8_t>(y, x) = LocalMap::ColoredGrid::occupiedCellValue;
+        coloredGrid.grid.at<std::uint8_t>(y, x) = LocalMap::ColoredGrid::occupiedCellValue;
         const Color& pointColor = colors[i];
         if (pointColor != Color::missingColor)
         {

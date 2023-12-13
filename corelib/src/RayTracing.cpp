@@ -29,7 +29,7 @@ void RayTracing::parseParameters(const Parameters& parameters)
 
 void RayTracing::traceRays(cv::Mat& grid, const Cell& origin) const
 {
-    UASSERT(grid.type() == CV_8S);
+    UASSERT(grid.type() == CV_8U);
     UASSERT(origin.inFrame(grid.rows, grid.cols));
     for (const Ray& ray : rays_)
     {
@@ -43,7 +43,7 @@ void RayTracing::traceRays(cv::Mat& grid, const Cell& origin) const
             {
                 break;
             }
-            const std::int8_t& cellValue = grid.at<std::int8_t>(cell.y, cell.x);
+            const std::uint8_t& cellValue = grid.at<std::uint8_t>(cell.y, cell.x);
             if (cellValue == LocalMap::ColoredGrid::occupiedCellValue ||
                 cellValue == LocalMap::ColoredGrid::ignoredOccupiedCellValue)
             {
@@ -60,7 +60,7 @@ void RayTracing::traceRays(cv::Mat& grid, const Cell& origin) const
         {
             for (const Cell& litCell : litCells_)
             {
-                grid.at<std::int8_t>(litCell.y, litCell.x) = LocalMap::ColoredGrid::emptyCellValue;
+                grid.at<std::uint8_t>(litCell.y, litCell.x) = LocalMap::ColoredGrid::emptyCellValue;
             }
         }
     }
