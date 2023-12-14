@@ -18,7 +18,7 @@ void ObstacleDilation::parseParameters(const Parameters& parameters)
     UASSERT(dilationSizeF_ >= 0.0f);
 
     dilationSize_ = std::ceil(dilationSizeF_ / cellSize_);
-    dilation_ = std::make_unique<kas_utils::Dilation>(dilationSize_);
+    dilation_ = std::make_unique<kas_utils::Dilation>(dilationSize_, true /* include_border */);
 }
 
 std::shared_ptr<LocalMap> ObstacleDilation::dilate(
