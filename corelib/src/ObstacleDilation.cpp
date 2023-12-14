@@ -33,7 +33,7 @@ std::shared_ptr<LocalMap> ObstacleDilation::dilate(
         true /* dilateBackground */);
 
     auto dilatedLocalMap = std::make_shared<LocalMap>(
-        coloredGrid, 0.0f, localMap.pointsDuplicated(),
+        coloredGrid, -1.0f, localMap.pointsDuplicated(),
         localMap.properties());
     return dilatedLocalMap;
 }
