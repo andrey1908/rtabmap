@@ -18,9 +18,7 @@ void ObstacleDilation::parseParameters(const Parameters& parameters)
     UASSERT(dilationSizeF_ >= 0.0f);
 
     dilationSize_ = std::ceil(dilationSizeF_ / cellSize_);
-    SemanticDilation::Parameters semanticDilationParameters;
-    semanticDilationParameters.dilationSize = dilationSize_;
-    semanticDilation_ = std::make_unique<SemanticDilation>(semanticDilationParameters);
+    dilation_ = std::make_unique<kas_utils::Dilation>(dilationSize_);
 }
 
 std::shared_ptr<LocalMap> ObstacleDilation::dilate(
@@ -28,7 +26,7 @@ std::shared_ptr<LocalMap> ObstacleDilation::dilate(
 {
     UASSERT(dilationSize_ > 0);
     LocalMap::ColoredGrid coloredGrid = localMap.toColoredGrid();
-    coloredGrid.grid = semanticDilation_->dilate(coloredGrid.grid,
+    coloredGrid.grid = dilation_->dilate(coloredGrid.grid,
         {LocalMap::ColoredGrid::occupiedCellValue} /* backgroundColors */,
         true /* dilateBackground */);
 

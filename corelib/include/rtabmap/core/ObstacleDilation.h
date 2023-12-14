@@ -2,10 +2,11 @@
 
 #include <rtabmap/utilite/ULogger.h>
 #include <rtabmap/core/MapLimits.h>
-#include <rtabmap/core/SemanticDilation.h>
 #include <rtabmap/core/LocalMap.h>
 
 #include <yaml-cpp/yaml.h>
+
+#include <kas_utils/dilation.hpp>
 
 #include <memory>
 
@@ -48,7 +49,7 @@ private:
     float dilationSizeF_;
     int dilationSize_;
 
-    std::unique_ptr<SemanticDilation> semanticDilation_;
+    std::unique_ptr<kas_utils::Dilation> dilation_;
 };
 
 }
