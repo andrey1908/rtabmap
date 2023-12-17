@@ -10,7 +10,7 @@
 #include <Eigen/Core>
 
 #include <rtabmap/core/Serialization.h>
-#include <rtabmap/core/TimedOccupancyGridMap.h>
+#include <rtabmap/core/OccupancyGridMap.h>
 #include <rtabmap/core/Compression.h>
 #include <rtabmap/core/Time.h>
 #include <rtabmap/core/Transform.h>
@@ -118,10 +118,9 @@ void ocpMapToImage(
         YAML::Node updateConfig = YAML::LoadFile(configFile);
         merge_yaml(config, updateConfig);
     }
-    TimedOccupancyGridMap::Parameters parameters =
-        TimedOccupancyGridMap::Parameters::createParameters(
-            config["TimedOccupancyGridMap"]);
-    TimedOccupancyGridMap gridMap(parameters);
+    OccupancyGridMap::Parameters parameters =
+        OccupancyGridMap::Parameters::createParameters(config["OccupancyGridMap"]);
+    OccupancyGridMap gridMap(parameters);
 
     gridMap.load(ocpFile);
     OccupancyGrid grid = gridMap.getOccupancyGrid(0);

@@ -16,7 +16,6 @@ SET(SRC_FILES
     StereoCameraModel.cpp
 
     OccupancyGridMap.cpp
-    TimedOccupancyGridMap.cpp
 
     Time.cpp
     Color.cpp
@@ -34,6 +33,7 @@ SET(SRC_FILES
     RayTracing.cpp
     ObstacleDilation.cpp
     NodesTrimmer.cpp
+    PosesApproximation.cpp
 
     Compression.cpp
     Serialization.cpp

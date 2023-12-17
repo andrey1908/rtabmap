@@ -7,6 +7,8 @@
 #include <rtabmap/core/TemporaryOccupancyGridBuilder.h>
 #include <rtabmap/core/ObstacleDilation.h>
 #include <rtabmap/core/ObjectTracking.h>
+#include <rtabmap/core/PosesApproximation.h>
+#include <rtabmap/core/NodesTrimmer.h>
 
 #include <yaml-cpp/yaml.h>
 
@@ -23,8 +25,11 @@ public:
     struct Parameters
     {
         float cellSize = 0.1f;
+        bool enableNodesTrimmer = false;
         bool enableObjectTracking = false;
 
+        PosesApproximation::Parameters posesApproximationParameters;
+        NodesTrimmer::Parameters nodesTrimmerParameters;
         LocalMapBuilder::Parameters localMapBuilderParameters;
         std::vector<ObstacleDilation::Parameters> obstacleDilationsParameters =
             std::vector<ObstacleDilation::Parameters>(1);
@@ -39,6 +44,21 @@ public:
             if (node["CellSize"])
             {
                 parameters.cellSize = node["CellSize"].as<float>();
+            }
+            if (node["EnableNodesTrimmer"])
+            {
+                parameters.enableNodesTrimmer = node["EnableNodesTrimmer"].as<bool>();
+            }
+            if (node["NodesTrimmer"])
+            {
+                parameters.nodesTrimmerParameters =
+                    NodesTrimmer::Parameters::createParameters(node["NodesTrimmer"]);
+            }
+            if (node["PosesApproximation"])
+            {
+                parameters.posesApproximationParameters =
+                    PosesApproximation::Parameters::createParameters(
+                        node["PosesApproximation"]);
             }
             if (node["EnableObjectTracking"])
             {
@@ -109,9 +129,9 @@ public:
         const Transform& pose, const Transform& fromUpdatedPose);
 
     void removeNodes(const std::vector<int>& nodeIdsToRemove);
-
     void transformMap(const Transform& transform);
 
+    void updatePoses(const Trajectories& trajectories);
     void updatePoses(const std::map<int, Transform>& updatedPoses,
         const std::deque<Transform>& updatedTemporaryPoses,
         int lastNodeIdToIncludeInCachedMap = -1);
@@ -119,6 +139,9 @@ public:
     OccupancyGrid getOccupancyGrid(int index) const;
     OccupancyGrid getProbOccupancyGrid(int index) const;
     ColorGrid getColorGrid(int index) const;
+
+    std::set<Time> trimPoses(const Trajectories& trajectories)
+        { UASSERT(nodesTrimmer_); return nodesTrimmer_->trimPoses(trajectories); }
 
     float cellSize() const { return cellSize_; }
     std::pair<float, float> getGridOrigin(int index) const;
@@ -133,6 +156,7 @@ public:
     const cv::Mat& lastDilatedSemantic() const
         { return localMapBuilder_->lastDilatedSemantic(); }
     int numBuilders() const { return numBuilders_; }
+    bool nodesTrimmerEnabled() const { return nodesTrimmer_ != nullptr; }
     bool objectTrackingEnabled() const { return objectTracking_ != nullptr; }
     const std::vector<ObjectTracking::TrackedObject>& trackedObjects() const
         { UASSERT(objectTracking_); return objectTracking_->trackedObjects(); }
@@ -141,12 +165,19 @@ public:
     const std::vector<LocalMapBuilder::Area>& sensorIgnoreAreas() const
         { return localMapBuilder_->sensorIgnoreAreas(); }
 
-    void resetAll();
+    void reset();
     void resetTemporary();
+
+    void save(const std::string& file);
+    void load(const std::string& file);
 
 private:
     float cellSize_;
     bool enableObjectTracking_;
+    bool enableNodesTrimmer_;
+
+    std::unique_ptr<PosesApproximation> posesApproximation_;
+    std::unique_ptr<NodesTrimmer> nodesTrimmer_;
 
     std::unique_ptr<LocalMapBuilder> localMapBuilder_;
 
