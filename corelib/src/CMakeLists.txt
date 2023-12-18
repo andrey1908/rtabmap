@@ -32,8 +32,8 @@ SET(SRC_FILES
     SemanticDilation.cpp
     RayTracing.cpp
     ObstacleDilation.cpp
-    NodesTrimmer.cpp
     PosesApproximation.cpp
+    PosesTrimmer.cpp
 
     Compression.cpp
     Serialization.cpp

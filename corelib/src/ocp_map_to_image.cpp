@@ -20,7 +20,6 @@
 #include <rtabmap/core/Node.h>
 #include <rtabmap/core/LocalMap.h>
 #include <rtabmap/core/MapLimits.h>
-#include <rtabmap/core/NodesTrimmer.h>
 #include <rtabmap/utilite/ULogger.h>
 
 #include <rtabmap/proto/RawData.pb.h>

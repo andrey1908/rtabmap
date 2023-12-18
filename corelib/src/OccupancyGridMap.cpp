@@ -18,20 +18,20 @@ void OccupancyGridMap::parseParameters(const Parameters& parameters)
 
     cellSize_ = parameters.cellSize;
     enableObjectTracking_ = parameters.enableObjectTracking;
-    enableNodesTrimmer_ = parameters.enableNodesTrimmer;
+    enablePosesTrimmer_ = parameters.enablePosesTrimmer;
     UASSERT(cellSize_ > 0.0f);
 
     posesApproximation_ = std::make_unique<PosesApproximation>(
         parameters.posesApproximationParameters);
 
-    if (enableNodesTrimmer_)
+    if (enablePosesTrimmer_)
     {
-        nodesTrimmer_ = std::make_unique<NodesTrimmer>(
-            parameters.nodesTrimmerParameters);
+        posesTrimmer_ = std::make_unique<PosesTrimmer>(
+            parameters.posesTrimmerParameters);
     }
     else
     {
-        nodesTrimmer_.reset();
+        posesTrimmer_.reset();
     }
 
     LocalMapBuilder::Parameters localMapBuilderParameters =
@@ -128,9 +128,9 @@ int OccupancyGridMap::addLocalMap(const Transform& pose,
     const Transform& toUpdatedPose = localMap->fromUpdatedPose().inverse();
     posesApproximation_->addNode(nodeId, localMap->time(), pose * toUpdatedPose);
 
-    if (nodesTrimmer_)
+    if (posesTrimmer_)
     {
-        nodesTrimmer_->addLocalMap(localMap);
+        posesTrimmer_->addLocalMap(localMap);
     }
 
     localMapsWithoutDilation_.emplace(nodeId, localMap);
@@ -212,6 +212,7 @@ void OccupancyGridMap::removeNodes(const std::vector<int>& nodeIdsToRemove)
     {
         localMapsWithoutDilation_.erase(nodeIdToRemove);
     }
+    /// TODO: maybe remove nodes from poses trimmer
 }
 
 void OccupancyGridMap::transformMap(const Transform& transform)

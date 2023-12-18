@@ -23,7 +23,7 @@ public:
         const Transform& newPose, const LocalMap::ColoredGrid& newGrid);    
 };
 
-class NodesTrimmer
+class PosesTrimmer
 {
 public:
     struct Parameters
@@ -59,11 +59,11 @@ public:
     };
 
 public:
-    NodesTrimmer(const Parameters& parameters);
+    PosesTrimmer(const Parameters& parameters);
     void parseParameters(const Parameters& parameters);
 
     void addLocalMap(const std::shared_ptr<const LocalMap>& localMap);
-    std::set<Time> trimPoses(const Trajectories& trajectories);
+    std::set<Time> getPosesToTrim(const Trajectories& trajectories);
     static Trajectories removePosesFromTrajectories(const Trajectories& trajectories,
         const std::set<Time>& posesToTrim);
 
