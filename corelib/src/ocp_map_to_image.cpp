@@ -24,46 +24,12 @@
 
 #include <rtabmap/proto/RawData.pb.h>
 
+#include <kas_utils/yaml_utils.h>
 
 namespace po = boost::program_options;
+using kas_utils::mergeYaml;
 
 namespace rtabmap {
-
-static void merge_yaml(YAML::Node& target, const YAML::Node& source)
-{
-    if (target.IsNull())
-    {
-        target = YAML::Clone(source);
-        return;
-    }
-
-    UASSERT(target.Type() == source.Type());
-    switch (target.Type())
-    {
-    case YAML::NodeType::Map:
-        for (auto it = source.begin(); it != source.end(); ++it)
-        {
-            const std::string& key = it->first.as<std::string>();
-            const YAML::Node& val = it->second;
-            if (!target[key])
-            {
-                target[key] = YAML::Clone(val);
-            }
-            else
-            {
-                YAML::Node next_target = target[key];
-                merge_yaml(next_target, val);
-            }
-        }
-        break;
-    case YAML::NodeType::Scalar:
-    case YAML::NodeType::Sequence:
-        target = YAML::Clone(source);
-        break;
-    default:
-        UASSERT(false);
-    }
-}
 
 cv::Mat drawGrid(const OccupancyGrid::GridType& grid, int scale)
 {
@@ -115,7 +81,8 @@ void ocpMapToImage(
     for (const std::string& configFile : configFiles)
     {
         YAML::Node updateConfig = YAML::LoadFile(configFile);
-        merge_yaml(config, updateConfig);
+        bool ret = mergeYaml(config, updateConfig);
+        UASSERT(ret);
     }
     OccupancyGridMap::Parameters parameters =
         OccupancyGridMap::Parameters::createParameters(config["OccupancyGridMap"]);
