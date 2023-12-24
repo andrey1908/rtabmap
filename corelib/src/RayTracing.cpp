@@ -21,12 +21,11 @@ void RayTracing::parseParameters(const Parameters& parameters)
     UASSERT(maxVisibleRangeF_ >= 0.0f);
     UASSERT(maxTracingRangeF_ >= 0.0f);
     UASSERT(maxVisibleRangeF_ >= maxTracingRangeF_);
-    UASSERT(sensorBlindRange2dF_ >= 0.0f);
 
     maxVisibleRange_ = std::lround(maxVisibleRangeF_ / cellSize_);
     maxTracingRange_ = std::lround(maxTracingRangeF_ / cellSize_);
     maxTracingRangeSqr_ = maxTracingRange_ * maxTracingRange_;
-    if (sensorBlindRange2dF_ > 0.0f)
+    if (sensorBlindRange2dF_ >= 0.0f)
     {
         float sensorBlindRange2dInCells = sensorBlindRange2dF_ / cellSize_;
         sensorBlindRange2dSqr_ = std::ceil(sensorBlindRange2dInCells * sensorBlindRange2dInCells);

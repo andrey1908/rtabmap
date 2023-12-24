@@ -20,7 +20,7 @@ public:
         float cellSize = 0.1f;
         float maxVisibleRange = 100.0f;
         float maxTracingRange = 10.0f;
-        float sensorBlindRange2d = 0.0f;
+        float sensorBlindRange2d = -1.0f;  // disabled
         bool traceIntoUnknownSpace = false;
 
         static Parameters createParameters(const YAML::Node& node)
