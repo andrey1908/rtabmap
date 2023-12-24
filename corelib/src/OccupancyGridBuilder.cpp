@@ -540,9 +540,11 @@ void OccupancyGridBuilder::deployTransformedLocalMap(const LocalMap& localMap,
         {
             continue;
         }
-        bool occupied = localMap.isObstacle(i);
-        if (occupied)
+
+        LocalMap::PointType pointType = localMap.getPointType(i);
+        switch (pointType)
         {
+        case LocalMap::PointType::Occupied:
             if (temporarilyOccupiedCellColor_ != Color::missingColor)
             {
                 const Color& color = localMap.colors()[i];
@@ -553,23 +555,16 @@ void OccupancyGridBuilder::deployTransformedLocalMap(const LocalMap& localMap,
                 }
             }
             value = updateValues_.hitUpdates[value];
-        }
-        else
-        {
-            if (localMap.sensorBlindRange2dSqr() > 0.0f &&
-                value >= occupancyThr_)
+            break;
+        case LocalMap::PointType::MaybeEmpty:
+            if (value >= occupancyThr_)
             {
-                float localX = localMap.points().coeff(0, i);
-                float localY = localMap.points().coeff(1, i);
-                float sensorX = localX - localMap.toSensor().translation().x();
-                float sensorY = localY - localMap.toSensor().translation().y();
-                if (sensorX * sensorX + sensorY * sensorY <=
-                    localMap.sensorBlindRange2dSqr())
-                {
-                    continue;
-                }
+                value += PrecomputedUpdateValues::updated;
+                continue;
             }
+        case LocalMap::PointType::Empty:
             value = updateValues_.missUpdates[value];
+            break;
         }
 
         const Color& color = localMap.colors()[i];

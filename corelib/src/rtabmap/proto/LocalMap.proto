@@ -18,8 +18,8 @@ message LocalMap
     }
 
     ColoredGrid colored_grid = 1;
-    float sensor_blind_range_2d_sqr = 2;
-    Transform to_sensor = 3;
+    float sensor_blind_range_2d_sqr = 2 [deprecated = true];
+    Transform to_sensor = 3 [deprecated = true];
     Transform from_updated_pose = 4;
     Time time = 5;
     bool points_duplicated = 6;

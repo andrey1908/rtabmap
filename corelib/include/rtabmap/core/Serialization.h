@@ -14,7 +14,8 @@ namespace rtabmap {
 enum MapVersions
 {
     mapOldCellValues = 0,
-    mapLatestVersion = 1
+    mapWithSensorBlindRange = 1,
+    mapLatestVersion = 2
 };
 
 class MapSerialization

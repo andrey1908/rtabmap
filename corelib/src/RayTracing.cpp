@@ -15,15 +15,26 @@ void RayTracing::parseParameters(const Parameters& parameters)
     cellSize_ = parameters.cellSize;
     maxVisibleRangeF_ = parameters.maxVisibleRange;
     maxTracingRangeF_ = parameters.maxTracingRange;
+    sensorBlindRange2dF_ = parameters.sensorBlindRange2d;
     traceIntoUnknownSpace_ = parameters.traceIntoUnknownSpace;
     UASSERT(cellSize_ > 0.0f);
     UASSERT(maxVisibleRangeF_ >= 0.0f);
     UASSERT(maxTracingRangeF_ >= 0.0f);
     UASSERT(maxVisibleRangeF_ >= maxTracingRangeF_);
+    UASSERT(sensorBlindRange2dF_ >= 0.0f);
 
     maxVisibleRange_ = std::lround(maxVisibleRangeF_ / cellSize_);
     maxTracingRange_ = std::lround(maxTracingRangeF_ / cellSize_);
     maxTracingRangeSqr_ = maxTracingRange_ * maxTracingRange_;
+    if (sensorBlindRange2dF_ > 0.0f)
+    {
+        float sensorBlindRange2dInCells = sensorBlindRange2dF_ / cellSize_;
+        sensorBlindRange2dSqr_ = std::ceil(sensorBlindRange2dInCells * sensorBlindRange2dInCells);
+    }
+    else
+    {
+        sensorBlindRange2dSqr_ = -1;
+    }
     computeRays();
 }
 
@@ -33,7 +44,8 @@ void RayTracing::traceRays(cv::Mat& grid, const Cell& origin) const
     UASSERT(origin.inFrame(grid.rows, grid.cols));
     for (const Ray& ray : rays_)
     {
-        litCells_.clear();
+        maybeEmptyCells_.clear();
+        emptyCells_.clear();
         bool encounteredObstacle = false;
         int i = 0;
         for (Cell cell : ray.cells)
@@ -50,17 +62,25 @@ void RayTracing::traceRays(cv::Mat& grid, const Cell& origin) const
                 encounteredObstacle = true;
                 break;
             }
-            if (i < ray.lightRayLength)
+            if (i < ray.numMaybeEmpty)
             {
-                litCells_.emplace_back(cell);
+                maybeEmptyCells_.emplace_back(cell);
+            }
+            else if (i < ray.numEmpty)
+            {
+                emptyCells_.emplace_back(cell);
             }
             i++;
         }
         if (encounteredObstacle || traceIntoUnknownSpace_)
         {
-            for (const Cell& litCell : litCells_)
+            for (const Cell& cell : maybeEmptyCells_)
             {
-                grid.at<std::uint8_t>(litCell.y, litCell.x) = LocalMap::ColoredGrid::emptyCellValue;
+                grid.at<std::uint8_t>(cell.y, cell.x) = LocalMap::ColoredGrid::maybeEmptyCellValue;
+            }
+            for (const Cell& cell : emptyCells_)
+            {
+                grid.at<std::uint8_t>(cell.y, cell.x) = LocalMap::ColoredGrid::emptyCellValue;
             }
         }
     }
@@ -168,30 +188,47 @@ void RayTracing::computeRays()
         Cell cellForRayTracing = cell * scale;
         std::list<Cell> line = bresenhamLine(Cell{0, 0}, cellForRayTracing);
         rays_.emplace_back();
-        int lightRayLength = -1;
+        Ray& ray = rays_.back();
+        int numMaybeEmpty = -1;
+        int numEmpty = -1;
         int i = 0;
         for (const Cell& cell : line)
         {
-            rays_.back().cells.emplace_back(cell);
-            if (cell.rangeSqr() > maxTracingRangeSqr_ && lightRayLength == -1)
+            if (cell.rangeSqr() > sensorBlindRange2dSqr_ && numMaybeEmpty == -1)
             {
-                lightRayLength = i;
+                numMaybeEmpty = i;
             }
+            if (cell.rangeSqr() > maxTracingRangeSqr_ && numEmpty == -1)
+            {
+                numEmpty = i;
+            }
+
+            ray.cells.emplace_back(cell);
             i++;
         }
-        if (lightRayLength == -1)
+        if (numMaybeEmpty == -1)
         {
-            lightRayLength = rays_.back().cells.size();
+            numMaybeEmpty = line.size();
         }
-        rays_.back().lightRayLength = lightRayLength;
+        if (numEmpty == -1)
+        {
+            numEmpty = line.size();
+        }
+        numMaybeEmpty = std::min(numMaybeEmpty, numEmpty);
+
+        ray.numMaybeEmpty = numMaybeEmpty;
+        ray.numEmpty = numEmpty;
     }
 
-    int longestLightRay = 0;
+    int maxNumMaybeEmpty = 0;
+    int maxNumEmpty = 0;
     for (const Ray& ray : rays_)
     {
-        longestLightRay = std::max(longestLightRay, ray.lightRayLength);
+        maxNumMaybeEmpty = std::max(maxNumMaybeEmpty, ray.numMaybeEmpty);
+        maxNumEmpty = std::max(maxNumEmpty, ray.numEmpty);
     }
-    litCells_.reserve(longestLightRay);
+    maybeEmptyCells_.reserve(maxNumMaybeEmpty);
+    emptyCells_.reserve(maxNumEmpty);
 }
 
 }

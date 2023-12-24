@@ -6,6 +6,7 @@
 #include <opencv2/core/core.hpp>
 
 #include <rtabmap/core/LocalMap.h>
+#include <rtabmap/core/MapLimits.h>
 #include <rtabmap/core/Serialization.h>
 #include <rtabmap/core/Compression.h>
 #include <rtabmap/utilite/ULogger.h>
@@ -52,6 +53,41 @@ void migrateCellValues(proto::OccupancyGridMap::Node& proto)
         compressMat(newGrid));
 }
 
+void replaceSensorBlindRangeWithMaybeEmptyCells(proto::OccupancyGridMap::Node& proto)
+{
+    if (proto.local_map().sensor_blind_range_2d_sqr() == 0.0f)
+    {
+        return;
+    }
+
+    cv::Mat grid = decompressMat(proto.local_map().colored_grid().grid_compressed());
+    UASSERT(grid.type() == CV_8UC1);
+    MapLimitsI limits = fromProto(proto.local_map().colored_grid().limits());
+    Transform toSensor = fromProto(proto.local_map().to_sensor());
+    float cellSize = proto.local_map().colored_grid().cell_size();
+    for (int y = 0; y < grid.rows; y++)
+    {
+        for (int x = 0; x < grid.cols; x++)
+        {
+            std::uint8_t& value = grid.at<std::uint8_t>(y, x);
+            if (value == LocalMap::ColoredGrid::emptyCellValue)
+            {
+                float xf = (x + limits.minX() + 0.5f) * cellSize;
+                float yf = (y + limits.minY() + 0.5f) * cellSize;
+                float xs = xf - toSensor.translation().x();
+                float ys = yf - toSensor.translation().y();
+                if (xs * xs + ys * ys <= proto.local_map().sensor_blind_range_2d_sqr())
+                {
+                    value = LocalMap::ColoredGrid::maybeEmptyCellValue;
+                }
+            }
+        }
+    }
+
+    proto.mutable_local_map()->mutable_colored_grid()->set_grid_compressed(
+        compressMat(grid));
+}
+
 void migrateOcpMap(const std::string& inOcpFile, const std::string& outOcpFile)
 {
     MapDeserialization reader(inOcpFile);
@@ -63,6 +99,10 @@ void migrateOcpMap(const std::string& inOcpFile, const std::string& outOcpFile)
         if (reader.metaData().version() <= MapVersions::mapOldCellValues)
         {
             migrateCellValues(*proto);
+        }
+        if (reader.metaData().version() <= MapVersions::mapWithSensorBlindRange)
+        {
+            replaceSensorBlindRangeWithMaybeEmptyCells(*proto);
         }
         writer.write(*proto);
     }

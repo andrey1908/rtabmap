@@ -7,10 +7,12 @@ namespace rtabmap {
 
 LocalMap::LocalMap() :
     numObstacles_(0),
+    numMaybeEmpty_(0),
     numEmpty_(0) {}
 
 LocalMap::LocalMap(const Properties& properties) :
     numObstacles_(0),
+    numMaybeEmpty_(0),
     numEmpty_(0),
     properties_(properties) {}
 
@@ -45,6 +47,7 @@ void LocalMap::fromColoredGrid(const ColoredGrid& coloredGrid,
     const int& minY = coloredGrid.limits.minY();
 
     std::vector<std::pair<int, int>> occupiedCells;
+    std::vector<std::pair<int, int>> maybeEmptyCells;
     std::vector<std::pair<int, int>> emptyCells;
     for (int y = 0; y < coloredGrid.grid.rows; y++)
     {
@@ -59,23 +62,28 @@ void LocalMap::fromColoredGrid(const ColoredGrid& coloredGrid,
                     continue;
                 }
             }
-            std::uint8_t value = coloredGrid.grid.at<std::uint8_t>(y, x);
-            if (value == ColoredGrid::occupiedCellValue)
+            const std::uint8_t& value = coloredGrid.grid.at<std::uint8_t>(y, x);
+            switch (value)
             {
+            case ColoredGrid::occupiedCellValue:
                 occupiedCells.emplace_back(y, x);
-            }
-            else if (value == ColoredGrid::emptyCellValue)
-            {
+                break;
+            case ColoredGrid::maybeEmptyCellValue:
+                maybeEmptyCells.emplace_back(y, x);
+                break;
+            case ColoredGrid::emptyCellValue:
                 emptyCells.emplace_back(y, x);
+                break;
             }
         }
     }
 
-    int numPoints = occupiedCells.size() + emptyCells.size();
+    int numPoints = occupiedCells.size() + maybeEmptyCells.size() + emptyCells.size();
     colors_.clear();
     if (!duplicatePoints)
     {
         numObstacles_ = occupiedCells.size();
+        numMaybeEmpty_ = maybeEmptyCells.size();
         numEmpty_ = emptyCells.size();
         points_.resize(3, numPoints);
         colors_.reserve(numPoints);
@@ -83,22 +91,33 @@ void LocalMap::fromColoredGrid(const ColoredGrid& coloredGrid,
     else
     {
         numObstacles_ = occupiedCells.size() * 2;
+        numMaybeEmpty_ = maybeEmptyCells.size() * 2;
         numEmpty_ = emptyCells.size() * 2;
         points_.resize(3, numPoints * 2);
         colors_.reserve(numPoints * 2);
     }
+
+    std::vector<int> accumPointsNum = {
+        occupiedCells.size(),
+        occupiedCells.size() + maybeEmptyCells.size()};
     for (int i = 0; i < numPoints; i++)
     {
         int y, x;
-        if (i < (int)occupiedCells.size())
+        if (i < accumPointsNum[0])
         {
             const std::pair<int, int>& occupiedCell = occupiedCells[i];
             y = occupiedCell.first;
             x = occupiedCell.second;
         }
+        else if (i < accumPointsNum[1])
+        {
+            const std::pair<int, int>& maybeEmptyCell = maybeEmptyCells[i - accumPointsNum[0]];
+            y = maybeEmptyCell.first;
+            x = maybeEmptyCell.second;
+        }
         else
         {
-            const std::pair<int, int>& emptyCell = emptyCells[i - occupiedCells.size()];
+            const std::pair<int, int>& emptyCell = emptyCells[i - accumPointsNum[1]];
             y = emptyCell.first;
             x = emptyCell.second;
         }
@@ -154,15 +173,19 @@ LocalMap::ColoredGrid LocalMap::toColoredGrid() const
         float yf = points_.coeff(1, i);
         int y = std::floor(yf / cellSize_) - minY;
         int x = std::floor(xf / cellSize_) - minX;
-        if (isObstacle(i))
+        std::uint8_t& value = coloredGrid.grid.at<std::uint8_t>(y, x);
+        PointType pointType = getPointType(i);
+        switch (pointType)
         {
-            coloredGrid.grid.at<std::uint8_t>(y, x) =
-                LocalMap::ColoredGrid::occupiedCellValue;
-        }
-        else
-        {
-            coloredGrid.grid.at<std::uint8_t>(y, x) =
-                LocalMap::ColoredGrid::emptyCellValue;
+        case PointType::Occupied:
+            value = LocalMap::ColoredGrid::occupiedCellValue;
+            break;
+        case PointType::MaybeEmpty:
+            value = LocalMap::ColoredGrid::maybeEmptyCellValue;
+            break;
+        case PointType::Empty:
+            value = LocalMap::ColoredGrid::emptyCellValue;
+            break;
         }
         coloredGrid.colors.at<std::int32_t>(y, x) = colors_[i].data();
     }
@@ -193,9 +216,6 @@ proto::LocalMap toProto(const LocalMap& localMap)
 {
     proto::LocalMap proto;
     *proto.mutable_colored_grid() = toProto(localMap.toColoredGrid());
-    proto.set_sensor_blind_range_2d_sqr(localMap.sensorBlindRange2dSqr());
-    UASSERT(!localMap.toSensor().isNull());
-    *proto.mutable_to_sensor() = toProto(localMap.toSensor());
     UASSERT(!localMap.fromUpdatedPose().isNull());
     *proto.mutable_from_updated_pose() = toProto(localMap.fromUpdatedPose());
     *proto.mutable_time() = toProto(localMap.time());
@@ -207,8 +227,6 @@ std::shared_ptr<LocalMap> fromProto(const proto::LocalMap& proto)
 {
     auto localMap = std::make_shared<LocalMap>(fromProto(proto.colored_grid()),
         -1.0f, proto.points_duplicated());
-    localMap->setSensorBlindRange2dSqr(proto.sensor_blind_range_2d_sqr());
-    localMap->setToSensor(fromProto(proto.to_sensor()));
     localMap->setFromUpdatedPose(fromProto(proto.from_updated_pose()));
     localMap->setTime(fromProto(proto.time()));
     return localMap;

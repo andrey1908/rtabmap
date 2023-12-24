@@ -75,9 +75,9 @@ public:
         float maxObstacleHeight = 1.5f;
         float minSemanticRange = 0.0f;
         float maxSemanticRange = -1.0f;  // inf
+        float sensorBlindRange2d = 0.0f;
         bool enableRayTracing = false;
         float maxRange2d = 10.0f;  // (-1) - inf
-        float sensorBlindRange2d = 0.0f;
 
         SemanticDilation::Parameters semanticDilationParameters;
         RayTracing::Parameters rayTracingParameters;
@@ -118,6 +118,10 @@ public:
             {
                 parameters.maxSemanticRange = node["MaxSemanticRange"].as<float>();
             }
+            if (node["SensorBlindRange2d"])
+            {
+                parameters.sensorBlindRange2d = node["SensorBlindRange2d"].as<float>();
+            }
             if (node["EnableRayTracing"])
             {
                 parameters.enableRayTracing = node["EnableRayTracing"].as<bool>();
@@ -125,10 +129,6 @@ public:
             if (node["MaxRange2d"])
             {
                 parameters.maxRange2d = node["MaxRange2d"].as<float>();
-            }
-            if (node["SensorBlindRange2d"])
-            {
-                parameters.sensorBlindRange2d = node["SensorBlindRange2d"].as<float>();
             }
             if (node["SemanticDilation"])
             {
@@ -197,8 +197,6 @@ private:
     bool enableRayTracing_;
     float maxRange2d_;
     float maxRange2dSqr_;
-    float sensorBlindRange2d_;
-    float sensorBlindRange2dSqr_;
 
     std::unique_ptr<SemanticDilation> semanticDilation_;
     std::unique_ptr<RayTracing> rayTracing_;

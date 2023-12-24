@@ -31,21 +31,26 @@ public:
         cv::Mat colors;  // CV_32S
 
         static constexpr std::uint8_t unknownCellValue = 0;
-        static constexpr std::uint8_t emptyCellValue = 1;
         static constexpr std::uint8_t occupiedCellValue = 2;
+        static constexpr std::uint8_t maybeEmptyCellValue = 4;
+        static constexpr std::uint8_t emptyCellValue = 1;
 
         static constexpr std::uint8_t ignoredOccupiedCellValue = 3;
     };
 
     struct Properties
     {
-        float sensorBlindRange2dSqr = 0.0f;
-        Transform toSensor = Transform::getIdentity();
-
         // used to correct poses passed to updatePoses() function
         Transform fromUpdatedPose = Transform::getIdentity();
 
         Time time = Time(0, 0);
+    };
+
+    enum PointType
+    {
+        Occupied,
+        MaybeEmpty,
+        Empty
     };
 
 public:
@@ -67,20 +72,25 @@ public:
     void setProperties(T&& properties) { properties_ = std::forward<T>(properties); }
     const Properties& properties() const { return properties_; }
 
-    bool isObstacle(int i) const { return i < numObstacles_; }
+    PointType getPointType(int i) const
+    {
+        if (i < numObstacles_)
+        {
+            return PointType::Occupied;
+        }
+        if (i < numMaybeEmpty_)
+        {
+            return PointType::MaybeEmpty;
+        }
+        return PointType::Empty;
+    }
 
     int numObstacles() const { return numObstacles_; }
+    int numMaybeEmpty() const { return numMaybeEmpty_; }
     int numEmpty() const { return numEmpty_; }
     const Eigen::Matrix3Xf& points() const { return points_; }
     const std::vector<Color>& colors() const { return colors_; }
     bool pointsDuplicated() const { return pointsDuplicated_; }
-
-    void setSensorBlindRange2dSqr(float sensorBlindRange2dSqr)
-        { properties_.sensorBlindRange2dSqr = sensorBlindRange2dSqr; }
-    float sensorBlindRange2dSqr() const { return properties_.sensorBlindRange2dSqr; }
-    template<typename T>
-    void setToSensor(T&& toSensor) { properties_.toSensor = std::forward<T>(toSensor); }
-    const Transform& toSensor() const { return properties_.toSensor; }
 
     template<typename T>
     void setFromUpdatedPose(T&& fromUpdatedPose)
@@ -92,6 +102,7 @@ public:
 
 private:
     int numObstacles_;
+    int numMaybeEmpty_;
     int numEmpty_;
     Eigen::Matrix3Xf points_;  // z = 0
     std::vector<Color> colors_;

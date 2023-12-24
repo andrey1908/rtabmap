@@ -25,12 +25,10 @@ void LocalMapBuilder::parseParameters(const Parameters& parameters)
     maxSemanticRange_ = parameters.maxSemanticRange;
     enableRayTracing_ = parameters.enableRayTracing;
     maxRange2d_ = parameters.maxRange2d;
-    sensorBlindRange2d_ = parameters.sensorBlindRange2d;
     UASSERT(cellSize_ > 0.0f);
     UASSERT(minObstacleHeight_ < maxObstacleHeight_);
     UASSERT(minSemanticRange_ >= 0.0f);
     UASSERT(maxSemanticRange_ < 0.0f || minSemanticRange_ < maxSemanticRange_);
-    UASSERT(sensorBlindRange2d_ >= 0.0f);
 
     for (const Area& area : sensorIgnoreAreas_)
     {
@@ -79,7 +77,6 @@ void LocalMapBuilder::parseParameters(const Parameters& parameters)
     {
         maxRange2dSqr_ = -1.0f;
     }
-    sensorBlindRange2dSqr_ = sensorBlindRange2d_ * sensorBlindRange2d_;
 
     semanticDilation_ = std::make_unique<SemanticDilation>(
         parameters.semanticDilationParameters);
@@ -87,6 +84,7 @@ void LocalMapBuilder::parseParameters(const Parameters& parameters)
     {
         RayTracing::Parameters rayTracingParameters = parameters.rayTracingParameters;
         rayTracingParameters.cellSize = parameters.cellSize;
+        rayTracingParameters.sensorBlindRange2d = parameters.sensorBlindRange2d;
         rayTracing_ = std::make_unique<RayTracing>(rayTracingParameters);
     }
     else
@@ -160,8 +158,6 @@ std::shared_ptr<LocalMap> LocalMapBuilder::createLocalMap(
 
     auto localMap = std::make_shared<LocalMap>(
         coloredGrid, maxRange2dSqr_, true /* duplicatePoints */);
-    localMap->setSensorBlindRange2dSqr(sensorBlindRange2dSqr_);
-    localMap->setToSensor(toSensor);
     localMap->setFromUpdatedPose(fromUpdatedPose);
     localMap->setTime(time);
     return localMap;

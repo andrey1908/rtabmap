@@ -238,14 +238,17 @@ void TemporaryOccupancyGridBuilder::deployTransformedLocalMap(
         {
             continue;
         }
-        bool occupied = localMap.isObstacle(i);
-        if (occupied)
+
+        LocalMap::PointType pointType = localMap.getPointType(i);
+        switch (pointType)
         {
+        case LocalMap::PointType::Occupied:
             map_.hitCounter.coeffRef(y, x) += 1;
-        }
-        else
-        {
+            break;
+        case LocalMap::PointType::MaybeEmpty:
+        case LocalMap::PointType::Empty:
             map_.missCounter.coeffRef(y, x) += 1;
+            break;
         }
         map_.hitCounter.coeffRef(y, x) += updated_;
 
@@ -278,14 +281,17 @@ void TemporaryOccupancyGridBuilder::removeTransformedLocalMap(
         {
             continue;
         }
-        bool occupied = localMap.isObstacle(i);
-        if (occupied)
+
+        LocalMap::PointType pointType = localMap.getPointType(i);
+        switch (pointType)
         {
+        case LocalMap::PointType::Occupied:
             map_.hitCounter.coeffRef(y, x) -= 1;
-        }
-        else
-        {
+            break;
+        case LocalMap::PointType::MaybeEmpty:
+        case LocalMap::PointType::Empty:
             map_.missCounter.coeffRef(y, x) -= 1;
+            break;
         }
         map_.hitCounter.coeffRef(y, x) += updated_;
     }

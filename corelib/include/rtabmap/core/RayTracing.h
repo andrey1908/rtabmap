@@ -20,6 +20,7 @@ public:
         float cellSize = 0.1f;
         float maxVisibleRange = 100.0f;
         float maxTracingRange = 10.0f;
+        float sensorBlindRange2d = 0.0f;
         bool traceIntoUnknownSpace = false;
 
         static Parameters createParameters(const YAML::Node& node)
@@ -37,6 +38,10 @@ public:
             if (node["MaxTracingRange"])
             {
                 parameters.maxTracingRange = node["MaxTracingRange"].as<float>();
+            }
+            if (node["SensorBlindRange2d"])
+            {
+                parameters.sensorBlindRange2d = node["SensorBlindRange2d"].as<float>();
             }
             if (node["TraceIntoUnknownSpace"])
             {
@@ -85,7 +90,8 @@ private:
     struct Ray
     {
         std::vector<Cell> cells;
-        int lightRayLength;
+        int numMaybeEmpty;
+        int numEmpty;
     };
 
 public:
@@ -94,13 +100,13 @@ public:
 
     void traceRays(cv::Mat& grid, const Cell& origin) const;
 
-    bool traceIntoUnknownSpace() const
-    {
-        return traceIntoUnknownSpace_;
-    }
     float maxTracingRange() const
     {
         return maxTracingRangeF_;
+    }
+    bool traceIntoUnknownSpace() const
+    {
+        return traceIntoUnknownSpace_;
     }
 
 private:
@@ -112,17 +118,19 @@ private:
 private:
     float cellSize_;
     float maxVisibleRangeF_;
-    float maxTracingRangeF_;
-
     int maxVisibleRange_;
+    float maxTracingRangeF_;
     int maxTracingRange_;
     int maxTracingRangeSqr_;
+    float sensorBlindRange2dF_;
+    int sensorBlindRange2dSqr_;
     bool traceIntoUnknownSpace_;
 
     std::vector<Ray> rays_;
 
-    // buffer for ray tracing
-    mutable std::vector<Cell> litCells_;
+    // buffers for ray tracing
+    mutable std::vector<Cell> maybeEmptyCells_;
+    mutable std::vector<Cell> emptyCells_;
 };
 
 }
