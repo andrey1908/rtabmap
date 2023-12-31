@@ -322,7 +322,8 @@ bool OccupancyGridBuilder::cachedMapCanBeUsed(
         {
             return false;
         }
-        if (*cachedPoseIt != *newPoseIt)
+        if (cachedPoseIt->first != newPoseIt->first ||
+            !Transform::nearlyEqual(cachedPoseIt->second, newPoseIt->second))
         {
             return false;
         }

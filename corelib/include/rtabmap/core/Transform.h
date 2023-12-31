@@ -126,6 +126,7 @@ public:
     Transform & operator*=(const Transform & t);
     bool operator==(const Transform & t) const;
     bool operator!=(const Transform & t) const;
+    static bool nearlyEqual(const Transform & t1, const Transform & t2, float eps=1e-5f);
 
     Eigen::Matrix4f toEigen4f() const;
     Eigen::Matrix4d toEigen4d() const;

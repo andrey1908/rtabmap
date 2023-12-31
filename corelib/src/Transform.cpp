@@ -336,6 +336,18 @@ bool Transform::operator!=(const Transform & t) const
     return !(*this == t);
 }
 
+bool Transform::nearlyEqual(const Transform & t1, const Transform & t2, float eps /* 1e-5f */)
+{
+    for (int i = 0; i < 12; i++)
+    {
+        if (std::abs(t1.data()[i] - t2.data()[i]) >= eps)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 std::ostream& operator<<(std::ostream& os, const Transform& s)
 {
     os << "[" << s.data()[0] << ", " << s.data()[1] << ", " << s.data()[2] << ", " << s.data()[3] << ";" << std::endl

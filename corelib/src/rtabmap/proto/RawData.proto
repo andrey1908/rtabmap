@@ -16,16 +16,24 @@ message RawData
 
     message InputData
     {
-        SensorData sensor_data = 1;
-        Time time = 2;
-        Transform pose = 3;
-        Transform from_updated_pose = 4;
-        bool temporary = 5;
+        Transform local_pose = 1;  // might be empty
+        Transform global_pose = 2;
+        SensorData sensor_data = 3;
+        Time time = 4;
+        Transform from_updated_pose = 5;
+        bool temporary = 6;
+    }
+
+    message UpdatePosesData
+    {
+        Trajectories trajectories = 1;
+        Transform global_to_local = 2;  // might be empty
+        Time skip_local_maps_upto = 3;  // might be empty
     }
 
     oneof raw_data
     {
         InputData input_data = 1;
-        Trajectories optimization_results = 2;
+        UpdatePosesData update_poses_data = 2;
     }
 }

@@ -54,12 +54,11 @@ void PosesApproximation::removeFirstTemporaryNode()
 
 void PosesApproximation::transformCurrentTrajectory(const Transform& transform)
 {
-    Transform transform3DoF = transform.to3DoF();
     Trajectory transformedCurrentTrajectory;
     for (const auto& timedPose : currentTrajectory_)
     {
         const Transform& pose = timedPose.pose;
-        Transform transformedPose = transform3DoF * pose;
+        Transform transformedPose = transform * pose;
         transformedCurrentTrajectory.addPose(timedPose.time, transformedPose);
     }
     currentTrajectory_ = std::move(transformedCurrentTrajectory);

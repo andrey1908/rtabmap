@@ -15,6 +15,6 @@ message MetaData
 message Node
 {
     int32 node_id = 1;
-    Transform pose = 2;
+    Transform global_pose = 2;
     LocalMap local_map = 3;
 }

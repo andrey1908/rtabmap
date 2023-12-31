@@ -25,6 +25,7 @@ public:
     struct Parameters
     {
         float cellSize = 0.1f;
+        bool allowToTransformMap = false;
         bool enablePosesTrimmer = false;
         bool enableObjectTracking = false;
 
@@ -44,6 +45,10 @@ public:
             if (node["CellSize"])
             {
                 parameters.cellSize = node["CellSize"].as<float>();
+            }
+            if (node["AllowToTransformMap"])
+            {
+                parameters.allowToTransformMap = node["AllowToTransformMap"].as<bool>();
             }
             if (node["EnablePosesTrimmer"])
             {
@@ -116,25 +121,28 @@ public:
         const Time& time, const Transform& fromUpdatedPose) const;
 
     int addLocalMap(const std::shared_ptr<const LocalMap>& localMap);
-    int addLocalMap(const Transform& pose,
+
+    int addLocalMap(const Transform& globalPose,
         const std::shared_ptr<const LocalMap>& localMap);
-    bool addTemporaryLocalMap(const Transform& pose,
+    bool addTemporaryLocalMap(const Transform& globalPose,
         const std::shared_ptr<const LocalMap>& localMap);
 
-    int addSensorData(const SensorData& sensorData, const Time& time,
-        const Transform& fromUpdatedPose);
-    int addSensorData(const SensorData& sensorData, const Time& time,
-        const Transform& pose, const Transform& fromUpdatedPose);
-    bool addTemporarySensorData(const SensorData& sensorData, const Time& time,
-        const Transform& pose, const Transform& fromUpdatedPose);
+    int addLocalMap(const Transform& localPose, const Transform& globalPose,
+        const std::shared_ptr<const LocalMap>& localMap);
+    bool addTemporaryLocalMap(const Transform& localPose, const Transform& globalPose,
+        const std::shared_ptr<const LocalMap>& localMap);
 
     void removeNodes(const std::vector<int>& nodeIdsToRemove);
     void transformMap(const Transform& transform);
 
-    void updatePoses(const Trajectories& trajectories);
+    void updatePoses(const Trajectories& trajectories,
+        const std::optional<Transform>& newGlobalToLocal = std::nullopt,
+        const Time& skipLocalMapsUpto = Time());
     void updatePoses(const std::map<int, Transform>& updatedPoses,
         const std::deque<Transform>& updatedTemporaryPoses,
-        int lastNodeIdToIncludeInCachedMap = -1);
+        int lastNodeIdToIncludeInCachedMap = -1,
+        const std::optional<Transform>& newGlobalToLocal = std::nullopt,
+        const Time& skipLocalMapsUpto = Time());
 
     OccupancyGrid getOccupancyGrid(int index) const;
     OccupancyGrid getProbOccupancyGrid(int index) const;
@@ -172,12 +180,18 @@ public:
     void load(const std::string& file);
 
 private:
+    bool updateGlobalToLocal(const Transform& localPose, const Transform& globalPose);
+
+private:
     float cellSize_;
+    bool allowToTransformMap_;
     bool enableObjectTracking_;
     bool enablePosesTrimmer_;
 
     std::unique_ptr<PosesApproximation> posesApproximation_;
     std::unique_ptr<PosesTrimmer> posesTrimmer_;
+    std::optional<Transform> globalToLocal_;
+    Time skipLocalMapsUpto_;
 
     std::unique_ptr<LocalMapBuilder> localMapBuilder_;
 
