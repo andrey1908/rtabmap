@@ -86,8 +86,6 @@ public:
 
     void transformMap(const Transform& transform);
 
-    void updatePoses(const std::deque<Transform>& updatedPoses);
-
     OccupancyGrid getOccupancyGrid(MapLimitsI roi = MapLimitsI()) const;
     OccupancyGrid getProbOccupancyGrid(MapLimitsI roi = MapLimitsI()) const;
     ColorGrid getColorGrid(MapLimitsI roi = MapLimitsI()) const;

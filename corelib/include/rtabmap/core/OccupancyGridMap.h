@@ -136,12 +136,11 @@ public:
     void transformMap(const Transform& transform);
 
     void updatePoses(const Trajectories& trajectories,
-        const std::optional<Transform>& newGlobalToLocal = std::nullopt,
+        const std::optional<Transform>& newGlobalToLocal,
         const Time& skipLocalMapsUpto = Time());
     void updatePoses(const std::map<int, Transform>& updatedPoses,
-        const std::deque<Transform>& updatedTemporaryPoses,
+        const std::optional<Transform>& newGlobalToLocal,
         int lastNodeIdToIncludeInCachedMap = -1,
-        const std::optional<Transform>& newGlobalToLocal = std::nullopt,
         const Time& skipLocalMapsUpto = Time());
 
     OccupancyGrid getOccupancyGrid(int index) const;

@@ -97,40 +97,6 @@ void TemporaryOccupancyGridBuilder::transformMap(const Transform& transform)
     deployAllNodes();
 }
 
-void TemporaryOccupancyGridBuilder::updatePoses(
-    const std::deque<Transform>& updatedPoses)
-{
-    MEASURE_BLOCK_TIME(TemporaryOccupancyGridBuilder__updatePoses);
-    UASSERT(map_.nodes.size() == updatedPoses.size());
-    std::deque<Transform> newPoses;
-    {
-        auto nodeIt = map_.nodes.begin();
-        auto updatedPoseIt = updatedPoses.begin();
-        while (updatedPoseIt != updatedPoses.end())
-        {
-            const Transform& fromUpdatedPose = nodeIt->localMap()->fromUpdatedPose();
-            const Transform& updatedPose = *updatedPoseIt;
-            newPoses.emplace_back(updatedPose * fromUpdatedPose);
-            ++nodeIt;
-            ++updatedPoseIt;
-        }
-    }
-
-    clear();
-
-    auto nodeIt = map_.nodes.begin();
-    auto newPoseIt = newPoses.begin();
-    while (newPoseIt != newPoses.end())
-    {
-        Node& node = *nodeIt;
-        const Transform& newPose = *newPoseIt;
-        node.transformLocalMap(newPose, cellSize_);
-        ++nodeIt;
-        ++newPoseIt;
-    }
-    deployAllNodes();
-}
-
 void TemporaryOccupancyGridBuilder::createOrResizeMap(const MapLimitsI& newMapLimits)
 {
     UASSERT(newMapLimits.valid());

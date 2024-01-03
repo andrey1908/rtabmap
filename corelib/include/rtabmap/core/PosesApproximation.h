@@ -20,7 +20,6 @@ public:
     struct Parameters
     {
         float maxInterpolationTimeError = 0.06f;
-        float guaranteedInterpolationTimeWindow = 1.0f;
 
         static Parameters createParameters(const YAML::Node& node)
         {
@@ -31,57 +30,31 @@ public:
                 parameters.maxInterpolationTimeError =
                     node["MaxInterpolationTimeError"].as<float>();
             }
-            if (node["GuaranteedInterpolationTimeWindow"])
-            {
-                parameters.guaranteedInterpolationTimeWindow =
-                    node["GuaranteedInterpolationTimeWindow"].as<float>();
-            }
             return parameters;
         }
-    };
-
-    struct ApproximatedPoses
-    {
-        std::map<int, Transform> poses;
-        std::deque<Transform> temporaryPoses;
-        int lastNodeIdToIncludeInCachedMap;
     };
 
 public:
     PosesApproximation(const Parameters& parameters);
     void parseParameters(const Parameters& parameters);
 
-    void addNode(int nodeId, const Time& time);
-    void addNode(int nodeId, const Time& time, const Transform& pose);
-    void addTemporaryNode(const Time& time, const Transform& pose);
+    void addTime(int nodeId, const Time& time);
+    void removeTimes(const std::vector<int>& nodeIdsToRemove);
 
-    void removeNodes(const std::vector<int>& nodeIdsToRemove);
-    void removeFirstTemporaryNode();
-
-    void transformCurrentTrajectory(const Transform& transform);
-
-    ApproximatedPoses approximatePoses(const Trajectories& trajectories);
+    // poses, lastNodeIdToIncludeInCachedMap
+    std::pair<std::map<int, Transform>, int> approximatePoses(
+        const Trajectories& trajectories) const;
 
     void reset();
-    void resetTemporary();
 
 private:
-    std::optional<Transform> getPose(
-        const Trajectories& trajectories, const Time& time,
-        const Trajectory* activeTrajectoryPtr = nullptr,
-        const std::optional<Transform>& extrapolationShift = std::nullopt);
+    std::optional<Transform> interpolate(
+        const Trajectories& trajectories, const Time& time) const;
 
 private:
     float maxInterpolationTimeError_;
-    float guaranteedInterpolationTimeWindow_;
 
-    Trajectory currentTrajectory_;
-
-    std::map<int, Time> nodeTimes_;
-    std::deque<Time> temporaryNodeTimes_;
-
-    Time lastNodeTime_;
-    Time lastTemporaryNodeTime_;
+    std::map<int, Time> times_;
 };
 
 }
