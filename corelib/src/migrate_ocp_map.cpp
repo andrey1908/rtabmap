@@ -7,6 +7,7 @@
 
 #include <rtabmap/core/LocalMap.h>
 #include <rtabmap/core/MapLimits.h>
+#include <rtabmap/core/Trajectory.h>
 #include <rtabmap/core/Serialization.h>
 #include <rtabmap/core/Compression.h>
 #include <rtabmap/utilite/ULogger.h>
@@ -88,14 +89,49 @@ void replaceSensorBlindRangeWithMaybeEmptyCells(proto::OccupancyGridMap::Node& p
         compressMat(grid));
 }
 
+Trajectory getLocalPoses(MapDeserialization& reader)
+{
+    Trajectory localPoses;
+    std::optional<proto::OccupancyGridMap::Node> proto;
+    while (proto = reader.read())
+    {
+        if (!proto->has_global_pose())
+        {
+            continue;
+        }
+        localPoses.addPose(
+            fromProto(proto->local_map().time()), fromProto(proto->global_pose()));
+    }
+    return localPoses;
+}
+
 void migrateOcpMap(const std::string& inOcpFile, const std::string& outOcpFile)
 {
     MapDeserialization reader(inOcpFile);
-    MapSerialization writer(outOcpFile, reader.metaData().cell_size());
+
+    Trajectory localPoses;
+    if (reader.metaData().version() <= MapVersions::mapNoLocalPoses)
+    {
+        localPoses = getLocalPoses(reader);
+        reader.close();
+        reader = MapDeserialization(inOcpFile);
+    }
+    else
+    {
+        localPoses = reader.localPoses();
+    }
+
+    MapSerialization writer(outOcpFile, reader.metaData().cell_size(), localPoses);
 
     std::optional<proto::OccupancyGridMap::Node> proto;
     while (proto = reader.read())
     {
+        if (reader.metaData().version() <= MapVersions::mapNoLocalPoses &&
+            !proto->has_global_pose())
+        {
+            continue;
+        }
+
         if (reader.metaData().version() <= MapVersions::mapOldCellValues)
         {
             migrateCellValues(*proto);

@@ -93,7 +93,7 @@ public:
         UASSERT(trajectory_.size());
         return trajectory_.count(time);
     }
-    std::optional<Transform> getPose(const Time& time)
+    std::optional<Transform> getPose(const Time& time) const
     {
         auto it = trajectory_.find(time);
         if (it == trajectory_.end())

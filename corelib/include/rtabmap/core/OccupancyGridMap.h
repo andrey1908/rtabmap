@@ -25,11 +25,11 @@ public:
     struct Parameters
     {
         float cellSize = 0.1f;
+        float minNodesTimeDifference = 1.0f;
         bool allowToTransformMap = false;
         bool enablePosesTrimmer = false;
         bool enableObjectTracking = false;
 
-        PosesApproximation::Parameters posesApproximationParameters;
         PosesTrimmer::Parameters posesTrimmerParameters;
         LocalMapBuilder::Parameters localMapBuilderParameters;
         std::vector<ObstacleDilation::Parameters> obstacleDilationsParameters =
@@ -46,6 +46,10 @@ public:
             {
                 parameters.cellSize = node["CellSize"].as<float>();
             }
+            if (node["MinNodesTimeDifference"])
+            {
+                parameters.minNodesTimeDifference = node["MinNodesTimeDifference"].as<float>();
+            }
             if (node["AllowToTransformMap"])
             {
                 parameters.allowToTransformMap = node["AllowToTransformMap"].as<bool>();
@@ -58,12 +62,6 @@ public:
             {
                 parameters.posesTrimmerParameters =
                     PosesTrimmer::Parameters::createParameters(node["PosesTrimmer"]);
-            }
-            if (node["PosesApproximation"])
-            {
-                parameters.posesApproximationParameters =
-                    PosesApproximation::Parameters::createParameters(
-                        node["PosesApproximation"]);
             }
             if (node["EnableObjectTracking"])
             {
@@ -183,6 +181,7 @@ private:
 
 private:
     float cellSize_;
+    float minNodesTimeDifference_;
     bool allowToTransformMap_;
     bool enableObjectTracking_;
     bool enablePosesTrimmer_;
@@ -190,6 +189,7 @@ private:
     std::unique_ptr<PosesApproximation> posesApproximation_;
     std::unique_ptr<PosesTrimmer> posesTrimmer_;
     std::optional<Transform> globalToLocal_;
+    Time lastNodeTime_;
     Time skipLocalMapsUpto_;
 
     std::unique_ptr<LocalMapBuilder> localMapBuilder_;

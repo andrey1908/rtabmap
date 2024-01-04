@@ -17,27 +17,9 @@ namespace rtabmap {
 class PosesApproximation
 {
 public:
-    struct Parameters
-    {
-        float maxInterpolationTimeError = 0.06f;
+    PosesApproximation() = default;
 
-        static Parameters createParameters(const YAML::Node& node)
-        {
-            UASSERT(node.IsMap());
-            Parameters parameters;
-            if (node["MaxInterpolationTimeError"])
-            {
-                parameters.maxInterpolationTimeError =
-                    node["MaxInterpolationTimeError"].as<float>();
-            }
-            return parameters;
-        }
-    };
-
-public:
-    PosesApproximation(const Parameters& parameters);
-    void parseParameters(const Parameters& parameters);
-
+    void addLocalPose(const Time& time, const Transform& localPose);
     void addTime(int nodeId, const Time& time);
     void removeTimes(const std::vector<int>& nodeIdsToRemove);
 
@@ -45,15 +27,18 @@ public:
     std::pair<std::map<int, Transform>, int> approximatePoses(
         const Trajectories& trajectories) const;
 
+    const Trajectory& localPoses() const { return localPoses_; }
+
     void reset();
 
 private:
-    std::optional<Transform> interpolate(
-        const Trajectories& trajectories, const Time& time) const;
+    std::optional<Transform> approximate(
+        const Trajectories& trajectories, const Time& time, int nodeId /* for logs */) const;
 
 private:
     float maxInterpolationTimeError_;
 
+    Trajectory localPoses_;
     std::map<int, Time> times_;
 };
 

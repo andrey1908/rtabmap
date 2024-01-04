@@ -5,6 +5,8 @@
 #include <fstream>
 #include <cinttypes>
 
+#include <rtabmap/core/Trajectory.h>
+
 #include <google/protobuf/message.h>
 #include <rtabmap/proto/OccupancyGridMap.pb.h>
 #include <rtabmap/proto/RawData.pb.h>
@@ -15,19 +17,22 @@ enum MapVersions
 {
     mapOldCellValues = 0,
     mapWithSensorBlindRange = 1,
-    mapLatestVersion = 2
+    mapNoLocalPoses = 2,
+    mapLatestVersion = 3
 };
 
 class MapSerialization
 {
 public:
-    MapSerialization(const std::string& fileName, float cellSize);
+    MapSerialization(const std::string& fileName,
+        float cellSize, const Trajectory& localPoses);
 
     void write(const proto::OccupancyGridMap::Node& proto);
     void close();
 
 private:
     void writeMetaData(float cellSize);
+    void writeLocalPoses(const Trajectory& localPoses);
     void writeString(const std::string& uncompressed);
 
 private:
@@ -39,18 +44,21 @@ class MapDeserialization
 public:
     MapDeserialization(const std::string& fileName);
 
-    const proto::OccupancyGridMap::MetaData& metaData();
+    const proto::OccupancyGridMap::MetaData& metaData() { return metaData_; }
+    const Trajectory& localPoses() { return localPoses_; }
 
     std::optional<proto::OccupancyGridMap::Node> read();
     void close();
 
 private:
     void readMetaData();
+    void readLocalPoses();
     std::string readString();
 
 private:
     std::ifstream input_;
     proto::OccupancyGridMap::MetaData metaData_;
+    Trajectory localPoses_;
 };
 
 enum RawDataVersions

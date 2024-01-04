@@ -4,12 +4,18 @@ package rtabmap.proto.OccupancyGridMap;
 
 import "Time.proto";
 import "Transform.proto";
+import "Trajectory.proto";
 import "LocalMap.proto";
 
 message MetaData
 {
     int32 version = 2;
     float cell_size = 1;
+}
+
+message LocalPoses
+{
+    Trajectory local_poses = 1;
 }
 
 message Node

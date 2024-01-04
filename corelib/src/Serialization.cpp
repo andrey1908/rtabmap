@@ -12,7 +12,8 @@ static constexpr uint64_t magicNumber = 0x8eed8e9c3d064b79;
 
 /* MapSerialization */
 
-MapSerialization::MapSerialization(const std::string& fileName, float cellSize)
+MapSerialization::MapSerialization(const std::string& fileName,
+    float cellSize, const Trajectory& localPoses)
 {
     UASSERT(fileName.size() >= mapExtension.size() &&
         std::equal(mapExtension.rbegin(), mapExtension.rend(),
@@ -22,6 +23,7 @@ MapSerialization::MapSerialization(const std::string& fileName, float cellSize)
     output_.write((const char*)&magicNumber, sizeof(magicNumber));
 
     writeMetaData(cellSize);
+    writeLocalPoses(localPoses);
 }
 
 void MapSerialization::writeMetaData(float cellSize)
@@ -32,6 +34,16 @@ void MapSerialization::writeMetaData(float cellSize)
 
     std::string uncompressed;
     metaData.SerializeToString(&uncompressed);
+    writeString(uncompressed);
+}
+
+void MapSerialization::writeLocalPoses(const Trajectory& localPoses)
+{
+    proto::OccupancyGridMap::LocalPoses proto;
+    *proto.mutable_local_poses() = toProto(localPoses);
+
+    std::string uncompressed;
+    proto.SerializeToString(&uncompressed);
     writeString(uncompressed);
 }
 
@@ -71,11 +83,26 @@ MapDeserialization::MapDeserialization(const std::string& fileName)
     UASSERT(checkMagicNumber == magicNumber);
 
     readMetaData();
+    if (metaData_.version() > mapNoLocalPoses)
+    {
+        readLocalPoses();
+    }
 }
 
 void MapDeserialization::readMetaData()
 {
     metaData_.ParseFromString(readString());
+}
+
+void MapDeserialization::readLocalPoses()
+{
+    UASSERT(metaData_.version() > mapNoLocalPoses);
+
+    proto::OccupancyGridMap::LocalPoses proto;
+    proto.ParseFromString(readString());
+
+    UASSERT(proto.has_local_poses());
+    localPoses_ = fromProto(proto.local_poses());
 }
 
 std::optional<proto::OccupancyGridMap::Node> MapDeserialization::read()
@@ -98,11 +125,6 @@ std::string MapDeserialization::readString()
     input_.read(compressed.data(), size);
     UASSERT(input_.gcount() == size);
     return decompressString(compressed);
-}
-
-const proto::OccupancyGridMap::MetaData& MapDeserialization::metaData()
-{
-    return metaData_;
 }
 
 void MapDeserialization::close()
