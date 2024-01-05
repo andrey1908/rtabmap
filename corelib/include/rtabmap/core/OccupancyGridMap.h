@@ -115,6 +115,7 @@ public:
     OccupancyGridMap(const Parameters& parameters);
     void parseParameters(const Parameters& parameters);
 
+    bool localMapCanBeAdded(const Time& time);
     std::shared_ptr<LocalMap> createLocalMap(const SensorData& sensorData,
         const Time& time, const Transform& fromUpdatedPose) const;
 

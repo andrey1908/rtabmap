@@ -78,6 +78,22 @@ void OccupancyGridMap::parseParameters(const Parameters& parameters)
     }
 }
 
+bool OccupancyGridMap::localMapCanBeAdded(const Time& time)
+{
+    if (time <= skipLocalMapsUpto_)
+    {
+        return false;
+    }
+
+    double timeDiff = time.toSec() - lastNodeTime_.toSec();
+    if (timeDiff >= 0.0 && timeDiff < minNodesTimeDifference_)
+    {
+        return false;
+    }
+
+    return true;
+}
+
 std::shared_ptr<LocalMap> OccupancyGridMap::createLocalMap(const SensorData& sensorData,
     const Time& time, const Transform& fromUpdatedPose) const
 {
