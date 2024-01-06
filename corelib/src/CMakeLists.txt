@@ -25,8 +25,8 @@ SET(SRC_FILES
     LocalMap.cpp
     LocalMapBuilder.cpp
     Node.cpp
-    OccupancyGridBuilder.cpp
     TemporaryOccupancyGridBuilder.cpp
+    OccupancyGridBuilder.cpp
     DoorTracking.cpp
     ObjectTracking.cpp
     SemanticDilation.cpp

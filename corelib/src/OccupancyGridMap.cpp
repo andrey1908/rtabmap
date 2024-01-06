@@ -44,8 +44,8 @@ void OccupancyGridMap::parseParameters(const Parameters& parameters)
 
     numBuilders_ = parameters.obstacleDilationsParameters.size();
     obstacleDilations_.clear();
-    occupancyGridBuilders_.clear();
     temporaryOccupancyGridBuilders_.clear();
+    occupancyGridBuilders_.clear();
     for (int i = 0; i < numBuilders_; i++)
     {
         ObstacleDilation::Parameters obstacleDilationParameters =
@@ -54,18 +54,18 @@ void OccupancyGridMap::parseParameters(const Parameters& parameters)
         obstacleDilations_.push_back(
             std::make_unique<ObstacleDilation>(obstacleDilationParameters));
 
-        OccupancyGridBuilder::Parameters occupancyGridBuilderParameters =
-            parameters.occupancyGridBuilderParameters;
-        occupancyGridBuilderParameters.cellSize = parameters.cellSize;
-        occupancyGridBuilders_.push_back(
-            std::make_unique<OccupancyGridBuilder>(occupancyGridBuilderParameters));
-
         TemporaryOccupancyGridBuilder::Parameters temporaryOccupancyGridBuilderParameters =
             parameters.temporaryOccupancyGridBuilderParameters;
         temporaryOccupancyGridBuilderParameters.cellSize = parameters.cellSize;
         temporaryOccupancyGridBuilders_.push_back(
             std::make_unique<TemporaryOccupancyGridBuilder>(
                 temporaryOccupancyGridBuilderParameters));
+
+        OccupancyGridBuilder::Parameters occupancyGridBuilderParameters =
+            parameters.occupancyGridBuilderParameters;
+        occupancyGridBuilderParameters.cellSize = parameters.cellSize;
+        occupancyGridBuilders_.push_back(
+            std::make_unique<OccupancyGridBuilder>(occupancyGridBuilderParameters));
     }
 
     if (enableObjectTracking_)
@@ -143,6 +143,40 @@ int OccupancyGridMap::addLocalMap(const std::shared_ptr<const LocalMap>& localMa
     return nodeId;
 }
 
+bool OccupancyGridMap::addTemporaryLocalMap(const Transform& globalPose,
+    const std::shared_ptr<const LocalMap>& localMap)
+{
+    if (localMap->time() <= skipLocalMapsUpto_)
+    {
+        return false;
+    }
+
+    bool overflowed = false;
+    for (int i = 0; i < numBuilders_; i++)
+    {
+        std::shared_ptr<const LocalMap> dilatedLocalMap;
+        if (obstacleDilations_[i]->dilationSize() > 0.0f)
+        {
+            MEASURE_BLOCK_TIME(OccupancyGridMap__obstacleDilation);
+            dilatedLocalMap = obstacleDilations_[i]->dilate(*localMap);
+        }
+        else
+        {
+            dilatedLocalMap = localMap;
+        }
+        overflowed =
+            temporaryOccupancyGridBuilders_[i]->addLocalMap(globalPose, dilatedLocalMap);
+    }
+
+    if (objectTracking_)
+    {
+        /// TODO: use local pose for tracking
+        objectTracking_->track(*localMap, globalPose);
+    }
+
+    return overflowed;
+}
+
 int OccupancyGridMap::addLocalMap(const Transform& globalPose,
     const std::shared_ptr<const LocalMap>& localMap)
 {
@@ -191,40 +225,6 @@ int OccupancyGridMap::addLocalMap(const Transform& globalPose,
     return nodeId;
 }
 
-bool OccupancyGridMap::addTemporaryLocalMap(const Transform& globalPose,
-    const std::shared_ptr<const LocalMap>& localMap)
-{
-    if (localMap->time() <= skipLocalMapsUpto_)
-    {
-        return false;
-    }
-
-    bool overflowed = false;
-    for (int i = 0; i < numBuilders_; i++)
-    {
-        std::shared_ptr<const LocalMap> dilatedLocalMap;
-        if (obstacleDilations_[i]->dilationSize() > 0.0f)
-        {
-            MEASURE_BLOCK_TIME(OccupancyGridMap__obstacleDilation);
-            dilatedLocalMap = obstacleDilations_[i]->dilate(*localMap);
-        }
-        else
-        {
-            dilatedLocalMap = localMap;
-        }
-        overflowed =
-            temporaryOccupancyGridBuilders_[i]->addLocalMap(globalPose, dilatedLocalMap);
-    }
-
-    if (objectTracking_)
-    {
-        /// TODO: use local pose for tracking
-        objectTracking_->track(*localMap, globalPose);
-    }
-
-    return overflowed;
-}
-
 bool OccupancyGridMap::updateGlobalToLocal(
     const Transform& localPose, const Transform& globalPose)
 {
@@ -252,26 +252,6 @@ bool OccupancyGridMap::updateGlobalToLocal(
     return true;
 }
 
-int OccupancyGridMap::addLocalMap(
-    const Transform& localPose, const Transform& globalPose,
-    const std::shared_ptr<const LocalMap>& localMap)
-{
-    posesApproximation_->addLocalPose(localMap->time(), localPose);
-
-    if (localMap->time() <= skipLocalMapsUpto_)
-    {
-        return -1;
-    }
-
-    bool canProcessLocalMap = updateGlobalToLocal(localPose, globalPose);
-    if (!canProcessLocalMap)
-    {
-        return -1;
-    }
-    int nodeId = addLocalMap(globalPose, localMap);
-    return nodeId;
-}
-
 bool OccupancyGridMap::addTemporaryLocalMap(
     const Transform& localPose, const Transform& globalPose,
     const std::shared_ptr<const LocalMap>& localMap)
@@ -292,6 +272,26 @@ bool OccupancyGridMap::addTemporaryLocalMap(
     return overflowed;
 }
 
+int OccupancyGridMap::addLocalMap(
+    const Transform& localPose, const Transform& globalPose,
+    const std::shared_ptr<const LocalMap>& localMap)
+{
+    posesApproximation_->addLocalPose(localMap->time(), localPose);
+
+    if (localMap->time() <= skipLocalMapsUpto_)
+    {
+        return -1;
+    }
+
+    bool canProcessLocalMap = updateGlobalToLocal(localPose, globalPose);
+    if (!canProcessLocalMap)
+    {
+        return -1;
+    }
+    int nodeId = addLocalMap(globalPose, localMap);
+    return nodeId;
+}
+
 void OccupancyGridMap::removeNodes(const std::vector<int>& nodeIdsToRemove)
 {
     for (int i = 0; i < numBuilders_; i++)
@@ -310,8 +310,8 @@ void OccupancyGridMap::transformMap(const Transform& transform)
 {
     for (int i = 0; i < numBuilders_; i++)
     {
-        occupancyGridBuilders_[i]->transformMap(transform);
         temporaryOccupancyGridBuilders_[i]->transformMap(transform);
+        occupancyGridBuilders_[i]->transformMap(transform);
     }
     if (globalToLocal_)
     {
@@ -346,7 +346,6 @@ void OccupancyGridMap::updatePoses(
     }
     for (int i = 0; i < numBuilders_; i++)
     {
-        occupancyGridBuilders_[i]->updatePoses(updatedPoses, lastNodeIdToIncludeInCachedMap);
         if (resetTemporary)
         {
             temporaryOccupancyGridBuilders_[i]->reset();
@@ -355,6 +354,7 @@ void OccupancyGridMap::updatePoses(
         {
             temporaryOccupancyGridBuilders_[i]->transformMap(correction);
         }
+        occupancyGridBuilders_[i]->updatePoses(updatedPoses, lastNodeIdToIncludeInCachedMap);
     }
 
     globalToLocal_ = newGlobalToLocal;
@@ -365,29 +365,26 @@ OccupancyGrid OccupancyGridMap::getOccupancyGrid(int index) const
 {
     MEASURE_BLOCK_TIME(OccupancyGridMap__getOccupancyGrid);
     UASSERT(index >= 0 && index < numBuilders_);
-    const auto& occupancyGridBuilder = occupancyGridBuilders_[index];
     const auto& temporaryOccupancyGridBuilder = temporaryOccupancyGridBuilders_[index];
-    MapLimitsI mapLimits = occupancyGridBuilder->mapLimits();
+    const auto& occupancyGridBuilder = occupancyGridBuilders_[index];
     MapLimitsI temporaryMapLimits = temporaryOccupancyGridBuilder->mapLimits();
-    if (!mapLimits.valid() && !temporaryMapLimits.valid())
+    MapLimitsI mapLimits = occupancyGridBuilder->mapLimits();
+    if (!temporaryMapLimits.valid() && !mapLimits.valid())
     {
         return OccupancyGrid();
-    }
-    if (!mapLimits.valid())
-    {
-        return temporaryOccupancyGridBuilder->getOccupancyGrid();
     }
     if (!temporaryMapLimits.valid())
     {
         return occupancyGridBuilder->getOccupancyGrid();
     }
+    if (!mapLimits.valid())
+    {
+        return temporaryOccupancyGridBuilder->getOccupancyGrid();
+    }
 
-    MapLimitsI combinedMapLimits =
-        MapLimitsI::unite(mapLimits, temporaryMapLimits);
-    OccupancyGrid occupancyGrid =
-        occupancyGridBuilder->getOccupancyGrid(combinedMapLimits);
-    OccupancyGrid temporaryOccupancyGrid =
-        temporaryOccupancyGridBuilder->getOccupancyGrid();
+    MapLimitsI combinedMapLimits = MapLimitsI::unite(temporaryMapLimits, mapLimits);
+    OccupancyGrid temporaryOccupancyGrid = temporaryOccupancyGridBuilder->getOccupancyGrid();
+    OccupancyGrid occupancyGrid = occupancyGridBuilder->getOccupancyGrid(combinedMapLimits);
 
     int dstStartY = temporaryOccupancyGrid.limits.minY() - occupancyGrid.limits.minY();
     int dstStartX = temporaryOccupancyGrid.limits.minX() - occupancyGrid.limits.minX();
@@ -411,29 +408,26 @@ OccupancyGrid OccupancyGridMap::getProbOccupancyGrid(int index) const
 {
     MEASURE_BLOCK_TIME(OccupancyGridMap__getProbOccupancyGrid);
     UASSERT(index >= 0 && index < numBuilders_);
-    const auto& occupancyGridBuilder = occupancyGridBuilders_[index];
     const auto& temporaryOccupancyGridBuilder = temporaryOccupancyGridBuilders_[index];
-    MapLimitsI mapLimits = occupancyGridBuilder->mapLimits();
+    const auto& occupancyGridBuilder = occupancyGridBuilders_[index];
     MapLimitsI temporaryMapLimits = temporaryOccupancyGridBuilder->mapLimits();
-    if (!mapLimits.valid() && !temporaryMapLimits.valid())
+    MapLimitsI mapLimits = occupancyGridBuilder->mapLimits();
+    if (!temporaryMapLimits.valid() && !mapLimits.valid())
     {
         return OccupancyGrid();
-    }
-    if (!mapLimits.valid())
-    {
-        return temporaryOccupancyGridBuilder->getProbOccupancyGrid();
     }
     if (!temporaryMapLimits.valid())
     {
         return occupancyGridBuilder->getProbOccupancyGrid();
     }
+    if (!mapLimits.valid())
+    {
+        return temporaryOccupancyGridBuilder->getProbOccupancyGrid();
+    }
 
-    MapLimitsI combinedMapLimits =
-        MapLimitsI::unite(mapLimits, temporaryMapLimits);
-    OccupancyGrid occupancyGrid =
-        occupancyGridBuilder->getProbOccupancyGrid(combinedMapLimits);
-    OccupancyGrid temporaryOccupancyGrid =
-        temporaryOccupancyGridBuilder->getProbOccupancyGrid();
+    MapLimitsI combinedMapLimits = MapLimitsI::unite(temporaryMapLimits, mapLimits);
+    OccupancyGrid temporaryOccupancyGrid = temporaryOccupancyGridBuilder->getProbOccupancyGrid();
+    OccupancyGrid occupancyGrid = occupancyGridBuilder->getProbOccupancyGrid(combinedMapLimits);
 
     int dstStartY = temporaryOccupancyGrid.limits.minY() - occupancyGrid.limits.minY();
     int dstStartX = temporaryOccupancyGrid.limits.minX() - occupancyGrid.limits.minX();
@@ -457,29 +451,26 @@ ColorGrid OccupancyGridMap::getColorGrid(int index) const
 {
     MEASURE_BLOCK_TIME(OccupancyGridMap__getColorGrid);
     UASSERT(index >= 0 && index < numBuilders_);
-    const auto& occupancyGridBuilder = occupancyGridBuilders_[index];
     const auto& temporaryOccupancyGridBuilder = temporaryOccupancyGridBuilders_[index];
-    MapLimitsI mapLimits = occupancyGridBuilder->mapLimits();
+    const auto& occupancyGridBuilder = occupancyGridBuilders_[index];
     MapLimitsI temporaryMapLimits = temporaryOccupancyGridBuilder->mapLimits();
-    if (!mapLimits.valid() && !temporaryMapLimits.valid())
+    MapLimitsI mapLimits = occupancyGridBuilder->mapLimits();
+    if (!temporaryMapLimits.valid() && !mapLimits.valid())
     {
         return ColorGrid();
-    }
-    if (!mapLimits.valid())
-    {
-        return temporaryOccupancyGridBuilder->getColorGrid();
     }
     if (!temporaryMapLimits.valid())
     {
         return occupancyGridBuilder->getColorGrid();
     }
+    if (!mapLimits.valid())
+    {
+        return temporaryOccupancyGridBuilder->getColorGrid();
+    }
 
-    MapLimitsI combinedMapLimits =
-        MapLimitsI::unite(mapLimits, temporaryMapLimits);
-    ColorGrid colorGrid =
-        occupancyGridBuilder->getColorGrid(combinedMapLimits);
-    ColorGrid temporaryColorGrid =
-        temporaryOccupancyGridBuilder->getColorGrid();
+    MapLimitsI combinedMapLimits = MapLimitsI::unite(temporaryMapLimits, mapLimits);
+    ColorGrid temporaryColorGrid = temporaryOccupancyGridBuilder->getColorGrid();
+    ColorGrid colorGrid = occupancyGridBuilder->getColorGrid(combinedMapLimits);
 
     int dstStartY = temporaryColorGrid.limits.minY() - colorGrid.limits.minY();
     int dstStartX = temporaryColorGrid.limits.minX() - colorGrid.limits.minX();
@@ -502,8 +493,9 @@ ColorGrid OccupancyGridMap::getColorGrid(int index) const
 std::pair<float, float> OccupancyGridMap::getGridOrigin(int index) const
 {
     UASSERT(index >= 0 && index < numBuilders_);
-    MapLimitsI mapLimits = MapLimitsI::unite(occupancyGridBuilders_[index]->mapLimits(),
-        temporaryOccupancyGridBuilders_[index]->mapLimits());
+    MapLimitsI mapLimits = MapLimitsI::unite(
+        temporaryOccupancyGridBuilders_[index]->mapLimits(),
+        occupancyGridBuilders_[index]->mapLimits());
     if (!mapLimits.valid())
     {
         return std::make_pair(
@@ -518,8 +510,8 @@ void OccupancyGridMap::reset()
 {
     for (int i = 0; i < numBuilders_; i++)
     {
-        occupancyGridBuilders_[i]->reset();
         temporaryOccupancyGridBuilders_[i]->reset();
+        occupancyGridBuilders_[i]->reset();
     }
     posesApproximation_->reset();
     globalToLocal_.reset();

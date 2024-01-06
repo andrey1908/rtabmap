@@ -3,8 +3,8 @@
 #include <rtabmap/utilite/ULogger.h>
 #include <rtabmap/core/SensorData.h>
 #include <rtabmap/core/LocalMapBuilder.h>
-#include <rtabmap/core/OccupancyGridBuilder.h>
 #include <rtabmap/core/TemporaryOccupancyGridBuilder.h>
+#include <rtabmap/core/OccupancyGridBuilder.h>
 #include <rtabmap/core/ObstacleDilation.h>
 #include <rtabmap/core/ObjectTracking.h>
 #include <rtabmap/core/PosesApproximation.h>
@@ -34,9 +34,8 @@ public:
         LocalMapBuilder::Parameters localMapBuilderParameters;
         std::vector<ObstacleDilation::Parameters> obstacleDilationsParameters =
             std::vector<ObstacleDilation::Parameters>(1);
+        TemporaryOccupancyGridBuilder::Parameters temporaryOccupancyGridBuilderParameters;
         OccupancyGridBuilder::Parameters occupancyGridBuilderParameters;
-        TemporaryOccupancyGridBuilder::Parameters
-            temporaryOccupancyGridBuilderParameters;
 
         static Parameters createParameters(const YAML::Node& node)
         {
@@ -95,17 +94,17 @@ public:
                     }
                 }
             }
-            if (node["OccupancyGridBuilder"])
-            {
-                parameters.occupancyGridBuilderParameters =
-                    OccupancyGridBuilder::Parameters::createParameters(
-                        node["OccupancyGridBuilder"]);
-            }
             if (node["TemporaryOccupancyGridBuilder"])
             {
                 parameters.temporaryOccupancyGridBuilderParameters =
                     TemporaryOccupancyGridBuilder::Parameters::createParameters(
                         node["TemporaryOccupancyGridBuilder"]);
+            }
+            if (node["OccupancyGridBuilder"])
+            {
+                parameters.occupancyGridBuilderParameters =
+                    OccupancyGridBuilder::Parameters::createParameters(
+                        node["OccupancyGridBuilder"]);
             }
             return parameters;
         }
@@ -121,14 +120,14 @@ public:
 
     int addLocalMap(const std::shared_ptr<const LocalMap>& localMap);
 
-    int addLocalMap(const Transform& globalPose,
-        const std::shared_ptr<const LocalMap>& localMap);
     bool addTemporaryLocalMap(const Transform& globalPose,
         const std::shared_ptr<const LocalMap>& localMap);
-
-    int addLocalMap(const Transform& localPose, const Transform& globalPose,
+    int addLocalMap(const Transform& globalPose,
         const std::shared_ptr<const LocalMap>& localMap);
+
     bool addTemporaryLocalMap(const Transform& localPose, const Transform& globalPose,
+        const std::shared_ptr<const LocalMap>& localMap);
+    int addLocalMap(const Transform& localPose, const Transform& globalPose,
         const std::shared_ptr<const LocalMap>& localMap);
 
     void removeNodes(const std::vector<int>& nodeIdsToRemove);
@@ -153,10 +152,10 @@ public:
     std::pair<float, float> getGridOrigin(int index) const;
     int maxTemporaryLocalMaps(int index) const
         { return temporaryOccupancyGridBuilders_[index]->maxTemporaryLocalMaps(); }
-    const std::map<int, Node>& nodes(int index) const
-        { return occupancyGridBuilders_[index]->nodes(); }
     const std::deque<Node>& temporaryNodes(int index) const
         { return temporaryOccupancyGridBuilders_[index]->nodes(); }
+    const std::map<int, Node>& nodes(int index) const
+        { return occupancyGridBuilders_[index]->nodes(); }
     const std::map<int, const std::shared_ptr<const LocalMap>>& localMapsWithoutDilation() const
         { return localMapsWithoutDilation_; }
     const cv::Mat& lastDilatedSemantic() const
@@ -197,9 +196,8 @@ private:
 
     int numBuilders_;
     std::vector<std::unique_ptr<ObstacleDilation>> obstacleDilations_;
+    std::vector<std::unique_ptr<TemporaryOccupancyGridBuilder>> temporaryOccupancyGridBuilders_;
     std::vector<std::unique_ptr<OccupancyGridBuilder>> occupancyGridBuilders_;
-    std::vector<std::unique_ptr<TemporaryOccupancyGridBuilder>>
-        temporaryOccupancyGridBuilders_;
 
     std::unique_ptr<ObjectTracking> objectTracking_;
 
