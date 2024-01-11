@@ -15,14 +15,11 @@
 #include <rtabmap/core/Time.h>
 #include <rtabmap/core/Transform.h>
 #include <rtabmap/core/Trajectory.h>
-#include <rtabmap/core/LaserScan.h>
 #include <rtabmap/core/SensorData.h>
 #include <rtabmap/core/Node.h>
 #include <rtabmap/core/LocalMap.h>
 #include <rtabmap/core/MapLimits.h>
 #include <rtabmap/utilite/ULogger.h>
-
-#include <rtabmap/proto/RawData.pb.h>
 
 #include <kas_utils/yaml_utils.h>
 

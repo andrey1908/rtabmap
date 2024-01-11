@@ -157,7 +157,7 @@ void RawDataSerialization::writeMetaData()
     writeString(uncompressed);
 }
 
-void RawDataSerialization::write(const proto::RawData& rawData)
+void RawDataSerialization::write(const proto::RawData::RawData& rawData)
 {
     std::string uncompressed;
     rawData.SerializeToString(&uncompressed);
@@ -199,13 +199,13 @@ void RawDataDeserialization::readMetaData()
     metaData_.ParseFromString(readString());
 }
 
-std::optional<proto::RawData> RawDataDeserialization::read()
+std::optional<proto::RawData::RawData> RawDataDeserialization::read()
 {
     if (input_.peek() == EOF)
     {
         return std::nullopt;
     }
-    proto::RawData rawData;
+    proto::RawData::RawData rawData;
     rawData.ParseFromString(readString());
     return rawData;
 }

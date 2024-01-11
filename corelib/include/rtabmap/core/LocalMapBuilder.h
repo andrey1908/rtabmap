@@ -2,7 +2,6 @@
 
 #include <rtabmap/utilite/ULogger.h>
 #include <rtabmap/core/SensorData.h>
-#include <rtabmap/core/LaserScan.h>
 #include <rtabmap/core/Transform.h>
 #include <rtabmap/core/SemanticDilation.h>
 #include <rtabmap/core/RayTracing.h>
@@ -159,7 +158,6 @@ public:
     const std::vector<Area>& sensorIgnoreAreas() const { return sensorIgnoreAreas_; }
 
 private:
-    Eigen::Matrix3Xf convertLaserScan(const LaserScan& laserScan) const;
     Eigen::Matrix3Xf filterMaxVisibleRange(const Eigen::Matrix3Xf& points) const;
     Eigen::Matrix3Xf transformPoints(const Eigen::Matrix3Xf& points,
         const Transform& transform) const;
@@ -168,8 +166,7 @@ private:
         const Eigen::Matrix3Xf& points, const Transform& toSensor) const;
 
     std::vector<Color> getPointsColors(const Eigen::Matrix3Xf& points,
-        const std::vector<cv::Mat>& images,
-        const std::vector<rtabmap::CameraModel>& cameraModels) const;
+        const std::vector<SensorData::CameraData>& camerasData) const;
 
     LocalMap::ColoredGrid coloredGridFromObstacles(const Eigen::Matrix3Xf& points,
         const Eigen::Matrix3Xf& ignorePoints,

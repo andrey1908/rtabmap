@@ -6,7 +6,6 @@ SET(PROTO_FILES
     LocalMap.proto
     OccupancyGridMap.proto
 
-    LaserScan.proto
     SensorData.proto
     Trajectory.proto
     RawData.proto

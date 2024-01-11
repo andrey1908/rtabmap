@@ -71,7 +71,7 @@ class RawDataSerialization
 public:
     RawDataSerialization(const std::string& fileName);
 
-    void write(const proto::RawData& rawData);
+    void write(const proto::RawData::RawData& rawData);
     void close();
 
 private:
@@ -89,7 +89,7 @@ public:
 
     const proto::RawData::MetaData& metaData();
 
-    std::optional<proto::RawData> read();
+    std::optional<proto::RawData::RawData> read();
     void close();
 
 private:

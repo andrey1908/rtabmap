@@ -98,20 +98,23 @@ std::shared_ptr<LocalMap> LocalMapBuilder::createLocalMap(
     const Transform& fromUpdatedPose) const
 {
     MEASURE_BLOCK_TIME(LocalMapBuilder__createLocalMap);
-    UASSERT(!sensorData.laserScan().isEmpty() &&
-            !sensorData.laserScan().is2d());
-    UASSERT(!sensorData.laserScan().localTransform().isNull());
+    UASSERT(sensorData.numLidarsData() == 1);
     UASSERT(!fromUpdatedPose.isNull());
-    const LaserScan& laserScan = sensorData.laserScan();
-    const Transform& toSensor = laserScan.localTransform();
-    Eigen::Matrix3Xf points, obstacles;
-    points = convertLaserScan(laserScan);
+    const SensorData::LidarData& lidarData = sensorData.lidarsData().front();
+    const Transform& toSensor = lidarData.toSensor;
+
+    Eigen::Matrix3Xf points;
     if (maxVisibleRangeSqr_ >= 0.0f)
     {
-        points = filterMaxVisibleRange(points);
+        points = filterMaxVisibleRange(lidarData.points);
+        points = transformPoints(points, toSensor);
     }
-    points = transformPoints(points, toSensor);
-    obstacles = getObstaclePoints(points);
+    else
+    {
+        points = transformPoints(lidarData.points, toSensor);
+    }
+
+    Eigen::Matrix3Xf obstacles = getObstaclePoints(points);
     Eigen::Matrix3Xf ignoreObstacles;
     if (fromSensorIgnoreAreas_.size())
     {
@@ -119,26 +122,27 @@ std::shared_ptr<LocalMap> LocalMapBuilder::createLocalMap(
     }
 
     std::vector<Color> colors;
-    if (sensorData.numImages())
+    if (sensorData.numCamerasData())
     {
         if (semanticDilation_->dilationSize() > 0)
         {
-            std::vector<cv::Mat> dilatedImages;
-            for (const cv::Mat& image : sensorData.images())
+            std::vector<SensorData::CameraData> dilatedCamerasData;
+            for (const SensorData::CameraData& cameraData : sensorData.camerasData())
             {
                 MEASURE_BLOCK_TIME(LocalMapBuilder__dilate);
+                const cv::Mat& image = cameraData.image;
                 cv::Mat dilatedImage =
                     semanticDilation_->dilate(image, {semanticBackgroundColor});
-                dilatedImages.push_back(dilatedImage);
+                SensorData::CameraData dilatedCameraData{
+                    cameraData.toSensor, cameraData.parameters, dilatedImage};
+                dilatedCamerasData.push_back(std::move(dilatedCameraData));
                 lastDilatedSemantic_ = dilatedImage;
             }
-            colors = getPointsColors(obstacles, dilatedImages,
-                sensorData.cameraModels());
+            colors = getPointsColors(obstacles, dilatedCamerasData);
         }
         else
         {
-            colors = getPointsColors(obstacles, sensorData.images(),
-                sensorData.cameraModels());
+            colors = getPointsColors(obstacles, sensorData.camerasData());
         }
     }
     else
@@ -161,21 +165,6 @@ std::shared_ptr<LocalMap> LocalMapBuilder::createLocalMap(
     localMap->setFromUpdatedPose(fromUpdatedPose);
     localMap->setTime(time);
     return localMap;
-}
-
-Eigen::Matrix3Xf LocalMapBuilder::convertLaserScan(const LaserScan& laserScan) const
-{
-    Eigen::Matrix3Xf points(3, laserScan.size());
-    for (int i = 0; i < laserScan.size(); i++)
-    {
-        float x = laserScan.field(i, 0);
-        float y = laserScan.field(i, 1);
-        float z = laserScan.field(i, 2);
-        points(0, i) = x;
-        points(1, i) = y;
-        points(2, i) = z;
-    }
-    return points;
 }
 
 Eigen::Matrix3Xf LocalMapBuilder::filterMaxVisibleRange(const Eigen::Matrix3Xf& points) const
@@ -345,42 +334,43 @@ std::pair<Eigen::Matrix3Xf, Eigen::Matrix3Xf> LocalMapBuilder::applySensorIgnore
 
 std::vector<Color> LocalMapBuilder::getPointsColors(
     const Eigen::Matrix3Xf& points,
-    const std::vector<cv::Mat>& images,
-    const std::vector<CameraModel>& cameraModels) const
+    const std::vector<SensorData::CameraData>& camerasData) const
 {
-    UASSERT(images.size() == cameraModels.size());
     std::vector<Color> colors;
     colors.resize(points.cols(), Color::missingColor);
-    for (int camI = 0; camI < images.size(); camI++)
+    for (const SensorData::CameraData& cameraData : camerasData)
     {
-        const cv::Mat& image = images[camI];
+        const Transform& toSensor = cameraData.toSensor;
+        const SensorData::CameraParameters& parameters = cameraData.parameters;
+        const cv::Mat& image = cameraData.image;
         UASSERT(image.type() == CV_8UC3);
-        const CameraModel& cameraModel = cameraModels[camI];
-        const Transform& transform = cameraModel.localTransform().inverse();
+
+        Transform fromSensor = toSensor.inverse();
         const Eigen::Matrix3Xf& transformedPoints =
-            (transform.toEigen3fRotation() * points).colwise() +
-            transform.toEigen3fTranslation();
+            (fromSensor.toEigen3fRotation() * points).colwise() +
+            fromSensor.toEigen3fTranslation();
         for (int i = 0; i < transformedPoints.cols(); i++)
         {
             float x = transformedPoints(0, i);
             float y = transformedPoints(1, i);
             float z = transformedPoints(2, i);
-            float rangeSqr = x * x + y * y + z * z;
-            int u, v;
-            cameraModel.reproject(x, y, z, u, v);
-            if (cameraModel.inFrame(u, v) && z > 0 &&
-                rangeSqr >= minSemanticRangeSqr_ &&
-                (maxSemanticRangeSqr_ < 0.0f || rangeSqr <= maxSemanticRangeSqr_))
+            SensorData::Pixel pixel = parameters.project(x, y, z);
+            if (parameters.inFrame(pixel))
             {
-                const cv::Vec3b& pixelColor = image.at<cv::Vec3b>(v, u);
-                if (pixelColor == semanticBackgroundColor)
+                float rangeSqr = x * x + y * y + z * z;
+                if (rangeSqr >= minSemanticRangeSqr_ &&
+                    (maxSemanticRangeSqr_ < 0.0f || rangeSqr <= maxSemanticRangeSqr_))
                 {
-                    continue;
+                    const cv::Vec3b& pixelColor = image.at<cv::Vec3b>(pixel.v, pixel.u);
+                    if (pixelColor == semanticBackgroundColor)
+                    {
+                        continue;
+                    }
+                    colors[i].b() = pixelColor[0];
+                    colors[i].g() = pixelColor[1];
+                    colors[i].r() = pixelColor[2];
+                    colors[i].missing() = false;
                 }
-                colors[i].b() = pixelColor[0];
-                colors[i].g() = pixelColor[1];
-                colors[i].r() = pixelColor[2];
-                colors[i].missing() = false;
             }
         }
     }

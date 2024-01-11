@@ -5,10 +5,6 @@ SET(SRC_FILES
 
     Transform.cpp
 
-    util3d.cpp
-    util3d_transforms.cpp
-
-    LaserScan.cpp
     IMU.cpp
 
     GeodeticCoords.cpp

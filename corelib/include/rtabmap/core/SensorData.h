@@ -29,15 +29,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <rtabmap/core/Transform.h>
 #include <rtabmap/core/CameraModel.h>
-#include <rtabmap/core/LaserScan.h>
 #include <rtabmap/utilite/ULogger.h>
 
 #include <rtabmap/proto/SensorData.pb.h>
 
 #include <opencv2/core/core.hpp>
+#include <Eigen/Dense>
 
 #include <vector>
 #include <optional>
+#include <string>
 
 namespace rtabmap
 {
@@ -45,45 +46,90 @@ namespace rtabmap
 class SensorData
 {
 public:
+    struct Pixel
+    {
+        int u;
+        int v;
+    };
+
+    struct CameraParameters
+    {
+        Pixel project(float x, float y, float z) const
+        {
+            Pixel pixel{-1, -1};
+            if (z <= 0.0f)
+            {
+                return pixel;
+            }
+            pixel.u = fx * x / z + cx;
+            pixel.v = fy * y / z + cy;
+            return pixel;
+        }
+        bool inFrame(const Pixel& pixel) const
+        {
+            const int& u = pixel.u;
+            const int& v = pixel.v;
+            return u >= 0 && v >= 0 && u < width && v < height;
+        }
+
+        int width;
+        int height;
+        float fx;
+        float fy;
+        float cx;
+        float cy;
+    };
+
+    struct CameraData
+    {
+        Transform toSensor;
+        CameraParameters parameters;
+        cv::Mat image;
+    };
+
+    struct LidarData
+    {
+        Transform toSensor;
+        Eigen::Matrix3Xf points;
+    };
+
+public:
     SensorData() = default;
 
-    template<typename T, typename U>
-    void addImage(T&& cameraModel, U&& image)
+    template<typename T>
+    void addCameraData(T&& cameraData)
     {
-        cameraModels_.emplace_back(std::forward<T>(cameraModel));
-        images_.emplace_back(std::forward<U>(image));
+        camerasData_.push_back(std::forward<T>(cameraData));
     }
-    template<typename T, typename U>
-    void setImages(T&& cameraModels, U&& images)
-    {
-        UASSERT(cameraModels.size() == images.size());
-        cameraModels_ = std::forward<T>(cameraModels);
-        images_ = std::forward<U>(images);
-    }
-    int numImages() const { return cameraModels_.size(); }
-    void clearImages()
-    {
-        cameraModels_.clear(); 
-        images_.clear();
-    }
-    const std::vector<CameraModel>& cameraModels() const { return cameraModels_; }
-    const std::vector<cv::Mat>& images() const { return images_; }
+    int numCamerasData() const { return camerasData_.size(); }
+    void clearCamerasData() { camerasData_.clear(); }
+    const std::vector<CameraData>& camerasData() const { return camerasData_; }
 
     template<typename T>
-    void setLaserScan(T&& laserScan)
+    void addLidarData(T&& lidarData)
     {
-        laserScan_ = std::forward<T>(laserScan);
+        lidarsData_.push_back(std::forward<T>(lidarData));
     }
-    bool hasLaserScan() const { return laserScan_.has_value(); }
-    void clearLaserScan() { laserScan_.reset(); }
-    const LaserScan& laserScan() const { return laserScan_.value(); }
+    int numLidarsData() const { return lidarsData_.size(); }
+    void clearLidarsData() { lidarsData_.clear(); }
+    const std::vector<LidarData>& lidarsData() const { return lidarsData_; }
 
 private:
-    std::vector<CameraModel> cameraModels_;
-    std::vector<cv::Mat> images_;
-
-    std::optional<LaserScan> laserScan_;
+    std::vector<CameraData> camerasData_;
+    std::vector<LidarData> lidarsData_;
 };
+
+proto::CameraParameters toProto(const SensorData::CameraParameters& parameters);
+SensorData::CameraParameters fromProto(const proto::CameraParameters& proto);
+
+proto::CameraImage toProto(const cv::Mat& image);
+cv::Mat fromProto(const proto::CameraImage& proto);
+
+proto::CameraData toProto(const SensorData::CameraData& cameraData);
+SensorData::CameraData fromProto(const proto::CameraData& proto);
+
+proto::LidarData toProto(const SensorData::LidarData& lidarData);
+SensorData::LidarData fromProto(const proto::LidarData& proto);
 
 proto::SensorData toProto(const SensorData& sensorData);
 SensorData fromProto(const proto::SensorData& proto);
