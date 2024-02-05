@@ -45,7 +45,7 @@ public:
     MapDeserialization(const std::string& fileName);
 
     const proto::OccupancyGridMap::MetaData& metaData() { return metaData_; }
-    const Trajectory& localPoses() { return localPoses_; }
+    const proto::Trajectory& localPoses() { return localPoses_; }
 
     std::optional<proto::OccupancyGridMap::Node> read();
     void close();
@@ -58,7 +58,7 @@ private:
 private:
     std::ifstream input_;
     proto::OccupancyGridMap::MetaData metaData_;
-    Trajectory localPoses_;
+    proto::Trajectory localPoses_;
 };
 
 enum RawDataVersions

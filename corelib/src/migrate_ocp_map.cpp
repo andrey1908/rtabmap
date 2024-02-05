@@ -118,7 +118,7 @@ void migrateOcpMap(const std::string& inOcpFile, const std::string& outOcpFile)
     }
     else
     {
-        localPoses = reader.localPoses();
+        localPoses = fromProto(reader.localPoses());
     }
 
     MapSerialization writer(outOcpFile, reader.metaData().cell_size(), localPoses);

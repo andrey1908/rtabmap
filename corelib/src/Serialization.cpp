@@ -102,7 +102,7 @@ void MapDeserialization::readLocalPoses()
     proto.ParseFromString(readString());
 
     UASSERT(proto.has_local_poses());
-    localPoses_ = fromProto(proto.local_poses());
+    localPoses_ = proto.local_poses();
 }
 
 std::optional<proto::OccupancyGridMap::Node> MapDeserialization::read()

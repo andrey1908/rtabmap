@@ -562,7 +562,7 @@ void OccupancyGridMap::load(const std::string& file)
     UASSERT(reader.metaData().version() == MapVersions::mapLatestVersion);
     UASSERT(reader.metaData().cell_size() == cellSize_);
 
-    for (const TimedPose& timedPose : reader.localPoses())
+    for (const TimedPose& timedPose : fromProto(reader.localPoses()))
     {
         posesApproximation_->addLocalPose(timedPose.time, timedPose.pose);
     }
