@@ -136,7 +136,7 @@ void migrateOcpMap(const std::string& inOcpFile, const std::string& outOcpFile)
         {
             migrateCellValues(*proto);
         }
-        if (reader.metaData().version() <= MapVersions::mapWithSensorBlindRange)
+        if (reader.metaData().version() <= MapVersions::mapNoMaybeEmptyCells)
         {
             replaceSensorBlindRangeWithMaybeEmptyCells(*proto);
         }

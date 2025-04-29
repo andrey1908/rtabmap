@@ -16,7 +16,7 @@ namespace rtabmap {
 enum MapVersions
 {
     mapOldCellValues = 0,
-    mapWithSensorBlindRange = 1,
+    mapNoMaybeEmptyCells = 1,
     mapNoLocalPoses = 2,
     mapLatestVersion = 3
 };
