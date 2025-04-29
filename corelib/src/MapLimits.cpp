@@ -2,24 +2,44 @@
 
 namespace rtabmap {
 
-proto::MapLimitsI toProto(const MapLimitsI& limits)
+template <typename T, int Dims>
+proto::MapLimitsI toProto(const MapLimits<T, Dims>& limits)
 {
     proto::MapLimitsI proto;
-    proto.set_min_x(limits.minX());
-    proto.set_min_y(limits.minY());
-    proto.set_max_x(limits.maxX());
-    proto.set_max_y(limits.maxY());
+    proto.set_is_3d(Dims == 3);
+    *proto.mutable_min() = {limits.min().begin(), limits.min().end()};
+    *proto.mutable_max() = {limits.max().begin(), limits.max().end()};
     return proto;
 }
 
-MapLimitsI fromProto(const proto::MapLimitsI& proto)
+template <typename T, int Dims>
+MapLimits<T, Dims> fromProto(const proto::MapLimitsI& proto)
 {
-    MapLimitsI limits(
-        proto.min_x(),
-        proto.min_y(),
-        proto.max_x(),
-        proto.max_y());
+    constexpr bool is_3d = (Dims == 3);
+    UASSERT(proto.is_3d() == is_3d);
+
+    // backward compatibility
+    if (proto.min_size() == 0)
+    {
+        MapLimits<T, Dims> limits(
+            {proto.min_x(), proto.min_y()},
+            {proto.max_x(), proto.max_y()});
+        return limits;
+    }
+
+    std::array<T, Dims> min;
+    std::array<T, Dims> max;
+    for (int i = 0; i < Dims; i++)
+    {
+        min[i] = proto.min(i);
+        max[i] = proto.max(i);
+    }
+
+    MapLimits<T, Dims> limits(min, max);
     return limits;
 }
+
+template proto::MapLimitsI toProto(const MapLimitsI&);
+template MapLimitsI fromProto(const proto::MapLimitsI&);
 
 }

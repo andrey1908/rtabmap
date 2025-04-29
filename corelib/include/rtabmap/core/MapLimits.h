@@ -3,138 +3,128 @@
 #include <limits>
 #include <type_traits>
 #include <algorithm>
+#include <array>
 
 #include <rtabmap/utilite/ULogger.h>
 #include <rtabmap/proto/MapLimits.pb.h>
 
 namespace rtabmap {
 
-template<typename T>
+// for integral limits the max limit is included
+template<typename T, int Dims>
 class MapLimits
 {
 public:
-    MapLimits() :
-        minX_(std::numeric_limits<T>::max()),
-        minY_(std::numeric_limits<T>::max()),
-        maxX_(std::numeric_limits<T>::lowest()),
-        maxY_(std::numeric_limits<T>::lowest()) {}
-    MapLimits(const T& minX, const T& minY, const T& maxX, const T& maxY)
-    {
-        set(minX, minY, maxX, maxY);
+    MapLimits() {
+        std::fill(min_.begin(), min_.end(), std::numeric_limits<T>::max());
+        std::fill(max_.begin(), max_.end(), std::numeric_limits<T>::lowest());
     }
-    void set(const T& minX, const T& minY, const T& maxX, const T& maxY)
+    MapLimits(const std::array<T, Dims>& min, const std::array<T, Dims>& max)
     {
-        UASSERT(checkLimits(minX, minY, maxX, maxY));
-        minX_ = minX;
-        minY_ = minY;
-        maxX_ = maxX;
-        maxY_ = maxY;
+        set(min, max);
     }
-    T minX() const
+    void set(const std::array<T, Dims>& min, const std::array<T, Dims>& max)
     {
-        return minX_;
+        UASSERT(checkLimits(min, max));
+        min_ = min;
+        max_ = max;
     }
-    T minY() const
+    const std::array<T, Dims>& min() const
     {
-        return minY_;
+        return min_;
     }
-    T maxX() const
+    const std::array<T, Dims>& max() const
     {
-        return maxX_;
+        return max_;
     }
-    T maxY() const
-    {
-        return maxY_;
-    }
-    bool operator==(const MapLimits<T>& other) const
+    bool operator==(const MapLimits<T, Dims>& other) const
     {
         return
-            minX_ == other.minX_ &&
-            minY_ == other.minY_ &&
-            maxX_ == other.maxX_ &&
-            maxY_ == other.maxY_;
+            std::equal(min_.begin(), min_.end(), other.min_.begin()) &&
+            std::equal(max_.begin(), max_.end(), other.max_.begin());
     }
-    bool operator!=(const MapLimits<T>& other) const
+    bool operator!=(const MapLimits<T, Dims>& other) const
     {
         return !operator==(other);
     }
     bool valid() const
     {
-        return minX_ != std::numeric_limits<T>::max();
+        return min_[0] != std::numeric_limits<T>::max();
     }
-    void update(T x, T y)
+    void update(const std::array<T, Dims>& point)
     {
-        if (minX_ > x)
-            minX_ = x;
-        if (maxX_ < x)
-            maxX_ = x;
-        if (minY_ > y)
-            minY_ = y;
-        if (maxY_ < y)
-            maxY_ = y;
+        for (int i = 0; i < Dims; i++)
+        {
+            min_[i] = std::min(min_[i], point[i]);
+            max_[i] = std::max(max_[i], point[i]);
+        }
     }
-    T width() const
+    std::array<T, Dims> shape() const
     {
         constexpr bool integral = std::is_integral<T>::value;
         constexpr bool floating = std::is_floating_point<T>::value;
         static_assert(integral || floating);
-        if constexpr (integral)
+
+        std::array<T, Dims> limitsShape;
+        for (int i = 0; i < Dims; i++)
         {
-            return maxX_ - minX_ + static_cast<T>(1);
+            if constexpr(integral)
+            {
+                limitsShape[i] = max_[i] - min_[i] + static_cast<T>(1);
+            }
+            if constexpr(floating)
+            {
+                limitsShape[i] = max_[i] - min_[i];
+            }
         }
-        if constexpr (floating)
-        {
-            return maxX_ - minX_;
-        }
+        return limitsShape;
     }
-    T height() const
+    static MapLimits<T, Dims> unite(const MapLimits<T, Dims>& a, const MapLimits<T, Dims>& b)
     {
-        constexpr bool integral = std::is_integral<T>::value;
-        constexpr bool floating = std::is_floating_point<T>::value;
-        static_assert(integral || floating);
-        if constexpr (integral)
+        MapLimits<T, Dims> res;
+        for (int i = 0; i < Dims; i++)
         {
-            return maxY_ - minY_ + static_cast<T>(1);
+            res.min_[i] = std::min(a.min_[i], b.min_[i]);
+            res.max_[i] = std::max(a.max_[i], b.max_[i]);
         }
-        if constexpr (floating)
-        {
-            return maxY_ - minY_;
-        }
-    }
-    static MapLimits<T> unite(const MapLimits<T>& a, const MapLimits<T>& b)
-    {
-        MapLimits<T> res;
-        res.minX_ = std::min(a.minX_, b.minX_);
-        res.minY_ = std::min(a.minY_, b.minY_);
-        res.maxX_ = std::max(a.maxX_, b.maxX_);
-        res.maxY_ = std::max(a.maxY_, b.maxY_);
         return res;
     }
-    static MapLimits<T> intersect(const MapLimits<T>& a, const MapLimits<T>& b)
+    static MapLimits<T, Dims> intersect(const MapLimits<T, Dims>& a, const MapLimits<T, Dims>& b)
     {
-        MapLimits<T> res;
-        res.minX_ = std::max(a.minX_, b.minX_);
-        res.minY_ = std::max(a.minY_, b.minY_);
-        res.maxX_ = std::min(a.maxX_, b.maxX_);
-        res.maxY_ = std::min(a.maxY_, b.maxY_);
+        MapLimits<T, Dims> res;
+        for (int i = 0; i < Dims; i++)
+        {
+            res.min_[i] = std::max(a.min_[i], b.min_[i]);
+            res.max_[i] = std::min(a.max_[i], b.max_[i]);
+        }
         res.normalize();
         return res;
     }
 
 private:
-    static bool checkLimits(const T& minX, const T& minY, const T& maxX, const T& maxY)
+    static bool checkLimits(const std::array<T, Dims>& min, const std::array<T, Dims>& max)
     {
         constexpr bool integral = std::is_integral<T>::value;
         constexpr bool floating = std::is_floating_point<T>::value;
         static_assert(integral || floating);
-        if constexpr (integral)
+
+        for (int i = 0; i < Dims; i++)
         {
-            return minX <= maxX + static_cast<T>(1) && minY <= maxY + static_cast<T>(1);
+            bool checkResult;
+            if constexpr(integral)
+            {
+                checkResult = (min[i] <= max[i] + static_cast<T>(1));
+            }
+            if constexpr(floating)
+            {
+                checkResult = (min[i] <= max[i]);
+            }
+            if (!checkResult)
+            {
+                return false;
+            }
         }
-        if constexpr (floating)
-        {
-            return minX <= maxX && minY <= maxY;
-        }
+        return true;
     }
     void normalize()
     {
@@ -145,33 +135,31 @@ private:
         constexpr bool integral = std::is_integral<T>::value;
         constexpr bool floating = std::is_floating_point<T>::value;
         static_assert(integral || floating);
-        if constexpr (integral)
+
+        for (int i = 0; i < Dims; i++)
         {
-            if (minX_ > maxX_ + static_cast<T>(1))
-                minX_ = maxX_ + static_cast<T>(1);
-            if (minY_ > maxY_ + static_cast<T>(1))
-                minY_ = maxY_ + static_cast<T>(1);
-        }
-        if constexpr (floating)
-        {
-            if (minX_ > maxX_)
-                minX_ = maxX_;
-            if (minY_ > maxY_)
-                minY_ = maxY_;
+            if constexpr(integral)
+            {
+                min_[i] = std::min(min_[i], max_[i] + static_cast<T>(1));
+            }
+            if constexpr(floating)
+            {
+                min_[i] = std::min(min_[i], max_[i]);
+            }
         }
     }
 
 private:
-    T minX_;
-    T minY_;
-    T maxX_;
-    T maxY_;
+    std::array<T, Dims> min_;
+    std::array<T, Dims> max_;
 };
 
-typedef MapLimits<int> MapLimitsI;
-typedef MapLimits<float> MapLimitsF;
+typedef MapLimits<int, 2> MapLimitsI;
+typedef MapLimits<float, 2> MapLimitsF;
 
-proto::MapLimitsI toProto(const MapLimitsI& limits);
-MapLimitsI fromProto(const proto::MapLimitsI& proto);
+template<typename T, int Dims>
+proto::MapLimitsI toProto(const MapLimits<T, Dims>& limits);
+template<typename T, int Dims>
+MapLimits<T, Dims> fromProto(const proto::MapLimitsI& proto);
 
 }

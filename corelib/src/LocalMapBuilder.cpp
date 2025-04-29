@@ -384,33 +384,31 @@ LocalMap::ColoredGrid LocalMapBuilder::coloredGridFromObstacles(
     const Eigen::Vector2f& sensor) const
 {
     MapLimitsF limitsF;
-    limitsF.update(sensor.x(), sensor.y());
+    limitsF.update({sensor.x(), sensor.y()});
     for (int i = 0; i < points.cols(); i++)
     {
         float x = points(0, i);
         float y = points(1, i);
-        limitsF.update(x, y);
+        limitsF.update({x, y});
     }
     if (enableRayTracing_ && rayTracing_->traceIntoUnknownSpace())
     {
         float range = rayTracing_->maxTracingRange();
-        limitsF.update(sensor.x() - range, sensor.y() - range);
-        limitsF.update(sensor.x() + range, sensor.y() + range);
+        limitsF.update({sensor.x() - range, sensor.y() - range});
+        limitsF.update({sensor.x() + range, sensor.y() + range});
     }
 
     LocalMap::ColoredGrid coloredGrid;
     coloredGrid.cellSize = cellSize_;
     coloredGrid.limits.set(
-        std::floor(limitsF.minX() / cellSize_),
-        std::floor(limitsF.minY() / cellSize_),
-        std::floor(limitsF.maxX() / cellSize_),
-        std::floor(limitsF.maxY() / cellSize_));
-    int height = coloredGrid.limits.height();
-    int width = coloredGrid.limits.width();
+        {std::floor(limitsF.min()[0] / cellSize_), std::floor(limitsF.min()[1] / cellSize_)},
+        {std::floor(limitsF.max()[0] / cellSize_), std::floor(limitsF.max()[1] / cellSize_)});
+    int height = coloredGrid.limits.shape()[1];
+    int width = coloredGrid.limits.shape()[0];
     coloredGrid.grid = cv::Mat(height, width, CV_8U, LocalMap::ColoredGrid::unknownCellValue);
     coloredGrid.colors = cv::Mat(height, width, CV_32S, Color::missingColor.data());
-    const int& minX = coloredGrid.limits.minX();
-    const int& minY = coloredGrid.limits.minY();
+    const int& minX = coloredGrid.limits.min()[0];
+    const int& minY = coloredGrid.limits.min()[1];
 
     for (int i = 0; i < ignorePoints.cols(); i++)
     {
@@ -452,8 +450,8 @@ void LocalMapBuilder::traceRays(LocalMap::ColoredGrid& coloredGrid,
 {
     MEASURE_BLOCK_TIME(LocalMapBuilder__traceRays);
     RayTracing::Cell origin;
-    origin.y = std::floor(sensor.y() / cellSize_) - coloredGrid.limits.minY();
-    origin.x = std::floor(sensor.x() / cellSize_) - coloredGrid.limits.minX();
+    origin.y = std::floor(sensor.y() / cellSize_) - coloredGrid.limits.min()[1];
+    origin.x = std::floor(sensor.x() / cellSize_) - coloredGrid.limits.min()[0];
     rayTracing_->traceRays(coloredGrid.grid, origin);
 }
 

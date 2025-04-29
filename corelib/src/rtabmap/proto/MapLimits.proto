@@ -4,8 +4,12 @@ package rtabmap.proto;
 
 message MapLimitsI
 {
-    int32 min_x = 1;
-    int32 min_y = 2;
-    int32 max_x = 3;
-    int32 max_y = 4;
+    int32 min_x = 1 [deprecated=true];
+    int32 min_y = 2 [deprecated=true];
+    int32 max_x = 3 [deprecated=true];
+    int32 max_y = 4 [deprecated=true];
+
+    bool is_3d = 5;
+    repeated int32 min = 6;
+    repeated int32 max = 7;
 }

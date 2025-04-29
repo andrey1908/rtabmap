@@ -63,7 +63,7 @@ void replaceSensorBlindRangeWithMaybeEmptyCells(proto::OccupancyGridMap::Node& p
 
     cv::Mat grid = decompressMat(proto.local_map().colored_grid().grid_compressed());
     UASSERT(grid.type() == CV_8UC1);
-    MapLimitsI limits = fromProto(proto.local_map().colored_grid().limits());
+    MapLimitsI limits = fromProto<int, 2>(proto.local_map().colored_grid().limits());
     Transform toSensor = fromProto(proto.local_map().to_sensor());
     float cellSize = proto.local_map().colored_grid().cell_size();
     for (int y = 0; y < grid.rows; y++)
@@ -73,8 +73,8 @@ void replaceSensorBlindRangeWithMaybeEmptyCells(proto::OccupancyGridMap::Node& p
             std::uint8_t& value = grid.at<std::uint8_t>(y, x);
             if (value == LocalMap::ColoredGrid::emptyCellValue)
             {
-                float xf = (x + limits.minX() + 0.5f) * cellSize;
-                float yf = (y + limits.minY() + 0.5f) * cellSize;
+                float xf = (x + limits.min()[0] + 0.5f) * cellSize;
+                float yf = (y + limits.min()[1] + 0.5f) * cellSize;
                 float xs = xf - toSensor.translation().x();
                 float ys = yf - toSensor.translation().y();
                 if (xs * xs + ys * ys <= proto.local_map().sensor_blind_range_2d_sqr())

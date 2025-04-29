@@ -65,7 +65,7 @@ ObjectTracking::TrackedObject ObjectTracking::segment(
     cv::Mat& colorGrid, const Cell& startCell, const MapLimitsI& mapLimits,
     const Transform& pose) const
 {
-    Cell shift(mapLimits.minY(), mapLimits.minX());
+    Cell shift(mapLimits.min()[1], mapLimits.min()[0]);
 
     std::int32_t& startCellColor = colorGrid.at<std::int32_t>(startCell.y, startCell.x);
     Color segmentColor = reinterpret_cast<const Color&>(startCellColor);
