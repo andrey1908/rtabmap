@@ -22,8 +22,8 @@ MapLimits<T, Dims> fromProto(const proto::MapLimitsI& proto)
     if (proto.min_size() == 0)
     {
         MapLimits<T, Dims> limits(
-            {proto.min_x(), proto.min_y()},
-            {proto.max_x(), proto.max_y()});
+            {proto.min_y(), proto.min_x()},
+            {proto.max_y(), proto.max_x()});
         return limits;
     }
 

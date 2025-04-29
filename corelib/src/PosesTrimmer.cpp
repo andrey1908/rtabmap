@@ -20,9 +20,9 @@ float NodesSimilarityEstimation::getSimilarity(
     {
         float y = oldPoints.coeff(1, i);
         float x = oldPoints.coeff(0, i);
-        int yi = std::floor(y / newGrid.cellSize) - newGrid.limits.min()[1];
-        int xi = std::floor(x / newGrid.cellSize) - newGrid.limits.min()[0];
-        if (yi < 0 || xi < 0 || yi >= newGrid.limits.shape()[1] || xi >= newGrid.limits.shape()[0])
+        int yi = std::floor(y / newGrid.cellSize) - newGrid.limits.min()[0];
+        int xi = std::floor(x / newGrid.cellSize) - newGrid.limits.min()[1];
+        if (yi < 0 || xi < 0 || yi >= newGrid.limits.shape()[0] || xi >= newGrid.limits.shape()[1])
         {
             continue;
         }

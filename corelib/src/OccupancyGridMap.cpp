@@ -386,10 +386,10 @@ OccupancyGrid OccupancyGridMap::getOccupancyGrid(int index) const
     OccupancyGrid temporaryOccupancyGrid = temporaryOccupancyGridBuilder->getOccupancyGrid();
     OccupancyGrid occupancyGrid = occupancyGridBuilder->getOccupancyGrid(combinedMapLimits);
 
-    int dstStartY = temporaryOccupancyGrid.limits.min()[1] - occupancyGrid.limits.min()[1];
-    int dstStartX = temporaryOccupancyGrid.limits.min()[0] - occupancyGrid.limits.min()[0];
-    int height = temporaryOccupancyGrid.limits.shape()[1];
-    int width = temporaryOccupancyGrid.limits.shape()[0];
+    int dstStartY = temporaryOccupancyGrid.limits.min()[0] - occupancyGrid.limits.min()[0];
+    int dstStartX = temporaryOccupancyGrid.limits.min()[1] - occupancyGrid.limits.min()[1];
+    int height = temporaryOccupancyGrid.limits.shape()[0];
+    int width = temporaryOccupancyGrid.limits.shape()[1];
     for (int y = 0; y < height; y++)
     {
         for (int x = 0; x < width; x++)
@@ -429,10 +429,10 @@ OccupancyGrid OccupancyGridMap::getProbOccupancyGrid(int index) const
     OccupancyGrid temporaryOccupancyGrid = temporaryOccupancyGridBuilder->getProbOccupancyGrid();
     OccupancyGrid occupancyGrid = occupancyGridBuilder->getProbOccupancyGrid(combinedMapLimits);
 
-    int dstStartY = temporaryOccupancyGrid.limits.min()[1] - occupancyGrid.limits.min()[1];
-    int dstStartX = temporaryOccupancyGrid.limits.min()[0] - occupancyGrid.limits.min()[0];
-    int height = temporaryOccupancyGrid.limits.shape()[1];
-    int width = temporaryOccupancyGrid.limits.shape()[0];
+    int dstStartY = temporaryOccupancyGrid.limits.min()[0] - occupancyGrid.limits.min()[0];
+    int dstStartX = temporaryOccupancyGrid.limits.min()[1] - occupancyGrid.limits.min()[1];
+    int height = temporaryOccupancyGrid.limits.shape()[0];
+    int width = temporaryOccupancyGrid.limits.shape()[1];
     for (int y = 0; y < height; y++)
     {
         for (int x = 0; x < width; x++)
@@ -472,10 +472,10 @@ ColorGrid OccupancyGridMap::getColorGrid(int index) const
     ColorGrid temporaryColorGrid = temporaryOccupancyGridBuilder->getColorGrid();
     ColorGrid colorGrid = occupancyGridBuilder->getColorGrid(combinedMapLimits);
 
-    int dstStartY = temporaryColorGrid.limits.min()[1] - colorGrid.limits.min()[1];
-    int dstStartX = temporaryColorGrid.limits.min()[0] - colorGrid.limits.min()[0];
-    int height = temporaryColorGrid.limits.shape()[1];
-    int width = temporaryColorGrid.limits.shape()[0];
+    int dstStartY = temporaryColorGrid.limits.min()[0] - colorGrid.limits.min()[0];
+    int dstStartX = temporaryColorGrid.limits.min()[1] - colorGrid.limits.min()[1];
+    int height = temporaryColorGrid.limits.shape()[0];
+    int width = temporaryColorGrid.limits.shape()[1];
     for (int y = 0; y < height; y++)
     {
         for (int x = 0; x < width; x++)
@@ -501,8 +501,8 @@ std::pair<float, float> OccupancyGridMap::getGridOrigin(int index) const
         return std::make_pair(
             std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest());
     }
-    float originX = mapLimits.min()[0] * cellSize_;
-    float originY = mapLimits.min()[1] * cellSize_;
+    float originX = mapLimits.min()[1] * cellSize_;
+    float originY = mapLimits.min()[0] * cellSize_;
     return std::make_pair(originX, originY);
 }
 

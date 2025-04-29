@@ -73,8 +73,8 @@ void replaceSensorBlindRangeWithMaybeEmptyCells(proto::OccupancyGridMap::Node& p
             std::uint8_t& value = grid.at<std::uint8_t>(y, x);
             if (value == LocalMap::ColoredGrid::emptyCellValue)
             {
-                float xf = (x + limits.min()[0] + 0.5f) * cellSize;
-                float yf = (y + limits.min()[1] + 0.5f) * cellSize;
+                float xf = (x + limits.min()[1] + 0.5f) * cellSize;
+                float yf = (y + limits.min()[0] + 0.5f) * cellSize;
                 float xs = xf - toSensor.translation().x();
                 float ys = yf - toSensor.translation().y();
                 if (xs * xs + ys * ys <= proto.local_map().sensor_blind_range_2d_sqr())

@@ -37,14 +37,14 @@ void LocalMap::fromColoredGrid(const ColoredGrid& coloredGrid,
     UASSERT(coloredGrid.limits.valid());
     UASSERT(coloredGrid.grid.type() == CV_8U);
     UASSERT(coloredGrid.colors.type() == CV_32S);
-    UASSERT(coloredGrid.grid.rows == coloredGrid.limits.shape()[1]);
-    UASSERT(coloredGrid.grid.cols == coloredGrid.limits.shape()[0]);
-    UASSERT(coloredGrid.colors.rows == coloredGrid.limits.shape()[1]);
-    UASSERT(coloredGrid.colors.cols == coloredGrid.limits.shape()[0]);
+    UASSERT(coloredGrid.grid.rows == coloredGrid.limits.shape()[0]);
+    UASSERT(coloredGrid.grid.cols == coloredGrid.limits.shape()[1]);
+    UASSERT(coloredGrid.colors.rows == coloredGrid.limits.shape()[0]);
+    UASSERT(coloredGrid.colors.cols == coloredGrid.limits.shape()[1]);
 
     const float& cellSize = coloredGrid.cellSize;
-    const int& minX = coloredGrid.limits.min()[0];
-    const int& minY = coloredGrid.limits.min()[1];
+    const int& minX = coloredGrid.limits.min()[1];
+    const int& minY = coloredGrid.limits.min()[0];
 
     std::vector<std::pair<int, int>> occupiedCells;
     std::vector<std::pair<int, int>> maybeEmptyCells;
@@ -159,13 +159,13 @@ LocalMap::ColoredGrid LocalMap::toColoredGrid() const
     ColoredGrid coloredGrid;
     coloredGrid.cellSize = cellSize_;
     coloredGrid.limits = limits_;
-    coloredGrid.grid = cv::Mat(limits_.shape()[1], limits_.shape()[0], CV_8U,
+    coloredGrid.grid = cv::Mat(limits_.shape()[0], limits_.shape()[1], CV_8U,
         ColoredGrid::unknownCellValue);
-    coloredGrid.colors = cv::Mat(limits_.shape()[1], limits_.shape()[0], CV_32S,
+    coloredGrid.colors = cv::Mat(limits_.shape()[0], limits_.shape()[1], CV_32S,
         Color::missingColor.data());
 
-    const int& minX = limits_.min()[0];
-    const int& minY = limits_.min()[1];
+    const int& minX = limits_.min()[1];
+    const int& minY = limits_.min()[0];
     int step = pointsDuplicated_ ? 2 : 1;
     for (int i = 0; i < points_.cols(); i += step)
     {

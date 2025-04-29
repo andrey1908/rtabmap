@@ -18,7 +18,7 @@ void TransformedLocalMap::set(const LocalMap& localMap, const Transform& pose,
         int y = std::floor(transformedPoints(1, i) / cellSize);
         points_.coeffRef(0, i) = x;
         points_.coeffRef(1, i) = y;
-        mapLimits_.update({x, y});
+        mapLimits_.update({y, x});
     }
     UASSERT(mapLimits_.valid());
 }

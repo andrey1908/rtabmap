@@ -205,13 +205,13 @@ void OccupancyGridBuilder::transformMap(const Transform& transform)
             {
                 // empty
                 int color = map_.colors.coeff(y, x);
-                points.coeffRef(0, i) = (x + map_.mapLimits.min()[0] + 0.25f) * cellSize_;
-                points.coeffRef(1, i) = (y + map_.mapLimits.min()[1] + 0.25f) * cellSize_;
+                points.coeffRef(0, i) = (x + map_.mapLimits.min()[1] + 0.25f) * cellSize_;
+                points.coeffRef(1, i) = (y + map_.mapLimits.min()[0] + 0.25f) * cellSize_;
                 values.push_back(value);
                 colors.push_back(color);
                 i++;
-                points.coeffRef(0, i) = (x + map_.mapLimits.min()[0] + 0.75f) * cellSize_;
-                points.coeffRef(1, i) = (y + map_.mapLimits.min()[1] + 0.75f) * cellSize_;
+                points.coeffRef(0, i) = (x + map_.mapLimits.min()[1] + 0.75f) * cellSize_;
+                points.coeffRef(1, i) = (y + map_.mapLimits.min()[0] + 0.75f) * cellSize_;
                 values.push_back(value);
                 colors.push_back(color);
                 i++;
@@ -220,8 +220,8 @@ void OccupancyGridBuilder::transformMap(const Transform& transform)
             {
                 // occupied
                 int color = map_.colors.coeff(y, x);
-                points.coeffRef(0, i) = (x + map_.mapLimits.min()[0] + 0.5f) * cellSize_;
-                points.coeffRef(1, i) = (y + map_.mapLimits.min()[1] + 0.5f) * cellSize_;
+                points.coeffRef(0, i) = (x + map_.mapLimits.min()[1] + 0.5f) * cellSize_;
+                points.coeffRef(1, i) = (y + map_.mapLimits.min()[0] + 0.5f) * cellSize_;
                 values.push_back(value);
                 colors.push_back(color);
                 i++;
@@ -245,18 +245,16 @@ void OccupancyGridBuilder::transformMap(const Transform& transform)
     {
         float x = points.coeff(0, i);
         float y = points.coeff(1, i);
-        newMapLimitsF.update({x, y});
+        newMapLimitsF.update({y, x});
     }
     MapLimitsI newMapLimits(
-        {std::floor(newMapLimitsF.min()[0] / cellSize_),
-        std::floor(newMapLimitsF.min()[1] / cellSize_)},
-        {std::floor(newMapLimitsF.max()[0] / cellSize_),
-        std::floor(newMapLimitsF.max()[1] / cellSize_)});
+        {std::floor(newMapLimitsF.min()[0] / cellSize_), std::floor(newMapLimitsF.min()[1] / cellSize_)},
+        {std::floor(newMapLimitsF.max()[0] / cellSize_), std::floor(newMapLimitsF.max()[1] / cellSize_)});
 
     clear();
     map_.mapLimits = newMapLimits;
-    int width = newMapLimits.shape()[0];
-    int height = newMapLimits.shape()[1];
+    int width = newMapLimits.shape()[1];
+    int height = newMapLimits.shape()[0];
     map_.map = MapType::Constant(height, width, PrecomputedUpdateValues::unknown);
     map_.colors = ColorsType::Constant(height, width, Color::missingColor.data());
     for (int i = 0; i < numPoints; i++)
@@ -266,8 +264,8 @@ void OccupancyGridBuilder::transformMap(const Transform& transform)
         int value = values[i];
         int color = colors[i];
 
-        int y = std::floor(yf / cellSize_) - newMapLimits.min()[1];
-        int x = std::floor(xf / cellSize_) - newMapLimits.min()[0];
+        int y = std::floor(yf / cellSize_) - newMapLimits.min()[0];
+        int x = std::floor(xf / cellSize_) - newMapLimits.min()[1];
         if (value > map_.map.coeff(y, x))
         {
             map_.map.coeffRef(y, x) = value;
@@ -458,24 +456,24 @@ void OccupancyGridBuilder::createOrResizeMap(const MapLimitsI& newMapLimits)
     if(!map_.mapLimits.valid())
     {
         map_.mapLimits = newMapLimits;
-        int height = newMapLimits.shape()[1];
-        int width = newMapLimits.shape()[0];
+        int height = newMapLimits.shape()[0];
+        int width = newMapLimits.shape()[1];
         map_.map = MapType::Constant(height, width, PrecomputedUpdateValues::unknown);
         map_.colors = ColorsType::Constant(height, width, Color::missingColor.data());
     }
     else if(map_.mapLimits != newMapLimits)
     {
-        int dstStartY = std::max(map_.mapLimits.min()[1] - newMapLimits.min()[1], 0);
-        int dstStartX = std::max(map_.mapLimits.min()[0] - newMapLimits.min()[0], 0);
-        int srcStartY = std::max(newMapLimits.min()[1] - map_.mapLimits.min()[1], 0);
-        int srcStartX = std::max(newMapLimits.min()[0] - map_.mapLimits.min()[0], 0);
+        int dstStartY = std::max(map_.mapLimits.min()[0] - newMapLimits.min()[0], 0);
+        int dstStartX = std::max(map_.mapLimits.min()[1] - newMapLimits.min()[1], 0);
+        int srcStartY = std::max(newMapLimits.min()[0] - map_.mapLimits.min()[0], 0);
+        int srcStartX = std::max(newMapLimits.min()[1] - map_.mapLimits.min()[1], 0);
         MapLimitsI intersection = MapLimitsI::intersect(map_.mapLimits, newMapLimits);
-        int copyHeight = intersection.shape()[1];
-        int copyWidth = intersection.shape()[0];
+        int copyHeight = intersection.shape()[0];
+        int copyWidth = intersection.shape()[1];
         UASSERT(copyHeight > 0 && copyWidth > 0);
 
-        int height = newMapLimits.shape()[1];
-        int width = newMapLimits.shape()[0];
+        int height = newMapLimits.shape()[0];
+        int width = newMapLimits.shape()[1];
         MapType newMap = MapType::Constant(height, width, PrecomputedUpdateValues::unknown);
         ColorsType newColors =
             ColorsType::Constant(height, width, Color::missingColor.data());
@@ -532,8 +530,8 @@ void OccupancyGridBuilder::deployTransformedLocalMap(const LocalMap& localMap,
     const Eigen::Matrix2Xi& transformedPoints = transformedLocalMap.points();
     for (int i = 0; i < transformedPoints.cols(); i++)
     {
-        int y = transformedPoints.coeff(1, i) - map_.mapLimits.min()[1];
-        int x = transformedPoints.coeff(0, i) - map_.mapLimits.min()[0];
+        int y = transformedPoints.coeff(1, i) - map_.mapLimits.min()[0];
+        int x = transformedPoints.coeff(0, i) - map_.mapLimits.min()[1];
         UASSERT(y >= 0 && x >= 0 && y < map_.map.rows() && x < map_.map.cols());
 
         int& value = map_.map.coeffRef(y, x);
@@ -599,18 +597,18 @@ OccupancyGrid OccupancyGridBuilder::getOccupancyGrid(
     }
     OccupancyGrid occupancyGrid;
     occupancyGrid.limits = roi;
-    occupancyGrid.grid = OccupancyGrid::GridType::Constant(roi.shape()[1], roi.shape()[0], -1);
+    occupancyGrid.grid = OccupancyGrid::GridType::Constant(roi.shape()[0], roi.shape()[1], -1);
     MapLimitsI intersection = MapLimitsI::intersect(map_.mapLimits, roi);
-    int height = intersection.shape()[1];
-    int width = intersection.shape()[0];
+    int height = intersection.shape()[0];
+    int width = intersection.shape()[1];
     if (height == 0 || width == 0)
     {
         return occupancyGrid;
     }
-    int dstStartY = std::max(map_.mapLimits.min()[1] - roi.min()[1], 0);
-    int dstStartX = std::max(map_.mapLimits.min()[0] - roi.min()[0], 0);
-    int srcStartY = std::max(roi.min()[1] - map_.mapLimits.min()[1], 0);
-    int srcStartX = std::max(roi.min()[0] - map_.mapLimits.min()[0], 0);
+    int dstStartY = std::max(map_.mapLimits.min()[0] - roi.min()[0], 0);
+    int dstStartX = std::max(map_.mapLimits.min()[1] - roi.min()[1], 0);
+    int srcStartY = std::max(roi.min()[0] - map_.mapLimits.min()[0], 0);
+    int srcStartX = std::max(roi.min()[1] - map_.mapLimits.min()[1], 0);
     for(int y = 0; y < height; ++y)
     {
         for(int x = 0; x < width; ++x)
@@ -650,18 +648,18 @@ OccupancyGrid OccupancyGridBuilder::getProbOccupancyGrid(
     }
     OccupancyGrid occupancyGrid;
     occupancyGrid.limits = roi;
-    occupancyGrid.grid = OccupancyGrid::GridType::Constant(roi.shape()[1], roi.shape()[0], -1);
+    occupancyGrid.grid = OccupancyGrid::GridType::Constant(roi.shape()[0], roi.shape()[1], -1);
     MapLimitsI intersection = MapLimitsI::intersect(map_.mapLimits, roi);
-    int height = intersection.shape()[1];
-    int width = intersection.shape()[0];
+    int height = intersection.shape()[0];
+    int width = intersection.shape()[1];
     if (height == 0 || width == 0)
     {
         return occupancyGrid;
     }
-    int dstStartY = std::max(map_.mapLimits.min()[1] - roi.min()[1], 0);
-    int dstStartX = std::max(map_.mapLimits.min()[0] - roi.min()[0], 0);
-    int srcStartY = std::max(roi.min()[1] - map_.mapLimits.min()[1], 0);
-    int srcStartX = std::max(roi.min()[0] - map_.mapLimits.min()[0], 0);
+    int dstStartY = std::max(map_.mapLimits.min()[0] - roi.min()[0], 0);
+    int dstStartX = std::max(map_.mapLimits.min()[1] - roi.min()[1], 0);
+    int srcStartY = std::max(roi.min()[0] - map_.mapLimits.min()[0], 0);
+    int srcStartX = std::max(roi.min()[1] - map_.mapLimits.min()[1], 0);
     for(int y = 0; y < height; ++y)
     {
         for(int x = 0; x < width; ++x)
@@ -701,19 +699,19 @@ ColorGrid OccupancyGridBuilder::getColorGrid(
     }
     ColorGrid colorGrid;
     colorGrid.limits = roi;
-    colorGrid.grid = ColorGrid::GridType::Constant(roi.shape()[1], roi.shape()[0],
+    colorGrid.grid = ColorGrid::GridType::Constant(roi.shape()[0], roi.shape()[1],
         Color::missingColor.data());
     MapLimitsI intersection = MapLimitsI::intersect(map_.mapLimits, roi);
-    int height = intersection.shape()[1];
-    int width = intersection.shape()[0];
+    int height = intersection.shape()[0];
+    int width = intersection.shape()[1];
     if (height == 0 || width == 0)
     {
         return colorGrid;
     }
-    int dstStartY = std::max(map_.mapLimits.min()[1] - roi.min()[1], 0);
-    int dstStartX = std::max(map_.mapLimits.min()[0] - roi.min()[0], 0);
-    int srcStartY = std::max(roi.min()[1] - map_.mapLimits.min()[1], 0);
-    int srcStartX = std::max(roi.min()[0] - map_.mapLimits.min()[0], 0);
+    int dstStartY = std::max(map_.mapLimits.min()[0] - roi.min()[0], 0);
+    int dstStartX = std::max(map_.mapLimits.min()[1] - roi.min()[1], 0);
+    int srcStartY = std::max(roi.min()[0] - map_.mapLimits.min()[0], 0);
+    int srcStartX = std::max(roi.min()[1] - map_.mapLimits.min()[1], 0);
     colorGrid.grid.block(dstStartY, dstStartX, height, width) =
         map_.colors.block(srcStartY, srcStartX, height, width);
     if (showTemporarilyOccupiedCells_)
