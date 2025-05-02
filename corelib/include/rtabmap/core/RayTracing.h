@@ -10,7 +10,11 @@
 
 #include <cstdint>
 
+#include <kas_utils/multi_array.hpp>
+
 namespace rtabmap {
+
+using kas_utils::MultiArray;
 
 class RayTracing
 {
@@ -98,7 +102,7 @@ public:
     RayTracing(const Parameters& parameters);
     void parseParameters(const Parameters& parameters);
 
-    void traceRays(cv::Mat& grid, const Cell& origin) const;
+    void traceRays(MultiArray<std::uint8_t, 2>& grid, const Cell& origin) const;
 
     float maxTracingRange() const
     {

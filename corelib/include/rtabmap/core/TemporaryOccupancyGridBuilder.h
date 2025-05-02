@@ -82,7 +82,7 @@ public:
     void parseParameters(const Parameters& parameters);
 
     bool addLocalMap(const Transform& pose,
-        const std::shared_ptr<const LocalMap>& localMap);
+        const std::shared_ptr<const LocalMap2d>& localMap);
 
     void transformMap(const Transform& transform);
 
@@ -105,9 +105,9 @@ private:
     void deployAllNodes();
     void removeFirstNode();
 
-    void deployTransformedLocalMap(const LocalMap& localMap,
+    void deployTransformedLocalMap(const LocalMap2d& localMap,
         const TransformedLocalMap& transformedLocalMap);
-    void removeTransformedLocalMap(const LocalMap& localMap,
+    void removeTransformedLocalMap(const LocalMap2d& localMap,
         const TransformedLocalMap& transformedLocalMap);
 
     void clear();

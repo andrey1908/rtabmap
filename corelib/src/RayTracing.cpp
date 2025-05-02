@@ -37,10 +37,9 @@ void RayTracing::parseParameters(const Parameters& parameters)
     computeRays();
 }
 
-void RayTracing::traceRays(cv::Mat& grid, const Cell& origin) const
+void RayTracing::traceRays(MultiArray<std::uint8_t, 2>& grid, const Cell& origin) const
 {
-    UASSERT(grid.type() == CV_8U);
-    UASSERT(origin.inFrame(grid.rows, grid.cols));
+    UASSERT(origin.inFrame(grid.shape()[0], grid.shape()[1]));
     for (const Ray& ray : rays_)
     {
         maybeEmptyCells_.clear();
@@ -50,13 +49,13 @@ void RayTracing::traceRays(cv::Mat& grid, const Cell& origin) const
         for (Cell cell : ray.cells)
         {
             cell += origin;
-            if (!cell.inFrame(grid.rows, grid.cols))
+            if (!cell.inFrame(grid.shape()[0], grid.shape()[1]))
             {
                 break;
             }
-            const std::uint8_t& cellValue = grid.at<std::uint8_t>(cell.y, cell.x);
-            if (cellValue == LocalMap::ColoredGrid::occupiedCellValue ||
-                cellValue == LocalMap::ColoredGrid::ignoredOccupiedCellValue)
+            const std::uint8_t& cellValue = grid[{cell.y, cell.x}];
+            if (cellValue == LocalMap2d::ColoredGrid::occupiedCellValue ||
+                cellValue == LocalMap2d::ColoredGrid::ignoredOccupiedCellValue)
             {
                 encounteredObstacle = true;
                 break;
@@ -75,11 +74,11 @@ void RayTracing::traceRays(cv::Mat& grid, const Cell& origin) const
         {
             for (const Cell& cell : maybeEmptyCells_)
             {
-                grid.at<std::uint8_t>(cell.y, cell.x) = LocalMap::ColoredGrid::maybeEmptyCellValue;
+                grid[{cell.y, cell.x}] = LocalMap2d::ColoredGrid::maybeEmptyCellValue;
             }
             for (const Cell& cell : emptyCells_)
             {
-                grid.at<std::uint8_t>(cell.y, cell.x) = LocalMap::ColoredGrid::emptyCellValue;
+                grid[{cell.y, cell.x}] = LocalMap2d::ColoredGrid::emptyCellValue;
             }
         }
     }

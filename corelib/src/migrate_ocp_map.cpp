@@ -36,13 +36,13 @@ void migrateCellValues(proto::OccupancyGridMap::Node& proto)
             switch (oldValue)
             {
             case oldUnknownCellValue:
-                newValue = LocalMap::ColoredGrid::unknownCellValue;
+                newValue = LocalMap2d::ColoredGrid::unknownCellValue;
                 break;
             case oldEmptyCellValue:
-                newValue = LocalMap::ColoredGrid::emptyCellValue;
+                newValue = LocalMap2d::ColoredGrid::emptyCellValue;
                 break;
             case oldOccupiedCellValue:
-                newValue = LocalMap::ColoredGrid::occupiedCellValue;
+                newValue = LocalMap2d::ColoredGrid::occupiedCellValue;
                 break;
             default:
                 UASSERT_MSG(false, "Unknown old cell value. This should not happen.");
@@ -71,7 +71,7 @@ void replaceSensorBlindRangeWithMaybeEmptyCells(proto::OccupancyGridMap::Node& p
         for (int x = 0; x < grid.cols; x++)
         {
             std::uint8_t& value = grid.at<std::uint8_t>(y, x);
-            if (value == LocalMap::ColoredGrid::emptyCellValue)
+            if (value == LocalMap2d::ColoredGrid::emptyCellValue)
             {
                 float xf = (x + limits.min()[1] + 0.5f) * cellSize;
                 float yf = (y + limits.min()[0] + 0.5f) * cellSize;
@@ -79,7 +79,7 @@ void replaceSensorBlindRangeWithMaybeEmptyCells(proto::OccupancyGridMap::Node& p
                 float ys = yf - toSensor.translation().y();
                 if (xs * xs + ys * ys <= proto.local_map().sensor_blind_range_2d_sqr())
                 {
-                    value = LocalMap::ColoredGrid::maybeEmptyCellValue;
+                    value = LocalMap2d::ColoredGrid::maybeEmptyCellValue;
                 }
             }
         }

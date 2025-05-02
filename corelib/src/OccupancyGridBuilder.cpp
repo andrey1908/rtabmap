@@ -109,7 +109,7 @@ void OccupancyGridBuilder::precomputeUpdateValues()
 }
 
 int OccupancyGridBuilder::addLocalMap(
-    const std::shared_ptr<const LocalMap>& localMap)
+    const std::shared_ptr<const LocalMap2d>& localMap)
 {
     int nodeId;
     if (map_.nodes.empty())
@@ -125,7 +125,7 @@ int OccupancyGridBuilder::addLocalMap(
 }
 
 int OccupancyGridBuilder::addLocalMap(const Transform& pose,
-    const std::shared_ptr<const LocalMap>& localMap)
+    const std::shared_ptr<const LocalMap2d>& localMap)
 {
     MEASURE_BLOCK_TIME(OccupancyGridBuilder__addLocalMap__withPose);
     int nodeId;
@@ -523,7 +523,7 @@ void OccupancyGridBuilder::deployNodes(
     }
 }
 
-void OccupancyGridBuilder::deployTransformedLocalMap(const LocalMap& localMap,
+void OccupancyGridBuilder::deployTransformedLocalMap(const LocalMap2d& localMap,
     const TransformedLocalMap& transformedLocalMap)
 {
     map_.temporarilyOccupiedCells.clear();
@@ -540,10 +540,10 @@ void OccupancyGridBuilder::deployTransformedLocalMap(const LocalMap& localMap,
             continue;
         }
 
-        LocalMap::PointType pointType = localMap.getPointType(i);
+        LocalMap2d::PointType pointType = localMap.getPointType(i);
         switch (pointType)
         {
-        case LocalMap::PointType::Occupied:
+        case LocalMap2d::PointType::Occupied:
             if (temporarilyOccupiedCellColor_ != Color::missingColor)
             {
                 const Color& color = localMap.colors()[i];
@@ -555,13 +555,13 @@ void OccupancyGridBuilder::deployTransformedLocalMap(const LocalMap& localMap,
             }
             value = updateValues_.hitUpdates[value];
             break;
-        case LocalMap::PointType::MaybeEmpty:
+        case LocalMap2d::PointType::MaybeEmpty:
             if (value >= occupancyThr_)
             {
                 value += PrecomputedUpdateValues::updated;
                 continue;
             }
-        case LocalMap::PointType::Empty:
+        case LocalMap2d::PointType::Empty:
             value = updateValues_.missUpdates[value];
             break;
         }

@@ -40,6 +40,9 @@ MapLimits<T, Dims> fromProto(const proto::MapLimitsI& proto)
 }
 
 template proto::MapLimitsI toProto(const MapLimitsI&);
-template MapLimitsI fromProto(const proto::MapLimitsI&);
+template MapLimitsI fromProto<int, 2>(const proto::MapLimitsI&);
+
+template proto::MapLimitsI toProto(const MapLimitsI3d&);
+template MapLimitsI3d fromProto<int, 3>(const proto::MapLimitsI&);
 
 }

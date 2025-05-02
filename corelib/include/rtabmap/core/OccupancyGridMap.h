@@ -115,20 +115,20 @@ public:
     void parseParameters(const Parameters& parameters);
 
     bool localMapCanBeAdded(const Time& time);
-    std::shared_ptr<LocalMap> createLocalMap(const SensorData& sensorData,
+    std::shared_ptr<LocalMap2d> createLocalMap(const SensorData& sensorData,
         const Time& time, const Transform& fromUpdatedPose) const;
 
-    int addLocalMap(const std::shared_ptr<const LocalMap>& localMap);
+    int addLocalMap(const std::shared_ptr<const LocalMap2d>& localMap);
 
     bool addTemporaryLocalMap(const Transform& globalPose,
-        const std::shared_ptr<const LocalMap>& localMap);
+        const std::shared_ptr<const LocalMap2d>& localMap);
     int addLocalMap(const Transform& globalPose,
-        const std::shared_ptr<const LocalMap>& localMap);
+        const std::shared_ptr<const LocalMap2d>& localMap);
 
     bool addTemporaryLocalMap(const Transform& localPose, const Transform& globalPose,
-        const std::shared_ptr<const LocalMap>& localMap);
+        const std::shared_ptr<const LocalMap2d>& localMap);
     int addLocalMap(const Transform& localPose, const Transform& globalPose,
-        const std::shared_ptr<const LocalMap>& localMap);
+        const std::shared_ptr<const LocalMap2d>& localMap);
 
     void removeNodes(const std::vector<int>& nodeIdsToRemove);
     void transformMap(const Transform& transform);
@@ -156,7 +156,7 @@ public:
         { return temporaryOccupancyGridBuilders_[index]->nodes(); }
     const std::map<int, Node>& nodes(int index) const
         { return occupancyGridBuilders_[index]->nodes(); }
-    const std::map<int, const std::shared_ptr<const LocalMap>>& localMapsWithoutDilation() const
+    const std::map<int, const std::shared_ptr<const LocalMap2d>>& localMapsWithoutDilation() const
         { return localMapsWithoutDilation_; }
     const cv::Mat& lastDilatedSemantic() const
         { return localMapBuilder_->lastDilatedSemantic(); }
@@ -201,7 +201,7 @@ private:
 
     std::unique_ptr<ObjectTracking> objectTracking_;
 
-    std::map<int, const std::shared_ptr<const LocalMap>> localMapsWithoutDilation_;
+    std::map<int, const std::shared_ptr<const LocalMap2d>> localMapsWithoutDilation_;
 };
 
 }

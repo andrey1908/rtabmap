@@ -41,9 +41,101 @@ static void writeToString(std::string& str, const T& value)
     std::copy(valuePtr, valuePtr + sizeof(T), std::back_inserter(str));
 }
 
-static void writeToString(std::string& str, char* value, size_t num)
+static void writeToString(std::string& str, const char* value, size_t num)
 {
     std::copy(value, value + num, std::back_inserter(str));
+}
+
+template<typename T>
+static size_t readFromString(const std::string& str, size_t index, T& value)
+{
+    UASSERT(index + sizeof(T) <= str.size());
+    char* valuePtr = (char*)&value;
+    auto copyFrom = str.begin() + index;
+    std::copy(copyFrom, copyFrom + sizeof(T), valuePtr);
+    return index + sizeof(T);
+}
+
+static size_t readFromString(const std::string& str, size_t index, char* value, size_t num)
+{
+    UASSERT(index + num <= str.size());
+    auto copyFrom = str.begin() + index;
+    std::copy(copyFrom, copyFrom + num, value);
+    return index + num;
+}
+
+template <typename T, std::size_t Dims>
+std::string compressMultiArray(const MultiArray<T, Dims>& array)
+{
+    UASSERT(array.size() > 0);
+
+    std::string compressed;
+    for (int i = 0; i < Dims; i++)
+    {
+        writeToString(compressed, (int)array.shape()[i]);  // cast to int for backward compatibility
+    }
+    writeToString(compressed, (int)0);  // backward compatibility; this was a type of opencv matrix
+
+    T currentValue;
+    std::uint16_t counter = 0;
+    for (auto it = array.begin(); it != array.end(); ++it)
+    {
+        const T& value = *it;
+        if (value != currentValue)
+        {
+            if (counter > 0)
+            {
+                writeToString(compressed, counter);
+                writeToString(compressed, currentValue);
+                counter = 0;
+            }
+            currentValue = value;
+        }
+        counter++;
+    }
+    UASSERT(counter > 0);
+    writeToString(compressed, counter);
+    writeToString(compressed, currentValue);
+
+    return compressed;
+}
+
+template <typename T, std::size_t Dims>
+MultiArray<T, Dims> decompressMultiArray(const std::string& compressed)
+{
+    size_t index = 0;
+    std::array<std::size_t, Dims> shape;
+    for (int i = 0; i < Dims; i++)
+    {
+        int axisSize;
+        index = readFromString(compressed, index, axisSize);
+        shape[i] = axisSize;
+    }
+    index += sizeof(int);  // backward compatibility; this was a type of opencv matrix
+
+    MultiArray<T, Dims> array(shape);
+    T currentValue;
+    std::uint16_t counter = 0;
+    constexpr std::uint16_t newRow = 0xFFFF;  // backward compatibility; not used in new versions
+    for (auto it = array.begin(); it != array.end(); ++it)
+    {
+        if (counter == 0)
+        {
+            index = readFromString(compressed, index, counter);
+            if (counter == newRow)
+            {
+                index = readFromString(compressed, index, counter);
+            }
+            UASSERT(counter != newRow);
+            index = readFromString(compressed, index, currentValue);
+        }
+        *it = currentValue;
+        counter--;
+    }
+    UASSERT(counter == 0);
+    UASSERT(index = compressed.size());
+
+    return array;
 }
 
 std::string compressMat(const cv::Mat& mat)
@@ -88,24 +180,6 @@ std::string compressMat(const cv::Mat& mat)
     return compressed;
 }
 
-template<typename T>
-static size_t readFromString(const std::string& str, size_t index, T& value)
-{
-    UASSERT(index + sizeof(T) <= str.size());
-    char* valuePtr = (char*)&value;
-    auto copyFrom = str.begin() + index;
-    std::copy(copyFrom, copyFrom + sizeof(T), valuePtr);
-    return index + sizeof(T);
-}
-
-static size_t readFromString(const std::string& str, size_t index, char* value, size_t num)
-{
-    UASSERT(index + num <= str.size());
-    auto copyFrom = str.begin() + index;
-    std::copy(copyFrom, copyFrom + num, value);
-    return index + num;
-}
-
 cv::Mat decompressMat(const std::string& compressed)
 {
     size_t index = 0;
@@ -141,5 +215,15 @@ cv::Mat decompressMat(const std::string& compressed)
     UASSERT(currentRow == mat.rows && currentCol == 0);
     return mat;
 }
+
+template std::string compressMultiArray(const MultiArray<std::uint8_t, 2>& array);
+template std::string compressMultiArray(const MultiArray<std::uint8_t, 3>& array);
+template std::string compressMultiArray(const MultiArray<std::int32_t, 2>& array);
+template std::string compressMultiArray(const MultiArray<std::int32_t, 3>& array);
+
+template MultiArray<std::uint8_t, 2> decompressMultiArray<std::uint8_t, 2>(const std::string& compressed);
+template MultiArray<std::uint8_t, 3> decompressMultiArray<std::uint8_t, 3>(const std::string& compressed);
+template MultiArray<std::int32_t, 2> decompressMultiArray<std::int32_t, 2>(const std::string& compressed);
+template MultiArray<std::int32_t, 3> decompressMultiArray<std::int32_t, 3>(const std::string& compressed);
 
 }

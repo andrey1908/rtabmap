@@ -6,8 +6,8 @@
 namespace rtabmap {
 
 float NodesSimilarityEstimation::getSimilarity(
-    const Transform& oldPose, const LocalMap& oldLocalMap,
-    const Transform& newPose, const LocalMap::ColoredGrid& newGrid)
+    const Transform& oldPose, const LocalMap2d& oldLocalMap,
+    const Transform& newPose, const LocalMap2d::ColoredGrid& newGrid)
 {
     MEASURE_BLOCK_TIME(NodesSimilarityEstimation__getSimilarity);
     const Transform& relativePose = newPose.inverse() * oldPose;
@@ -26,7 +26,7 @@ float NodesSimilarityEstimation::getSimilarity(
         {
             continue;
         }
-        if (newGrid.grid.at<std::uint8_t>(yi, xi) == LocalMap::ColoredGrid::unknownCellValue)
+        if (newGrid.grid[{yi, xi}] == LocalMap2d::ColoredGrid::unknownCellValue)
         {
             continue;
         }
@@ -56,14 +56,14 @@ void PosesTrimmer::parseParameters(const Parameters& parameters)
     maxDistanceSqr_ = maxDistance_ * maxDistance_;
 }
 
-void PosesTrimmer::addLocalMap(const std::shared_ptr<const LocalMap>& localMap)
+void PosesTrimmer::addLocalMap(const std::shared_ptr<const LocalMap2d>& localMap)
 {
     UASSERT(localMaps_.empty() || (*localMaps_.rbegin())->time() < localMap->time());
     localMaps_.push_back(localMap);
 }
 
-const LocalMap* PosesTrimmer::findNextClosestLocalMap(
-    std::vector<std::shared_ptr<const LocalMap>>::const_iterator& it,
+const LocalMap2d* PosesTrimmer::findNextClosestLocalMap(
+    std::vector<std::shared_ptr<const LocalMap2d>>::const_iterator& it,
     const Time& time, double maxError) const
 {
     while (it != localMaps_.end() && (*it)->time() < time)
@@ -71,9 +71,9 @@ const LocalMap* PosesTrimmer::findNextClosestLocalMap(
         ++it;
     }
 
-    const LocalMap* upper = nullptr;
+    const LocalMap2d* upper = nullptr;
     double upperDiff = std::numeric_limits<double>::max();
-    const LocalMap* lower = nullptr;
+    const LocalMap2d* lower = nullptr;
     double lowerDiff = std::numeric_limits<double>::max();
 
     if (it != localMaps_.end())
@@ -104,14 +104,14 @@ const LocalMap* PosesTrimmer::findNextClosestLocalMap(
     return nullptr;
 }
 
-std::map<Time, const LocalMap*> PosesTrimmer::findClosestLocalMaps(
+std::map<Time, const LocalMap2d*> PosesTrimmer::findClosestLocalMaps(
     const Trajectories& trajectories, double maxError) const
 {
-    std::map<Time, const LocalMap*> closestLocalMaps;
+    std::map<Time, const LocalMap2d*> closestLocalMaps;
     auto localMapIt = localMaps_.begin();
     for (auto it = trajectories.poses_begin(); it != trajectories.poses_end(); ++it)
     {
-        const LocalMap* closestLocalMap = findNextClosestLocalMap(
+        const LocalMap2d* closestLocalMap = findNextClosestLocalMap(
             localMapIt, it->time, maxError);
         closestLocalMaps.insert(closestLocalMaps.end(),
             std::make_pair(it->time, closestLocalMap));
@@ -139,7 +139,7 @@ std::set<Time> PosesTrimmer::getPosesToTrim(
         poseIt = trajectoryIt->begin();
     }
 
-    std::map<Time, const LocalMap*> closestLocalMaps =
+    std::map<Time, const LocalMap2d*> closestLocalMaps =
         findClosestLocalMaps(trajectories, maxTimeErrorForClosestLocalMapSearch_);
     auto newIt = trajectories.poses_iterator(trajectoryIt, poseIt);
     auto newLocalMapIt = closestLocalMaps.find(newIt->time);
@@ -182,7 +182,7 @@ std::set<Time> PosesTrimmer::getPosesToTrim(
             continue;
         }
         const Transform& newPose = newIt->pose;
-        const LocalMap::ColoredGrid& newGrid = newLocalMapIt->second->toColoredGrid();
+        const LocalMap2d::ColoredGrid& newGrid = newLocalMapIt->second->toColoredGrid();
 
         auto oldIt = trajectories.poses_begin();
         auto oldLocalMapIt = closestLocalMaps.begin();

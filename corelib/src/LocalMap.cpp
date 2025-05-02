@@ -3,26 +3,35 @@
 
 #include <rtabmap/utilite/ULogger.h>
 
+#include <kas_utils/utils.hpp>
+
+using kas_utils::castArray;
+
+
 namespace rtabmap {
 
-LocalMap::LocalMap() :
+template <int Dims>
+LocalMap<Dims>::LocalMap() :
     numObstacles_(0),
     numMaybeEmpty_(0),
     numEmpty_(0) {}
 
-LocalMap::LocalMap(const Properties& properties) :
+template <int Dims>
+LocalMap<Dims>::LocalMap(const Properties& properties) :
     numObstacles_(0),
     numMaybeEmpty_(0),
     numEmpty_(0),
     properties_(properties) {}
 
-LocalMap::LocalMap(const ColoredGrid& coloredGrid,
+template <int Dims>
+LocalMap<Dims>::LocalMap(const ColoredGrid& coloredGrid,
     float maxRange2dSqr, bool duplicatePoints)
 {
     fromColoredGrid(coloredGrid, maxRange2dSqr, duplicatePoints);
 }
 
-LocalMap::LocalMap(const ColoredGrid& coloredGrid,
+template <int Dims>
+LocalMap<Dims>::LocalMap(const ColoredGrid& coloredGrid,
         float maxRange2dSqr, bool duplicatePoints,
         const Properties& properties) :
     properties_(properties)
@@ -30,51 +39,53 @@ LocalMap::LocalMap(const ColoredGrid& coloredGrid,
     fromColoredGrid(coloredGrid, maxRange2dSqr, duplicatePoints);
 }
 
-void LocalMap::fromColoredGrid(const ColoredGrid& coloredGrid,
+template <int Dims>
+void LocalMap<Dims>::fromColoredGrid(const ColoredGrid& coloredGrid,
     float maxRange2dSqr, bool duplicatePoints)
 {
     UASSERT(coloredGrid.cellSize > 0.0f);
     UASSERT(coloredGrid.limits.valid());
-    UASSERT(coloredGrid.grid.type() == CV_8U);
-    UASSERT(coloredGrid.colors.type() == CV_32S);
-    UASSERT(coloredGrid.grid.rows == coloredGrid.limits.shape()[0]);
-    UASSERT(coloredGrid.grid.cols == coloredGrid.limits.shape()[1]);
-    UASSERT(coloredGrid.colors.rows == coloredGrid.limits.shape()[0]);
-    UASSERT(coloredGrid.colors.cols == coloredGrid.limits.shape()[1]);
+    UASSERT(coloredGrid.grid.shape()[0] == coloredGrid.limits.shape()[0]);
+    UASSERT(coloredGrid.grid.shape()[1] == coloredGrid.limits.shape()[1]);
+    UASSERT(coloredGrid.colors.shape()[0] == coloredGrid.limits.shape()[0]);
+    UASSERT(coloredGrid.colors.shape()[1] == coloredGrid.limits.shape()[1]);
 
     const float& cellSize = coloredGrid.cellSize;
-    const int& minX = coloredGrid.limits.min()[1];
-    const int& minY = coloredGrid.limits.min()[0];
+    const std::array<int, Dims>& limitsMin = coloredGrid.limits.min();
 
-    std::vector<std::pair<int, int>> occupiedCells;
-    std::vector<std::pair<int, int>> maybeEmptyCells;
-    std::vector<std::pair<int, int>> emptyCells;
-    for (int y = 0; y < coloredGrid.grid.rows; y++)
+    std::vector<std::array<int, Dims>> occupiedCells;
+    std::vector<std::array<int, Dims>> maybeEmptyCells;
+    std::vector<std::array<int, Dims>> emptyCells;
+    std::array<std::size_t, Dims> beginIndex = {};
+    auto gridBlock = coloredGrid.grid.block(beginIndex, coloredGrid.grid.shape());
+    for (auto it = gridBlock.begin(); it != gridBlock.end(); ++it)
     {
-        for (int x = 0; x < coloredGrid.grid.cols; x++)
+        std::array<int, Dims> cell = castArray<int>(it.position());
+        if (maxRange2dSqr >= 0.0f)
         {
-            if (maxRange2dSqr >= 0.0f)
+            float rangeSqr = 0.f;
+            for (int d = 0; d < 2; d++)  // i < 2 because maxRange2dSqr parameter has '2d' in its name
             {
-                float xf = (x + minX + 0.5f) * cellSize;
-                float yf = (y + minY + 0.5f) * cellSize;
-                if (xf * xf + yf * yf > maxRange2dSqr)
-                {
-                    continue;
-                }
+                float axisRange = (cell[d] + limitsMin[d] + 0.5f) * cellSize;
+                rangeSqr += axisRange * axisRange;
             }
-            const std::uint8_t& value = coloredGrid.grid.at<std::uint8_t>(y, x);
-            switch (value)
+            if (rangeSqr > maxRange2dSqr)
             {
-            case ColoredGrid::occupiedCellValue:
-                occupiedCells.emplace_back(y, x);
-                break;
-            case ColoredGrid::maybeEmptyCellValue:
-                maybeEmptyCells.emplace_back(y, x);
-                break;
-            case ColoredGrid::emptyCellValue:
-                emptyCells.emplace_back(y, x);
-                break;
+                continue;
             }
+        }
+        const std::uint8_t& value = *it;
+        switch (value)
+        {
+        case ColoredGrid::occupiedCellValue:
+            occupiedCells.emplace_back(cell);
+            break;
+        case ColoredGrid::maybeEmptyCellValue:
+            maybeEmptyCells.emplace_back(cell);
+            break;
+        case ColoredGrid::emptyCellValue:
+            emptyCells.emplace_back(cell);
+            break;
         }
     }
 
@@ -102,49 +113,54 @@ void LocalMap::fromColoredGrid(const ColoredGrid& coloredGrid,
         occupiedCells.size() + maybeEmptyCells.size()};
     for (int i = 0; i < numPoints; i++)
     {
-        int y, x;
+        std::array<int, Dims> cell;
         if (i < accumPointsNum[0])
         {
-            const std::pair<int, int>& occupiedCell = occupiedCells[i];
-            y = occupiedCell.first;
-            x = occupiedCell.second;
+            cell = occupiedCells[i];
         }
         else if (i < accumPointsNum[1])
         {
-            const std::pair<int, int>& maybeEmptyCell = maybeEmptyCells[i - accumPointsNum[0]];
-            y = maybeEmptyCell.first;
-            x = maybeEmptyCell.second;
+            cell = maybeEmptyCells[i - accumPointsNum[0]];
         }
         else
         {
-            const std::pair<int, int>& emptyCell = emptyCells[i - accumPointsNum[1]];
-            y = emptyCell.first;
-            x = emptyCell.second;
+            cell = emptyCells[i - accumPointsNum[1]];
         }
+
         const Color& color =
-            reinterpret_cast<const Color&>(coloredGrid.colors.at<int>(y, x));
+            reinterpret_cast<const Color&>(coloredGrid.colors[castArray<std::size_t>(cell)]);
         if (!duplicatePoints)
         {
-            float xf = (x + minX + 0.5f) * cellSize;
-            float yf = (y + minY + 0.5f) * cellSize;
-            points_(0, i) = xf;
-            points_(1, i) = yf;
-            points_(2, i) = 0.0f;
+            for (int d = 0; d < Dims; d++)
+            {
+                points_(Dims - 1 - d, i) = (cell[d] + limitsMin[d] + 0.5f) * cellSize;
+            }
+            if constexpr(Dims == 2)
+            {
+                points_(2, i) = 0.0f;
+            }
             colors_.push_back(color);
         }
         else
         {
-            float xf1 = (x + minX + 0.25f) * cellSize;
-            float yf1 = (y + minY + 0.25f) * cellSize;
-            float xf2 = (x + minX + 0.75f) * cellSize;
-            float yf2 = (y + minY + 0.75f) * cellSize;
-            points_(0, i * 2) = xf1;
-            points_(1, i * 2) = yf1;
-            points_(2, i * 2) = 0.0f;
+            for (int d = 0; d < Dims; d++)
+            {
+                points_(Dims - 1 - d, i * 2) = (cell[d] + limitsMin[d] + 0.25f) * cellSize;
+            }
+            if constexpr(Dims == 2)
+            {
+                points_(2, i * 2) = 0.0f;
+            }
             colors_.push_back(color);
-            points_(0, i * 2 + 1) = xf2;
-            points_(1, i * 2 + 1) = yf2;
-            points_(2, i * 2 + 1) = 0.0f;
+
+            for (int d = 0; d < Dims; d++)
+            {
+                points_(Dims - 1 - d, i * 2 + 1) = (cell[d] + limitsMin[d] + 0.75f) * cellSize;
+            }
+            if constexpr(Dims == 2)
+            {
+                points_(2, i * 2 + 1) = 0.0f;
+            }
             colors_.push_back(color);
         }
     }
@@ -153,27 +169,26 @@ void LocalMap::fromColoredGrid(const ColoredGrid& coloredGrid,
     limits_ = coloredGrid.limits;
 }
 
-LocalMap::ColoredGrid LocalMap::toColoredGrid() const
+template <int Dims>
+typename LocalMap<Dims>::ColoredGrid LocalMap<Dims>::toColoredGrid() const
 {
     UASSERT(limits_.valid());
     ColoredGrid coloredGrid;
     coloredGrid.cellSize = cellSize_;
     coloredGrid.limits = limits_;
-    coloredGrid.grid = cv::Mat(limits_.shape()[0], limits_.shape()[1], CV_8U,
-        ColoredGrid::unknownCellValue);
-    coloredGrid.colors = cv::Mat(limits_.shape()[0], limits_.shape()[1], CV_32S,
-        Color::missingColor.data());
+    coloredGrid.grid.reset(castArray<std::size_t>(limits_.shape()));
+    coloredGrid.colors.reset(castArray<std::size_t>(limits_.shape()));
 
-    const int& minX = limits_.min()[1];
-    const int& minY = limits_.min()[0];
+    const std::array<int, Dims>& limitsMin = limits_.min();
     int step = pointsDuplicated_ ? 2 : 1;
     for (int i = 0; i < points_.cols(); i += step)
     {
-        float xf = points_.coeff(0, i);
-        float yf = points_.coeff(1, i);
-        int y = std::floor(yf / cellSize_) - minY;
-        int x = std::floor(xf / cellSize_) - minX;
-        std::uint8_t& value = coloredGrid.grid.at<std::uint8_t>(y, x);
+        std::array<int, Dims> cell;
+        for (int d = 0; d < Dims; d++)
+        {
+            cell[Dims - 1 - d] = std::floor(points_.coeff(d, i) / cellSize_) - limitsMin[d];
+        }
+        std::uint8_t& value = coloredGrid.grid[castArray<std::size_t>(cell)];
         PointType pointType = getPointType(i);
         switch (pointType)
         {
@@ -187,35 +202,38 @@ LocalMap::ColoredGrid LocalMap::toColoredGrid() const
             value = LocalMap::ColoredGrid::emptyCellValue;
             break;
         }
-        coloredGrid.colors.at<std::int32_t>(y, x) = colors_[i].data();
+        coloredGrid.colors[castArray<std::size_t>(cell)] = colors_[i].data();
     }
     return coloredGrid;
 }
 
-proto::LocalMap::ColoredGrid toProto(const LocalMap::ColoredGrid& coloredGrid)
+template <int Dims>
+proto::LocalMap::ColoredGrid toProto(const typename LocalMap<Dims>::ColoredGrid& coloredGrid)
 {
     proto::LocalMap::ColoredGrid proto;
     proto.set_cell_size(coloredGrid.cellSize);
     *proto.mutable_limits() = toProto(coloredGrid.limits);
-    proto.set_grid_compressed(compressMat(coloredGrid.grid));
-    proto.set_colors_compressed(compressMat(coloredGrid.colors));
+    proto.set_grid_compressed(compressMultiArray(coloredGrid.grid));
+    proto.set_colors_compressed(compressMultiArray(coloredGrid.colors));
     return proto;
 }
 
-LocalMap::ColoredGrid fromProto(const proto::LocalMap::ColoredGrid& proto)
+template <int Dims>
+typename LocalMap<Dims>::ColoredGrid fromProto(const proto::LocalMap::ColoredGrid& proto)
 {
-    LocalMap::ColoredGrid coloredGrid;
+    typename LocalMap<Dims>::ColoredGrid coloredGrid;
     coloredGrid.cellSize = proto.cell_size();
-    coloredGrid.limits = fromProto<int, 2>(proto.limits());
-    coloredGrid.grid = decompressMat(proto.grid_compressed());
-    coloredGrid.colors = decompressMat(proto.colors_compressed());
+    coloredGrid.limits = fromProto<int, Dims>(proto.limits());
+    coloredGrid.grid = decompressMultiArray<std::uint8_t, Dims>(proto.grid_compressed());
+    coloredGrid.colors = decompressMultiArray<std::int32_t, Dims>(proto.colors_compressed());
     return coloredGrid;
 }
 
-proto::LocalMap toProto(const LocalMap& localMap)
+template <int Dims>
+proto::LocalMap toProto(const LocalMap<Dims>& localMap)
 {
     proto::LocalMap proto;
-    *proto.mutable_colored_grid() = toProto(localMap.toColoredGrid());
+    *proto.mutable_colored_grid() = toProto<Dims>(localMap.toColoredGrid());
     UASSERT(!localMap.fromUpdatedPose().isNull());
     *proto.mutable_from_updated_pose() = toProto(localMap.fromUpdatedPose());
     *proto.mutable_time() = toProto(localMap.time());
@@ -223,13 +241,27 @@ proto::LocalMap toProto(const LocalMap& localMap)
     return proto;
 }
 
-std::shared_ptr<LocalMap> fromProto(const proto::LocalMap& proto)
+template <int Dims>
+std::shared_ptr<LocalMap<Dims>> fromProto(const proto::LocalMap& proto)
 {
-    auto localMap = std::make_shared<LocalMap>(fromProto(proto.colored_grid()),
+    auto localMap = std::make_shared<LocalMap<Dims>>(fromProto<Dims>(proto.colored_grid()),
         -1.0f, proto.points_duplicated());
     localMap->setFromUpdatedPose(fromProto(proto.from_updated_pose()));
     localMap->setTime(fromProto(proto.time()));
     return localMap;
 }
+
+template class LocalMap<2>;
+template class LocalMap<3>;
+
+template proto::LocalMap::ColoredGrid toProto<2>(const typename LocalMap<2>::ColoredGrid& coloredGrid);
+template proto::LocalMap::ColoredGrid toProto<3>(const typename LocalMap<3>::ColoredGrid& coloredGrid);
+template typename LocalMap<2>::ColoredGrid fromProto<2>(const proto::LocalMap::ColoredGrid& proto);
+template typename LocalMap<3>::ColoredGrid fromProto<3>(const proto::LocalMap::ColoredGrid& proto);
+
+template proto::LocalMap toProto(const LocalMap<2>& localMap);
+template proto::LocalMap toProto(const LocalMap<3>& localMap);
+template std::shared_ptr<LocalMap<2>> fromProto<2>(const proto::LocalMap& proto);
+template std::shared_ptr<LocalMap<3>> fromProto<3>(const proto::LocalMap& proto);
 
 }

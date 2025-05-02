@@ -19,8 +19,8 @@ public:
     NodesSimilarityEstimation() = default;
 
     float getSimilarity(
-        const Transform& oldPose, const LocalMap& oldLocalMap,
-        const Transform& newPose, const LocalMap::ColoredGrid& newGrid);    
+        const Transform& oldPose, const LocalMap2d& oldLocalMap,
+        const Transform& newPose, const LocalMap2d::ColoredGrid& newGrid);
 };
 
 class PosesTrimmer
@@ -62,16 +62,16 @@ public:
     PosesTrimmer(const Parameters& parameters);
     void parseParameters(const Parameters& parameters);
 
-    void addLocalMap(const std::shared_ptr<const LocalMap>& localMap);
+    void addLocalMap(const std::shared_ptr<const LocalMap2d>& localMap);
     std::set<Time> getPosesToTrim(const Trajectories& trajectories);
     static Trajectories removePosesFromTrajectories(const Trajectories& trajectories,
         const std::set<Time>& posesToTrim);
 
 private:
-    const LocalMap* findNextClosestLocalMap(
-        std::vector<std::shared_ptr<const LocalMap>>::const_iterator& it,
+    const LocalMap2d* findNextClosestLocalMap(
+        std::vector<std::shared_ptr<const LocalMap2d>>::const_iterator& it,
         const Time& time, double maxError) const;
-    std::map<Time, const LocalMap*> findClosestLocalMaps(
+    std::map<Time, const LocalMap2d*> findClosestLocalMaps(
         const Trajectories& trajectories, double maxError) const;
 
 private:
@@ -83,7 +83,7 @@ private:
 
     NodesSimilarityEstimation similarityEstimator_;
 
-    std::vector<std::shared_ptr<const LocalMap>> localMaps_;
+    std::vector<std::shared_ptr<const LocalMap2d>> localMaps_;
     Time prevLastTime_;
 };
 

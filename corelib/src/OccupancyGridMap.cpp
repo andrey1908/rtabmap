@@ -94,13 +94,13 @@ bool OccupancyGridMap::localMapCanBeAdded(const Time& time)
     return true;
 }
 
-std::shared_ptr<LocalMap> OccupancyGridMap::createLocalMap(const SensorData& sensorData,
+std::shared_ptr<LocalMap2d> OccupancyGridMap::createLocalMap(const SensorData& sensorData,
     const Time& time, const Transform& fromUpdatedPose) const
 {
     return localMapBuilder_->createLocalMap(sensorData, time, fromUpdatedPose);
 }
 
-int OccupancyGridMap::addLocalMap(const std::shared_ptr<const LocalMap>& localMap)
+int OccupancyGridMap::addLocalMap(const std::shared_ptr<const LocalMap2d>& localMap)
 {
     if (localMap->time() <= skipLocalMapsUpto_)
     {
@@ -124,7 +124,7 @@ int OccupancyGridMap::addLocalMap(const std::shared_ptr<const LocalMap>& localMa
     int nodeId;
     for (int i = 0; i < numBuilders_; i++)
     {
-        std::shared_ptr<const LocalMap> dilatedLocalMap;
+        std::shared_ptr<const LocalMap2d> dilatedLocalMap;
         if (obstacleDilations_[i]->dilationSize() > 0.0f)
         {
             MEASURE_BLOCK_TIME(OccupancyGridMap__obstacleDilation);
@@ -144,7 +144,7 @@ int OccupancyGridMap::addLocalMap(const std::shared_ptr<const LocalMap>& localMa
 }
 
 bool OccupancyGridMap::addTemporaryLocalMap(const Transform& globalPose,
-    const std::shared_ptr<const LocalMap>& localMap)
+    const std::shared_ptr<const LocalMap2d>& localMap)
 {
     if (localMap->time() <= skipLocalMapsUpto_)
     {
@@ -154,7 +154,7 @@ bool OccupancyGridMap::addTemporaryLocalMap(const Transform& globalPose,
     bool overflowed = false;
     for (int i = 0; i < numBuilders_; i++)
     {
-        std::shared_ptr<const LocalMap> dilatedLocalMap;
+        std::shared_ptr<const LocalMap2d> dilatedLocalMap;
         if (obstacleDilations_[i]->dilationSize() > 0.0f)
         {
             MEASURE_BLOCK_TIME(OccupancyGridMap__obstacleDilation);
@@ -178,7 +178,7 @@ bool OccupancyGridMap::addTemporaryLocalMap(const Transform& globalPose,
 }
 
 int OccupancyGridMap::addLocalMap(const Transform& globalPose,
-    const std::shared_ptr<const LocalMap>& localMap)
+    const std::shared_ptr<const LocalMap2d>& localMap)
 {
     if (localMap->time() <= skipLocalMapsUpto_)
     {
@@ -202,7 +202,7 @@ int OccupancyGridMap::addLocalMap(const Transform& globalPose,
     int nodeId;
     for (int i = 0; i < numBuilders_; i++)
     {
-        std::shared_ptr<const LocalMap> dilatedLocalMap;
+        std::shared_ptr<const LocalMap2d> dilatedLocalMap;
         if (obstacleDilations_[i]->dilationSize() > 0.0f)
         {
             MEASURE_BLOCK_TIME(OccupancyGridMap__obstacleDilation);
@@ -254,7 +254,7 @@ bool OccupancyGridMap::updateGlobalToLocal(
 
 bool OccupancyGridMap::addTemporaryLocalMap(
     const Transform& localPose, const Transform& globalPose,
-    const std::shared_ptr<const LocalMap>& localMap)
+    const std::shared_ptr<const LocalMap2d>& localMap)
 {
     posesApproximation_->addLocalPose(localMap->time(), localPose);
 
@@ -274,7 +274,7 @@ bool OccupancyGridMap::addTemporaryLocalMap(
 
 int OccupancyGridMap::addLocalMap(
     const Transform& localPose, const Transform& globalPose,
-    const std::shared_ptr<const LocalMap>& localMap)
+    const std::shared_ptr<const LocalMap2d>& localMap)
 {
     posesApproximation_->addLocalPose(localMap->time(), localPose);
 
@@ -570,7 +570,7 @@ void OccupancyGridMap::load(const std::string& file)
     std::optional<proto::OccupancyGridMap::Node> proto;
     while (proto = reader.read())
     {
-        std::shared_ptr<LocalMap> localMap = rtabmap::fromProto(proto->local_map());
+        std::shared_ptr<LocalMap2d> localMap = rtabmap::fromProto<2>(proto->local_map());
         if (proto->has_global_pose())
         {
             Transform globalPose = rtabmap::fromProto(proto->global_pose());

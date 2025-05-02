@@ -4,7 +4,7 @@
 
 namespace rtabmap {
 
-void TransformedLocalMap::set(const LocalMap& localMap, const Transform& pose,
+void TransformedLocalMap::set(const LocalMap2d& localMap, const Transform& pose,
     float cellSize)
 {
     points_.resize(2, localMap.points().cols());

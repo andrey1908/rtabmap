@@ -116,9 +116,9 @@ public:
     OccupancyGridBuilder(const Parameters& parameters);
     void parseParameters(const Parameters& parameters);
 
-    int addLocalMap(const std::shared_ptr<const LocalMap>& localMap);
+    int addLocalMap(const std::shared_ptr<const LocalMap2d>& localMap);
     int addLocalMap(const Transform& pose,
-        const std::shared_ptr<const LocalMap>& localMap);
+        const std::shared_ptr<const LocalMap2d>& localMap);
 
     void removeNodes(const std::vector<int>& nodeIdsToRemove);
 
@@ -149,7 +149,7 @@ private:
     void deployNode(const Node& node);
     void deployNodes(const std::vector<std::reference_wrapper<Node>>& nodes);
 
-    void deployTransformedLocalMap(const LocalMap& localMap,
+    void deployTransformedLocalMap(const LocalMap2d& localMap,
         const TransformedLocalMap& transformedLocalMap);
 
     void clear();

@@ -53,7 +53,7 @@ void TemporaryOccupancyGridBuilder::precomputeProbabilities()
 }
 
 bool TemporaryOccupancyGridBuilder::addLocalMap(
-    const Transform& pose, const std::shared_ptr<const LocalMap>& localMap)
+    const Transform& pose, const std::shared_ptr<const LocalMap2d>& localMap)
 {
     MEASURE_BLOCK_TIME(TemporaryOccupancyGridBuilder__addLocalMap);
     UASSERT(localMap);
@@ -191,7 +191,7 @@ void TemporaryOccupancyGridBuilder::removeFirstNode()
 }
 
 void TemporaryOccupancyGridBuilder::deployTransformedLocalMap(
-    const LocalMap& localMap, const TransformedLocalMap& transformedLocalMap)
+    const LocalMap2d& localMap, const TransformedLocalMap& transformedLocalMap)
 {
     const Eigen::Matrix2Xi& transformedPoints = transformedLocalMap.points();
     for (int i = 0; i < transformedPoints.cols(); i++)
@@ -205,14 +205,14 @@ void TemporaryOccupancyGridBuilder::deployTransformedLocalMap(
             continue;
         }
 
-        LocalMap::PointType pointType = localMap.getPointType(i);
+        LocalMap2d::PointType pointType = localMap.getPointType(i);
         switch (pointType)
         {
-        case LocalMap::PointType::Occupied:
+        case LocalMap2d::PointType::Occupied:
             map_.hitCounter.coeffRef(y, x) += 1;
             break;
-        case LocalMap::PointType::MaybeEmpty:
-        case LocalMap::PointType::Empty:
+        case LocalMap2d::PointType::MaybeEmpty:
+        case LocalMap2d::PointType::Empty:
             map_.missCounter.coeffRef(y, x) += 1;
             break;
         }
@@ -234,7 +234,7 @@ void TemporaryOccupancyGridBuilder::deployTransformedLocalMap(
 }
 
 void TemporaryOccupancyGridBuilder::removeTransformedLocalMap(
-    const LocalMap& localMap, const TransformedLocalMap& transformedLocalMap)
+    const LocalMap2d& localMap, const TransformedLocalMap& transformedLocalMap)
 {
     const Eigen::Matrix2Xi& transformedPoints = transformedLocalMap.points();
     for (int i = 0; i < transformedPoints.cols(); i++)
@@ -248,14 +248,14 @@ void TemporaryOccupancyGridBuilder::removeTransformedLocalMap(
             continue;
         }
 
-        LocalMap::PointType pointType = localMap.getPointType(i);
+        LocalMap2d::PointType pointType = localMap.getPointType(i);
         switch (pointType)
         {
-        case LocalMap::PointType::Occupied:
+        case LocalMap2d::PointType::Occupied:
             map_.hitCounter.coeffRef(y, x) -= 1;
             break;
-        case LocalMap::PointType::MaybeEmpty:
-        case LocalMap::PointType::Empty:
+        case LocalMap2d::PointType::MaybeEmpty:
+        case LocalMap2d::PointType::Empty:
             map_.missCounter.coeffRef(y, x) -= 1;
             break;
         }

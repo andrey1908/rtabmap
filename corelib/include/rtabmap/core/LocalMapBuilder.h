@@ -151,7 +151,7 @@ public:
     LocalMapBuilder(const Parameters& parameters);
     void parseParameters(const Parameters& parameters);
 
-    std::shared_ptr<LocalMap> createLocalMap(const SensorData& sensorData,
+    std::shared_ptr<LocalMap2d> createLocalMap(const SensorData& sensorData,
         const Time& time, const Transform& fromUpdatedPose) const;
 
     const cv::Mat& lastDilatedSemantic() const { return lastDilatedSemantic_; }
@@ -168,11 +168,11 @@ private:
     std::vector<Color> getPointsColors(const Eigen::Matrix3Xf& points,
         const std::vector<SensorData::CameraData>& camerasData) const;
 
-    LocalMap::ColoredGrid coloredGridFromObstacles(const Eigen::Matrix3Xf& points,
+    LocalMap2d::ColoredGrid coloredGridFromObstacles(const Eigen::Matrix3Xf& points,
         const Eigen::Matrix3Xf& ignorePoints,
         const std::vector<Color>& colors,
         const Eigen::Vector2f& sensor) const;
-    void traceRays(LocalMap::ColoredGrid& coloredGrid,
+    void traceRays(LocalMap2d::ColoredGrid& coloredGrid,
         const Eigen::Vector2f& sensor) const;
 
 private:

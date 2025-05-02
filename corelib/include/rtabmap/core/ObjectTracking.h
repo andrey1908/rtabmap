@@ -7,7 +7,11 @@
 #include <utility>
 #include <functional>
 
+#include <kas_utils/multi_array.hpp>
+
 namespace rtabmap {
+
+using kas_utils::MultiArray;
 
 class ObjectTracking
 {
@@ -106,7 +110,7 @@ private:
 public:
     ObjectTracking(float cellSize);
 
-    void track(const LocalMap& localMap, const Transform& pose);
+    void track(const LocalMap2d& localMap, const Transform& pose);
 
     const std::vector<TrackedObject>& trackedObjects() const
         { return trackedObjects_; }
@@ -115,8 +119,8 @@ public:
 
 private:
     std::vector<TrackedObject> detect(
-        const LocalMap& localMap, const Transform& pose) const;
-    TrackedObject segment(cv::Mat& colorGrid, const Cell& startCell,
+        const LocalMap2d& localMap, const Transform& pose) const;
+    TrackedObject segment(MultiArray<std::int32_t, 2>& colorGrid, const Cell& startCell,
         const MapLimitsI& mapLimits, const Transform& pose) const;
     std::vector<TrackedObject> assign(
         const std::vector<TrackedObject>& trackedObjects, float dt) const;

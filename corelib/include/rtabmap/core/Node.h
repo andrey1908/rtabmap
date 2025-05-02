@@ -13,12 +13,12 @@ namespace rtabmap {
 class TransformedLocalMap
 {
 public:
-    TransformedLocalMap(const LocalMap& localMap, const Transform& pose, float cellSize)
+    TransformedLocalMap(const LocalMap2d& localMap, const Transform& pose, float cellSize)
     {
         set(localMap, pose, cellSize);
     }
 
-    void set(const LocalMap& localMap, const Transform& pose, float cellSize);
+    void set(const LocalMap2d& localMap, const Transform& pose, float cellSize);
 
     const MapLimitsI& mapLimits() const { return mapLimits_; }
     const Eigen::Matrix2Xi& points() const { return points_; }
@@ -47,7 +47,7 @@ public:
         pose_(std::forward<U>(pose)),
         transformedLocalMap_(std::in_place, *localMap, pose, cellSize) {}
 
-    const std::shared_ptr<const LocalMap>& localMap() const { return localMap_; }
+    const std::shared_ptr<const LocalMap2d>& localMap() const { return localMap_; }
 
     bool hasPose() const { return pose_.has_value(); }
     void setPose(const Transform& pose) { pose_ = pose; transformedLocalMap_.reset(); }
@@ -71,7 +71,7 @@ public:
     void removeTransformedLocalMap() { transformedLocalMap_.reset(); }
 
 private:
-    const std::shared_ptr<const LocalMap> localMap_;
+    const std::shared_ptr<const LocalMap2d> localMap_;
     std::optional<Transform> pose_;
     std::optional<TransformedLocalMap> transformedLocalMap_;
 };

@@ -5,15 +5,23 @@
 #include <rtabmap/core/LocalMap.h>
 
 #include <yaml-cpp/yaml.h>
-
-#include <kas_utils/dilation.hpp>
-
 #include <memory>
 
 namespace rtabmap {
 
 class ObstacleDilation
 {
+private:
+    struct PixelCoords
+    {
+        bool inFrame(int h, int w) const
+        {
+            return y >= 0 && x >= 0 && y < h && x < w;
+        }
+        int y;
+        int x;
+    };
+
 public:
     struct Parameters
     {
@@ -40,16 +48,23 @@ public:
     ObstacleDilation(const Parameters& parameters);
     void parseParameters(const Parameters& parameters);
 
-    std::shared_ptr<LocalMap> dilate(const LocalMap& localMap) const;
+    std::shared_ptr<LocalMap2d> dilate(const LocalMap2d& localMap) const;
 
     float dilationSize() { return dilationSizeF_; }
+
+private:
+    void computeDilationPixels();
 
 private:
     float cellSize_;
     float dilationSizeF_;
     int dilationSize_;
 
-    std::unique_ptr<kas_utils::Dilation> dilation_;
+    float dilationRadiusSqr_;
+    int dilationWidth_;
+
+    std::vector<PixelCoords> dilationPixels_;
+    std::vector<int> dilationWidthToPixelsNum_;
 };
 
 }

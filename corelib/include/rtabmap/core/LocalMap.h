@@ -18,17 +18,23 @@
 #include <rtabmap/proto/Transform.pb.h>
 #include <rtabmap/proto/LocalMap.pb.h>
 
+#include <kas_utils/multi_array.hpp>
+
+
 namespace rtabmap {
 
+using kas_utils::MultiArray;
+
+template <int Dims>
 class LocalMap
 {
 public:
     struct ColoredGrid
     {
         float cellSize = 0.0f;
-        MapLimitsI limits;
-        cv::Mat grid;  // CV_8U
-        cv::Mat colors;  // CV_32S
+        MapLimits<int, Dims> limits;
+        MultiArray<std::uint8_t, Dims> grid;
+        MultiArray<std::int32_t, Dims> colors;
 
         static constexpr std::uint8_t unknownCellValue = 0;
         static constexpr std::uint8_t occupiedCellValue = 2;
@@ -104,21 +110,28 @@ private:
     int numObstacles_;
     int numMaybeEmpty_;
     int numEmpty_;
-    Eigen::Matrix3Xf points_;  // z = 0
+    Eigen::Matrix3Xf points_;  // z = 0 for 2d
     std::vector<Color> colors_;
     bool pointsDuplicated_;
 
     // information about ColoredGrid that produced LocalMap
     float cellSize_;
-    MapLimitsI limits_;
+    MapLimits<int, Dims> limits_;
 
     Properties properties_;
 };
 
-proto::LocalMap::ColoredGrid toProto(const LocalMap::ColoredGrid& coloredGrid);
-LocalMap::ColoredGrid fromProto(const proto::LocalMap::ColoredGrid& proto);
+typedef LocalMap<2> LocalMap2d;
+typedef LocalMap<3> LocalMap3d;
 
-proto::LocalMap toProto(const LocalMap& localMap);
-std::shared_ptr<LocalMap> fromProto(const proto::LocalMap& proto);
+template <int Dims>
+proto::LocalMap::ColoredGrid toProto(const typename LocalMap<Dims>::ColoredGrid& coloredGrid);
+template <int Dims>
+typename LocalMap<Dims>::ColoredGrid fromProto(const proto::LocalMap::ColoredGrid& proto);
+
+template <int Dims>
+proto::LocalMap toProto(const LocalMap<Dims>& localMap);
+template <int Dims>
+std::shared_ptr<LocalMap<Dims>> fromProto(const proto::LocalMap& proto);
 
 }

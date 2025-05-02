@@ -23,7 +23,7 @@ ObjectTracking::ObjectTracking(float cellSize) :
     }
 };
 
-void ObjectTracking::track(const LocalMap& localMap, const Transform& pose)
+void ObjectTracking::track(const LocalMap2d& localMap, const Transform& pose)
 {
     MEASURE_BLOCK_TIME(ObjectTracking__track);
     float dt = localMap.time().toSec() - prevTime_.toSec();
@@ -37,24 +37,22 @@ void ObjectTracking::track(const LocalMap& localMap, const Transform& pose)
 }
 
 std::vector<ObjectTracking::TrackedObject> ObjectTracking::detect(
-    const LocalMap& localMap, const Transform& pose) const
+    const LocalMap2d& localMap, const Transform& pose) const
 {
-    LocalMap::ColoredGrid coloredGrid = localMap.toColoredGrid();
+    LocalMap2d::ColoredGrid coloredGrid = localMap.toColoredGrid();
     MapLimitsI mapLimits = coloredGrid.limits;
-    cv::Mat colorGrid = coloredGrid.colors;
+    MultiArray<std::int32_t, 2>& colorGrid = coloredGrid.colors;
+
     std::vector<TrackedObject> trackedObjects;
-    for (int y = 0; y < colorGrid.rows; y++)
+    auto colorGridBlock = colorGrid.block({}, colorGrid.shape());
+    for (auto it = colorGridBlock.begin(); it != colorGridBlock.end(); ++it)
     {
-        for (int x = 0; x < colorGrid.cols; x++)
+        if (*it != Color::missingColor.data())
         {
-            if (colorGrid.at<std::int32_t>(y, x) != Color::missingColor.data())
+            TrackedObject trackedObject = segment(colorGrid, Cell(it.position()[0], it.position()[1]), mapLimits, pose);
+            if (trackedObject.object.size() >= 4)
             {
-                TrackedObject trackedObject = segment(colorGrid, Cell(y, x), mapLimits,
-                    pose);
-                if (trackedObject.object.size() >= 4)
-                {
-                    trackedObjects.push_back(std::move(trackedObject));
-                }
+                trackedObjects.push_back(std::move(trackedObject));
             }
         }
     }
@@ -62,12 +60,12 @@ std::vector<ObjectTracking::TrackedObject> ObjectTracking::detect(
 }
 
 ObjectTracking::TrackedObject ObjectTracking::segment(
-    cv::Mat& colorGrid, const Cell& startCell, const MapLimitsI& mapLimits,
+    MultiArray<std::int32_t, 2>& colorGrid, const Cell& startCell, const MapLimitsI& mapLimits,
     const Transform& pose) const
 {
     Cell shift(mapLimits.min()[0], mapLimits.min()[1]);
 
-    std::int32_t& startCellColor = colorGrid.at<std::int32_t>(startCell.y, startCell.x);
+    std::int32_t& startCellColor = colorGrid[{startCell.y, startCell.x}];
     Color segmentColor = reinterpret_cast<const Color&>(startCellColor);
     UASSERT(segmentColor != Color::missingColor);
 
@@ -86,7 +84,7 @@ ObjectTracking::TrackedObject ObjectTracking::segment(
             Cell nextCell = currentCell + neighborCell;
             int y = nextCell.y;
             int x = nextCell.x;
-            std::int32_t& color = colorGrid.at<std::int32_t>(y, x);
+            std::int32_t& color = colorGrid[{y, x}];
             if (color == segmentColor.data())
             {
                 queue.emplace_back(y, x);
