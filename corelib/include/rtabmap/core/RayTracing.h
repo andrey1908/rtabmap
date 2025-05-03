@@ -6,6 +6,7 @@
 
 #include <opencv2/opencv.hpp>
 #include <vector>
+#include <array>
 #include <list>
 
 #include <cstdint>
@@ -16,6 +17,7 @@ namespace rtabmap {
 
 using kas_utils::MultiArray;
 
+template <int Dims>
 class RayTracing
 {
 public:
@@ -56,51 +58,62 @@ public:
         }
     };
 
-    struct Cell
+    template <int CellDims>
+    struct CellImpl : public std::array<int, CellDims>
     {
-        Cell operator*(const int i) const
+        CellImpl operator*(const int i) const
         {
-            Cell cell;
-            cell.y = y * i;
-            cell.x = x * i;
+            CellImpl cell;
+            for (int dim = 0; dim < CellDims; dim++)
+            {
+                cell[dim] = this->operator[](dim) * i;
+            }
             return cell;
         }
-        Cell operator*(const double d) const
+        CellImpl operator*(const double d) const
         {
-            Cell cell;
-            cell.y = std::lround(y * d);
-            cell.x = std::lround(x * d);
+            CellImpl cell;
+            for (int dim = 0; dim < CellDims; dim++)
+            {
+                cell[dim] = std::lround(this->operator[](dim) * d);
+            }
             return cell;
         }
-        Cell& operator+=(const Cell& other)
+        CellImpl& operator+=(const CellImpl& other)
         {
-            y += other.y;
-            x += other.x;
+            for (int dim = 0; dim < CellDims; dim++)
+            {
+                this->operator[](dim) += other[dim];
+            }
             return *this;
         }
-        inline int rangeSqr() const
+        int rangeSqr() const
         {
-            return y * y + x * x;
-        }
-        inline bool inFrame(int h, int w) const
-        {
-            return y >= 0 && x >= 0 && y < h && x < w;
-        }
-        bool operator<(const Cell& other) const
-        {
-            if (y < other.y)
+            int rangeSqr = 0;
+            for (int dim = 0; dim < CellDims; dim++)
             {
-                return true;
+                int axisRange = this->operator[](dim);
+                rangeSqr += axisRange * axisRange;
             }
-            if (y > other.y)
-            {
-                return false;
-            }
-            return x < other.x;
+            return rangeSqr;
         }
-        int y;
-        int x;
+        bool inFrame(const std::array<int, CellDims>& shape) const
+        {
+            for (int dim = 0; dim < CellDims; dim++)
+            {
+                int coord = this->operator[](dim);
+                if (coord < 0 || coord >= shape[dim])
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
     };
+
+    typedef CellImpl<2> Cell2d;
+    typedef CellImpl<3> Cell3d;
+    typedef CellImpl<Dims> Cell;
 
 private:
     struct Ray
@@ -114,7 +127,7 @@ public:
     RayTracing(const Parameters& parameters);
     void parseParameters(const Parameters& parameters);
 
-    void traceRays(MultiArray<std::uint8_t, 2>& grid, const Cell& origin) const;
+    void traceRays(MultiArray<std::uint8_t, Dims>& grid, const Cell& origin) const;
 
     float maxTracingRange() const
     {
@@ -126,9 +139,15 @@ public:
     }
 
 private:
-    void addCirclePoints(std::set<Cell>& circle, int cy, int cx, int y, int x);
-    std::list<Cell> bresenhamCircle(int cy, int cx, int r);
+    std::list<Cell2d> bresenhamLine2d(const Cell2d& start, const Cell2d& end);
+    std::list<Cell3d> bresenhamLine3d(const Cell3d& start, const Cell3d& end);
     std::list<Cell> bresenhamLine(const Cell& start, const Cell& end);
+
+    void addCirclePoints(std::set<Cell2d>& circle, int cy, int cx, int y, int x);
+    std::list<Cell2d> bresenhamCircle2d(const Cell2d& center, int r);
+    std::list<Cell3d> bresenhamSphere3d(const Cell3d& center, int r);
+    std::list<Cell> getRaysEndCells(const Cell& center, int r);
+
     void computeRays();
 
 private:
@@ -148,5 +167,8 @@ private:
     mutable std::vector<Cell> maybeEmptyCells_;
     mutable std::vector<Cell> emptyCells_;
 };
+
+typedef RayTracing<2> RayTracing2d;
+typedef RayTracing<3> RayTracing3d;
 
 }

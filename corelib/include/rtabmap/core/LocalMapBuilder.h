@@ -79,7 +79,7 @@ public:
         float maxRange2d = 10.0f;  // (-1) - inf
 
         SemanticDilation::Parameters semanticDilationParameters;
-        RayTracing::Parameters rayTracingParameters;
+        RayTracing2d::Parameters rayTracingParameters;
 
         static Parameters createParameters(const YAML::Node& node)
         {
@@ -138,7 +138,7 @@ public:
             if (node["RayTracing"])
             {
                 parameters.rayTracingParameters =
-                    RayTracing::Parameters::createParameters(
+                    RayTracing2d::Parameters::createParameters(
                         node["RayTracing"]);
             }
             return parameters;
@@ -196,7 +196,7 @@ private:
     float maxRange2dSqr_;
 
     std::unique_ptr<SemanticDilation> semanticDilation_;
-    std::unique_ptr<RayTracing> rayTracing_;
+    std::unique_ptr<RayTracing2d> rayTracing_;
 
     mutable cv::Mat lastDilatedSemantic_;
 };

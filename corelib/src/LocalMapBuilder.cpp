@@ -85,10 +85,10 @@ void LocalMapBuilder::parseParameters(const Parameters& parameters)
         parameters.semanticDilationParameters);
     if (enableRayTracing_)
     {
-        RayTracing::Parameters rayTracingParameters = parameters.rayTracingParameters;
+        RayTracing2d::Parameters rayTracingParameters = parameters.rayTracingParameters;
         rayTracingParameters.cellSize = parameters.cellSize;
         rayTracingParameters.sensorBlindRange2d = parameters.sensorBlindRange2d;
-        rayTracing_ = std::make_unique<RayTracing>(rayTracingParameters);
+        rayTracing_ = std::make_unique<RayTracing2d>(rayTracingParameters);
     }
     else
     {
@@ -451,9 +451,9 @@ void LocalMapBuilder::traceRays(LocalMap2d::ColoredGrid& coloredGrid,
     const Eigen::Vector2f& sensor) const
 {
     MEASURE_BLOCK_TIME(LocalMapBuilder__traceRays);
-    RayTracing::Cell origin;
-    origin.y = std::floor(sensor.y() / cellSize_) - coloredGrid.limits.min()[0];
-    origin.x = std::floor(sensor.x() / cellSize_) - coloredGrid.limits.min()[1];
+    RayTracing2d::Cell origin;
+    origin[0] = std::floor(sensor.y() / cellSize_) - coloredGrid.limits.min()[0];
+    origin[1] = std::floor(sensor.x() / cellSize_) - coloredGrid.limits.min()[1];
     rayTracing_->traceRays(coloredGrid.grid, origin);
 }
 
