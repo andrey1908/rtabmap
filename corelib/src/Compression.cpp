@@ -70,9 +70,9 @@ std::string compressMultiArray(const MultiArray<T, Dims>& array)
     UASSERT(array.size() > 0);
 
     std::string compressed;
-    for (int i = 0; i < Dims; i++)
+    for (int d = 0; d < Dims; d++)
     {
-        writeToString(compressed, (int)array.shape()[i]);  // cast to int for backward compatibility
+        writeToString(compressed, (int)array.shape()[d]);  // cast to int for backward compatibility
     }
     writeToString(compressed, (int)0);  // backward compatibility; this was a type of opencv matrix
 
@@ -105,11 +105,11 @@ MultiArray<T, Dims> decompressMultiArray(const std::string& compressed)
 {
     size_t index = 0;
     std::array<std::size_t, Dims> shape;
-    for (int i = 0; i < Dims; i++)
+    for (int d = 0; d < Dims; d++)
     {
         int axisSize;
         index = readFromString(compressed, index, axisSize);
-        shape[i] = axisSize;
+        shape[d] = axisSize;
     }
     index += sizeof(int);  // backward compatibility; this was a type of opencv matrix
 

@@ -53,10 +53,10 @@ public:
     }
     void update(const std::array<T, Dims>& point)
     {
-        for (int i = 0; i < Dims; i++)
+        for (int d = 0; d < Dims; d++)
         {
-            min_[i] = std::min(min_[i], point[i]);
-            max_[i] = std::max(max_[i], point[i]);
+            min_[d] = std::min(min_[d], point[d]);
+            max_[d] = std::max(max_[d], point[d]);
         }
     }
     std::array<T, Dims> shape() const
@@ -66,15 +66,15 @@ public:
         static_assert(integral || floating);
 
         std::array<T, Dims> limitsShape;
-        for (int i = 0; i < Dims; i++)
+        for (int d = 0; d < Dims; d++)
         {
             if constexpr(integral)
             {
-                limitsShape[i] = max_[i] - min_[i] + static_cast<T>(1);
+                limitsShape[d] = max_[d] - min_[d] + static_cast<T>(1);
             }
             if constexpr(floating)
             {
-                limitsShape[i] = max_[i] - min_[i];
+                limitsShape[d] = max_[d] - min_[d];
             }
         }
         return limitsShape;
@@ -82,20 +82,20 @@ public:
     static MapLimits<T, Dims> unite(const MapLimits<T, Dims>& a, const MapLimits<T, Dims>& b)
     {
         MapLimits<T, Dims> res;
-        for (int i = 0; i < Dims; i++)
+        for (int d = 0; d < Dims; d++)
         {
-            res.min_[i] = std::min(a.min_[i], b.min_[i]);
-            res.max_[i] = std::max(a.max_[i], b.max_[i]);
+            res.min_[d] = std::min(a.min_[d], b.min_[d]);
+            res.max_[d] = std::max(a.max_[d], b.max_[d]);
         }
         return res;
     }
     static MapLimits<T, Dims> intersect(const MapLimits<T, Dims>& a, const MapLimits<T, Dims>& b)
     {
         MapLimits<T, Dims> res;
-        for (int i = 0; i < Dims; i++)
+        for (int d = 0; d < Dims; d++)
         {
-            res.min_[i] = std::max(a.min_[i], b.min_[i]);
-            res.max_[i] = std::min(a.max_[i], b.max_[i]);
+            res.min_[d] = std::max(a.min_[d], b.min_[d]);
+            res.max_[d] = std::min(a.max_[d], b.max_[d]);
         }
         res.normalize();
         return res;
@@ -108,16 +108,16 @@ private:
         constexpr bool floating = std::is_floating_point<T>::value;
         static_assert(integral || floating);
 
-        for (int i = 0; i < Dims; i++)
+        for (int d = 0; d < Dims; d++)
         {
             bool checkResult;
             if constexpr(integral)
             {
-                checkResult = (min[i] <= max[i] + static_cast<T>(1));
+                checkResult = (min[d] <= max[d] + static_cast<T>(1));
             }
             if constexpr(floating)
             {
-                checkResult = (min[i] <= max[i]);
+                checkResult = (min[d] <= max[d]);
             }
             if (!checkResult)
             {
@@ -136,15 +136,15 @@ private:
         constexpr bool floating = std::is_floating_point<T>::value;
         static_assert(integral || floating);
 
-        for (int i = 0; i < Dims; i++)
+        for (int d = 0; d < Dims; d++)
         {
             if constexpr(integral)
             {
-                min_[i] = std::min(min_[i], max_[i] + static_cast<T>(1));
+                min_[d] = std::min(min_[d], max_[d] + static_cast<T>(1));
             }
             if constexpr(floating)
             {
-                min_[i] = std::min(min_[i], max_[i]);
+                min_[d] = std::min(min_[d], max_[d]);
             }
         }
     }

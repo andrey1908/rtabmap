@@ -29,10 +29,10 @@ MapLimits<T, Dims> fromProto(const proto::MapLimitsI& proto)
 
     std::array<T, Dims> min;
     std::array<T, Dims> max;
-    for (int i = 0; i < Dims; i++)
+    for (int d = 0; d < Dims; d++)
     {
-        min[i] = proto.min(i);
-        max[i] = proto.max(i);
+        min[d] = proto.min(d);
+        max[d] = proto.max(d);
     }
 
     MapLimits<T, Dims> limits(min, max);
