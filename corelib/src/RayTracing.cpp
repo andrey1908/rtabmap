@@ -84,21 +84,21 @@ void RayTracing::traceRays(MultiArray<std::uint8_t, 2>& grid, const Cell& origin
     }
 }
 
-void RayTracing::addCirclePoints(std::list<Cell>& circle, int cy, int cx, int y, int x)
+void RayTracing::addCirclePoints(std::set<Cell>& circle, int cy, int cx, int y, int x)
 {
-    circle.emplace_back(Cell{cy + y, cx + x});
-    circle.emplace_back(Cell{cy + y, cx - x});
-    circle.emplace_back(Cell{cy - y, cx + x});
-    circle.emplace_back(Cell{cy - y, cx - x});
-    circle.emplace_back(Cell{cy + x, cx + y});
-    circle.emplace_back(Cell{cy + x, cx - y});
-    circle.emplace_back(Cell{cy - x, cx + y});
-    circle.emplace_back(Cell{cy - x, cx - y});
+    circle.emplace(Cell{cy + y, cx + x});
+    circle.emplace(Cell{cy + y, cx - x});
+    circle.emplace(Cell{cy - y, cx + x});
+    circle.emplace(Cell{cy - y, cx - x});
+    circle.emplace(Cell{cy + x, cx + y});
+    circle.emplace(Cell{cy + x, cx - y});
+    circle.emplace(Cell{cy - x, cx + y});
+    circle.emplace(Cell{cy - x, cx - y});
 }
 
 std::list<RayTracing::Cell> RayTracing::bresenhamCircle(int cy, int cx, int r)
 {
-    std::list<Cell> circle;
+    std::set<Cell> circle;  // use std::set to remove duplicated cells
     int y = r;
     int x = 0;
     int d = 3 - 2 * r;
@@ -117,7 +117,7 @@ std::list<RayTracing::Cell> RayTracing::bresenhamCircle(int cy, int cx, int r)
         }
         addCirclePoints(circle, cy, cx, y, x);
     }
-    return circle;
+    return {circle.begin(), circle.end()};
 }
 
 std::list<RayTracing::Cell> RayTracing::bresenhamLine(const Cell& start, const Cell& end)

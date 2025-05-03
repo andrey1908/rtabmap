@@ -86,6 +86,18 @@ public:
         {
             return y >= 0 && x >= 0 && y < h && x < w;
         }
+        bool operator<(const Cell& other) const
+        {
+            if (y < other.y)
+            {
+                return true;
+            }
+            if (y > other.y)
+            {
+                return false;
+            }
+            return x < other.x;
+        }
         int y;
         int x;
     };
@@ -114,7 +126,7 @@ public:
     }
 
 private:
-    void addCirclePoints(std::list<Cell>& circle, int cy, int cx, int y, int x);
+    void addCirclePoints(std::set<Cell>& circle, int cy, int cx, int y, int x);
     std::list<Cell> bresenhamCircle(int cy, int cx, int r);
     std::list<Cell> bresenhamLine(const Cell& start, const Cell& end);
     void computeRays();
