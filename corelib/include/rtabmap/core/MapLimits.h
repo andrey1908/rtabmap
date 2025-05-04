@@ -79,6 +79,17 @@ public:
         }
         return limitsShape;
     }
+    bool contains(const std::array<T, Dims>& point) const
+    {
+        for (int d = 0; d < Dims; d++)
+        {
+            if (point[d] < min_[d] || point[d] > max_[d])
+            {
+                return false;
+            }
+        }
+        return true;
+    }
     static MapLimits<T, Dims> unite(const MapLimits<T, Dims>& a, const MapLimits<T, Dims>& b)
     {
         MapLimits<T, Dims> res;
