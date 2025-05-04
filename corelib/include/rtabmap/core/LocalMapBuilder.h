@@ -17,6 +17,7 @@
 
 namespace rtabmap {
 
+template <int Dims>
 class LocalMapBuilder
 {
 public:
@@ -79,7 +80,7 @@ public:
         float maxRange2d = 10.0f;  // (-1) - inf
 
         SemanticDilation::Parameters semanticDilationParameters;
-        RayTracing2d::Parameters rayTracingParameters;
+        typename RayTracing<Dims>::Parameters rayTracingParameters;
 
         static Parameters createParameters(const YAML::Node& node)
         {
@@ -138,7 +139,7 @@ public:
             if (node["RayTracing"])
             {
                 parameters.rayTracingParameters =
-                    RayTracing2d::Parameters::createParameters(
+                    RayTracing<Dims>::Parameters::createParameters(
                         node["RayTracing"]);
             }
             return parameters;
@@ -151,7 +152,7 @@ public:
     LocalMapBuilder(const Parameters& parameters);
     void parseParameters(const Parameters& parameters);
 
-    std::shared_ptr<LocalMap2d> createLocalMap(const SensorData& sensorData,
+    std::shared_ptr<LocalMap<Dims>> createLocalMap(const SensorData& sensorData,
         const Time& time, const Transform& fromUpdatedPose) const;
 
     const cv::Mat& lastDilatedSemantic() const { return lastDilatedSemantic_; }
@@ -168,12 +169,12 @@ private:
     std::vector<Color> getPointsColors(const Eigen::Matrix3Xf& points,
         const std::vector<SensorData::CameraData>& camerasData) const;
 
-    LocalMap2d::ColoredGrid coloredGridFromObstacles(const Eigen::Matrix3Xf& points,
+    typename LocalMap<Dims>::ColoredGrid coloredGridFromObstacles(const Eigen::Matrix3Xf& points,
         const Eigen::Matrix3Xf& ignorePoints,
         const std::vector<Color>& colors,
-        const Eigen::Vector2f& sensor) const;
-    void traceRays(LocalMap2d::ColoredGrid& coloredGrid,
-        const Eigen::Vector2f& sensor) const;
+        const std::array<float, Dims>& sensor) const;
+    void traceRays(typename LocalMap<Dims>::ColoredGrid& coloredGrid,
+        const std::array<float, Dims>& sensor) const;
 
 private:
     float cellSize_;
@@ -196,9 +197,12 @@ private:
     float maxRange2dSqr_;
 
     std::unique_ptr<SemanticDilation> semanticDilation_;
-    std::unique_ptr<RayTracing2d> rayTracing_;
+    std::unique_ptr<RayTracing<Dims>> rayTracing_;
 
     mutable cv::Mat lastDilatedSemantic_;
 };
+
+typedef LocalMapBuilder<2> LocalMapBuilder2d;
+typedef LocalMapBuilder<3> LocalMapBuilder3d;
 
 }

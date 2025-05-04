@@ -31,7 +31,7 @@ public:
         bool enableObjectTracking = false;
 
         PosesTrimmer::Parameters posesTrimmerParameters;
-        LocalMapBuilder::Parameters localMapBuilderParameters;
+        LocalMapBuilder2d::Parameters localMapBuilderParameters;
         std::vector<ObstacleDilation::Parameters> obstacleDilationsParameters =
             std::vector<ObstacleDilation::Parameters>(1);
         TemporaryOccupancyGridBuilder::Parameters temporaryOccupancyGridBuilderParameters;
@@ -70,7 +70,7 @@ public:
             if (node["LocalMapBuilder"])
             {
                 parameters.localMapBuilderParameters =
-                    LocalMapBuilder::Parameters::createParameters(
+                    LocalMapBuilder2d::Parameters::createParameters(
                         node["LocalMapBuilder"]);
             }
             if (node["ObstacleDilation"])
@@ -167,7 +167,7 @@ public:
         { UASSERT(objectTracking_); return objectTracking_->trackedObjects(); }
     const std::list<ObjectTracking::MOT16TrackedObject>& mot16TrackedObjectsCache() const
         { UASSERT(objectTracking_); return objectTracking_->mot16TrackedObjectsCache(); }
-    const std::vector<LocalMapBuilder::Area>& sensorIgnoreAreas() const
+    const std::vector<LocalMapBuilder2d::Area>& sensorIgnoreAreas() const
         { return localMapBuilder_->sensorIgnoreAreas(); }
 
     void reset();
@@ -192,7 +192,7 @@ private:
     Time lastNodeTime_;
     Time skipLocalMapsUpto_;
 
-    std::unique_ptr<LocalMapBuilder> localMapBuilder_;
+    std::unique_ptr<LocalMapBuilder2d> localMapBuilder_;
 
     int numBuilders_;
     std::vector<std::unique_ptr<ObstacleDilation>> obstacleDilations_;

@@ -36,11 +36,11 @@ void OccupancyGridMap::parseParameters(const Parameters& parameters)
         posesTrimmer_.reset();
     }
 
-    LocalMapBuilder::Parameters localMapBuilderParameters =
+    LocalMapBuilder2d::Parameters localMapBuilderParameters =
         parameters.localMapBuilderParameters;
     localMapBuilderParameters.cellSize = parameters.cellSize;
     localMapBuilder_ =
-        std::make_unique<LocalMapBuilder>(localMapBuilderParameters);
+        std::make_unique<LocalMapBuilder2d>(localMapBuilderParameters);
 
     numBuilders_ = parameters.obstacleDilationsParameters.size();
     obstacleDilations_.clear();
