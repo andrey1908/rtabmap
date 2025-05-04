@@ -20,11 +20,11 @@ public:
 
     void set(const LocalMap2d& localMap, const Transform& pose, float cellSize);
 
-    const MapLimitsI& mapLimits() const { return mapLimits_; }
+    const MapLimitsI2d& mapLimits() const { return mapLimits_; }
     const Eigen::Matrix2Xi& points() const { return points_; }
 
 private:
-    MapLimitsI mapLimits_;
+    MapLimitsI2d mapLimits_;
     Eigen::Matrix2Xi points_;
 };
 

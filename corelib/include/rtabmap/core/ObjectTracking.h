@@ -121,7 +121,7 @@ private:
     std::vector<TrackedObject> detect(
         const LocalMap2d& localMap, const Transform& pose) const;
     TrackedObject segment(MultiArray<std::int32_t, 2>& colorGrid, const Cell& startCell,
-        const MapLimitsI& mapLimits, const Transform& pose) const;
+        const MapLimitsI2d& mapLimits, const Transform& pose) const;
     std::vector<TrackedObject> assign(
         const std::vector<TrackedObject>& trackedObjects, float dt) const;
     void update(std::vector<TrackedObject>& trackedObjects,

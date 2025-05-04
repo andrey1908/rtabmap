@@ -65,7 +65,7 @@ private:
     struct ColoredGridMap
     {
         std::deque<Node> nodes;
-        MapLimitsI mapLimits;
+        MapLimitsI2d mapLimits;
         CounterType hitCounter;
         CounterType missCounter;
         ColorsType colors;
@@ -86,20 +86,20 @@ public:
 
     void transformMap(const Transform& transform);
 
-    OccupancyGrid getOccupancyGrid(MapLimitsI roi = MapLimitsI()) const;
-    OccupancyGrid getProbOccupancyGrid(MapLimitsI roi = MapLimitsI()) const;
-    ColorGrid getColorGrid(MapLimitsI roi = MapLimitsI()) const;
+    OccupancyGrid getOccupancyGrid(MapLimitsI2d roi = MapLimitsI2d()) const;
+    OccupancyGrid getProbOccupancyGrid(MapLimitsI2d roi = MapLimitsI2d()) const;
+    ColorGrid getColorGrid(MapLimitsI2d roi = MapLimitsI2d()) const;
 
     int maxTemporaryLocalMaps() const { return maxTemporaryLocalMaps_; }
     const std::deque<Node>& nodes() const { return map_.nodes; }
-    const MapLimitsI& mapLimits() const { return map_.mapLimits; }
+    const MapLimitsI2d& mapLimits() const { return map_.mapLimits; }
 
     void reset();
 
 private:
     void precomputeProbabilities();
 
-    void createOrResizeMap(const MapLimitsI& newMapLimits);
+    void createOrResizeMap(const MapLimitsI2d& newMapLimits);
 
     void deployLastNode();
     void deployAllNodes();

@@ -83,7 +83,7 @@ private:
     struct ColoredGridMap
     {
         std::map<int, Node> nodes;
-        MapLimitsI mapLimits;
+        MapLimitsI2d mapLimits;
         MapType map;
         ColorsType colors;
         Cells temporarilyOccupiedCells;
@@ -92,7 +92,7 @@ private:
     struct CachedColoredGridMap
     {
         std::map<int, Transform> poses;
-        MapLimitsI mapLimits;
+        MapLimitsI2d mapLimits;
         MapType map;
         ColorsType colors;
         Cells temporarilyOccupiedCells;
@@ -127,12 +127,12 @@ public:
     void updatePoses(const std::map<int, Transform>& updatedPoses,
         int lastNodeIdToIncludeInCachedMap = -1);
 
-    OccupancyGrid getOccupancyGrid(MapLimitsI roi = MapLimitsI()) const;
-    OccupancyGrid getProbOccupancyGrid(MapLimitsI roi = MapLimitsI()) const;
-    ColorGrid getColorGrid(MapLimitsI roi = MapLimitsI()) const;
+    OccupancyGrid getOccupancyGrid(MapLimitsI2d roi = MapLimitsI2d()) const;
+    OccupancyGrid getProbOccupancyGrid(MapLimitsI2d roi = MapLimitsI2d()) const;
+    ColorGrid getColorGrid(MapLimitsI2d roi = MapLimitsI2d()) const;
 
     const std::map<int, Node>& nodes() const { return map_.nodes; }
-    const MapLimitsI& mapLimits() const { return map_.mapLimits; }
+    const MapLimitsI2d& mapLimits() const { return map_.mapLimits; }
 
     void reset();
 
@@ -144,7 +144,7 @@ private:
     void useCachedMap();
     bool tryToUseCachedMap(const std::map<int, Transform>& newPoses);
 
-    void createOrResizeMap(const MapLimitsI& newMapLimits);
+    void createOrResizeMap(const MapLimitsI2d& newMapLimits);
 
     void deployNode(const Node& node);
     void deployNodes(const std::vector<std::reference_wrapper<Node>>& nodes);

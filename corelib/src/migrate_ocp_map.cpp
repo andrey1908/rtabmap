@@ -63,7 +63,7 @@ void replaceSensorBlindRangeWithMaybeEmptyCells(proto::OccupancyGridMap::Node& p
 
     cv::Mat grid = decompressMat(proto.local_map().colored_grid().grid_compressed());
     UASSERT(grid.type() == CV_8UC1);
-    MapLimitsI limits = fromProto<int, 2>(proto.local_map().colored_grid().limits());
+    MapLimitsI2d limits = fromProto<int, 2>(proto.local_map().colored_grid().limits());
     Transform toSensor = fromProto(proto.local_map().to_sensor());
     float cellSize = proto.local_map().colored_grid().cell_size();
     for (int y = 0; y < grid.rows; y++)

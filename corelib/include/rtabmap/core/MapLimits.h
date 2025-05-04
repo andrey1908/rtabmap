@@ -154,9 +154,9 @@ private:
     std::array<T, Dims> max_;
 };
 
-typedef MapLimits<int, 2> MapLimitsI;
-typedef MapLimits<float, 2> MapLimitsF;
+typedef MapLimits<int, 2> MapLimitsI2d;
 typedef MapLimits<int, 3> MapLimitsI3d;
+typedef MapLimits<float, 2> MapLimitsF2d;
 typedef MapLimits<float, 3> MapLimitsF3d;
 
 template<typename T, int Dims>

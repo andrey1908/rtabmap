@@ -386,7 +386,7 @@ LocalMap2d::ColoredGrid LocalMapBuilder::coloredGridFromObstacles(
     const std::vector<Color>& colors,
     const Eigen::Vector2f& sensor) const
 {
-    MapLimitsF limitsF;
+    MapLimitsF2d limitsF;
     limitsF.update({sensor.y(), sensor.x()});
     for (int i = 0; i < points.cols(); i++)
     {

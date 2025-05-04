@@ -40,7 +40,7 @@ std::vector<ObjectTracking::TrackedObject> ObjectTracking::detect(
     const LocalMap2d& localMap, const Transform& pose) const
 {
     LocalMap2d::ColoredGrid coloredGrid = localMap.toColoredGrid();
-    MapLimitsI mapLimits = coloredGrid.limits;
+    MapLimitsI2d mapLimits = coloredGrid.limits;
     MultiArray<std::int32_t, 2>& colorGrid = coloredGrid.colors;
 
     std::vector<TrackedObject> trackedObjects;
@@ -60,7 +60,7 @@ std::vector<ObjectTracking::TrackedObject> ObjectTracking::detect(
 }
 
 ObjectTracking::TrackedObject ObjectTracking::segment(
-    MultiArray<std::int32_t, 2>& colorGrid, const Cell& startCell, const MapLimitsI& mapLimits,
+    MultiArray<std::int32_t, 2>& colorGrid, const Cell& startCell, const MapLimitsI2d& mapLimits,
     const Transform& pose) const
 {
     Cell shift(mapLimits.min()[0], mapLimits.min()[1]);

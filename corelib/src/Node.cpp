@@ -11,7 +11,7 @@ void TransformedLocalMap::set(const LocalMap2d& localMap, const Transform& pose,
     Eigen::Matrix3Xf transformedPoints =
         (pose.toEigen3fRotation() * localMap.points()).colwise() +
         pose.toEigen3fTranslation();
-    mapLimits_ = MapLimitsI();
+    mapLimits_ = MapLimitsI2d();
     for (int i = 0; i < transformedPoints.cols(); i++)
     {
         int x = std::floor(transformedPoints(0, i) / cellSize);
